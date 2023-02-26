@@ -1,4 +1,4 @@
-package com.example.bootcamp;
+package com.example.CoachMe;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;

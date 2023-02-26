@@ -1,4 +1,4 @@
-package com.example.bootcamp;
+package com.example.CoachMe;
 
 import android.content.Intent;
 import androidx.test.core.app.ActivityScenario;
@@ -9,8 +9,6 @@ import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
-
-import static org.hamcrest.CoreMatchers.containsString;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

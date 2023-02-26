@@ -1,4 +1,4 @@
-package com.example.bootcamp;
+package com.example.CoachMe;
 
 import androidx.appcompat.app.AppCompatActivity;
 

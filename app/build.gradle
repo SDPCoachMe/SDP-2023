@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'com.example.bootcamp'
+    namespace 'com.example.CoachMe'
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.example.bootcamp"
+        applicationId "com.example.CoachMe"
         minSdk 24
         targetSdk 33
         versionCode 1
