@@ -11,4 +11,7 @@ interface RequestPoolDB {
 
     @Insert
     fun insert(vararg lineDB: LineDB)
+
+    @Query("DELETE FROM lineDB")
+    fun deleteDB()
 }

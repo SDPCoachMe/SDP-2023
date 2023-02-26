@@ -6,4 +6,5 @@
     <string name="API">API page</string>
     <string name="request">New Activity</string>
     <string name="DB">See DB</string>
+    <string name="deleteDB">DELETE</string>
 </resources>

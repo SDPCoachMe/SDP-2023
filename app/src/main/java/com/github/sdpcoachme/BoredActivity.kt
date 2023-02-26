@@ -13,9 +13,12 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import kotlinx.coroutines.*
+import kotlin.random.Random
+
 
 class BoredActivity : AppCompatActivity() {
-    @SuppressLint("MissingInflatedId")
+    @SuppressLint("MissingInflatedId", "SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_bored)
@@ -33,6 +36,7 @@ class BoredActivity : AppCompatActivity() {
 
         val requestButton = findViewById<Button>(R.id.request)
         val dbButton = findViewById<Button>(R.id.db)
+        val dbDelete = findViewById<Button>(R.id.delete)
 
         // defines a db entity
         val db = Room.databaseBuilder(
@@ -43,8 +47,21 @@ class BoredActivity : AppCompatActivity() {
         val userDB = db.userDB() //creates an instance of the db
 
         dbButton.setOnClickListener {
-            val dbTable : List<LineDB> = userDB.getAll()
-            txt.text = dbTable.toString()
+            CoroutineScope(Dispatchers.IO).launch {
+                val dbTable : List<LineDB> = userDB.getAll()
+                var str = ""
+                for (line in dbTable){
+                    str = str + line.activity + "\n"
+                }
+                txt.text = str
+            }
+        }
+
+        dbDelete.setOnClickListener {
+            CoroutineScope(Dispatchers.IO).launch {
+                userDB.deleteDB()
+                txt.text = "DB deleted"
+            }
         }
 
         //onclickListener for the api request button
@@ -54,23 +71,35 @@ class BoredActivity : AppCompatActivity() {
                 override fun onResponse(call: Call<DataFormat>, response: Response<DataFormat>) {
                     if (response.code() != 200){
                         txt.text = "Error getting the activity"
-                        val resp = response.body()
-                        val newEntry : LineDB = LineDB(resp.hashCode(),
-                                                        resp?.activity,
-                                                        resp?.type,
-                                                        resp?.participants,
-                                                        resp?.price,
-                                                        resp?.link,
-                                                        resp?.key,
-                                                        resp?.accessibility)
-                        userDB.insert(newEntry)
                         return
                     }
                     txt.text = "Activity : " + (response.body()?.activity ?: "Null")
+                    val resp = response.body()
+                    val newEntry = LineDB(System.currentTimeMillis().hashCode(),
+                            resp?.activity,
+                            resp?.type,
+                            resp?.participants,
+                            resp?.price,
+                            resp?.link,
+                            resp?.key,
+                            resp?.accessibility)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        userDB.insert(newEntry)
+                    }
                 }
                 @SuppressLint("SetTextI18n")
                 override fun onFailure(call: Call<DataFormat>, t: Throwable) {
-                    txt.text = "Error no internet connection ..."
+//                    txt.text = "Error no internet connection ..."
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val entriesDB = userDB.getAll()
+                        if (entriesDB.isNotEmpty()){
+                            val rand = Random.nextInt(entriesDB.size)
+                            val randElem = entriesDB[rand]
+                            txt.text = "No internet connection : seeing cached data : " + randElem.activity
+                        }else{
+                            txt.text = "No internet connection : no cached data"
+                        }
+                    }
                 }
             })
         }
