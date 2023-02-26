@@ -1,6 +1,3 @@
 <resources>
     <string name="app_name">CoachMe</string>
-    <string name="OK">OK !</string>
-    <string name="Empty">Empty</string>
-    <string name="Name">Enter your name</string>
 </resources>
