@@ -1,59 +1,44 @@
 package com.github.sdpcoachme
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
-class MainActivity : ComponentActivity() {
+class GreetingActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             CoachMeTheme {
-                GreetingForm()
+                intent.getStringExtra("name")?.let { Greeting(it) }
             }
         }
     }
 }
 
 @Composable
-fun GreetingForm() {
-    var text by remember { mutableStateOf("") }
-    val context = LocalContext.current
-
+fun Greeting(name: String) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        TextField(
-            value = text,
-            onValueChange = { text = it },
-            label = { Text("Your name") }
-        )
-        Button(onClick = {
-            val intent = Intent(context, GreetingActivity::class.java)
-            intent.putExtra("name", text)
-            context.startActivity(intent)
-        })
-        { Text("DISPLAY MESSAGE") }
+        Text(text = "Hello $name!")
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun DefaultPreview() {
+fun DefaultPreview2() {
     CoachMeTheme {
-        GreetingForm()
+        Greeting("John")
     }
 }
