@@ -29,14 +29,6 @@ import static org.junit.Assert.*;
  */
 @RunWith(AndroidJUnit4.class)
 public class MainActivityTest {
-    @Test
-    public void useAppContext() {
-        // Context of the app under test.
-        Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertEquals("com.github.sdpcoachme", appContext.getPackageName());
-
-    }
-
     @Rule
     public ActivityScenarioRule<MainActivity> testRule = new ActivityScenarioRule<>(MainActivity.class);
 
