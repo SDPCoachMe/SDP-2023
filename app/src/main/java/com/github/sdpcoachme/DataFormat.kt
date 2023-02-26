@@ -1,4 +1,4 @@
-package com.example.CoachMe
+package com.github.sdpcoachme
 
 data class DataFormat(
         val activity: String,
