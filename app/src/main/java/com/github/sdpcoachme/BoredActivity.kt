@@ -5,6 +5,9 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
+import androidx.room.Room
+import com.github.sdpcoachme.database.AppDB
+import com.github.sdpcoachme.database.LineDB
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -12,27 +15,55 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class BoredActivity : AppCompatActivity() {
+    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_bored)
 
         val txt : TextView = findViewById(R.id.response)
 
+        //Create a retrofit object that will handle the connection to the api and covert them into JSon
         val retrofit = Retrofit.Builder()
                 .baseUrl("https://www.boredapi.com/api/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
 
-        val boredApi = retrofit.create(BoredAPI::class.java)
+        //create an object that can handle the request fromm the pool of commands
+        val requestPoolApi = retrofit.create(RequestPoolAPI::class.java)
 
         val requestButton = findViewById<Button>(R.id.request)
+        val dbButton = findViewById<Button>(R.id.db)
 
+        // defines a db entity
+        val db = Room.databaseBuilder(
+                applicationContext,
+                AppDB::class.java, "AppDB"
+        ).build()
+
+        val userDB = db.userDB() //creates an instance of the db
+
+        dbButton.setOnClickListener {
+            val dbTable : List<LineDB> = userDB.getAll()
+            txt.text = dbTable.toString()
+        }
+
+        //onclickListener for the api request button
         requestButton.setOnClickListener {
-            boredApi.getActivity().enqueue(object : Callback<DataFormat> {
+            requestPoolApi.getActivity().enqueue(object : Callback<DataFormat> {
                 @SuppressLint("SetTextI18n")
                 override fun onResponse(call: Call<DataFormat>, response: Response<DataFormat>) {
                     if (response.code() != 200){
                         txt.text = "Error getting the activity"
+                        val resp = response.body()
+                        val newEntry : LineDB = LineDB(resp.hashCode(),
+                                                        resp?.activity,
+                                                        resp?.type,
+                                                        resp?.participants,
+                                                        resp?.price,
+                                                        resp?.link,
+                                                        resp?.key,
+                                                        resp?.accessibility)
+                        userDB.insert(newEntry)
                         return
                     }
                     txt.text = "Activity : " + (response.body()?.activity ?: "Null")

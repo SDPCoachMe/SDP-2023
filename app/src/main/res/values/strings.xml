@@ -5,4 +5,5 @@
     <string name="Name">Enter your name</string>
     <string name="API">API page</string>
     <string name="request">New Activity</string>
+    <string name="DB">See DB</string>
 </resources>
