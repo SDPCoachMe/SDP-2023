@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'com.example.CoachMe'
+    namespace 'com.github.sdpcoachme'
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.example.CoachMe"
+        applicationId "com.github.sdpcoachme"
         minSdk 24
         targetSdk 33
         versionCode 1

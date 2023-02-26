@@ -1,4 +1,4 @@
-package com.example.CoachMe;
+package com.github.sdpcoachme;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
@@ -33,7 +33,7 @@ public class MainActivityTest {
     public void useAppContext() {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertEquals("com.example.bootcamp", appContext.getPackageName());
+        assertEquals("com.github.sdpcoachme", appContext.getPackageName());
 
     }
 
