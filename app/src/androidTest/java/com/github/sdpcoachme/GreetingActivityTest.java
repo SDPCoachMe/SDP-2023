@@ -1,4 +1,4 @@
-package com.example.CoachMe;
+package com.github.sdpcoachme;
 
 import android.content.Intent;
 import androidx.test.core.app.ActivityScenario;
