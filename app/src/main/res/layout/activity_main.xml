@@ -31,4 +31,15 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/mainName" />
 
+    <Button
+        android:id="@+id/boredAPI"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="apiActivity"
+        android:text="@string/API"
+        app:layout_constraintBottom_toTopOf="@+id/mainName"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

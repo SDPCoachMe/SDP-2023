@@ -3,4 +3,6 @@
     <string name="OK">OK !</string>
     <string name="Empty">Empty</string>
     <string name="Name">Enter your name</string>
+    <string name="API">API page</string>
+    <string name="request">New Activity</string>
 </resources>
