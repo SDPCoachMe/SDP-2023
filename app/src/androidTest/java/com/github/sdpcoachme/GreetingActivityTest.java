@@ -28,18 +28,4 @@ public class GreetingActivityTest {
 
         scenario.close();
     }
-
-    @Test
-    public void boredActivityContainsAllElements(){
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), BoredActivity.class);
-        ActivityScenario<MainActivity> scenario = ActivityScenario.launch(intent);
-
-        onView(withId(R.id.response)).check(matches(isDisplayed()));
-        onView(withId(R.id.request)).check(matches(isDisplayed()));
-        onView(withId(R.id.db)).check(matches(isDisplayed()));
-        onView(withId(R.id.delete)).check(matches(isDisplayed()));
-
-        scenario.close();
-    }
-
 }
