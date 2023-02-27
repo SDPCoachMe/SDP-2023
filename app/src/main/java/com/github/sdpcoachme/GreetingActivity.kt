@@ -11,7 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.tooling.preview.Preview
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 class GreetingActivity : ComponentActivity() {
@@ -33,13 +32,5 @@ fun Greeting(name: String) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(modifier = Modifier.testTag("text"), text = "Hello $name!")
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview2() {
-    CoachMeTheme {
-        Greeting("John")
     }
 }
