@@ -17,7 +17,8 @@ import kotlinx.coroutines.*
 import kotlin.random.Random
 
 
-class BoredActivity : AppCompatActivity() {
+open class BoredActivity : AppCompatActivity() {
+    open fun getBaseUrl() = "https://www.boredapi.com/api/"
     @SuppressLint("MissingInflatedId", "SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,9 +29,10 @@ class BoredActivity : AppCompatActivity() {
         val dbButton = findViewById<Button>(R.id.db)
         val dbDelete = findViewById<Button>(R.id.delete)
 
+
         //Create a retrofit object that will handle the connection to the api and covert them into JSon
         val retrofit = Retrofit.Builder()
-                .baseUrl("https://www.boredapi.com/api/")
+                .baseUrl(getBaseUrl())
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
 
