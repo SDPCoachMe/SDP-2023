@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
@@ -37,11 +38,14 @@ fun GreetingForm() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         TextField(
+            modifier = Modifier.testTag("textfield"),
             value = text,
             onValueChange = { text = it },
             label = { Text("Your name") }
         )
-        Button(onClick = {
+        Button(
+            modifier = Modifier.testTag("button"),
+            onClick = {
             val intent = Intent(context, GreetingActivity::class.java)
             intent.putExtra("name", text)
             context.startActivity(intent)
