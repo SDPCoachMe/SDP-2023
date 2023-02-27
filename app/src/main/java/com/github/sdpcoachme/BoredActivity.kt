@@ -24,6 +24,9 @@ class BoredActivity : AppCompatActivity() {
         setContentView(R.layout.activity_bored)
 
         val txt : TextView = findViewById(R.id.response)
+        val requestButton = findViewById<Button>(R.id.request)
+        val dbButton = findViewById<Button>(R.id.db)
+        val dbDelete = findViewById<Button>(R.id.delete)
 
         //Create a retrofit object that will handle the connection to the api and covert them into JSon
         val retrofit = Retrofit.Builder()
@@ -33,10 +36,6 @@ class BoredActivity : AppCompatActivity() {
 
         //create an object that can handle the request fromm the pool of commands
         val requestPoolApi = retrofit.create(RequestPoolAPI::class.java)
-
-        val requestButton = findViewById<Button>(R.id.request)
-        val dbButton = findViewById<Button>(R.id.db)
-        val dbDelete = findViewById<Button>(R.id.delete)
 
         // defines a db entity
         val db = Room.databaseBuilder(
