@@ -35,8 +35,8 @@ public class GreetingActivity extends AppCompatActivity implements View.OnClickL
             getSupportFragmentManager().beginTransaction().replace(R.id.open_maps_btn, new MapsFragment()).commit();
         }*/
         Uri gmIntentUri = Uri.parse("geo:46.520536,6.568318");
-        //mapIntent = new Intent(GreetingActivity.this, MapsActivity.class);
-        mapIntent = new Intent(Intent.ACTION_VIEW, gmIntentUri);
+        mapIntent = new Intent(GreetingActivity.this, MapsActivity.class);
+        //mapIntent = new Intent(Intent.ACTION_VIEW, gmIntentUri);
         if (mapIntent.resolveActivity(getPackageManager()) != null) {
             startActivity(mapIntent);
         }
