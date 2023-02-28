@@ -10,11 +10,11 @@ import android.widget.EditText;
 import android.widget.TextView;
 public class MainActivity extends AppCompatActivity {
 
-    Button button;
-    TextView textView;
+    private Button button;
+    private TextView textView;
 
-    Button setButton, getButton;
-    EditText emailText, phoneText;
+    private Button setButton, getButton;
+    private EditText emailText, phoneText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
