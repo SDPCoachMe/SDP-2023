@@ -3,9 +3,4 @@
     <string name="OK">OK !</string>
     <string name="Empty">Empty</string>
     <string name="Name">Enter your name</string>
-    <string name="email">Email</string>
-    <string name="phone">Phone</string>
-    <string name="set">set</string>
-    <string name="get">get</string>
-
 </resources>
