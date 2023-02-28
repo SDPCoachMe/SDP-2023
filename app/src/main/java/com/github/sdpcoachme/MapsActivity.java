@@ -3,13 +3,18 @@ package com.github.sdpcoachme;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.github.sdpcoachme.databinding.ActivityMapsBinding;
 
@@ -17,6 +22,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
+
+    private static final LatLng SATELLITE = new LatLng(46.520544, 6.567825);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,8 +53,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
 
-        LatLng satellite = new LatLng(46.520544, 6.567825);
-        mMap.addMarker(new MarkerOptions().position(satellite).title("Marker for Sat"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(satellite));
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(
+                new LatLng(46.520536,6.568318)));
+        mMap.moveCamera(CameraUpdateFactory.zoomTo(18));
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(@NonNull Marker marker) {
+                LatLng markerPose = marker.getPosition();
+                if (markerPose.latitude == SATELLITE.latitude && markerPose.longitude == SATELLITE.longitude) {
+                    Context context = getApplicationContext();
+                    int duration = Toast.LENGTH_LONG;
+                    CharSequence text = "latitude: " + markerPose.latitude + ", longitude: " + markerPose.longitude;
+                    Toast toast = Toast.makeText(context, text, duration);
+                    toast.show();
+                }
+            }
+        });
+
+        Marker satMarker = mMap.addMarker(new MarkerOptions()
+                .position(SATELLITE)
+                .title("Sat marker title"));
+        assert satMarker != null;
+        satMarker.showInfoWindow();
     }
 }
