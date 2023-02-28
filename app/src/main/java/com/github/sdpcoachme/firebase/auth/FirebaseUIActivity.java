@@ -2,6 +2,7 @@ package com.github.sdpcoachme.firebase.auth;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AppCompatActivity;
@@ -32,14 +33,14 @@ public class FirebaseUIActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_firebase_ui);
 
-        createSignInIntent();
+//        createSignInIntent();
     }
 
     public void createSignInIntent() {
         // Choose authentication providers
         List<AuthUI.IdpConfig> providers = Arrays.asList(
-                new AuthUI.IdpConfig.EmailBuilder().build(),
-                new AuthUI.IdpConfig.PhoneBuilder().build(),
+//                new AuthUI.IdpConfig.EmailBuilder().build(),
+//                new AuthUI.IdpConfig.PhoneBuilder().build(),
                 new AuthUI.IdpConfig.GoogleBuilder().build());
 //                new AuthUI.IdpConfig.FacebookBuilder().build(),
 //                new AuthUI.IdpConfig.TwitterBuilder().build());
@@ -73,6 +74,19 @@ public class FirebaseUIActivity extends AppCompatActivity {
                     // ...
                 });
     }
+
+    public void deleteGoogleAccount(View view) {
+        delete();
+    }
+
+    public void signIntoGoogleAccount(View view) {
+        createSignInIntent();
+    }
+
+    public void signOutOfGoogleAccount(View view) {
+        signOut();
+    }
+
 
     public void delete() {
         AuthUI.getInstance()
