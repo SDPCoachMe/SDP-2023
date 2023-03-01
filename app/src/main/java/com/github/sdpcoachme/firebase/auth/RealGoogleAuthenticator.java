@@ -15,7 +15,7 @@ import com.github.sdpcoachme.R;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -29,7 +29,7 @@ public class RealGoogleAuthenticator implements GoogleAuthenticator {
 
     public void createSignInIntent(ActivityResultLauncher<Intent> signInLauncher) {
         // Choose authentication providers
-        List<AuthUI.IdpConfig> providers = Arrays.asList(
+        List<AuthUI.IdpConfig> providers = Collections.singletonList(
                 new AuthUI.IdpConfig.GoogleBuilder().build());
 
         // Create and launch sign-in intent
@@ -55,7 +55,11 @@ public class RealGoogleAuthenticator implements GoogleAuthenticator {
             // sign-in flow using the back button. Otherwise check
             // response.getError().getErrorCode() and handle the error.
             // ...
-            textView.setText(R.string.sign_in_failed);
+            if (response == null || response.getError() == null) {
+                textView.setText(R.string.sign_in_failed);
+            } else {
+                textView.setText(response.getError().getErrorCode());
+            }
         }
     }
 
