@@ -15,7 +15,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/log_out_button" />
+        app:layout_constraintTop_toBottomOf="@+id/sign_out_button" />
 
     <Button
         android:id="@+id/sign_in"
@@ -23,14 +23,14 @@
         android:layout_height="wrap_content"
         android:onClick="signIntoGoogleAccount"
         android:text="@string/sign_into_google_button"
-        app:layout_constraintBottom_toTopOf="@+id/log_out_button"
+        app:layout_constraintBottom_toTopOf="@+id/sign_out_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/log_out_button"
+        android:id="@+id/sign_out_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="signOutOfGoogleAccount"
@@ -41,7 +41,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/user_email"
+        android:id="@+id/sign_in_info"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/google_account_info_text"

@@ -22,7 +22,7 @@ public class FirebaseUIActivity extends AppCompatActivity {
     // See: https://developer.android.com/training/basics/intents/result
     private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
             new FirebaseAuthUIActivityResultContract(),
-            res -> googleAuthenticator.onSignInResult(res, findViewById(R.id.user_email))
+            res -> googleAuthenticator.onSignInResult(res, findViewById(R.id.sign_in_info))
     );
 
     @Override
@@ -37,7 +37,7 @@ public class FirebaseUIActivity extends AppCompatActivity {
     }
 
     public void deleteGoogleAccount(View view) {
-        googleAuthenticator.delete(this, findViewById(R.id.user_email));
+        googleAuthenticator.delete(this, findViewById(R.id.sign_in_info));
     }
 
     public void signIntoGoogleAccount(View view) {
@@ -45,6 +45,6 @@ public class FirebaseUIActivity extends AppCompatActivity {
     }
 
     public void signOutOfGoogleAccount(View view) {
-        googleAuthenticator.signOut(this, findViewById(R.id.user_email));
+        googleAuthenticator.signOut(this, findViewById(R.id.sign_in_info));
     }
 }
