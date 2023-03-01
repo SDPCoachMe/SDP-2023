@@ -24,7 +24,7 @@ public class RealGoogleAuthenticator implements GoogleAuthenticator {
 
     @Inject
     public RealGoogleAuthenticator() {
-        // Your constructor logic goes here
+        // Potential constructor logic comes here
     }
 
     public void createSignInIntent(ActivityResultLauncher<Intent> signInLauncher) {
@@ -37,9 +37,11 @@ public class RealGoogleAuthenticator implements GoogleAuthenticator {
                 .createSignInIntentBuilder()
                 .setAvailableProviders(providers)
                 .build();
+
         signInLauncher.launch(signInIntent);
     }
 
+    @Override
     public void onSignInResult(FirebaseAuthUIAuthenticationResult result, TextView textView) {
         IdpResponse response = result.getIdpResponse();
         if (result.getResultCode() == RESULT_OK) {
@@ -58,7 +60,8 @@ public class RealGoogleAuthenticator implements GoogleAuthenticator {
             if (response == null || response.getError() == null) {
                 textView.setText(R.string.sign_in_failed);
             } else {
-                textView.setText(response.getError().getErrorCode());
+                 String error = "Sign in failed: " + response.getError().getErrorCode();
+                textView.setText(error);
             }
         }
     }
@@ -70,23 +73,17 @@ public class RealGoogleAuthenticator implements GoogleAuthenticator {
 
     @Override
     public void delete(Context context, TextView textView) {
-
         AuthUI.getInstance()
                 .delete(context)
-                .addOnCompleteListener(task -> {
-                    // ...
-                    textView.setText(R.string.deleted_accout);
-                });
+                .addOnCompleteListener(task ->
+                        textView.setText(R.string.deleted_accout));
     }
 
     @Override
     public void signOut(Context context, TextView textView) {
         AuthUI.getInstance()
                 .signOut(context)
-                .addOnCompleteListener(task -> {
-                    // ...
-                    textView.setText(R.string.signed_out);
-
-                });
+                .addOnCompleteListener(task ->
+                        textView.setText(R.string.signed_out));
     }
 }

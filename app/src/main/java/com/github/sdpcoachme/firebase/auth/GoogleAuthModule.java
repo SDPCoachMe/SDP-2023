@@ -1,7 +1,5 @@
 package com.github.sdpcoachme.firebase.auth;
 
-import android.content.Context;
-
 import dagger.Module;
 import dagger.Provides;
 
