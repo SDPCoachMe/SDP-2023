@@ -21,7 +21,6 @@ import com.github.sdpcoachme.databinding.ActivityMapsBinding;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
-    private ActivityMapsBinding binding;
 
     private static final LatLng SATELLITE = new LatLng(46.520544, 6.567825);
 
@@ -56,19 +55,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.moveCamera(CameraUpdateFactory.newLatLng(
                 new LatLng(46.520536,6.568318)));
         mMap.moveCamera(CameraUpdateFactory.zoomTo(18));
-        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+        /*mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(@NonNull Marker marker) {
                 LatLng markerPose = marker.getPosition();
-                if (markerPose.latitude == SATELLITE.latitude && markerPose.longitude == SATELLITE.longitude) {
+                if (markerPose.latitude == SATELLITE.latitude
+                        && markerPose.longitude == SATELLITE.longitude) {
                     Context context = getApplicationContext();
                     int duration = Toast.LENGTH_LONG;
-                    CharSequence text = "latitude: " + markerPose.latitude + ", longitude: " + markerPose.longitude;
+                    CharSequence text = "latitude: " + markerPose.latitude
+                            + ", longitude: " + markerPose.longitude;
                     Toast toast = Toast.makeText(context, text, duration);
                     toast.show();
                 }
             }
-        });
+        });*/
 
         Marker satMarker = mMap.addMarker(new MarkerOptions()
                 .position(SATELLITE)
