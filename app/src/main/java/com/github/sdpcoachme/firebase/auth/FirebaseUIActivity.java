@@ -3,6 +3,7 @@ package com.github.sdpcoachme.firebase.auth;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,7 +21,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import javax.inject.Inject;
+
 public class FirebaseUIActivity extends AppCompatActivity {
+
+    //inject instance of GoogleAuthenticator
+    @Inject
+    RealGoogleAuthenticator googleAuthenticator;
+
 
     // See: https://developer.android.com/training/basics/intents/result
     private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
@@ -33,17 +41,16 @@ public class FirebaseUIActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_firebase_ui);
 
-//        createSignInIntent();
+        DaggerGoogleAuthComponent.builder()
+                .googleAuthModule(new GoogleAuthModule())
+                .build()
+                .inject(this);
     }
 
     public void createSignInIntent() {
         // Choose authentication providers
         List<AuthUI.IdpConfig> providers = Arrays.asList(
-//                new AuthUI.IdpConfig.EmailBuilder().build(),
-//                new AuthUI.IdpConfig.PhoneBuilder().build(),
                 new AuthUI.IdpConfig.GoogleBuilder().build());
-//                new AuthUI.IdpConfig.FacebookBuilder().build(),
-//                new AuthUI.IdpConfig.TwitterBuilder().build());
 
         // Create and launch sign-in intent
         Intent signInIntent = AuthUI.getInstance()
@@ -55,11 +62,17 @@ public class FirebaseUIActivity extends AppCompatActivity {
 
     private void onSignInResult(FirebaseAuthUIAuthenticationResult result) {
         IdpResponse response = result.getIdpResponse();
+        TextView textView = findViewById(R.id.user_email);
+
         if (result.getResultCode() == RESULT_OK) {
             // Successfully signed in
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             // ...
+            assert user != null;
+            textView.setText(String.format("%s %s", getString(R.string.signed_in_as), user.getEmail()));
+
         } else {
+            textView.setText(R.string.sign_in_failed);
             // Sign in failed. If response is null the user canceled the
             // sign-in flow using the back button. Otherwise check
             // response.getError().getErrorCode() and handle the error.
@@ -68,23 +81,28 @@ public class FirebaseUIActivity extends AppCompatActivity {
     }
 
     public void signOut() {
+        TextView textView = findViewById(R.id.user_email);
         AuthUI.getInstance()
                 .signOut(this)
                 .addOnCompleteListener(task -> {
                     // ...
+                    textView.setText(R.string.signed_out);
                 });
     }
 
     public void deleteGoogleAccount(View view) {
-        delete();
+        googleAuthenticator.delete(this, findViewById(R.id.user_email));
+//        delete();
     }
 
     public void signIntoGoogleAccount(View view) {
-        createSignInIntent();
+        googleAuthenticator.signIn(signInLauncher);
+//        createSignInIntent();
     }
 
     public void signOutOfGoogleAccount(View view) {
-        signOut();
+        googleAuthenticator.signOut(this, findViewById(R.id.user_email));
+//        signOut();
     }
 
 
