@@ -9,7 +9,6 @@ import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
 
 import com.firebase.ui.auth.AuthUI;
-import com.firebase.ui.auth.IdpResponse;
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult;
 import com.github.sdpcoachme.R;
 import com.google.firebase.auth.FirebaseAuth;
@@ -43,11 +42,10 @@ public class RealGoogleAuthenticator implements GoogleAuthenticator {
 
     @Override
     public void onSignInResult(FirebaseAuthUIAuthenticationResult result, TextView textView) {
-        IdpResponse response = result.getIdpResponse();
         if (result.getResultCode() == RESULT_OK) {
             // Successfully signed in
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-            // ...
+
             assert user != null;
             String signInText = "Signed in as: " + user.getEmail();
             textView.setText(signInText);
@@ -57,12 +55,7 @@ public class RealGoogleAuthenticator implements GoogleAuthenticator {
             // sign-in flow using the back button. Otherwise check
             // response.getError().getErrorCode() and handle the error.
             // ...
-            if (response == null || response.getError() == null) {
-                textView.setText(R.string.sign_in_failed);
-            } else {
-                 String error = "Sign in failed: " + response.getError().getErrorCode();
-                textView.setText(error);
-            }
+            textView.setText(R.string.sign_in_failed);
         }
     }
 

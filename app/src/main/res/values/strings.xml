@@ -7,7 +7,7 @@
     <string name="phone">Phone</string>
     <string name="set">set</string>
     <string name="get">get</string>
-    <string name="sign_in">Sign in</string>
+    <string name="sign_in_page">Go to sign in page</string>
     <string name="deleted_accout">Account deleted</string>
     <string name="firebase_sign_in_domain">https://sdpcoachme.page.link/</string>
     <string name="signed_out">Signed out</string>

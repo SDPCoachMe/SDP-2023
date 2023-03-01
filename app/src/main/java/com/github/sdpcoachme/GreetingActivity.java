@@ -12,8 +12,6 @@ import com.github.sdpcoachme.firebase.auth.FirebaseUIActivity;
 
 public class GreetingActivity extends AppCompatActivity {
 
-    private Button signInButton;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -25,12 +23,5 @@ public class GreetingActivity extends AppCompatActivity {
         String str = intent.getStringExtra("name");
 
         receiverMessage.setText(str);
-    }
-
-    public void signIn(View view){
-        signInButton = findViewById(R.id.sign_in_button);
-        Intent intent = new Intent(GreetingActivity.this, FirebaseUIActivity.class);
-
-        startActivity(intent);
     }
 }
