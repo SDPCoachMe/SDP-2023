@@ -30,11 +30,7 @@ public class RealGoogleAuthenticator implements GoogleAuthenticator {
     public void createSignInIntent(ActivityResultLauncher<Intent> signInLauncher) {
         // Choose authentication providers
         List<AuthUI.IdpConfig> providers = Arrays.asList(
-//                new AuthUI.IdpConfig.EmailBuilder().build(),
-//                new AuthUI.IdpConfig.PhoneBuilder().build(),
                 new AuthUI.IdpConfig.GoogleBuilder().build());
-//                new AuthUI.IdpConfig.FacebookBuilder().build(),
-//                new AuthUI.IdpConfig.TwitterBuilder().build());
 
         // Create and launch sign-in intent
         Intent signInIntent = AuthUI.getInstance()
@@ -44,17 +40,22 @@ public class RealGoogleAuthenticator implements GoogleAuthenticator {
         signInLauncher.launch(signInIntent);
     }
 
-    private void onSignInResult(FirebaseAuthUIAuthenticationResult result) {
+    public void onSignInResult(FirebaseAuthUIAuthenticationResult result, TextView textView) {
         IdpResponse response = result.getIdpResponse();
         if (result.getResultCode() == RESULT_OK) {
             // Successfully signed in
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             // ...
+            assert user != null;
+            String signInText = "Signed in as: " + user.getEmail();
+            textView.setText(signInText);
+
         } else {
             // Sign in failed. If response is null the user canceled the
             // sign-in flow using the back button. Otherwise check
             // response.getError().getErrorCode() and handle the error.
             // ...
+            textView.setText(R.string.sign_in_failed);
         }
     }
 
