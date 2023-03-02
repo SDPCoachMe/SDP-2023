@@ -9,18 +9,15 @@ import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
-import android.content.Context;
-
 import androidx.test.espresso.intent.Intents;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.*;
+import com.github.sdpcoachme.firebase.auth.FirebaseUIActivity;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -43,6 +40,23 @@ public class MainActivityTest {
 
         Intents.intended(hasComponent(GreetingActivity.class.getName()));
         Intents.intended(hasExtra("name", str));
+
+        Intents.release();
+    }
+
+    @Test
+    public void goToSignInButtonTakesUserToFirebaseUIActivity(){
+        Intents.init();
+
+        onView(withId(R.id.go_to_sign_in_button)).check(matches(isDisplayed()));
+        onView(withId(R.id.go_to_sign_in_button)).perform(click());
+
+        Intents.intended(hasComponent(FirebaseUIActivity.class.getName()));
+
+        onView(withId(R.id.sign_in_button)).check(matches(isDisplayed()));
+        onView(withId(R.id.sign_out_button)).check(matches(isDisplayed()));
+        onView(withId(R.id.delete_account_button)).check(matches(isDisplayed()));
+        onView(withId(R.id.sign_in_info)).check(matches(isDisplayed()));
 
         Intents.release();
     }

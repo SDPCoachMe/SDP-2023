@@ -54,13 +54,14 @@ public class FirebaseUIActivityTest {
 
         device.wait(Until.hasObject(By.pkg(BASIC_SAMPLE_PACKAGE).depth(0)),
                 LAUNCH_TIMEOUT);
+
+        device.findObject(By.res("com.github.sdpcoachme:id/go_to_sign_in_button")).click();
+
     }
 
 
     @Test
     public void signOutOfGoogleAccountResultsInCorrectMessage() {
-        device.findObject(By.res("com.github.sdpcoachme:id/sign_in_button")).click();
-
         ViewInteraction signOutButton = onView(withId(R.id.sign_out_button));
         signOutButton.perform(click());
 
@@ -73,10 +74,7 @@ public class FirebaseUIActivityTest {
 
     @Test
     public void deleteGoogleAccountResultsInCorrectMessage() {
-
-        device.findObject(By.res("com.github.sdpcoachme:id/sign_in_button")).click();
-
-        ViewInteraction deleteButton = onView(withId(R.id.delete_google_account));
+        ViewInteraction deleteButton = onView(withId(R.id.delete_account_button));
         deleteButton.perform(click());
 
         UiObject2 confirmDialog = device.wait(
@@ -90,8 +88,6 @@ public class FirebaseUIActivityTest {
     // The following tests have been commented out because they only worked on the local emulator:
     /*@Test
     public void signIntoGoogleAccountResultsInFailedMessageIfNoAccountChosenAfterSignOut() {
-        device.findObject(By.res("com.github.sdpcoachme:id/sign_in_button")).click();
-
         ViewInteraction signOutButton = onView(withId(R.id.sign_out_button));
         signOutButton.perform(click());
         signOutButton.perform(click());
@@ -112,8 +108,6 @@ public class FirebaseUIActivityTest {
 */
     /*@Test
     public void signIntoGoogleAccountResultsInFailedMessageIfNoAccountChosenAfterDelete() {
-        device.findObject(By.res("com.github.sdpcoachme:id/sign_in_button")).click();
-
         ViewInteraction deleteButton = onView(withId(R.id.delete_google_account));
         deleteButton.perform(click());
         deleteButton.perform(click());

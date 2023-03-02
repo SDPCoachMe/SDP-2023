@@ -7,7 +7,7 @@
     android:onClick="deleteGoogleAccount">
 
     <Button
-        android:id="@+id/delete_google_account"
+        android:id="@+id/delete_account_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="deleteGoogleAccount"
@@ -18,7 +18,7 @@
         app:layout_constraintTop_toBottomOf="@+id/sign_out_button" />
 
     <Button
-        android:id="@+id/sign_in"
+        android:id="@+id/sign_in_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="signIntoGoogleAccount"
@@ -45,7 +45,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/google_account_info_text"
-        app:layout_constraintBottom_toTopOf="@+id/sign_in"
+        app:layout_constraintBottom_toTopOf="@+id/sign_in_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
