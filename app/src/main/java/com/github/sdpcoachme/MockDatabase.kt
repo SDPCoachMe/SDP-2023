@@ -2,16 +2,16 @@ package com.github.sdpcoachme
 
 import java.util.concurrent.CompletableFuture
 
-class MockDatabase<K, V>: Database<K, V> {
+class MockDatabase<V>: Database<V> {
 
-    private val db = hashMapOf<K, V>()
+    private val db = hashMapOf<String, V>()
 
 
-    override fun get(key: K): CompletableFuture<V> {
+    override fun get(key: String): CompletableFuture<V> {
         return CompletableFuture.completedFuture(db[key])
     }
 
-    override fun set(key: K, value: V) {
+    override fun set(key: String, value: V) {
         db[key] = value
     }
 }

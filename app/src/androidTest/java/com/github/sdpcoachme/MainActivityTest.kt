@@ -33,4 +33,9 @@ class MainActivityTest {
         intended(allOf(hasComponent(GreetingActivity::class.java.name), hasExtra("name", name)))
         Intents.release()
     }
+
+    @Test
+    fun setAndGet() {
+
+    }
 }

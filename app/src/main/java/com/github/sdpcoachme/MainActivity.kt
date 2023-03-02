@@ -15,16 +15,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.ktx.database
-
-import com.google.firebase.ktx.Firebase
-import java.util.concurrent.CompletableFuture
 
 
 class MainActivity : ComponentActivity() {
 
-    private val db: DatabaseReference = Firebase.database.reference
+
+    private val db: Database<String> = MockDatabase()
+    //private val db: Database<String, String> = FirebaseDatabase()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,25 +54,14 @@ class MainActivity : ComponentActivity() {
             ) {
                 Button(modifier = Modifier.testTag("getButton"),
                     onClick = {
-                        val future = CompletableFuture<String>()
-
-                        db.child(phoneText).get().addOnSuccessListener {
-                            if (it.value == null) future.completeExceptionally(NoSuchFieldException())
-                            else future.complete(it.value as String)
-                        }.addOnFailureListener {
-                            future.completeExceptionally(it)
-                        }
-
-                        future.thenAccept {
-                            emailText = it
-                        }
+                        db.get(phoneText).thenAccept { emailText = it }
                     },)
                 {
                     Text("get")
                 }
                 Button(modifier = Modifier.testTag("setButton"),
                     onClick = {
-                        db.child(phoneText).setValue(emailText)
+                        db.set(phoneText, emailText)
                     },)
                 {
                     Text("set")
