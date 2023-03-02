@@ -13,14 +13,14 @@ import com.github.sdpcoachme.R;
 
 import javax.inject.Inject;
 
+/**
+ * Activity that uses FirebaseUI to sign in a user with the injected Authenticator
+ */
 public class FirebaseUIActivity extends AppCompatActivity {
 
-    //inject instance of GoogleAuthenticator
     @Inject
     GoogleAuthenticator googleAuthenticator;
 
-
-    // See: https://developer.android.com/training/basics/intents/result
     private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
             new FirebaseAuthUIActivityResultContract(),
             res -> googleAuthenticator.onSignInResult(
@@ -43,14 +43,29 @@ public class FirebaseUIActivity extends AppCompatActivity {
                 .inject(this);
     }
 
+    /**
+     * Deletes the google account from the device
+     *
+     * @param view current view
+     */
     public void deleteGoogleAccount(View view) {
         googleAuthenticator.delete(this, () -> ((TextView) findViewById(R.id.sign_in_info)).setText(R.string.deleted_accout));
     }
 
+    /**
+     * Signs into the google account
+     *
+     * @param view current view
+     */
     public void signIntoGoogleAccount(View view) {
         googleAuthenticator.signIn(signInLauncher);
     }
 
+    /**
+     * Signs out of the google account
+     *
+     * @param view current view
+     */
     public void signOutOfGoogleAccount(View view) {
         googleAuthenticator.signOut(this, () -> ((TextView) findViewById(R.id.sign_in_info)).setText(R.string.signed_out));
     }

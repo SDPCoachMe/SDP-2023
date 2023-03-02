@@ -18,29 +18,30 @@ import java.util.function.Consumer;
 
 import javax.inject.Inject;
 
+/**
+ * Class that handles the Google sign in process
+ */
 public class RealGoogleAuthenticator implements GoogleAuthenticator {
 
     @Inject
-    public RealGoogleAuthenticator() {
-        // Potential constructor logic comes here
-    }
+    public RealGoogleAuthenticator() {}
 
+    /**
+     * Creates a sign in intent and launches it using the given launcher
+     *
+     * @param signInLauncher the launcher to use
+     */
     public void createSignInIntent(ActivityResultLauncher<Intent> signInLauncher) {
         // Choose authentication providers
         List<AuthUI.IdpConfig> providers = Collections.singletonList(
                 new AuthUI.IdpConfig.GoogleBuilder().build());
 
-        // Create and launch sign-in intent
         Intent signInIntent = AuthUI.getInstance()
                 .createSignInIntentBuilder()
                 .setAvailableProviders(providers)
                 .build();
 
-         try {
-             signInLauncher.launch(signInIntent);
-         } catch (Exception e) {
-             System.out.println("My Error: " + e.getMessage());
-         }
+        signInLauncher.launch(signInIntent);
     }
 
     @Override

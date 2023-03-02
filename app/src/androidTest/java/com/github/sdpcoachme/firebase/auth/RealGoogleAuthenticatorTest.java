@@ -28,7 +28,6 @@ public class RealGoogleAuthenticatorTest {
     @Test
     public void onSignInResultThrowsIfUserIsNull() {
         RealGoogleAuthenticator realGoogleAuthenticator = new RealGoogleAuthenticator();
-        // Mock the getCurrentUser() method to return the mock user
 
         Exception error = assertThrows(IllegalStateException.class,
                 () -> realGoogleAuthenticator.onSignInResult(
@@ -37,4 +36,6 @@ public class RealGoogleAuthenticatorTest {
                         , () -> {}));
         assertThat(error.getMessage(), is("User is null"));
     }
+
+
 }
