@@ -52,7 +52,7 @@ class MainActivityTest {
 
         composeTestRule.onNodeWithTag("getButton").performClick()
 
-        val retrievedEmail = composeTestRule.onNodeWithTag(emailField).assertTextContains(email)
+        composeTestRule.onNodeWithTag(emailField).assertTextContains(email)
 
     }
 }
