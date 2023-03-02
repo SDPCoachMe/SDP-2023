@@ -3,6 +3,7 @@ package com.github.sdpcoachme.firebase.auth;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,7 +23,13 @@ public class FirebaseUIActivity extends AppCompatActivity {
     // See: https://developer.android.com/training/basics/intents/result
     private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
             new FirebaseAuthUIActivityResultContract(),
-            res -> googleAuthenticator.onSignInResult(res, findViewById(R.id.sign_in_info))
+            res -> googleAuthenticator.onSignInResult(
+                    res
+                    , email -> ((TextView) findViewById(R.id.sign_in_info))
+                            .setText(String.format(getString(R.string.signed_in_as), email))
+                    , () -> ((TextView) findViewById(R.id.sign_in_info))
+                            .setText(R.string.sign_in_failed)
+            )
     );
 
     @Override
@@ -37,7 +44,7 @@ public class FirebaseUIActivity extends AppCompatActivity {
     }
 
     public void deleteGoogleAccount(View view) {
-        googleAuthenticator.delete(this, findViewById(R.id.sign_in_info));
+        googleAuthenticator.delete(this, () -> ((TextView) findViewById(R.id.sign_in_info)).setText(R.string.deleted_accout));
     }
 
     public void signIntoGoogleAccount(View view) {
@@ -45,6 +52,6 @@ public class FirebaseUIActivity extends AppCompatActivity {
     }
 
     public void signOutOfGoogleAccount(View view) {
-        googleAuthenticator.signOut(this, findViewById(R.id.sign_in_info));
+        googleAuthenticator.signOut(this, () -> ((TextView) findViewById(R.id.sign_in_info)).setText(R.string.signed_out));
     }
 }

@@ -4,18 +4,17 @@ import static android.app.Activity.RESULT_OK;
 
 import android.content.Context;
 import android.content.Intent;
-import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult;
-import com.github.sdpcoachme.R;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 import javax.inject.Inject;
 
@@ -41,21 +40,21 @@ public class RealGoogleAuthenticator implements GoogleAuthenticator {
     }
 
     @Override
-    public void onSignInResult(FirebaseAuthUIAuthenticationResult result, TextView textView) {
+    public void onSignInResult(FirebaseAuthUIAuthenticationResult result, Consumer<String> onSuccess, Runnable onFailure) {
         if (result.getResultCode() == RESULT_OK) {
             // Successfully signed in
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-            assert user != null;
-            String signInText = "Signed in as: " + user.getEmail();
-            textView.setText(signInText);
+            if (user == null) throw new IllegalStateException("User is null");
+
+            onSuccess.accept(user.getEmail());
 
         } else {
             // Sign in failed. If response is null the user canceled the
             // sign-in flow using the back button. Otherwise check
             // response.getError().getErrorCode() and handle the error.
             // ...
-            textView.setText(R.string.sign_in_failed);
+            onFailure.run();
         }
     }
 
@@ -65,18 +64,18 @@ public class RealGoogleAuthenticator implements GoogleAuthenticator {
     }
 
     @Override
-    public void delete(Context context, TextView textView) {
+    public void delete(Context context, Runnable onComplete) {
         AuthUI.getInstance()
                 .delete(context)
                 .addOnCompleteListener(task ->
-                        textView.setText(R.string.deleted_accout));
+                        onComplete.run());
     }
 
     @Override
-    public void signOut(Context context, TextView textView) {
+    public void signOut(Context context, Runnable onComplete) {
         AuthUI.getInstance()
                 .signOut(context)
                 .addOnCompleteListener(task ->
-                        textView.setText(R.string.signed_out));
+                        onComplete.run());
     }
 }
