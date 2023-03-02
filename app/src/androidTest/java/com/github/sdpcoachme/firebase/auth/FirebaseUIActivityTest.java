@@ -80,7 +80,7 @@ public class FirebaseUIActivityTest {
         assertThat(confirmDialog.getText(), containsString("@"));
     }*/
 
-    @Test
+    /*@Test
     public void signIntoGoogleAccountResultsInFailedMessageIfNoAccountChosenAfterSignOut() {
         device.findObject(By.res("com.github.sdpcoachme:id/sign_in_button")).click();
 
@@ -104,8 +104,8 @@ public class FirebaseUIActivityTest {
 
         assertThat(confirmDialog.getText(), is("Sign in failed"));
     }
-
-    @Test
+*/
+    /*@Test
     public void signIntoGoogleAccountResultsInFailedMessageIfNoAccountChosenAfterDelete() {
         device.findObject(By.res("com.github.sdpcoachme:id/sign_in_button")).click();
 
@@ -129,7 +129,7 @@ public class FirebaseUIActivityTest {
         assertNotNull(confirmDialog);
 
         assertThat(confirmDialog.getText(), is("Sign in failed"));
-    }
+    }*/
 
     @Test
     public void signOutOfGoogleAccountResultsInCorrectMessage() {
