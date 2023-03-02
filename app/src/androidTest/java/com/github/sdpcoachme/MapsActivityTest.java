@@ -19,7 +19,7 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class MapsActivityTest {
     @Test
-    public void clickOnInfoWindowShowsToast() {
+    public void mapIsDisplayed() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MapsActivity.class);
         ActivityScenario<GreetingActivity> scenario = ActivityScenario.launch(intent);
         ViewInteraction gMap = onView(withId(R.id.map));

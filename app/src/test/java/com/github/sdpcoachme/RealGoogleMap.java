@@ -1,4 +1,3 @@
-/*
 package com.github.sdpcoachme;
 
 import android.location.Location;
@@ -455,4 +454,3 @@ public class RealGoogleMap implements IGoogleMapDelegate {
         return null;
     }
 }
-*/
