@@ -15,8 +15,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class BoredActivityTest {
-    @get:Rule
-    val hiltRule = HiltAndroidRule(this)
+
 
     @Test
     fun boredActivityContainsAllElements() {

@@ -44,16 +44,21 @@ open class BoredActivity : AppCompatActivity() {
         }
 
         requestButton.setOnClickListener {
-            CoroutineScope(Dispatchers.IO).launch {
-                val resp : Resource<Response<DataFormat>> = repo.apiCall()
-                if (resp.status == Status.SUCCESS) {
-                    txt.text = "Activity : " + (resp.data?.body()?.activity ?: "Null")
-                    resp.data?.let { it1 -> repo.insertNewEntryDB(it1) }
-                }else{
-                    txt.text = resp.message
-                    CoroutineScope(Dispatchers.IO).launch {
-                        txt.text = repo.getRandomDB()
-                    }
+            request(txt)
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    fun request(txt : TextView){
+        CoroutineScope(Dispatchers.IO).launch {
+            val resp : Resource<Response<DataFormat>> = repo.apiCall()
+            if (resp.status == Status.SUCCESS) {
+                txt.text = "Activity : " + (resp.data?.body()?.activity ?: "Null")
+                resp.data?.let { it1 -> repo.insertNewEntryDB(it1) }
+            }else{
+                txt.text = resp.message
+                CoroutineScope(Dispatchers.IO).launch {
+                    txt.text = repo.getRandomDB()
                 }
             }
         }
