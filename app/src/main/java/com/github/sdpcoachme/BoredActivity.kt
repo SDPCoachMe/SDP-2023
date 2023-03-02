@@ -73,45 +73,5 @@ open class BoredActivity : AppCompatActivity() {
                 }
             })
         }
-
-        //onclickListener for the api request button
-//        requestButton.setOnClickListener {
-//            remoteDataSource.getActivity().enqueue(object : Callback<DataFormat> {
-//                @SuppressLint("SetTextI18n")
-//                override fun onResponse(call: Call<DataFormat>, response: Response<DataFormat>) {
-//                    if (response.code() != 200){
-//                        txt.text = "Error getting the activity"
-//                        return
-//                    }
-//                    txt.text = "Activity : " + (response.body()?.activity ?: "Null")
-//                    val resp = response.body()
-//                    val newEntry = LineDB(System.currentTimeMillis().hashCode(),
-//                            resp?.activity,
-//                            resp?.type,
-//                            resp?.participants,
-//                            resp?.price,
-//                            resp?.link,
-//                            resp?.key,
-//                            resp?.accessibility)
-//                    CoroutineScope(Dispatchers.IO).launch {
-//                        db.insert(newEntry)
-//                    }
-//                }
-//                @SuppressLint("SetTextI18n")
-//                override fun onFailure(call: Call<DataFormat>, t: Throwable) {
-////                    txt.text = "Error no internet connection ..."
-//                    CoroutineScope(Dispatchers.IO).launch {
-//                        val entriesDB = db.getAll()
-//                        if (entriesDB.isNotEmpty()){
-//                            val rand = Random.nextInt(entriesDB.size)
-//                            val randElem = entriesDB[rand]
-//                            txt.text = "No internet connection : seeing cached data : " + randElem.activity
-//                        }else{
-//                            txt.text = "No internet connection : no cached data"
-//                        }
-//                    }
-//                }
-//            })
-//        }
     }
 }
