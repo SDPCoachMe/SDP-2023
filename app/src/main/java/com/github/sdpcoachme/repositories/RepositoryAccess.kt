@@ -1,7 +1,7 @@
 package com.github.sdpcoachme.repositories
 
 import com.github.sdpcoachme.network.DataFormat
-import retrofit2.Call
+
 import retrofit2.Response
 
 interface RepositoryAccess {
@@ -14,5 +14,5 @@ interface RepositoryAccess {
 
     fun insertNewEntryDB(response: Response<DataFormat>)
 
-    fun apiCall() : Call<DataFormat>
+    suspend fun apiCall() : Resource<Response<DataFormat>>
 }

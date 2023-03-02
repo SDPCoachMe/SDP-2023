@@ -8,8 +8,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import retrofit2.Call
 import retrofit2.Response
+import java.io.IOException
 import javax.inject.Inject
 import kotlin.random.Random
 
@@ -61,8 +61,16 @@ class DefaultRepositoryAccess @Inject constructor(
         }
     }
 
-    override fun apiCall() : Call<DataFormat> {
-        return api.getActivity()
+    override suspend fun apiCall() : Resource<Response<DataFormat>> {
+        try {
+            val resp = api.getActivity().execute()
+            if (resp.isSuccessful) {
+                return Resource.success(resp)
+            }
+            return Resource.error("Error getting the activity", null)
+        } catch (e: IOException) {
+            return Resource.error("Network error: ${e.message}", null)
+        }
     }
 
 

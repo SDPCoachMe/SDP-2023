@@ -5,22 +5,14 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
-import androidx.room.Room
-import com.github.sdpcoachme.database.AppDB
-import com.github.sdpcoachme.database.LineDB
-import com.github.sdpcoachme.dependencyInjection.AppModule
 import com.github.sdpcoachme.network.DataFormat
-import com.github.sdpcoachme.network.RequestPoolAPI
 import com.github.sdpcoachme.repositories.DefaultRepositoryAccess
+import com.github.sdpcoachme.repositories.Resource
+import com.github.sdpcoachme.repositories.Status
 import dagger.hilt.android.AndroidEntryPoint
-import retrofit2.Call
-import retrofit2.Callback
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import kotlinx.coroutines.*
 import javax.inject.Inject
-import kotlin.random.Random
 
 @AndroidEntryPoint
 open class BoredActivity : AppCompatActivity() {
@@ -52,26 +44,18 @@ open class BoredActivity : AppCompatActivity() {
         }
 
         requestButton.setOnClickListener {
-            repo.apiCall().enqueue(object : Callback<DataFormat> {
-
-                @SuppressLint("SetTextI18n")
-                override fun onResponse(call: Call<DataFormat>, response: Response<DataFormat>) {
-                    if (response.code() != 200){
-                        txt.text = "Error getting the activity"
-                        return
-                    }
-                    txt.text = "Activity : " + (response.body()?.activity ?: "Null")
-                    repo.insertNewEntryDB(response)
-                }
-
-                @SuppressLint("SetTextI18n")
-                override fun onFailure(call: Call<DataFormat>, t: Throwable) {
-                    txt.text = "Error no internet connection ..."
+            CoroutineScope(Dispatchers.IO).launch {
+                val resp : Resource<Response<DataFormat>> = repo.apiCall()
+                if (resp.status == Status.SUCCESS) {
+                    txt.text = "Activity : " + (resp.data?.body()?.activity ?: "Null")
+                    resp.data?.let { it1 -> repo.insertNewEntryDB(it1) }
+                }else{
+                    txt.text = resp.message
                     CoroutineScope(Dispatchers.IO).launch {
                         txt.text = repo.getRandomDB()
                     }
                 }
-            })
+            }
         }
     }
 }
