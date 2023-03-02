@@ -7,7 +7,6 @@ import androidx.test.espresso.Espresso
 import androidx.test.espresso.assertion.ViewAssertions
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -15,12 +14,12 @@ import org.junit.Test
 class BoredActivityTest {
 
     //Create a fake webserver
-    private val mockWebServer = MockWebServer()
+//    private val mockWebServer = MockWebServer()
 
     //Before tag used to start the webserver before running all the tests
     @Before
     fun setup() {
-        mockWebServer.start(8080)
+//        mockWebServer.start(8080)
     }
 
     @Test
@@ -44,6 +43,6 @@ class BoredActivityTest {
     //Shutting the server done once all the tests are run
     @After
     fun teardown() {
-        mockWebServer.shutdown()
+//        mockWebServer.shutdown()
     }
 }

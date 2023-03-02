@@ -1,4 +1,4 @@
-package com.github.sdpcoachme
+package com.github.sdpcoachme.network
 
 import retrofit2.Call
 import retrofit2.http.GET

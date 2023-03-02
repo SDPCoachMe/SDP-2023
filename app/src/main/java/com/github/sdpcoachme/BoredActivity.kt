@@ -8,6 +8,9 @@ import android.widget.TextView
 import androidx.room.Room
 import com.github.sdpcoachme.database.AppDB
 import com.github.sdpcoachme.database.LineDB
+import com.github.sdpcoachme.network.DataFormat
+import com.github.sdpcoachme.network.RequestPoolAPI
+import com.github.sdpcoachme.utility.Constants
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -18,11 +21,12 @@ import kotlin.random.Random
 
 
 open class BoredActivity : AppCompatActivity() {
-    open fun getBaseUrl() = "https://www.boredapi.com/api/"
     @SuppressLint("MissingInflatedId", "SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_bored)
+
+        val appContainer = (application as CoachMeApplication).appContainer
 
         val txt : TextView = findViewById(R.id.response)
         val requestButton = findViewById<Button>(R.id.request)
@@ -30,26 +34,15 @@ open class BoredActivity : AppCompatActivity() {
         val dbDelete = findViewById<Button>(R.id.delete)
 
 
-        //Create a retrofit object that will handle the connection to the api and covert them into JSon
-        val retrofit = Retrofit.Builder()
-                .baseUrl(getBaseUrl())
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-
-        //create an object that can handle the request fromm the pool of commands
-        val requestPoolApi = retrofit.create(RequestPoolAPI::class.java)
-
-        // defines a db entity
+        // creates an instance of the db
         val db = Room.databaseBuilder(
                 applicationContext,
                 AppDB::class.java, "AppDB"
-        ).build()
-
-        val userDB = db.userDB() //creates an instance of the db
+        ).build().userDB()
 
         dbButton.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
-                val dbTable : List<LineDB> = userDB.getAll()
+                val dbTable : List<LineDB> = db.getAll()
                 var str = ""
                 for (line in dbTable){
                     str = str + line.activity + "\n"
@@ -60,14 +53,14 @@ open class BoredActivity : AppCompatActivity() {
 
         dbDelete.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
-                userDB.deleteDB()
+                db.deleteDB()
                 txt.text = "DB deleted"
             }
         }
 
         //onclickListener for the api request button
         requestButton.setOnClickListener {
-            requestPoolApi.getActivity().enqueue(object : Callback<DataFormat> {
+            appContainer.remoteDataSource.getActivity().enqueue(object : Callback<DataFormat> {
                 @SuppressLint("SetTextI18n")
                 override fun onResponse(call: Call<DataFormat>, response: Response<DataFormat>) {
                     if (response.code() != 200){
@@ -85,14 +78,14 @@ open class BoredActivity : AppCompatActivity() {
                             resp?.key,
                             resp?.accessibility)
                     CoroutineScope(Dispatchers.IO).launch {
-                        userDB.insert(newEntry)
+                        db.insert(newEntry)
                     }
                 }
                 @SuppressLint("SetTextI18n")
                 override fun onFailure(call: Call<DataFormat>, t: Throwable) {
 //                    txt.text = "Error no internet connection ..."
                     CoroutineScope(Dispatchers.IO).launch {
-                        val entriesDB = userDB.getAll()
+                        val entriesDB = db.getAll()
                         if (entriesDB.isNotEmpty()){
                             val rand = Random.nextInt(entriesDB.size)
                             val randElem = entriesDB[rand]
