@@ -39,6 +39,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    //TODO put test tags in separate class
+
 
     @Composable
     fun FirebaseForm() {
@@ -69,13 +71,13 @@ class MainActivity : ComponentActivity() {
 
             }
             TextField(
-                modifier = Modifier.testTag("textfield"),
+                modifier = Modifier.testTag("phoneTextfield"),
                 value = phoneText,
                 onValueChange = { phoneText = it },
                 label = { Text("Phone") }
             )
             TextField(
-                modifier = Modifier.testTag("textfield"),
+                modifier = Modifier.testTag("emailTextfield"),
                 value = emailText,
                 onValueChange = { emailText = it },
                 label = { Text("Email") }

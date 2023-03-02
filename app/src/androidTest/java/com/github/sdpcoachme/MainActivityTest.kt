@@ -1,9 +1,7 @@
 package com.github.sdpcoachme
 
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intended
@@ -36,6 +34,25 @@ class MainActivityTest {
 
     @Test
     fun setAndGet() {
+        val phone = "0692000000"
+        val email = "jc@gmail.com"
+        val phoneField = "phoneTextfield"
+        val emailField = "emailTextfield"
+        // TODO Put testTags in seperate class
+        composeTestRule.onNodeWithTag(phoneField).performTextInput(phone)
+        Espresso.closeSoftKeyboard()
+        composeTestRule.onNodeWithTag(emailField).performTextInput(email)
+        Espresso.closeSoftKeyboard()
+
+        // Set value
+        composeTestRule.onNodeWithTag("setButton").performClick()
+
+        //Erase Email in box
+        composeTestRule.onNodeWithTag(emailField).performTextClearance()
+
+        composeTestRule.onNodeWithTag("getButton").performClick()
+
+        val retrievedEmail = composeTestRule.onNodeWithTag(emailField).assertTextContains(email)
 
     }
 }
