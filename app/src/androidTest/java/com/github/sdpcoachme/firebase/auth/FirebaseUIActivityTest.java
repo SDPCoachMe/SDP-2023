@@ -91,6 +91,9 @@ public class FirebaseUIActivityTest {
         ViewInteraction signInButton = onView(ViewMatchers.withId(R.id.sign_in));
         signInButton.perform(click());
 
+        // wait for email to appear on screen
+        device.wait(Until.findObject(By.textContains("email")), 5000);
+
         // Click the back button of the phone
         device.pressBack();
 
@@ -112,6 +115,10 @@ public class FirebaseUIActivityTest {
         // Click the delete account button
         ViewInteraction signInButton = onView(ViewMatchers.withId(R.id.sign_in));
         signInButton.perform(click());
+
+        // wait for either the "Next" button to appear or the text "Choose an account" to appear
+        device.wait(Until.findObject(By.textContains("email")), 5000);
+//        device.wait(, 5000);
 
         // Click the back button of the phone
         device.pressBack();

@@ -36,7 +36,11 @@ public class RealGoogleAuthenticator implements GoogleAuthenticator {
                 .setAvailableProviders(providers)
                 .build();
 
-        signInLauncher.launch(signInIntent);
+         try {
+             signInLauncher.launch(signInIntent);
+         } catch (Exception e) {
+             System.out.println("My Error: " + e.getMessage());
+         }
     }
 
     @Override
