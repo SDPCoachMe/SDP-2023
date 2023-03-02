@@ -1,9 +1,7 @@
 package com.github.sdpcoachme
 
 import android.app.Application
-import com.github.sdpcoachme.container.AppContainer
+import dagger.hilt.android.HiltAndroidApp
 
-// Base class for maintaining global application state.
-class CoachMeApplication : Application() {
-    val appContainer = AppContainer()
-}
+@HiltAndroidApp
+class CoachMeApplication : Application()

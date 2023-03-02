@@ -8,37 +8,38 @@ import android.widget.TextView
 import androidx.room.Room
 import com.github.sdpcoachme.database.AppDB
 import com.github.sdpcoachme.database.LineDB
+import com.github.sdpcoachme.dependencyInjection.AppModule
 import com.github.sdpcoachme.network.DataFormat
 import com.github.sdpcoachme.network.RequestPoolAPI
-import com.github.sdpcoachme.utility.Constants
+import dagger.hilt.android.AndroidEntryPoint
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import kotlinx.coroutines.*
+import javax.inject.Inject
 import kotlin.random.Random
 
+@AndroidEntryPoint
 
 open class BoredActivity : AppCompatActivity() {
+
+    @Inject lateinit var modules : AppModule
     @SuppressLint("MissingInflatedId", "SetTextI18n")
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_bored)
 
-        val appContainer = (application as CoachMeApplication).appContainer
+        val providedDB = modules.provideDatabase(applicationContext)
+        val db = modules.provideDao(providedDB)
+        val remoteDataSource = modules.provideApi()
 
         val txt : TextView = findViewById(R.id.response)
         val requestButton = findViewById<Button>(R.id.request)
         val dbButton = findViewById<Button>(R.id.db)
         val dbDelete = findViewById<Button>(R.id.delete)
-
-
-        // creates an instance of the db
-        val db = Room.databaseBuilder(
-                applicationContext,
-                AppDB::class.java, "AppDB"
-        ).build().userDB()
 
         dbButton.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
@@ -60,7 +61,7 @@ open class BoredActivity : AppCompatActivity() {
 
         //onclickListener for the api request button
         requestButton.setOnClickListener {
-            appContainer.remoteDataSource.getActivity().enqueue(object : Callback<DataFormat> {
+            remoteDataSource.getActivity().enqueue(object : Callback<DataFormat> {
                 @SuppressLint("SetTextI18n")
                 override fun onResponse(call: Call<DataFormat>, response: Response<DataFormat>) {
                     if (response.code() != 200){

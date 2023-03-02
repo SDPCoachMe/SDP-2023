@@ -5,6 +5,7 @@ plugins {
     id 'kotlin-android'
     id 'kotlin-kapt'
     id 'com.google.devtools.ksp' version '1.8.0-1.0.8'
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -75,6 +76,10 @@ dependencies {
     testImplementation "androidx.room:room-testing:$room_version"
     // optional - Paging 3 Integration
     implementation "androidx.room:room-paging:$room_version"
+
+    //dagger hilt
+    implementation "com.google.dagger:hilt-android:2.44"
+    kapt "com.google.dagger:hilt-compiler:2.44"
 }
 
 tasks.withType(Test) {
@@ -109,4 +114,9 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest', 'crea
 
 connectedCheck {
     finalizedBy jacocoTestReport
+}
+
+// Allow references to generated code
+kapt {
+    correctErrorTypes true
 }
