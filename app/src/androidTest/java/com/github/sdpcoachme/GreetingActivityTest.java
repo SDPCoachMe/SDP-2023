@@ -19,14 +19,13 @@ public class GreetingActivityTest {
     @Test
     public void greetingText(){
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), GreetingActivity.class);
-        String str = "Jeremy";
+        String str = "name";
         intent.putExtra("name", str);
         ActivityScenario<MainActivity> scenario = ActivityScenario.launch(intent);
 
         onView(withId(R.id.message)).check(matches(isDisplayed()));
-        onView(withId(R.id.message)).check(matches(withText("Jeremy")));
+        onView(withId(R.id.message)).check(matches(withText("name")));
 
         scenario.close();
     }
-
 }

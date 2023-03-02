@@ -27,4 +27,9 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    public void apiActivity(View view){
+        Intent intent = new Intent(MainActivity.this, BoredActivity.class);
+        startActivity(intent);
+    }
+
 }
