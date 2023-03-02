@@ -4,4 +4,5 @@
     <string name="Empty">Empty</string>
     <string name="Name">Enter your name</string>
     <string name="title_activity_maps">MapsActivity</string>
+    <string name="google_maps">Google Maps</string>
 </resources>

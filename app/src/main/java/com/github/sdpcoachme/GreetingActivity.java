@@ -31,11 +31,6 @@ public class GreetingActivity extends AppCompatActivity implements View.OnClickL
 
     @Override
     public void onClick(View v) {
-        /*if (v.getId() == R.id.open_maps_btn) {
-            getSupportFragmentManager().beginTransaction().replace(R.id.open_maps_btn, new MapsFragment()).commit();
-        }*/
-        //Uri gmIntentUri = Uri.parse("geo:46.520536,6.568318");
-        //mapIntent = new Intent(Intent.ACTION_VIEW, gmIntentUri);
         mapIntent = new Intent(GreetingActivity.this, MapsActivity.class);
         if (mapIntent.resolveActivity(getPackageManager()) != null) {
             startActivity(mapIntent);
