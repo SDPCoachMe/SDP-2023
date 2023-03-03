@@ -1,0 +1,20 @@
+package com.github.sdpcoachme.firebase.auth
+
+import dagger.Module
+import dagger.Provides
+
+/**
+ * Module that provides the implementation of the GoogleAuthenticator
+ */
+@Module
+class GoogleAuthModule {
+    /**
+     * Provides the implementation of the GoogleAuthenticator
+     *
+     * @return the implementation of the GoogleAuthenticator
+     */
+    @Provides
+    fun provideGoogleAuthenticator(): GoogleAuthenticator {
+        return RealGoogleAuthenticator()
+    }
+}

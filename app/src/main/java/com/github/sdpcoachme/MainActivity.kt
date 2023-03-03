@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import com.github.sdpcoachme.firebase.auth.FirebaseAuthActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 class MainActivity : ComponentActivity() {
@@ -50,5 +51,12 @@ fun GreetingForm() {
             context.startActivity(intent)
         })
         { Text("DISPLAY MESSAGE") }
+        Button(
+            modifier = Modifier.testTag("signInPageButton"),
+            onClick = {
+            val intent = Intent(context, FirebaseAuthActivity::class.java)
+            context.startActivity(intent)
+        })
+        { Text("Go to sign in page") }
     }
 }
