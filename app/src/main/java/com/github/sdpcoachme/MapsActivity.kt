@@ -1,0 +1,41 @@
+package com.github.sdpcoachme
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.github.sdpcoachme.ui.theme.CoachMeTheme
+
+class MapsActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            CoachMeTheme {
+                // A surface container using the 'background' color from the theme
+                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background) {
+                    GoogleMap()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun GoogleMap(modifier: Modifier = Modifier, properties: MapProperties = DefaultMapProperties,
+              onMapClick: (LatLng) -> Unit = {}, onMapLongClick: (LatLng) -> Unit = {},
+              onMapLoaded: () -> Unit = {}, content: @Composable() () -> Unit? = null) {
+
+}
+
+@Preview(showBackground = true)
+@Composable
+fun DefaultPreview() {
+    CoachMeTheme {
+        Greeting2("Android")
+    }
+}
