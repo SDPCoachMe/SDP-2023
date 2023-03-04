@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
@@ -21,11 +22,11 @@ import javax.inject.Inject
 
 
 class FirebaseAuthActivity() : ComponentActivity() {
+    private var signInInfo: String by mutableStateOf("Not signed in")
 
     @Inject
     lateinit var googleAuthenticator: GoogleAuthenticator
 
-    private var signInInfo: String by mutableStateOf("Not signed in")
 
     private val signInLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
         FirebaseAuthUIActivityResultContract()
@@ -62,7 +63,7 @@ class FirebaseAuthActivity() : ComponentActivity() {
      * Deletes the google account from the device
      */
     fun deleteGoogleAccount() {
-        googleAuthenticator.delete(this) { signInInfo = getString(R.string.deleted_accout) }
+        googleAuthenticator.delete(this) { signInInfo = getString(R.string.account_deleted) }
     }
 
     /**
@@ -94,7 +95,7 @@ fun AuthenticationForm(signInInfo: String) {
             modifier = Modifier.testTag("sign_in_info"),
             value = signInInfo,
             onValueChange = {},
-            label = { Text("Current Account Status") }
+            label = { Text(stringResource(id = R.string.account_status_text_field)) }
         )
 
         Button(
@@ -102,18 +103,18 @@ fun AuthenticationForm(signInInfo: String) {
             onClick = {
                 (context as? FirebaseAuthActivity)?.signIntoGoogleAccount()
             })
-        { Text("Sign in") }
+        { Text(stringResource(id = R.string.sign_in_button_text)) }
         Button(
             modifier = Modifier.testTag("sign_out_button"),
             onClick = {
                 (context as? FirebaseAuthActivity)?.signOutOfGoogleAccount()
             })
-        { Text("Sign out") }
+        { Text(stringResource(id = R.string.sign_out_button_text)) }
         Button(
             modifier = Modifier.testTag("delete_button"),
             onClick = {
                 (context as? FirebaseAuthActivity)?.deleteGoogleAccount()
             })
-        { Text("Delete") }
+        { Text(stringResource(id = R.string.delete_account_button_text)) }
     }
 }

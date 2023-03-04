@@ -16,6 +16,7 @@ import javax.inject.Inject
  * Class that handles the Google sign in process
  */
 class RealGoogleAuthenticator @Inject constructor() : GoogleAuthenticator {
+
     /**
      * Creates a sign in intent and launches it using the given launcher
      *
