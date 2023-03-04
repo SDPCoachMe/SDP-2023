@@ -1,9 +1,7 @@
 package com.github.sdpcoachme
 
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intended
@@ -32,5 +30,10 @@ class MainActivityTest {
 
         intended(allOf(hasComponent(GreetingActivity::class.java.name), hasExtra("name", name)))
         Intents.release()
+    }
+
+    @Test
+    fun dataFromDatabaseIsMock() {
+        composeTestRule.onNodeWithTag("dbText").assert(hasText("Mock data", substring = true))
     }
 }
