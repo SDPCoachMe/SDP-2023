@@ -20,7 +20,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
-import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
@@ -34,7 +33,7 @@ class FirebaseAuthActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        googleAuthenticator = (application as CoachMeApplication).googleAuthenticator
+        googleAuthenticator = RealGoogleAuthenticator()
 
         signInLauncher = registerForActivityResult (
             FirebaseAuthUIActivityResultContract()

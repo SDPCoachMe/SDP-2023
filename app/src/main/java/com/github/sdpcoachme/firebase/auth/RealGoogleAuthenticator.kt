@@ -38,7 +38,9 @@ class RealGoogleAuthenticator : GoogleAuthenticator {
         onSuccess: Consumer<String?>?,
         onFailure: Consumer<String?>?
     ) {
-        if (result!!.resultCode == Activity.RESULT_OK) {
+        if (result == null) {
+            onFailure!!.accept("login error")
+        } else if (result.resultCode == Activity.RESULT_OK) {
             // Successfully signed in
             val user = FirebaseAuth.getInstance().currentUser
                 ?: throw IllegalStateException("User is null")

@@ -113,24 +113,4 @@ class FirebaseAuthActivityTest {
         assertNotNull(confirmDialog)
         assertThat(confirmDialog.text, `is`(deleteInfoText))
     }
-//
-//    @Test
-//    fun signInTest() {
-//        val deleteButton = device.findObject(UiSelector().text(deleteButtonText))
-//        val signOutButton = device.findObject(UiSelector().text(signOutButtonText))
-//        deleteButton.click()
-//        signOutButton.click()
-//
-//        val signInButton = device.findObject(UiSelector().text(signInButtonText))
-//        signInButton.click()
-//
-//        device.pressBack()
-//        device.pressBack()
-//
-//        val confirmDialog: UiObject2 = device.wait(
-//            Until.findObject(By.text("User cancelled sign in")), 5000
-//        )
-//        assertNotNull(confirmDialog)
-//        assertThat(confirmDialog.text, `is`("User cancelled sign in"))
-//    }
 }
