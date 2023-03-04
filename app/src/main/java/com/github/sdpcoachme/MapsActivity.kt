@@ -10,6 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
 
 class MapsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,7 +21,7 @@ class MapsActivity : ComponentActivity() {
             CoachMeTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background) {
-                    GoogleMap()
+                    MapView()
                 }
             }
         }
@@ -26,16 +29,15 @@ class MapsActivity : ComponentActivity() {
 }
 
 @Composable
-fun GoogleMap(modifier: Modifier = Modifier, properties: MapProperties = DefaultMapProperties,
-              onMapClick: (LatLng) -> Unit = {}, onMapLongClick: (LatLng) -> Unit = {},
-              onMapLoaded: () -> Unit = {}, content: @Composable() () -> Unit? = null) {
-
+fun MapView() {
+    GoogleMap()
 }
+
 
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
     CoachMeTheme {
-        Greeting2("Android")
+        MapView()
     }
 }
