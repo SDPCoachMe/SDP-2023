@@ -21,7 +21,7 @@ import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import javax.inject.Inject
 
 
-class FirebaseAuthActivity() : ComponentActivity() {
+class FirebaseAuthActivity : ComponentActivity() {
     private var signInInfo: String by mutableStateOf("Not signed in")
 
     @Inject
@@ -32,13 +32,10 @@ class FirebaseAuthActivity() : ComponentActivity() {
         FirebaseAuthUIActivityResultContract()
     ) { res ->
         googleAuthenticator.onSignInResult(
-            res, { email ->
-                signInInfo =
-                    String.format(getString(R.string.signed_in_as), email)
-            }
-        ) {
-            signInInfo = getString(R.string.sign_in_failed)
-        }
+            res,
+            { email -> signInInfo = String.format(getString(R.string.signed_in_as), email) },
+            { errorMsg -> signInInfo = errorMsg.toString() }
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,7 +48,6 @@ class FirebaseAuthActivity() : ComponentActivity() {
                 )
             }
         }
-//        setContentView(R.layout.activity_firebase_ui)
 
         DaggerGoogleAuthComponent.builder()
             .googleAuthModule(GoogleAuthModule())

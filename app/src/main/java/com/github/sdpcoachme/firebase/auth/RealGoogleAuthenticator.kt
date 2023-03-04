@@ -7,7 +7,6 @@ import androidx.activity.result.ActivityResultLauncher
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.AuthUI.IdpConfig.GoogleBuilder
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
-import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
 import java.util.function.Consumer
 import javax.inject.Inject
@@ -37,19 +36,21 @@ class RealGoogleAuthenticator @Inject constructor() : GoogleAuthenticator {
     override fun onSignInResult(
         result: FirebaseAuthUIAuthenticationResult?,
         onSuccess: Consumer<String?>?,
-        onFailure: Runnable?
+        onFailure: Consumer<String?>?
     ) {
         if (result!!.resultCode == Activity.RESULT_OK) {
             // Successfully signed in
             val user = FirebaseAuth.getInstance().currentUser
                 ?: throw IllegalStateException("User is null")
             onSuccess!!.accept(user.email)
+        } else if (result.resultCode == Activity.RESULT_CANCELED) {
+            // Sign in was cancelled by the user
+            onFailure!!.accept("User cancelled sign in")
         } else {
-            // Sign in failed. If response is null the user canceled the
-            // sign-in flow using the back button. Otherwise check
-            // response.getError().getErrorCode() and handle the error.
+            val error = result.idpResponse!!.error
+            // Handle the error here
             // ...
-            onFailure!!.run()
+            onFailure!!.accept("login error: $error")
         }
     }
 
@@ -60,12 +61,12 @@ class RealGoogleAuthenticator @Inject constructor() : GoogleAuthenticator {
     override fun delete(context: Context?, onComplete: Runnable?) {
         AuthUI.getInstance()
             .delete(context!!)
-            .addOnCompleteListener { task: Task<Void?>? -> onComplete!!.run() }
+            .addOnCompleteListener { onComplete!!.run() }
     }
 
     override fun signOut(context: Context?, onComplete: Runnable?) {
         AuthUI.getInstance()
             .signOut(context!!)
-            .addOnCompleteListener { task: Task<Void?>? -> onComplete!!.run() }
+            .addOnCompleteListener { onComplete!!.run() }
     }
 }

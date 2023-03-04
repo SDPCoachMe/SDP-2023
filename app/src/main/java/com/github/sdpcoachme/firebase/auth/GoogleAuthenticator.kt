@@ -43,6 +43,6 @@ interface GoogleAuthenticator {
     fun onSignInResult(
         result: FirebaseAuthUIAuthenticationResult?,
         onSuccess: Consumer<String?>?,
-        onFailure: Runnable?
+        onFailure: Consumer<String?>?
     )
 }
