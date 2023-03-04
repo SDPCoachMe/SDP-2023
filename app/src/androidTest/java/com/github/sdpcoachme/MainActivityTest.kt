@@ -31,9 +31,4 @@ class MainActivityTest {
         intended(allOf(hasComponent(GreetingActivity::class.java.name), hasExtra("name", name)))
         Intents.release()
     }
-
-    @Test
-    fun dataFromDatabaseIsMock() {
-        composeTestRule.onNodeWithTag("dbText").assert(hasText("Mock data", substring = true))
-    }
 }

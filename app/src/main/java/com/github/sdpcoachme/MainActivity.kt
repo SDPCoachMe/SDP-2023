@@ -20,17 +20,16 @@ import com.github.sdpcoachme.ui.theme.CoachMeTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val dataFromDatabase = (application as CoachMeApplication).database.getData()
         setContent {
             CoachMeTheme {
-                GreetingForm(dataFromDatabase)
+                GreetingForm()
             }
         }
     }
 }
 
 @Composable
-fun GreetingForm(dataFromDatabase: String) {
+fun GreetingForm() {
     var text by remember { mutableStateOf("") }
     val context = LocalContext.current
 
@@ -53,6 +52,5 @@ fun GreetingForm(dataFromDatabase: String) {
             context.startActivity(intent)
         })
         { Text("DISPLAY MESSAGE") }
-        Text("Data from database: $dataFromDatabase", modifier = Modifier.testTag("dbText"))
     }
 }
