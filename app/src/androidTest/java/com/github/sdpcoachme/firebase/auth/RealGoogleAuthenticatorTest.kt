@@ -1,7 +1,12 @@
 package com.github.sdpcoachme.firebase.auth
 
 import android.app.Activity
+import android.content.Intent
+import android.os.Parcel
+import android.os.Parcelable
+import com.firebase.ui.auth.IdpResponse
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
+import com.firebase.ui.auth.data.model.User
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert
 import org.junit.Assert
@@ -35,4 +40,70 @@ class RealGoogleAuthenticatorTest {
         }
         MatcherAssert.assertThat(error.message, CoreMatchers.`is`("User is null"))
     }
+
+    @Test
+    fun onSignResultCallsOnFailureWhenUserCancelsSignIn() {
+        val realGoogleAuthenticator = RealGoogleAuthenticator()
+
+        var onFailureMsg = ""
+
+        realGoogleAuthenticator.onSignInResult(
+            FirebaseAuthUIAuthenticationResult(Activity.RESULT_CANCELED, null),
+            {onFailureMsg = "success"},
+            {errorMsg -> onFailureMsg = errorMsg?:"errorMsg is null"}
+        )
+
+        MatcherAssert.assertThat(onFailureMsg, CoreMatchers.`is`("User cancelled sign in"))
+    }
+
+    @Test
+    fun onSignInResultCallsOnFailureWhenResultCodeIsNotOkOrCanceled() {
+        val response = IdpResponse.Builder(
+            User.Builder("provider", "email").build())
+            .setNewUser(false)
+            .setSecret("secret")
+            .setToken("token")
+            .setPendingCredential(null)
+            .build()
+
+        val realGoogleAuthenticator = RealGoogleAuthenticator()
+
+        var onFailureMsg = ""
+
+        realGoogleAuthenticator.onSignInResult(
+            FirebaseAuthUIAuthenticationResult(1, response),
+            {onFailureMsg = "success"},
+            {errorMsg -> onFailureMsg = errorMsg ?: "errorMsg is null"}
+        )
+
+        MatcherAssert.assertThat(onFailureMsg, CoreMatchers.`is`("login error: null"))
+    }
+
+//    @Test
+//    fun onSignInResultPassesUserEmailToTheOnSuccessCallback() {
+//        val expectedEmail = "correct@email.com"
+//
+//        val response = IdpResponse.Builder(
+//            User.Builder("provider", expectedEmail).build())
+//            .setNewUser(true)
+//            .setSecret("secret")
+//            .setToken("token")
+//            .setPendingCredential(null)
+//            .build()
+//
+//        val realGoogleAuthenticator = RealGoogleAuthenticator()
+//        var receivedEmail = ""
+//
+//        realGoogleAuthenticator.onSignInResult(
+//            FirebaseAuthUIAuthenticationResult(Activity.RESULT_OK, response),
+//            {email -> receivedEmail = email?: "email is null"},
+//            {errorMsg -> receivedEmail = "error: $errorMsg"}
+//        )
+//
+//        MatcherAssert.assertThat(receivedEmail, CoreMatchers.`is`(expectedEmail))
+//    }
+
+
+
+
 }

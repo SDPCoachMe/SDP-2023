@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
+import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import javax.inject.Inject
@@ -24,8 +25,8 @@ import javax.inject.Inject
 class FirebaseAuthActivity : ComponentActivity() {
     private var signInInfo: String by mutableStateOf("Not signed in")
 
-    @Inject
-    lateinit var googleAuthenticator: GoogleAuthenticator
+//    @Inject
+    private lateinit var googleAuthenticator: GoogleAuthenticator
 
 
     private val signInLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
@@ -40,6 +41,7 @@ class FirebaseAuthActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        googleAuthenticator = (application as CoachMeApplication).googleAuthenticator
 
         setContent {
             CoachMeTheme {
@@ -49,10 +51,10 @@ class FirebaseAuthActivity : ComponentActivity() {
             }
         }
 
-        DaggerGoogleAuthComponent.builder()
-            .googleAuthModule(GoogleAuthModule())
-            .build()
-            .inject(this)
+//        DaggerGoogleAuthComponent.builder()
+//            .googleAuthModule(GoogleAuthModule())
+//            .build()
+//            .inject(this)
     }
 
     /**
@@ -87,11 +89,11 @@ fun AuthenticationForm(signInInfo: String) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        TextField(
+        // read only text field
+
+        Text(
             modifier = Modifier.testTag("sign_in_info"),
-            value = signInInfo,
-            onValueChange = {},
-            label = { Text(stringResource(id = R.string.account_status_text_field)) }
+            text = signInInfo,
         )
 
         Button(

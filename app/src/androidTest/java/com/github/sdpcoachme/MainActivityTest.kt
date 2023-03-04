@@ -1,5 +1,6 @@
 package com.github.sdpcoachme
 
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -10,6 +11,9 @@ import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiSelector
+import com.github.sdpcoachme.firebase.auth.FirebaseAuthActivity
 import org.hamcrest.Matchers.allOf
 import org.junit.Rule
 import org.junit.Test
@@ -31,6 +35,17 @@ class MainActivityTest {
         composeTestRule.onNodeWithTag("button").performClick()
 
         intended(allOf(hasComponent(GreetingActivity::class.java.name), hasExtra("name", name)))
+        Intents.release()
+    }
+
+    @Test
+    fun correctIntentFiredOnSignInPageButtonClick() {
+        //correctIntent fired on sign in page button click
+        Intents.init()
+
+        composeTestRule.onNodeWithTag("signInPageButton").performClick()
+
+        intended(hasComponent(FirebaseAuthActivity::class.java.name))
         Intents.release()
     }
 }
