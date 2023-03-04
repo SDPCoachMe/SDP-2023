@@ -1,9 +1,6 @@
 package com.github.sdpcoachme.firebase.auth
 
 import android.app.Activity
-import android.content.Intent
-import android.os.Parcel
-import android.os.Parcelable
 import com.firebase.ui.auth.IdpResponse
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.firebase.ui.auth.data.model.User
@@ -58,6 +55,7 @@ class RealGoogleAuthenticatorTest {
 
     @Test
     fun onSignInResultCallsOnFailureWhenResultCodeIsNotOkOrCanceled() {
+
         val response = IdpResponse.Builder(
             User.Builder("provider", "email").build())
             .setNewUser(false)
@@ -102,8 +100,4 @@ class RealGoogleAuthenticatorTest {
 //
 //        MatcherAssert.assertThat(receivedEmail, CoreMatchers.`is`(expectedEmail))
 //    }
-
-
-
-
 }

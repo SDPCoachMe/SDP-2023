@@ -6,16 +6,14 @@ import android.content.Intent
 import androidx.activity.result.ActivityResultLauncher
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.AuthUI.IdpConfig.GoogleBuilder
-import com.firebase.ui.auth.ErrorCodes
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.google.firebase.auth.FirebaseAuth
 import java.util.function.Consumer
-import javax.inject.Inject
 
 /**
  * Class that handles the Google sign in process
  */
-class RealGoogleAuthenticator @Inject constructor() : GoogleAuthenticator {
+class RealGoogleAuthenticator : GoogleAuthenticator {
 
     /**
      * Creates a sign in intent and launches it using the given launcher
@@ -31,6 +29,7 @@ class RealGoogleAuthenticator @Inject constructor() : GoogleAuthenticator {
             .createSignInIntentBuilder()
             .setAvailableProviders(providers)
             .build()
+
         signInLauncher.launch(signInIntent)
     }
 
