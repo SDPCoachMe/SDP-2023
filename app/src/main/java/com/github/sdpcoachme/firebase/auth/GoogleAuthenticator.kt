@@ -1,48 +1,74 @@
 package com.github.sdpcoachme.firebase.auth
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.activity.result.ActivityResultLauncher
+import com.firebase.ui.auth.AuthUI
+import com.firebase.ui.auth.AuthUI.IdpConfig.GoogleBuilder
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
+import com.google.firebase.auth.FirebaseAuth
 import java.util.function.Consumer
 
 /**
- * Interface responsible for the Google sign in process
+ * Class that handles the Google sign in process
  */
-interface GoogleAuthenticator {
+class GoogleAuthenticator : Authenticator {
+
     /**
      * Creates a sign in intent and launches it using the given launcher
      *
      * @param signInLauncher the launcher to use
      */
-    fun signIn(signInLauncher: ActivityResultLauncher<Intent>)
+    private fun createSignInIntent(signInLauncher: ActivityResultLauncher<Intent>) {
+        // Choose authentication providers
+        val providers = listOf(
+            GoogleBuilder().build()
+        )
+        val signInIntent = AuthUI.getInstance()
+            .createSignInIntentBuilder()
+            .setAvailableProviders(providers)
+            .build()
 
-    /**
-     * Deletes the current user
-     *
-     * @param context the context to use
-     * @param onComplete the callback to call on completion
-     */
-    fun delete(context: Context?, onComplete: Runnable?)
+        signInLauncher.launch(signInIntent)
+    }
 
-    /**
-     * Signs out the current user
-     *
-     * @param context the context to use
-     * @param onComplete the callback to call on completion
-     */
-    fun signOut(context: Context?, onComplete: Runnable?)
-
-    /**
-     * Handles the result of the sign in intent and calls the appropriate callback based on success or failure
-     *
-     * @param result the result of the sign in intent
-     * @param onSuccess the callback to call on success
-     * @param onFailure the callback to call on failure
-     */
-    fun onSignInResult(
+    override fun onSignInResult(
         result: FirebaseAuthUIAuthenticationResult?,
         onSuccess: Consumer<String?>?,
         onFailure: Consumer<String?>?
-    )
+    ) {
+        if (result == null) {
+            onFailure!!.accept("login error")
+        } else if (result.resultCode == Activity.RESULT_OK) {
+            // Successfully signed in
+            val user = FirebaseAuth.getInstance().currentUser
+                ?: throw IllegalStateException("User is null")
+            onSuccess!!.accept(user.email)
+        } else if (result.resultCode == Activity.RESULT_CANCELED) {
+            // Sign in was cancelled by the user
+            onFailure!!.accept("User cancelled sign in")
+        } else {
+            val error = result.idpResponse!!.error
+            // Handle the error here
+            // ...
+            onFailure!!.accept("login error: $error")
+        }
+    }
+
+    override fun signIn(signInLauncher: ActivityResultLauncher<Intent>) {
+        createSignInIntent(signInLauncher)
+    }
+
+    override fun delete(context: Context?, onComplete: Runnable?) {
+        AuthUI.getInstance()
+            .delete(context!!)
+            .addOnCompleteListener { onComplete!!.run() }
+    }
+
+    override fun signOut(context: Context?, onComplete: Runnable?) {
+        AuthUI.getInstance()
+            .signOut(context!!)
+            .addOnCompleteListener { onComplete!!.run() }
+    }
 }

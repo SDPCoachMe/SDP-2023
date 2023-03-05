@@ -24,21 +24,23 @@ import com.github.sdpcoachme.R
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 
+/**
+ * Activity responsible for the sign in process
+ */
 class FirebaseAuthActivity : ComponentActivity() {
+
     private var signInInfo: String by mutableStateOf("Not signed in")
-
-    private lateinit var googleAuthenticator: GoogleAuthenticator
-
+    private lateinit var authenticator: Authenticator
     private lateinit var signInLauncher: ActivityResultLauncher<Intent>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        googleAuthenticator = RealGoogleAuthenticator()
+        authenticator = GoogleAuthenticator()
 
         signInLauncher = registerForActivityResult (
             FirebaseAuthUIActivityResultContract()
         ) { res ->
-            googleAuthenticator.onSignInResult(
+            authenticator.onSignInResult(
                 res,
                 { email -> signInInfo = String.format(getString(R.string.signed_in_as), email) },
                 { errorMsg -> signInInfo = errorMsg.toString() }
@@ -58,21 +60,21 @@ class FirebaseAuthActivity : ComponentActivity() {
      * Deletes the google account from the device
      */
     fun deleteGoogleAccount() {
-        googleAuthenticator.delete(this) { signInInfo = getString(R.string.account_deleted) }
+        authenticator.delete(this) { signInInfo = getString(R.string.account_deleted) }
     }
 
     /**
      * Signs into the google account
      */
     fun signIntoGoogleAccount() {
-        googleAuthenticator.signIn(signInLauncher)
+        authenticator.signIn(signInLauncher)
     }
 
     /**
      * Signs out of the google account
      */
     fun signOutOfGoogleAccount() {
-        googleAuthenticator.signOut(this) { signInInfo = getString(R.string.signed_out) }
+        authenticator.signOut(this) { signInInfo = getString(R.string.signed_out) }
     }
 }
 

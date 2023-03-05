@@ -10,10 +10,10 @@ import org.junit.Assert
 import org.junit.Test
 import java.util.concurrent.atomic.AtomicReference
 
-class RealGoogleAuthenticatorTest {
+class GoogleAuthenticatorTest {
     @Test
     fun onSignInWithFailedResultCodeExecutesFailCallBack() {
-        val realGoogleAuthenticator = RealGoogleAuthenticator()
+        val realGoogleAuthenticator = GoogleAuthenticator()
         val result = AtomicReference("")
         realGoogleAuthenticator.onSignInResult(
             FirebaseAuthUIAuthenticationResult(0, null),
@@ -25,7 +25,7 @@ class RealGoogleAuthenticatorTest {
 
     @Test
     fun onSignInResultThrowsIfUserIsNull() {
-        val realGoogleAuthenticator = RealGoogleAuthenticator()
+        val realGoogleAuthenticator = GoogleAuthenticator()
         val error: Exception = Assert.assertThrows(
             IllegalStateException::class.java
         ) {
@@ -40,7 +40,7 @@ class RealGoogleAuthenticatorTest {
 
     @Test
     fun onSignResultCallsOnFailureWhenUserCancelsSignIn() {
-        val realGoogleAuthenticator = RealGoogleAuthenticator()
+        val realGoogleAuthenticator = GoogleAuthenticator()
 
         var onFailureMsg = ""
 
@@ -64,7 +64,7 @@ class RealGoogleAuthenticatorTest {
             .setPendingCredential(null)
             .build()
 
-        val realGoogleAuthenticator = RealGoogleAuthenticator()
+        val realGoogleAuthenticator = GoogleAuthenticator()
 
         var onFailureMsg = ""
 
@@ -76,28 +76,4 @@ class RealGoogleAuthenticatorTest {
 
         MatcherAssert.assertThat(onFailureMsg, CoreMatchers.`is`("login error: null"))
     }
-
-//    @Test
-//    fun onSignInResultPassesUserEmailToTheOnSuccessCallback() {
-//        val expectedEmail = "correct@email.com"
-//
-//        val response = IdpResponse.Builder(
-//            User.Builder("provider", expectedEmail).build())
-//            .setNewUser(true)
-//            .setSecret("secret")
-//            .setToken("token")
-//            .setPendingCredential(null)
-//            .build()
-//
-//        val realGoogleAuthenticator = RealGoogleAuthenticator()
-//        var receivedEmail = ""
-//
-//        realGoogleAuthenticator.onSignInResult(
-//            FirebaseAuthUIAuthenticationResult(Activity.RESULT_OK, response),
-//            {email -> receivedEmail = email?: "email is null"},
-//            {errorMsg -> receivedEmail = "error: $errorMsg"}
-//        )
-//
-//        MatcherAssert.assertThat(receivedEmail, CoreMatchers.`is`(expectedEmail))
-//    }
 }
