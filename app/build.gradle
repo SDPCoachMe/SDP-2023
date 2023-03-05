@@ -2,6 +2,7 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'jacoco'
+    id 'com.google.gms.google-services'
 }
 
 android {
@@ -71,6 +72,16 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_ui_version"
     //noinspection GradleDependency
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_ui_version"
+
+    // Import the Firebase BoM
+    implementation platform('com.google.firebase:firebase-bom:31.2.2')
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-firestore'
+    implementation 'com.firebaseui:firebase-ui-auth:7.2.0'
+
+    // UI Automator
+    androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'
 }
 
 tasks.withType(Test) {

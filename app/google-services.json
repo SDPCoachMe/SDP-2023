@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "781176350384",
+    "firebase_url": "https://sdp-firebase-bootcamp-7fa21-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "sdp-firebase-bootcamp-7fa21",
+    "storage_bucket": "sdp-firebase-bootcamp-7fa21.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:781176350384:android:3c9e03561bed75ec933d75",
+        "android_client_info": {
+          "package_name": "com.github.sdpcoachme"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "781176350384-pq653r46k140ap4mbmeq2bllb030frq4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.github.sdpcoachme",
+            "certificate_hash": "f96af7726bdbd702a46ed4f883143fe9e9e6ad6d"
+          }
+        },
+        {
+          "client_id": "781176350384-q1iomfbihfk7mtl0grur6tmpcpbh6bs2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1fr4PyUvQWgKqlpMZ_5dhKqQzgrgsl4U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "781176350384-q1iomfbihfk7mtl0grur6tmpcpbh6bs2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
