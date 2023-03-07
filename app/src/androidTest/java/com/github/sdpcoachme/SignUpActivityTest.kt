@@ -13,14 +13,14 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class DashboardActivityTest {
+class SignUpActivityTest {
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
     @Test
     fun correctEmailDisplayed() {
-        val launchGreeting = Intent(ApplicationProvider.getApplicationContext(), DashboardActivity::class.java)
+        val launchGreeting = Intent(ApplicationProvider.getApplicationContext(), SignUpActivity::class.java)
         val email = "some@email.com"
         launchGreeting.putExtra("email", email)
         ActivityScenario.launch<GreetingActivity>(launchGreeting).use {
@@ -30,7 +30,7 @@ class DashboardActivityTest {
 
     @Test
     fun noEmailMessageDisplayedWhenNoEmailReceived() {
-        val launchGreeting = Intent(ApplicationProvider.getApplicationContext(), DashboardActivity::class.java)
+        val launchGreeting = Intent(ApplicationProvider.getApplicationContext(), SignUpActivity::class.java)
 
         ActivityScenario.launch<GreetingActivity>(launchGreeting).use {
             composeTestRule.onNodeWithTag("email_text_field").assert(hasText(text = "No email", substring = true))

@@ -114,19 +114,28 @@ fun AuthenticationForm(signInInfo: String) {
         Button(
             modifier = Modifier.testTag("sign_in_button"),
             onClick = {
-                (context as? MainActivity)?.signIntoAccount()
+//                (context as? MainActivity)?.signIntoAccount()
+                if (context is MainActivity) {
+                    context.signIntoAccount()
+                }
             })
         { Text(stringResource(id = R.string.sign_in_button_text)) }
         Button(
             modifier = Modifier.testTag("sign_out_button"),
             onClick = {
-                (context as? MainActivity)?.signOutOfAccount()
+//                (context as? MainActivity)?.signOutOfAccount()
+                if (context is MainActivity) {
+                    context.signOutOfAccount()
+                }
             })
         { Text(stringResource(id = R.string.sign_out_button_text)) }
         Button(
             modifier = Modifier.testTag("delete_button"),
             onClick = {
-                (context as? MainActivity)?.deleteAccount()
+//                (context as? MainActivity)?.deleteAccount()
+                if (context is MainActivity) {
+                    context.deleteAccount()
+                }
             })
         { Text(stringResource(id = R.string.delete_account_button_text)) }
     }

@@ -19,8 +19,7 @@ class DashboardActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        email = intent.getStringExtra("email") ?: ""
-        println("Dashboard activity email: $email")
+        email = intent.getStringExtra("email") ?: "No email"
 
         setContent {
             CoachMeTheme {

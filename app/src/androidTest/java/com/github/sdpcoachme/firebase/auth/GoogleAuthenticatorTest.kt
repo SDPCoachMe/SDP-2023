@@ -11,6 +11,18 @@ import org.junit.Test
 import java.util.concurrent.atomic.AtomicReference
 
 class GoogleAuthenticatorTest {
+    
+    @Test
+    fun onSignInResultCallsOnFailureIfResultIsNull() {
+        val realGoogleAuthenticator = GoogleAuthenticator()
+        var onFailureMsg = ""
+        realGoogleAuthenticator.onSignInResult(
+            null,
+            {onFailureMsg = "success"},
+            {errorMsg -> onFailureMsg = errorMsg?:"errorMsg is null"}
+        )
+        MatcherAssert.assertThat(onFailureMsg, CoreMatchers.`is`("login error"))
+    } 
     @Test
     fun onSignInWithFailedResultCodeExecutesFailCallBack() {
         val realGoogleAuthenticator = GoogleAuthenticator()

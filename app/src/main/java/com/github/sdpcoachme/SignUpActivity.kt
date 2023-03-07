@@ -19,9 +19,7 @@ class SignUpActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        email = intent.getStringExtra("email") ?: ""
-
-        println("Sign up activity email: $email")
+        email = intent.getStringExtra("email") ?: "No email"
 
         setContent {
             CoachMeTheme {
