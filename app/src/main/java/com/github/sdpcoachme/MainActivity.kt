@@ -26,14 +26,6 @@ import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 class MainActivity : ComponentActivity() {
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        super.onCreate(savedInstanceState)
-//        setContent {
-//            CoachMeTheme {
-//                GreetingForm()
-//            }
-//        }
-//    }
 
     private lateinit var database : Database
     private var signInInfo: String by mutableStateOf("Not signed in")
@@ -104,8 +96,6 @@ fun AuthenticationForm(signInInfo: String) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // read only text field
-
         Text(
             modifier = Modifier.testTag("sign_in_info"),
             text = signInInfo,
@@ -114,7 +104,6 @@ fun AuthenticationForm(signInInfo: String) {
         Button(
             modifier = Modifier.testTag("sign_in_button"),
             onClick = {
-//                (context as? MainActivity)?.signIntoAccount()
                 if (context is MainActivity) {
                     context.signIntoAccount()
                 }
@@ -123,7 +112,6 @@ fun AuthenticationForm(signInInfo: String) {
         Button(
             modifier = Modifier.testTag("sign_out_button"),
             onClick = {
-//                (context as? MainActivity)?.signOutOfAccount()
                 if (context is MainActivity) {
                     context.signOutOfAccount()
                 }
@@ -132,7 +120,6 @@ fun AuthenticationForm(signInInfo: String) {
         Button(
             modifier = Modifier.testTag("delete_button"),
             onClick = {
-//                (context as? MainActivity)?.deleteAccount()
                 if (context is MainActivity) {
                     context.deleteAccount()
                 }
@@ -140,30 +127,3 @@ fun AuthenticationForm(signInInfo: String) {
         { Text(stringResource(id = R.string.delete_account_button_text)) }
     }
 }
-
-//@Composable
-//fun GreetingForm() {
-//    var text by remember { mutableStateOf("") }
-//    val context = LocalContext.current
-//
-//    Column(
-//        modifier = Modifier.fillMaxSize(),
-//        verticalArrangement = Arrangement.Center,
-//        horizontalAlignment = Alignment.CenterHorizontally
-//    ) {
-//        TextField(
-//            modifier = Modifier.testTag("textfield"),
-//            value = text,
-//            onValueChange = { text = it },
-//            label = { Text("Your name") }
-//        )
-//        Button(
-//            modifier = Modifier.testTag("button"),
-//            onClick = {
-//            val intent = Intent(context, GreetingActivity::class.java)
-//            intent.putExtra("name", text)
-//            context.startActivity(intent)
-//        })
-//        { Text("DISPLAY MESSAGE") }
-//    }
-//}
