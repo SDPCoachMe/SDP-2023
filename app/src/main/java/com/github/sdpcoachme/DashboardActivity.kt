@@ -25,13 +25,22 @@ import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.launch
 
+/**
+    Dashboard main activity implemented as a left-sided drawer
+    to navigate to other application activities. Should be set
+    above the main map view.
+ */
 class DashboardActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             CoachMeTheme() {
+                // equivalent to remember { ScaffoldState(...) }
                 val scaffoldState = rememberScaffoldState()
+                // creates a scope tied to the view's lifecycle. scope
+                // enables us to launch a coroutine tied to a specific lifecycle
                 val scope = rememberCoroutineScope()
                 Scaffold(
                     scaffoldState = scaffoldState,
@@ -44,43 +53,31 @@ class DashboardActivity : ComponentActivity() {
                             }
                         )
                     },
-                    drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
+                    drawerGesturesEnabled = true,
                     drawerContent = {
                         DrawerHeader()
                         DrawerBody(
                             items = listOf(
-                                MenuItem(
-                                    id = "home",
-                                    title = "Home",
+                                MenuItem(id = "home", title = "Home",
                                     contentDescription = "Go to home screen",
-                                    icon = Icons.Default.Home
-                                ),
-                                MenuItem(
-                                    id = "settings",
-                                    title = "Settings",
+                                    icon = Icons.Default.Home),
+                                MenuItem(id = "settings", title = "Settings",
                                     contentDescription = "Go to settings screen",
-                                    icon = Icons.Default.Settings
-                                ),
-                                MenuItem(
-                                    id = "help",
-                                    title = "Help",
+                                    icon = Icons.Default.Settings),
+                                MenuItem(id = "help", title = "Help",
                                     contentDescription = "Get help",
-                                    icon = Icons.Default.Info
-                                ),
-                            ),
+                                    icon = Icons.Default.Info),),
                             onItemClick = {
+                                // TODO call the associated fragment/activity associated with it
                                 println("Clicked on ${it.title}")
                             }
                         )
                     },
                     content = { innerPadding ->
+                        // pass the correct padding to the content root, here the column
                         LazyColumn(contentPadding = innerPadding) {
                             items(count = 100) {
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .height(50.dp)
-                                )
+                                Box(Modifier.fillMaxWidth().height(50.dp))
                             }
                         }
                     }
@@ -98,13 +95,11 @@ data class MenuItem(
 )
 
 @Composable
-fun     AppBar(
+fun AppBar(
     onNavigationIconClick: () -> Unit
 ) {
     TopAppBar(
-        title = {
-            Text(text = stringResource(id = R.string.app_name))
-        },
+        title = { Text(text = stringResource(id = R.string.app_name)) },
         backgroundColor = MaterialTheme.colors.primary,
         contentColor = MaterialTheme.colors.onPrimary,
         navigationIcon = {
@@ -121,13 +116,10 @@ fun     AppBar(
 @Composable
 fun DrawerHeader() {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 64.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text = "Dashboard", fontSize = 60.sp)
-    }
+        modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp),
+        contentAlignment = Alignment.Center,
+        content = { Text(text = "Dashboard", fontSize = 50.sp) }
+    )
 }
 
 @Composable
@@ -140,8 +132,7 @@ fun DrawerBody(
     LazyColumn(modifier) {
         items(items) { item ->
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
                     .clickable {
                         onItemClick(item)
                     }
