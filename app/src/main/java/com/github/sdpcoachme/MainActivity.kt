@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
 
 
     private val db: Database<String> = MockDatabase()
-    //private val db: Database<String, String> = FirebaseDatabase()
+    //private val db: Database<String> = FirebaseDatabase()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

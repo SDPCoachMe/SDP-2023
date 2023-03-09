@@ -11,7 +11,8 @@ class MockDatabase<V>: Database<V> {
         return CompletableFuture.completedFuture(db[key])
     }
 
-    override fun set(key: String, value: V) {
+    override fun set(key: String, value: V): CompletableFuture<Void> {
         db[key] = value
+        return CompletableFuture.completedFuture(null)
     }
 }

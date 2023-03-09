@@ -1,8 +1,10 @@
 package com.github.sdpcoachme
 
+import com.google.android.gms.tasks.Task
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import java.util.Objects
 import java.util.concurrent.CompletableFuture
 
 class FirebaseDatabase<V>: Database<V> {
@@ -23,7 +25,14 @@ class FirebaseDatabase<V>: Database<V> {
         return future
     }
 
-    override fun set(key: String, value: V) {
-
+    override fun set(key: String, value: V): CompletableFuture<Void> {
+        val future = CompletableFuture<Void>()
+        db.child(key).setValue(value).addOnSuccessListener {
+            future.complete(null)
+        }.addOnFailureListener {
+            future.completeExceptionally(it)
+        }
+        return future
     }
 }
+
