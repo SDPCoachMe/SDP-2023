@@ -16,7 +16,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
@@ -48,7 +47,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             CoachMeTheme {
                 AuthenticationForm(
-                    signInInfo = this.signInInfo
+                    signInInfo = this.signInInfo,
+                    context = this
                 )
             }
         }
@@ -88,8 +88,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AuthenticationForm(signInInfo: String) {
-    val context = LocalContext.current
+fun AuthenticationForm(signInInfo: String, context: MainActivity) {
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -104,25 +103,19 @@ fun AuthenticationForm(signInInfo: String) {
         Button(
             modifier = Modifier.testTag("sign_in_button"),
             onClick = {
-                if (context is MainActivity) {
-                    context.signIntoAccount()
-                }
+                context.signIntoAccount()
             })
         { Text(stringResource(id = R.string.sign_in_button_text)) }
         Button(
             modifier = Modifier.testTag("sign_out_button"),
             onClick = {
-                if (context is MainActivity) {
-                    context.signOutOfAccount()
-                }
+                context.signOutOfAccount()
             })
         { Text(stringResource(id = R.string.sign_out_button_text)) }
         Button(
             modifier = Modifier.testTag("delete_button"),
             onClick = {
-                if (context is MainActivity) {
-                    context.deleteAccount()
-                }
+                context.deleteAccount()
             })
         { Text(stringResource(id = R.string.delete_account_button_text)) }
     }
