@@ -9,15 +9,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -49,35 +47,36 @@ class DashboardActivity : ComponentActivity() {
                             onNavigationIconClick = {
                                 scope.launch {
                                     scaffoldState.drawerState.open()
-                                }
-                            }
-                        )
-                    },
+                                }})},
                     drawerGesturesEnabled = true,
                     drawerContent = {
                         DrawerHeader()
                         DrawerBody(
+                            modifier = Modifier.testTag("drawerBody"),
                             items = listOf(
-                                MenuItem(id = "home", title = "Home",
-                                    contentDescription = "Go to home screen",
-                                    icon = Icons.Default.Home),
+                                MenuItem(id = "schedule", title = "Schedule",
+                                    contentDescription = "See schedule",
+                                    icon = Icons.Default.CheckCircle),
+                                MenuItem(id = "profile", title = "Profile",
+                                    contentDescription = "Go to profile",
+                                    icon = Icons.Default.AccountCircle),
+                                MenuItem(id = "favorite", title = "Favorites",
+                                    contentDescription = "Go to favorites",
+                                    icon = Icons.Default.Favorite),
                                 MenuItem(id = "settings", title = "Settings",
-                                    contentDescription = "Go to settings screen",
+                                    contentDescription = "Go to settings",
                                     icon = Icons.Default.Settings),
                                 MenuItem(id = "help", title = "Help",
                                     contentDescription = "Get help",
-                                    icon = Icons.Default.Info),),
+                                    icon = Icons.Default.Info)),
                             onItemClick = {
                                 // TODO call the associated fragment/activity associated with it
-                                println("Clicked on ${it.title}")
-                            }
-                        )
-                    },
+                                println("Clicked on ${it.title}")})},
                     content = { innerPadding ->
                         // pass the correct padding to the content root, here the column
                         LazyColumn(contentPadding = innerPadding) {
                             items(count = 100) {
-                                Box(Modifier.fillMaxWidth().height(50.dp))
+                                Box(modifier = Modifier.fillMaxWidth().height(50.dp))
                             }
                         }
                     }
@@ -103,7 +102,9 @@ fun AppBar(
         backgroundColor = MaterialTheme.colors.primary,
         contentColor = MaterialTheme.colors.onPrimary,
         navigationIcon = {
-            IconButton(onClick = onNavigationIconClick) {
+            IconButton(
+                modifier = Modifier.testTag("appBarMenuIcon"),
+                onClick = onNavigationIconClick) {
                 Icon(
                     imageVector = Icons.Default.Menu,
                     contentDescription = "Toggle drawer"
@@ -133,21 +134,17 @@ fun DrawerBody(
         items(items) { item ->
             Row(
                 modifier = Modifier.fillMaxWidth()
-                    .clickable {
-                        onItemClick(item)
-                    }
+                    .clickable { onItemClick(item) }
                     .padding(16.dp)
             ) {
                 Icon(
                     imageVector = item.icon,
-                    contentDescription = item.contentDescription
-                )
+                    contentDescription = item.contentDescription)
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = item.title,
                     style = itemTextStyle,
-                    modifier = Modifier.weight(1f)
-                )
+                    modifier = Modifier.weight(1f))
             }
         }
     }
