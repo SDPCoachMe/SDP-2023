@@ -48,7 +48,7 @@ class MainActivity : ComponentActivity() {
     fun FirebaseForm() {
         var phoneText by remember { mutableStateOf("") }
         var emailText by remember { mutableStateOf("") }
-        Column(//modifier = Modifier.fillMaxSize(),
+        Column( //modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
