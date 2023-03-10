@@ -2,9 +2,9 @@ package com.github.sdpcoachme
 
 import java.util.concurrent.CompletableFuture
 
-interface Database<V> {
+interface Database {
 
-    fun get(key: String): CompletableFuture<V>
-    fun set(key: String, value: V): CompletableFuture<Void>
+    fun get(key: String): CompletableFuture<Any>
+    fun set(key: String, value: Any): CompletableFuture<Void>
 
 }

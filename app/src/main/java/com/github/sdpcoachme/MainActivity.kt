@@ -20,8 +20,8 @@ import com.github.sdpcoachme.ui.theme.CoachMeTheme
 class MainActivity : ComponentActivity() {
 
 
-    private val db: Database<String> = MockDatabase()
-    //private val db: Database<String> = FirebaseDatabase()
+    //private val db: Database = MockDatabase()
+    private val db: Database = FireDatabase()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 Button(modifier = Modifier.testTag("getButton"),
                     onClick = {
-                        db.get(phoneText).thenAccept { emailText = it }
+                        db.get(phoneText).thenAccept { emailText = it as String }
                     },)
                 {
                     Text("get")
