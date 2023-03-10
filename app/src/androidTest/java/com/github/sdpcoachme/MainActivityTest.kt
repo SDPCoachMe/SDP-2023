@@ -6,6 +6,7 @@ import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
+import com.google.firebase.auth.FirebaseAuth
 import junit.framework.TestCase
 import org.hamcrest.CoreMatchers
 import org.junit.Before
@@ -41,6 +42,7 @@ open class MainActivityTest {
 
     @Before
     fun startMainActivityFromHomeScreen() {
+        FirebaseAuth.getInstance().signOut()
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val targetContext = instrumentation.targetContext
         device = UiDevice.getInstance(instrumentation)

@@ -45,6 +45,7 @@ class GoogleAuthenticator : Authenticator {
             onFailure!!.accept("login error")
         } else if (result.resultCode == Activity.RESULT_OK) {
             // Successfully signed in
+            println("Successfully signed in")
             val user = FirebaseAuth.getInstance().currentUser
                 ?: throw IllegalStateException("User is null")
             onSuccess!!.accept(user.email)
@@ -73,5 +74,9 @@ class GoogleAuthenticator : Authenticator {
         AuthUI.getInstance()
             .signOut(context!!)
             .addOnCompleteListener { onComplete!!.run() }
+    }
+
+    override fun isSignedIn(): Boolean {
+        return FirebaseAuth.getInstance().currentUser != null
     }
 }

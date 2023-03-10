@@ -44,12 +44,16 @@ class MainActivity : ComponentActivity() {
         authenticator = GoogleAuthenticator()
         this.database =  (application as CoachMeApplication).database
 
-        setContent {
-            CoachMeTheme {
-                AuthenticationForm(
-                    signInInfo = this.signInInfo,
-                    context = this
-                )
+        if (authenticator.isSignedIn()) {
+            this.signIntoAccount()
+        } else {
+            setContent {
+                CoachMeTheme {
+                    AuthenticationForm(
+                        signInInfo = this.signInInfo,
+                        context = this
+                    )
+                }
             }
         }
     }

@@ -45,4 +45,11 @@ interface Authenticator {
         onSuccess: Consumer<String?>?,
         onFailure: Consumer<String?>?
     )
+
+    /**
+     * Checks if the user is signed in
+     *
+     * @return true if the user is signed in, false otherwise
+     */
+    fun isSignedIn(): Boolean
 }

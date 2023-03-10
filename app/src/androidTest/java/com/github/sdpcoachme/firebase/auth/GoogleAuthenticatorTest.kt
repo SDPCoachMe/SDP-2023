@@ -1,10 +1,12 @@
 package com.github.sdpcoachme.firebase.auth
 
 import android.app.Activity
+import androidx.test.espresso.matcher.ViewMatchers.assertThat
 import com.firebase.ui.auth.IdpResponse
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.firebase.ui.auth.data.model.User
-import org.hamcrest.CoreMatchers
+import com.google.firebase.auth.FirebaseAuth
+import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert
 import org.junit.Assert
 import org.junit.Test
@@ -21,7 +23,7 @@ class GoogleAuthenticatorTest {
             {onFailureMsg = "success"},
             {errorMsg -> onFailureMsg = errorMsg?:"errorMsg is null"}
         )
-        MatcherAssert.assertThat(onFailureMsg, CoreMatchers.`is`("login error"))
+        MatcherAssert.assertThat(onFailureMsg, `is`("login error"))
     } 
     @Test
     fun onSignInWithFailedResultCodeExecutesFailCallBack() {
@@ -32,22 +34,25 @@ class GoogleAuthenticatorTest {
             { result.set("success") },
             { result.set("failure") }
         )
-        MatcherAssert.assertThat(result.get(), CoreMatchers.`is`("failure"))
+        MatcherAssert.assertThat(result.get(), `is`("failure"))
     }
 
     @Test
     fun onSignInResultThrowsIfUserIsNull() {
+        FirebaseAuth.getInstance().signOut()
         val realGoogleAuthenticator = GoogleAuthenticator()
+        var message = ""
         val error: Exception = Assert.assertThrows(
             IllegalStateException::class.java
         ) {
             realGoogleAuthenticator.onSignInResult(
                 FirebaseAuthUIAuthenticationResult(Activity.RESULT_OK, null),
-                {},
-                {}
+                {message = "success"},
+                {message = "failure"}
             )
         }
-        MatcherAssert.assertThat(error.message, CoreMatchers.`is`("User is null"))
+        MatcherAssert.assertThat(error.message, `is`("User is null"))
+        println("message: $message")
     }
 
     @Test
@@ -62,7 +67,7 @@ class GoogleAuthenticatorTest {
             {errorMsg -> onFailureMsg = errorMsg?:"errorMsg is null"}
         )
 
-        MatcherAssert.assertThat(onFailureMsg, CoreMatchers.`is`("User cancelled sign in"))
+        MatcherAssert.assertThat(onFailureMsg, `is`("User cancelled sign in"))
     }
 
     @Test
@@ -86,6 +91,18 @@ class GoogleAuthenticatorTest {
             {errorMsg -> onFailureMsg = errorMsg ?: "errorMsg is null"}
         )
 
-        MatcherAssert.assertThat(onFailureMsg, CoreMatchers.`is`("login error: null"))
+        MatcherAssert.assertThat(onFailureMsg, `is`("login error: null"))
+    }
+
+    @Test
+    fun isSignedInReturnsFalseIfUserNotSignedIn() {
+        FirebaseAuth.getInstance().signOut()
+        assertThat(GoogleAuthenticator().isSignedIn(), `is`(false))
+    }
+
+    @Test
+    fun signIt() {
+        //sign it
+
     }
 }
