@@ -3,7 +3,10 @@ package com.github.sdpcoachme
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -11,6 +14,9 @@ import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
@@ -69,6 +75,16 @@ fun TitleRow() {
             fontSize = 30.sp,
             fontWeight = FontWeight.Bold
         )
+        Image(
+            painter = painterResource(id = R.drawable.ic_launcher_background),
+            contentDescription = "Profile Pic",
+            modifier = Modifier
+                .size(60.dp)
+                .clip(CircleShape)
+                .border(5.dp, Color.Gray, CircleShape)
+                .absolutePadding(0.dp, 0.dp, 0.dp, 0.dp)
+        )
+
     }
 }
 
