@@ -5,7 +5,7 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import java.util.concurrent.CompletableFuture
 
-class FireDatabase: Database {
+class FireDatabase : Database {
 
     private val db: DatabaseReference = Firebase.database.reference
 

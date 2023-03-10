@@ -6,7 +6,6 @@ class MockDatabase: Database {
 
     private val db = hashMapOf<String, Any>()
 
-
     override fun get(key: String): CompletableFuture<Any> {
         return CompletableFuture.completedFuture(db[key])
     }

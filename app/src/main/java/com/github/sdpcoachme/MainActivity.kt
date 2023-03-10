@@ -22,11 +22,11 @@ import com.github.sdpcoachme.ui.theme.CoachMeTheme
 class MainActivity : ComponentActivity() {
 
 
-    //private val db: Database = MockDatabase()
-    private val db: Database = FireDatabase()
+    private lateinit var db: Database
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        db = (application as CoachMeApplication).database
         setContent {
             CoachMeTheme {
                 Column(
