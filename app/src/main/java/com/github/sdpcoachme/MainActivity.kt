@@ -20,7 +20,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.github.sdpcoachme.firebase.auth.Authenticator
-import com.github.sdpcoachme.firebase.auth.GoogleAuthenticator
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
@@ -41,7 +40,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        authenticator = GoogleAuthenticator()
+        authenticator = (application as CoachMeApplication).authenticator
         this.database =  (application as CoachMeApplication).database
 
         if (authenticator.isSignedIn()) {
