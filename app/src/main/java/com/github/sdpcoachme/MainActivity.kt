@@ -43,16 +43,12 @@ class MainActivity : ComponentActivity() {
         authenticator = (application as CoachMeApplication).authenticator
         this.database =  (application as CoachMeApplication).database
 
-        if (authenticator.isSignedIn()) {
-            this.signIntoAccount()
-        } else {
-            setContent {
-                CoachMeTheme {
-                    AuthenticationForm(
-                        signInInfo = this.signInInfo,
-                        context = this
-                    )
-                }
+        setContent {
+            CoachMeTheme {
+                AuthenticationForm(
+                    signInInfo = this.signInInfo,
+                    context = this
+                )
             }
         }
     }
