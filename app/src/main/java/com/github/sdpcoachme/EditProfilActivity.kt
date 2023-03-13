@@ -7,10 +7,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +40,8 @@ class EditProfilActivity : ComponentActivity() {
 
 @Composable
 fun Profile() {
+    var isEditing by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Top,
@@ -50,23 +49,41 @@ fun Profile() {
     ) {
         TitleRow()
         EmailRow()
-        FirstNameRow()
-        LastNameRow()
+        FirstNameRow(isEditing)
+        LastNameRow(isEditing)
+        FavSportRow(isEditing)
 
-        Row (
-            modifier = Modifier.absolutePadding(20.dp, 10.dp, 0.dp, 10.dp),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.Start
-        ) {
-            Text(text = "Favorite sport: ")
+        if (isEditing) {
+            // save button
+            Button(
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                onClick = {
+                    isEditing = false
+                }
+            ) {
+                Text(text = "Save changes")
+            }
+        } else {
+            // edit button
+            Button(
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                onClick = {
+                    isEditing = true
+                }
+            ) {
+                Text(text = "Edit")
+            }
         }
+
+
     }
 }
 
 @Composable
 fun TitleRow() {
     Row (
-        modifier = Modifier.absolutePadding(20.dp, 20.dp, 0.dp, 10.dp),
+        modifier = Modifier
+            .absolutePadding(20.dp, 20.dp, 0.dp, 10.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ) {
@@ -75,23 +92,28 @@ fun TitleRow() {
             fontSize = 30.sp,
             fontWeight = FontWeight.Bold
         )
-        Image(
-            painter = painterResource(id = R.drawable.ic_launcher_background),
-            contentDescription = "Profile Pic",
+        Box(
             modifier = Modifier
-                .size(60.dp)
-                .clip(CircleShape)
-                .border(5.dp, Color.Gray, CircleShape)
-                .absolutePadding(0.dp, 0.dp, 0.dp, 0.dp)
-        )
-
+                .absolutePadding(100.dp, 0.dp, 0.dp, 0.dp)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_launcher_background),
+                contentDescription = "Profile Pic",
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(CircleShape)
+                    .border(2.dp, Color.Gray, CircleShape)
+                    .absolutePadding(0.dp, 0.dp, 0.dp, 0.dp)
+            )
+        }
     }
 }
 
 @Composable
 fun EmailRow() {
     Row (
-        modifier = Modifier.absolutePadding(20.dp, 80.dp, 0.dp, 10.dp),
+        modifier = Modifier
+            .absolutePadding(20.dp, 80.dp, 0.dp, 10.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ){
@@ -99,58 +121,104 @@ fun EmailRow() {
         // replace this Text with read-only TextField?
         Text(
             text = "damian.kopp@epfl.ch",
-            modifier = Modifier.absolutePadding(80.dp, 0.dp, 0.dp, 0.dp),
+            modifier = Modifier
+                .absolutePadding(80.dp, 0.dp, 0.dp, 0.dp),
         )
     }
 }
 
 @Composable
-fun FirstNameRow() {
+fun FirstNameRow(isEditing: Boolean) {
     // bind this to database
     var fname by remember { mutableStateOf(TextFieldValue("Damian")) }
 
     Row (
-        modifier = Modifier.absolutePadding(20.dp, 10.dp, 20.dp, 10.dp),
+        modifier = Modifier
+            .absolutePadding(20.dp, 10.dp, 20.dp, 10.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ){
         Text(text = "First name: ")
-        TextField(
-            modifier = Modifier
-                .absolutePadding(40.dp, 0.dp, 0.dp, 0.dp)
-                .defaultMinSize(150.dp, 40.dp),
-            value = fname,
-            onValueChange = {
-                fname = it
-            },
-            singleLine = true,
-            maxLines = 1
-        )
+        if (isEditing) {
+            TextField(
+                modifier = Modifier
+                    .absolutePadding(40.dp, 0.dp, 0.dp, 0.dp)
+                    .defaultMinSize(150.dp, 40.dp),
+                value = fname,
+                onValueChange = {
+                    fname = it
+                },
+                singleLine = true,
+                maxLines = 1)
+        } else {
+            Text(
+                modifier = Modifier
+                    .absolutePadding(45.dp, 0.dp, 0.dp, 0.dp),
+                text = fname.text)
+        }
     }
 }
 
 @Composable
-fun LastNameRow() {
+fun LastNameRow(isEditing: Boolean) {
     // bind this to database
     var lname by remember { mutableStateOf(TextFieldValue("Kopp")) }
 
     Row (
-        modifier = Modifier.absolutePadding(20.dp, 10.dp, 0.dp, 10.dp),
+        modifier = Modifier
+            .absolutePadding(20.dp, 10.dp, 20.dp, 10.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ){
         Text(text = "Last name: ")
-        TextField(
-            modifier = Modifier
-                .absolutePadding(40.dp, 0.dp, 0.dp, 0.dp)
-                .defaultMinSize(150.dp, 40.dp),
-            value = lname,
-            onValueChange = {
-                lname = it
-            },
-            singleLine = true,
-            maxLines = 1
-        )
+        if (isEditing) {
+            TextField(
+                modifier = Modifier
+                    .absolutePadding(40.dp, 0.dp, 0.dp, 0.dp)
+                    .defaultMinSize(150.dp, 40.dp),
+                value = lname,
+                onValueChange = {
+                    lname = it
+                },
+                singleLine = true,
+                maxLines = 1)
+        } else {
+            Text(
+                modifier = Modifier
+                    .absolutePadding(45.dp, 0.dp, 0.dp, 0.dp),
+                text = lname.text)
+        }
+    }
+}
+
+@Composable
+fun FavSportRow(isEditing: Boolean) {
+    // bind this to database
+    var favsport by remember { mutableStateOf(TextFieldValue("Jogging")) }
+
+    Row (
+        modifier = Modifier
+            .absolutePadding(20.dp, 10.dp, 20.dp, 10.dp),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.Start
+    ){
+        Text(text = "Favorite sport: ")
+        if (isEditing) {
+            TextField(
+                modifier = Modifier
+                    .absolutePadding(15.dp, 0.dp, 0.dp, 0.dp)
+                    .defaultMinSize(150.dp, 40.dp),
+                value = favsport,
+                onValueChange = {
+                    favsport = it
+                },
+                singleLine = true,
+                maxLines = 1)
+        } else {
+            Text(
+                modifier = Modifier.absolutePadding(20.dp, 0.dp, 0.dp, 0.dp),
+                text = favsport.text)
+        }
     }
 }
 
