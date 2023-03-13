@@ -54,14 +54,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun launchPostLoginActivity(email : String) {
-        val intent = if (database.isExistingUser(email)) {
-            Intent(this, DashboardActivity::class.java)
-        } else {
-            Intent(this, SignUpActivity::class.java)
-        }
-
-        intent.putExtra("email", email)
-        startActivity(intent)
+        // TODO: fill in the rest of the code to switch activities
     }
 
     /**
