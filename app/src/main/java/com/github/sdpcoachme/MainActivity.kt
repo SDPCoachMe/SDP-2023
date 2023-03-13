@@ -55,6 +55,7 @@ class MainActivity : ComponentActivity() {
 
     private fun launchPostLoginActivity(email : String) {
         // TODO: fill in the rest of the code to switch activities
+        signInInfo = email
     }
 
     /**
