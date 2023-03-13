@@ -34,64 +34,67 @@ class DashboardActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            CoachMeTheme() {
-                // equivalent to remember { ScaffoldState(...) }
-                val scaffoldState = rememberScaffoldState()
-                // creates a scope tied to the view's lifecycle. scope
-                // enables us to launch a coroutine tied to a specific lifecycle
-                val scope = rememberCoroutineScope()
-                Scaffold(
-                    scaffoldState = scaffoldState,
-                    topBar = {
-                        AppBar(
-                            onNavigationIconClick = {
-                                scope.launch {
-                                    scaffoldState.drawerState.open()
-                                }})},
-                    drawerGesturesEnabled = true,
-                    drawerContent = {
-                        DrawerHeader()
-                        DrawerBody(
-                            modifier = Modifier.testTag("drawerBody"),
-                            items = listOf(
-                                MenuItem(id = "schedule", title = "Schedule",
-                                    contentDescription = "See schedule",
-                                    icon = Icons.Default.CheckCircle),
-                                MenuItem(id = "profile", title = "Profile",
-                                    contentDescription = "Go to profile",
-                                    icon = Icons.Default.AccountCircle),
-                                MenuItem(id = "favorite", title = "Favorites",
-                                    contentDescription = "Go to favorites",
-                                    icon = Icons.Default.Favorite),
-                                MenuItem(id = "settings", title = "Settings",
-                                    contentDescription = "Go to settings",
-                                    icon = Icons.Default.Settings),
-                                MenuItem(id = "help", title = "Help",
-                                    contentDescription = "Get help",
-                                    icon = Icons.Default.Info)),
-                            onItemClick = {
-                                // TODO call the associated fragment/activity associated with it
-                                println("Clicked on ${it.title}")})},
-                    content = { innerPadding ->
-                        // pass the correct padding to the content root, here the column
-                        LazyColumn(contentPadding = innerPadding) {
-                            items(count = 100) {
-                                Box(modifier = Modifier.fillMaxWidth().height(50.dp))
-                            }
-                        }
-                    }
-                )
+            CoachMeTheme {
+                DashboardView()
             }
         }
     }
 }
 
-data class MenuItem(
-    val id: String,
-    val title: String,
-    val contentDescription: String,
-    val icon: ImageVector
-)
+@Composable
+fun DashboardView() {
+    // equivalent to remember { ScaffoldState(...) }
+    val scaffoldState = rememberScaffoldState()
+    // creates a scope tied to the view's lifecycle. scope
+    // enables us to launch a coroutine tied to a specific lifecycle
+    val coroutineScope = rememberCoroutineScope()
+
+    Dashboard(
+        scaffoldState = scaffoldState,
+        onScaffoldStateChange = { coroutineScope.launch { scaffoldState.drawerState.open()} }
+    )
+}
+
+@Composable
+fun Dashboard(scaffoldState: ScaffoldState, onScaffoldStateChange: () -> Unit) {
+
+    Scaffold(
+        scaffoldState = scaffoldState,
+        topBar = { AppBar(onNavigationIconClick = onScaffoldStateChange) },
+        drawerGesturesEnabled = true,
+        drawerContent = {
+            DrawerHeader()
+            DrawerBody(
+                modifier = Modifier.testTag("drawerBody"),
+                items = listOf(
+                    MenuItem(id = "schedule", title = "Schedule",
+                        contentDescription = "See schedule",
+                        icon = Icons.Default.CheckCircle),
+                    MenuItem(id = "profile", title = "Profile",
+                        contentDescription = "Go to profile",
+                        icon = Icons.Default.AccountCircle),
+                    MenuItem(id = "favorite", title = "Favorites",
+                        contentDescription = "Go to favorites",
+                        icon = Icons.Default.Favorite),
+                    MenuItem(id = "settings", title = "Settings",
+                        contentDescription = "Go to settings",
+                        icon = Icons.Default.Settings),
+                    MenuItem(id = "help", title = "Help",
+                        contentDescription = "Get help",
+                        icon = Icons.Default.Info)),
+                onItemClick = {
+                    // TODO call the associated fragment/activity associated with it
+                    println("Clicked on ${it.title}")})},
+        content = { innerPadding ->
+            // pass the correct padding to the content root, here the column
+            LazyColumn(contentPadding = innerPadding) {
+                items(count = 100) {
+                    Box(modifier = Modifier.fillMaxWidth().height(50.dp))
+                }
+            }
+        }
+    )
+}
 
 @Composable
 fun AppBar(
@@ -149,3 +152,10 @@ fun DrawerBody(
         }
     }
 }
+
+data class MenuItem(
+    val id: String,
+    val title: String,
+    val contentDescription: String,
+    val icon: ImageVector
+)
