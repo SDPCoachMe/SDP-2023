@@ -15,23 +15,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 open class MainActivityTest {
-
-//    @get:Rule
-//    val composeTestRule = createAndroidComposeRule<MainActivity>()
-//
-//    @Test
-//    fun correctIntentFiredOnDisplayMessageClick() {
-//        Intents.init()
-//
-//        val name = "John Lennon"
-//        composeTestRule.onNodeWithTag("textfield").performTextInput(name)
-//        Espresso.closeSoftKeyboard()
-//        composeTestRule.onNodeWithTag("button").performClick()
-//
-//        intended(allOf(hasComponent(GreetingActivity::class.java.name), hasExtra("name", name)))
-//        Intents.release()
-//    }
-
     private val launchTimeout = 5000L
     private lateinit var device: UiDevice
     private lateinit var signInButtonText: String
