@@ -13,10 +13,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
@@ -43,7 +43,7 @@ fun Profile() {
     var isEditing by remember { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().testTag("column"),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start
     ) {
@@ -56,7 +56,9 @@ fun Profile() {
         if (isEditing) {
             // save button
             Button(
-                modifier = Modifier.align(Alignment.CenterHorizontally),
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .testTag("save button"),
                 onClick = {
                     isEditing = false
                 }
@@ -66,7 +68,9 @@ fun Profile() {
         } else {
             // edit button
             Button(
-                modifier = Modifier.align(Alignment.CenterHorizontally),
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .testTag("edit button"),
                 onClick = {
                     isEditing = true
                 }
@@ -83,7 +87,8 @@ fun Profile() {
 fun TitleRow() {
     Row (
         modifier = Modifier
-            .absolutePadding(20.dp, 20.dp, 0.dp, 10.dp),
+            .absolutePadding(20.dp, 20.dp, 0.dp, 10.dp)
+            .testTag("title row"),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ) {
@@ -104,6 +109,7 @@ fun TitleRow() {
                     .clip(CircleShape)
                     .border(2.dp, Color.Gray, CircleShape)
                     .absolutePadding(0.dp, 0.dp, 0.dp, 0.dp)
+                    .testTag("profile pic")
             )
         }
     }
@@ -113,7 +119,8 @@ fun TitleRow() {
 fun EmailRow() {
     Row (
         modifier = Modifier
-            .absolutePadding(20.dp, 80.dp, 0.dp, 10.dp),
+            .absolutePadding(20.dp, 80.dp, 0.dp, 10.dp)
+            .testTag("email row"),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ){
@@ -122,7 +129,8 @@ fun EmailRow() {
         Text(
             text = "damian.kopp@epfl.ch",
             modifier = Modifier
-                .absolutePadding(80.dp, 0.dp, 0.dp, 0.dp),
+                .absolutePadding(80.dp, 0.dp, 0.dp, 0.dp)
+                .testTag("email address"),
         )
     }
 }
@@ -134,7 +142,8 @@ fun FirstNameRow(isEditing: Boolean) {
 
     Row (
         modifier = Modifier
-            .absolutePadding(20.dp, 10.dp, 20.dp, 10.dp),
+            .absolutePadding(20.dp, 10.dp, 20.dp, 10.dp)
+            .testTag("first name row"),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ){
@@ -143,7 +152,8 @@ fun FirstNameRow(isEditing: Boolean) {
             TextField(
                 modifier = Modifier
                     .absolutePadding(40.dp, 0.dp, 0.dp, 0.dp)
-                    .defaultMinSize(150.dp, 40.dp),
+                    .defaultMinSize(150.dp, 40.dp)
+                    .testTag("editable first name"),
                 value = fname,
                 onValueChange = {
                     fname = it
@@ -153,7 +163,8 @@ fun FirstNameRow(isEditing: Boolean) {
         } else {
             Text(
                 modifier = Modifier
-                    .absolutePadding(45.dp, 0.dp, 0.dp, 0.dp),
+                    .absolutePadding(45.dp, 0.dp, 0.dp, 0.dp)
+                    .testTag("saved first name"),
                 text = fname.text)
         }
     }
@@ -166,7 +177,8 @@ fun LastNameRow(isEditing: Boolean) {
 
     Row (
         modifier = Modifier
-            .absolutePadding(20.dp, 10.dp, 20.dp, 10.dp),
+            .absolutePadding(20.dp, 10.dp, 20.dp, 10.dp)
+            .testTag("last name row"),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ){
@@ -175,7 +187,8 @@ fun LastNameRow(isEditing: Boolean) {
             TextField(
                 modifier = Modifier
                     .absolutePadding(40.dp, 0.dp, 0.dp, 0.dp)
-                    .defaultMinSize(150.dp, 40.dp),
+                    .defaultMinSize(150.dp, 40.dp)
+                    .testTag("editable last name"),
                 value = lname,
                 onValueChange = {
                     lname = it
@@ -185,7 +198,8 @@ fun LastNameRow(isEditing: Boolean) {
         } else {
             Text(
                 modifier = Modifier
-                    .absolutePadding(45.dp, 0.dp, 0.dp, 0.dp),
+                    .absolutePadding(45.dp, 0.dp, 0.dp, 0.dp)
+                    .testTag("saved last name"),
                 text = lname.text)
         }
     }
@@ -198,7 +212,8 @@ fun FavSportRow(isEditing: Boolean) {
 
     Row (
         modifier = Modifier
-            .absolutePadding(20.dp, 10.dp, 20.dp, 10.dp),
+            .absolutePadding(20.dp, 10.dp, 20.dp, 10.dp)
+            .testTag("fav sport row"),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ){
@@ -207,7 +222,8 @@ fun FavSportRow(isEditing: Boolean) {
             TextField(
                 modifier = Modifier
                     .absolutePadding(15.dp, 0.dp, 0.dp, 0.dp)
-                    .defaultMinSize(150.dp, 40.dp),
+                    .defaultMinSize(150.dp, 40.dp)
+                    .testTag("editable fav sport"),
                 value = favsport,
                 onValueChange = {
                     favsport = it
@@ -216,16 +232,19 @@ fun FavSportRow(isEditing: Boolean) {
                 maxLines = 1)
         } else {
             Text(
-                modifier = Modifier.absolutePadding(20.dp, 0.dp, 0.dp, 0.dp),
+                modifier = Modifier
+                    .absolutePadding(20.dp, 0.dp, 0.dp, 0.dp)
+                    .testTag("saved fav sport"),
                 text = favsport.text)
         }
     }
 }
 
+/*
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
     CoachMeTheme {
         Profile()
     }
-}
+}*/
