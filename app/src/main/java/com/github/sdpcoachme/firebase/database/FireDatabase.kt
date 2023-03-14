@@ -1,5 +1,6 @@
-package com.github.sdpcoachme
+package com.github.sdpcoachme.firebase.database
 
+import com.github.sdpcoachme.database.Database
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase

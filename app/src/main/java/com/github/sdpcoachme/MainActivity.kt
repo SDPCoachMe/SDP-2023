@@ -7,7 +7,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Button
 import androidx.compose.material.Text
@@ -21,7 +20,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.github.sdpcoachme.firebase.auth.Authenticator
-import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 

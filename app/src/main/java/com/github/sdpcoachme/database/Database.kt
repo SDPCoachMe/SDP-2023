@@ -1,4 +1,4 @@
-package com.github.sdpcoachme
+package com.github.sdpcoachme.database
 
 import java.util.concurrent.CompletableFuture
 

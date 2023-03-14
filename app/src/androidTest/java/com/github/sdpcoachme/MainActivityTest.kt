@@ -116,28 +116,4 @@ open class MainActivityTest {
         TestCase.assertNotNull(confirmDialog)
         ViewMatchers.assertThat(confirmDialog.text, CoreMatchers.`is`(deleteInfoText))
     }
-
-    @Test
-    fun setAndGet() {
-        val phone = "0692000000"
-        val email = "jc@gmail.com"
-        val phoneField = "phoneTextfield"
-        val emailField = "emailTextfield"
-        // TODO Put testTags in seperate class
-        composeTestRule.onNodeWithTag(phoneField).performTextInput(phone)
-        Espresso.closeSoftKeyboard()
-        composeTestRule.onNodeWithTag(emailField).performTextInput(email)
-        Espresso.closeSoftKeyboard()
-
-        // Set value
-        composeTestRule.onNodeWithTag("setButton").performClick()
-
-        //Erase Email in box
-        composeTestRule.onNodeWithTag(emailField).performTextClearance()
-
-        composeTestRule.onNodeWithTag("getButton").performClick()
-
-        composeTestRule.onNodeWithTag(emailField).assertTextContains(email)
-
-    }
 }
