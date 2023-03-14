@@ -32,17 +32,18 @@ class DashboardActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val email = intent.getStringExtra("signInInfo")
 
         setContent {
             CoachMeTheme {
-                DashboardView()
+                DashboardView(email)
             }
         }
     }
 }
 
 @Composable
-fun DashboardView() {
+fun DashboardView(email: String?) {
     // equivalent to remember { ScaffoldState(...) }
     val scaffoldState = rememberScaffoldState()
     // creates a scope tied to the view's lifecycle. scope
@@ -50,20 +51,21 @@ fun DashboardView() {
     val coroutineScope = rememberCoroutineScope()
 
     Dashboard(
+        email = email,
         scaffoldState = scaffoldState,
         onScaffoldStateChange = { coroutineScope.launch { scaffoldState.drawerState.open()} }
     )
 }
 
 @Composable
-fun Dashboard(scaffoldState: ScaffoldState, onScaffoldStateChange: () -> Unit) {
+fun Dashboard(email: String?, scaffoldState: ScaffoldState, onScaffoldStateChange: () -> Unit) {
 
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = { AppBar(onNavigationIconClick = onScaffoldStateChange) },
         drawerGesturesEnabled = true,
         drawerContent = {
-            DrawerHeader()
+            DrawerHeader(email)
             DrawerBody(
                 items = listOf(
                     MenuItem(id = "schedule", title = "Schedule",
@@ -114,11 +116,12 @@ fun AppBar(
 }
 
 @Composable
-fun DrawerHeader() {
+fun DrawerHeader(email: String?) {
     Box(
         modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp).testTag("drawerHeader"),
         contentAlignment = Alignment.Center,
-        content = { Text(text = "Dashboard", fontSize = 50.sp) }
+        //TODO can we end up here with a null email ? Maybe throw an exception if it's the case
+        content = { Text(text = email?: "Not signed in", fontSize = 50.sp) }
     )
 }
 
