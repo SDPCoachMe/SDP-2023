@@ -37,7 +37,7 @@ fun Greeting(name: String) {
     ) {
         Text(modifier = Modifier.testTag("text"), text = "Hello $name!")
         Button(onClick = {
-            val intent = Intent(context, EditProfilActivity::class.java)
+            val intent = Intent(context, EditProfileActivity::class.java)
             context.startActivity(intent)
         }) {
             Text(text = "Edit profile")
