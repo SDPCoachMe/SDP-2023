@@ -99,10 +99,4 @@ class GoogleAuthenticatorTest {
         FirebaseAuth.getInstance().signOut()
         assertThat(GoogleAuthenticator().isSignedIn(), `is`(false))
     }
-
-    @Test
-    fun signIt() {
-        //sign it
-
-    }
 }
