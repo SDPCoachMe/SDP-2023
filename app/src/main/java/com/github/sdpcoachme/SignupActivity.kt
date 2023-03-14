@@ -3,77 +3,27 @@ package com.github.sdpcoachme
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Button
-import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.dp
+import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 class SignupActivity : ComponentActivity() {
+
+    private lateinit var database : Database
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        database =  (application as CoachMeApplication).database
         setContent {
             CoachMeTheme {
                 AccountForm()
-                //MultiSelectList()
-            }
-        }
-    }
-
-    @Composable
-    fun MultiSelectList() {
-        var sportItems by remember {
-            mutableStateOf(
-                listOf("Ski", "Tennis", "Padel").map {
-                    ListSport(
-                        title = it,
-                        selected = false
-                    )
-                }
-            )
-        }
-        LazyColumn(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(sportItems.size) { i ->
-                Row (
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            sportItems = sportItems.mapIndexed { j, item ->
-                                if (i == j) {
-                                    item.copy(selected = !item.selected)
-                                } else {
-                                    item
-                                }
-                            }
-                        }
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = sportItems[i].title)
-                    if (sportItems[i].selected) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = "Selected",
-                            tint = Color.Green,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
             }
         }
     }
@@ -85,8 +35,6 @@ class SignupActivity : ComponentActivity() {
         var email by remember { mutableStateOf("") }
         var phone by remember { mutableStateOf("") }
         var location by remember { mutableStateOf("") } //todo how to accept only valid location ?? => Google Maps
-        val context = LocalContext.current
-
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -125,22 +73,19 @@ class SignupActivity : ComponentActivity() {
             Button(
                 modifier = Modifier.testTag("registerButton"),
                 onClick = {
-                    //todo
+                    // Add the new user to the database
+                    val newUser = UserInfo(
+                        firstName = firstName,
+                        lastName = lastName,
+                        email = email,
+                        phone = phone,
+                        location = location,
+                        sports = listOf() // todo add sports with MultiSelectListUI
+                    )
+                    database.addUser(newUser)
                 })
             { Text("REGISTER") }
         }
     }
-
-    /*
-    @Composable
-    fun AccountElem(label: String, onValueChange: (String) -> Unit, testTag: String) {
-        TextField(
-            modifier = Modifier.testTag(testTag),
-            value = ,
-            onValueChange = onValueChange,
-            label = { Text(label) }
-        )
-    }
-    */
 }
 

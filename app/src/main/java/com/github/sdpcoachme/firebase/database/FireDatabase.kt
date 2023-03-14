@@ -1,5 +1,6 @@
 package com.github.sdpcoachme.firebase.database
 
+import com.github.sdpcoachme.UserInfo
 import com.github.sdpcoachme.database.Database
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ktx.database
@@ -11,12 +12,13 @@ import java.util.concurrent.CompletableFuture
  */
 class FireDatabase : Database {
 
-    private val db: DatabaseReference = Firebase.database.reference
+    private val rootDatabase: DatabaseReference = Firebase.database.reference
+    private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
 
     override fun get(key: String): CompletableFuture<Any> {
         val future = CompletableFuture<Any>()
 
-        db.child(key).get().addOnSuccessListener {
+        rootDatabase.child(key).get().addOnSuccessListener {
             if (it.value == null) future.completeExceptionally(NoSuchFieldException())
             else future.complete(it.value)
         }.addOnFailureListener {
@@ -27,8 +29,23 @@ class FireDatabase : Database {
     }
 
     override fun set(key: String, value: Any): CompletableFuture<Void> {
+        return setChild(rootDatabase, key, value)
+    }
+
+    override fun addUser(user: UserInfo): CompletableFuture<Void> {
+        return setChild(accounts, user.email, user)
+    }
+
+    /**
+     * Sets a key-value pair with a given key in a given database reference
+     * @param databaseChild the database reference in which to set the key-value pair
+     * @param key the key of the value
+     * @param value the value to set
+     * @return a completable future that completes when the child is set
+     */
+    private fun setChild(databaseChild: DatabaseReference, key: String, value: Any): CompletableFuture<Void> {
         val future = CompletableFuture<Void>()
-        db.child(key).setValue(value).addOnSuccessListener {
+        databaseChild.child(key).setValue(value).addOnSuccessListener {
             future.complete(null)
         }.addOnFailureListener {
             future.completeExceptionally(it)
