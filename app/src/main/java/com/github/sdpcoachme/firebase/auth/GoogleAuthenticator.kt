@@ -7,7 +7,6 @@ import androidx.activity.result.ActivityResultLauncher
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.AuthUI.IdpConfig.GoogleBuilder
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
-import com.github.sdpcoachme.firebase.database.Database
 import com.google.firebase.auth.FirebaseAuth
 import java.util.function.Consumer
 
@@ -15,8 +14,6 @@ import java.util.function.Consumer
  * Class that handles the Google sign in process
  */
 class GoogleAuthenticator : Authenticator {
-    private lateinit var database : Database
-
 
     /**
      * Creates a sign in intent and launches it using the given launcher

@@ -23,7 +23,15 @@
           }
         },
         {
-          "client_id": "781176350384-q1iomfbihfk7mtl0grur6tmpcpbh6bs2.apps.googleusercontent.com",
+          "client_id": "781176350384-qlaipdkrp9tt6g64ntg1fulp26iij1va.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.github.sdpcoachme",
+            "certificate_hash": "5fb3b131d7bf2c9641dbb78b4c2b782aac3e322b"
+          }
+        },
+        {
+          "client_id": "781176350384-k4c7oqt1574m6l5h3p33m84t1p8vtftr.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -36,7 +44,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "781176350384-q1iomfbihfk7mtl0grur6tmpcpbh6bs2.apps.googleusercontent.com",
+              "client_id": "781176350384-k4c7oqt1574m6l5h3p33m84t1p8vtftr.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

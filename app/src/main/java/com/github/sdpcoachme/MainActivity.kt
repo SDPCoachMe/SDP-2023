@@ -20,8 +20,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.github.sdpcoachme.firebase.auth.Authenticator
-import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+
 
 class MainActivity : ComponentActivity() {
 
@@ -79,6 +80,8 @@ class MainActivity : ComponentActivity() {
         authenticator.signOut(this) { signInInfo = getString(R.string.signed_out) }
     }
 }
+
+//TODO put test tags in separate class
 
 @Composable
 fun AuthenticationForm(signInInfo: String, context: MainActivity) {
