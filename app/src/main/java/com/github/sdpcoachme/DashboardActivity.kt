@@ -65,7 +65,6 @@ fun Dashboard(scaffoldState: ScaffoldState, onScaffoldStateChange: () -> Unit) {
         drawerContent = {
             DrawerHeader()
             DrawerBody(
-                modifier = Modifier.testTag("drawerBody"),
                 items = listOf(
                     MenuItem(id = "schedule", title = "Schedule",
                         contentDescription = "See schedule",
@@ -83,15 +82,12 @@ fun Dashboard(scaffoldState: ScaffoldState, onScaffoldStateChange: () -> Unit) {
                         contentDescription = "Get help",
                         icon = Icons.Default.Info)),
                 onItemClick = {
-                    // TODO call the associated fragment/activity associated with it
+                    // TODO replace the print by a call to the corresponding item activity
                     println("Clicked on ${it.title}")})},
+        //TODO replace the scaffold content here with the main map view
         content = { innerPadding ->
             // pass the correct padding to the content root, here the column
-            LazyColumn(contentPadding = innerPadding) {
-                items(count = 100) {
-                    Box(modifier = Modifier.fillMaxWidth().height(50.dp))
-                }
-            }
+            Text(modifier = Modifier.padding(innerPadding), text = "Main map view")
         }
     )
 }
@@ -120,7 +116,7 @@ fun AppBar(
 @Composable
 fun DrawerHeader() {
     Box(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp).testTag("drawerHeader"),
         contentAlignment = Alignment.Center,
         content = { Text(text = "Dashboard", fontSize = 50.sp) }
     )
@@ -133,7 +129,7 @@ fun DrawerBody(
     itemTextStyle: TextStyle = TextStyle(fontSize = 18.sp),
     onItemClick: (MenuItem) -> Unit
 ) {
-    LazyColumn(modifier) {
+    LazyColumn(modifier.testTag("menuList")) {
         items(items) { item ->
             Row(
                 modifier = Modifier.fillMaxWidth()
