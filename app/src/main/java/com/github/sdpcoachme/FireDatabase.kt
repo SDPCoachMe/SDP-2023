@@ -5,10 +5,12 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import java.util.concurrent.CompletableFuture
 
+/**
+ * A database class that uses Firebase
+ */
 class FireDatabase : Database {
 
     private val db: DatabaseReference = Firebase.database.reference
-
 
     override fun get(key: String): CompletableFuture<Any> {
         val future = CompletableFuture<Any>()

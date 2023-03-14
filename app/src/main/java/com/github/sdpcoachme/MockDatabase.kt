@@ -2,6 +2,9 @@ package com.github.sdpcoachme
 
 import java.util.concurrent.CompletableFuture
 
+/**
+ * A mock database class
+ */
 class MockDatabase: Database {
 
     private val db = hashMapOf<String, Any>()

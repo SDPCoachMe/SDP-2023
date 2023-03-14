@@ -44,6 +44,9 @@ class MainActivity : ComponentActivity() {
     //TODO put test tags in separate class
 
 
+    /**
+     * A form for testing the database
+     */
     @Composable
     fun FirebaseForm() {
         var phoneText by remember { mutableStateOf("") }
@@ -88,33 +91,34 @@ class MainActivity : ComponentActivity() {
         }
 
     }
-}
 
+    /**
+     * A form for testing the greeting activity
+     */
+    @Composable
+    fun GreetingForm() {
+        var text by remember { mutableStateOf("") }
+        val context = LocalContext.current
 
-
-@Composable
-fun GreetingForm() {
-    var text by remember { mutableStateOf("") }
-    val context = LocalContext.current
-
-    Column(
-        //modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        TextField(
-            modifier = Modifier.testTag("textfield"),
-            value = text,
-            onValueChange = { text = it },
-            label = { Text("Your name") }
-        )
-        Button(
-            modifier = Modifier.testTag("button"),
-            onClick = {
-            val intent = Intent(context, GreetingActivity::class.java)
-            intent.putExtra("name", text)
-            context.startActivity(intent)
-        })
-        { Text("DISPLAY MESSAGE") }
+        Column(
+            //modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            TextField(
+                modifier = Modifier.testTag("textfield"),
+                value = text,
+                onValueChange = { text = it },
+                label = { Text("Your name") }
+            )
+            Button(
+                modifier = Modifier.testTag("button"),
+                onClick = {
+                    val intent = Intent(context, GreetingActivity::class.java)
+                    intent.putExtra("name", text)
+                    context.startActivity(intent)
+                })
+            { Text("DISPLAY MESSAGE") }
+        }
     }
 }
