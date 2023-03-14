@@ -1,6 +1,10 @@
 package com.github.sdpcoachme
 
 import android.app.Application
+import com.github.sdpcoachme.firebase.auth.Authenticator
+import com.github.sdpcoachme.firebase.auth.GoogleAuthenticator
+import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.firebase.database.RealDatabase
 import com.google.firebase.FirebaseApp
 
 
@@ -13,4 +17,5 @@ open class CoachMeApplication : Application() {
         database = FireDatabase()
     }
 
+    open val authenticator: Authenticator = GoogleAuthenticator()
 }

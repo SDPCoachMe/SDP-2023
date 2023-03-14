@@ -4,121 +4,116 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Button
 import androidx.compose.material.Text
-import androidx.compose.material.TextField
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
+import com.github.sdpcoachme.firebase.auth.Authenticator
+import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 
 class MainActivity : ComponentActivity() {
 
-
-    private lateinit var db: Database
+    private lateinit var database : Database
+    private var signInInfo: String by mutableStateOf("Not signed in")
+    private lateinit var authenticator: Authenticator
+    private val signInLauncher: ActivityResultLauncher<Intent> = registerForActivityResult (
+        FirebaseAuthUIActivityResultContract()
+    ) { res ->
+        authenticator.onSignInResult(
+            res,
+            { email -> launchPostLoginActivity(email ?: "") },
+            { errorMsg -> signInInfo = errorMsg.toString() }
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        db = (application as CoachMeApplication).database
+        authenticator = (application as CoachMeApplication).authenticator
+        this.database =  (application as CoachMeApplication).database
+
         setContent {
             CoachMeTheme {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    FirebaseForm()
-                    GreetingForm()
-                }
+                AuthenticationForm(
+                    signInInfo = this.signInInfo,
+                    context = this
+                )
             }
         }
     }
 
-    //TODO put test tags in separate class
-
-
-    /**
-     * A form for testing the database
-     */
-    @Composable
-    fun FirebaseForm() {
-        var phoneText by remember { mutableStateOf("") }
-        var emailText by remember { mutableStateOf("") }
-        Column( //modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Row(//modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Button(modifier = Modifier.testTag("getButton"),
-                    onClick = {
-                        db.get(phoneText).thenAccept { emailText = it as String }
-                    },)
-                {
-                    Text("get")
-                }
-                Button(modifier = Modifier.testTag("setButton"),
-                    onClick = {
-                        db.set(phoneText, emailText)
-                    },)
-                {
-                    Text("set")
-                }
-
-            }
-            TextField(
-                modifier = Modifier.testTag("phoneTextfield"),
-                value = phoneText,
-                onValueChange = { phoneText = it },
-                label = { Text("Phone") }
-            )
-            TextField(
-                modifier = Modifier.testTag("emailTextfield"),
-                value = emailText,
-                onValueChange = { emailText = it },
-                label = { Text("Email") }
-            )
-
-        }
-
+    private fun launchPostLoginActivity(email : String) {
+        // TODO: fill in the rest of the code to switch activities
+        signInInfo = email
     }
 
     /**
-     * A form for testing the greeting activity
+     * Deletes the google account from the device
      */
-    @Composable
-    fun GreetingForm() {
-        var text by remember { mutableStateOf("") }
-        val context = LocalContext.current
+    fun deleteAccount() {
+        authenticator.delete(this) { signInInfo = getString(R.string.account_deleted) }
+    }
 
-        Column(
-            //modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            TextField(
-                modifier = Modifier.testTag("textfield"),
-                value = text,
-                onValueChange = { text = it },
-                label = { Text("Your name") }
-            )
-            Button(
-                modifier = Modifier.testTag("button"),
-                onClick = {
-                    val intent = Intent(context, GreetingActivity::class.java)
-                    intent.putExtra("name", text)
-                    context.startActivity(intent)
-                })
-            { Text("DISPLAY MESSAGE") }
-        }
+    /**
+     * Signs into the google account
+     */
+    fun signIntoAccount() {
+        authenticator.signIn(signInLauncher)
+    }
+
+    /**
+     * Signs out of the google account
+     */
+    fun signOutOfAccount() {
+        authenticator.signOut(this) { signInInfo = getString(R.string.signed_out) }
+    }
+}
+
+//TODO put test tags in separate class
+
+@Composable
+fun AuthenticationForm(signInInfo: String, context: MainActivity) {
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            modifier = Modifier.testTag("sign_in_info"),
+            text = signInInfo,
+        )
+
+        Button(
+            modifier = Modifier.testTag("sign_in_button"),
+            onClick = {
+                context.signIntoAccount()
+            })
+        { Text(stringResource(id = R.string.sign_in_button_text)) }
+        Button(
+            modifier = Modifier.testTag("sign_out_button"),
+            onClick = {
+                context.signOutOfAccount()
+            })
+        { Text(stringResource(id = R.string.sign_out_button_text)) }
+        Button(
+            modifier = Modifier.testTag("delete_button"),
+            onClick = {
+                context.deleteAccount()
+            })
+        { Text(stringResource(id = R.string.delete_account_button_text)) }
     }
 }
