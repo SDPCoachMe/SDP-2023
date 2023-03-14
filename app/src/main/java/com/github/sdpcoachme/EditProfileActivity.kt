@@ -21,12 +21,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
-class EditProfilActivity : ComponentActivity() {
+/**
+ * Activity used to view and edit the user's profile.
+ */
+class EditProfileActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             CoachMeTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
@@ -38,6 +40,9 @@ class EditProfilActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Composable used to display the user's profile.
+ */
 @Composable
 fun Profile() {
     var isEditing by remember { mutableStateOf(false) }
@@ -83,6 +88,9 @@ fun Profile() {
     }
 }
 
+/**
+ * Composable used to display the profile title and the user's profile picture.
+ */
 @Composable
 fun TitleRow() {
     Row (
@@ -115,6 +123,9 @@ fun TitleRow() {
     }
 }
 
+/**
+ * Composable used to display the user's email address.
+ */
 @Composable
 fun EmailRow() {
     Row (
@@ -135,6 +146,11 @@ fun EmailRow() {
     }
 }
 
+/**
+ * Composable used to display the user's first name.
+ * If the user is editing their profile, the first name is displayed in a TextField.
+ * Otherwise, the first name is displayed in a Text.
+ */
 @Composable
 fun FirstNameRow(isEditing: Boolean) {
     // bind this to database
@@ -170,6 +186,11 @@ fun FirstNameRow(isEditing: Boolean) {
     }
 }
 
+/**
+ * Composable used to display the user's last name.
+ * If the user is editing their profile, the last name is displayed in a TextField.
+ * Otherwise, the last name is displayed in a Text.
+ */
 @Composable
 fun LastNameRow(isEditing: Boolean) {
     // bind this to database
@@ -205,6 +226,11 @@ fun LastNameRow(isEditing: Boolean) {
     }
 }
 
+/**
+ * Composable used to display the user's favorite sport.
+ * If the user is editing their profile, the favorite sport is displayed in a TextField.
+ * Otherwise, the favorite sport is displayed in a Text.
+ */
 @Composable
 fun FavSportRow(isEditing: Boolean) {
     // bind this to database
@@ -239,12 +265,3 @@ fun FavSportRow(isEditing: Boolean) {
         }
     }
 }
-
-/*
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    CoachMeTheme {
-        Profile()
-    }
-}*/

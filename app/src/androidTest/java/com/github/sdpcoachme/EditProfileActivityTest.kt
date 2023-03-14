@@ -2,6 +2,7 @@ package com.github.sdpcoachme
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
@@ -10,7 +11,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class EditProfileActivityTest {
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<EditProfilActivity>()
+    val composeTestRule = createAndroidComposeRule<EditProfileActivity>()
 
     @Test
     fun correctInitialScreenContent() {
@@ -55,19 +56,31 @@ class EditProfileActivityTest {
 
     @Test
     fun saveButtonReturnsToCorrectElements() {
+        //change to edit mode
         composeTestRule.onNodeWithTag("edit button")
             .assertIsDisplayed()
             .performClick()
 
+        //edit text fields
+        composeTestRule.onNodeWithTag("editable first name")
+            .performTextClearance()
         composeTestRule.onNodeWithTag("editable first name")
             .performTextInput("Updated first name")
+        Espresso.closeSoftKeyboard()
 
         composeTestRule.onNodeWithTag("editable last name")
+            .performTextClearance()
+        composeTestRule.onNodeWithTag("editable last name")
             .performTextInput("Updated last name")
+        Espresso.closeSoftKeyboard()
 
         composeTestRule.onNodeWithTag("editable fav sport")
+            .performTextClearance()
+        composeTestRule.onNodeWithTag("editable fav sport")
             .performTextInput("Updated fav sport")
+        Espresso.closeSoftKeyboard()
 
+        //save updated profile
         composeTestRule.onNodeWithTag("save button")
             .assertIsDisplayed()
             .performClick()
