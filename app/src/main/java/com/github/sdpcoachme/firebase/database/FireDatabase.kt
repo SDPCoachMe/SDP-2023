@@ -28,6 +28,11 @@ class FireDatabase : Database {
         return setChild(accounts, userID, user)
     }
 
+    override fun getUser(user: UserInfo): CompletableFuture<Any> {
+        val userID = user.email.replace('.', ',')
+        return getChild(accounts, userID)
+    }
+
     /**
      * Sets a key-value pair with a given key in a given database reference
      * @param databaseChild the database reference in which to set the key-value pair

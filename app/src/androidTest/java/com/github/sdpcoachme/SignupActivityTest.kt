@@ -1,61 +1,44 @@
 package com.github.sdpcoachme
 
-import android.content.Intent
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.test.core.app.ActivityScenario
-import androidx.test.core.app.ApplicationProvider
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.espresso.Espresso
-import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
-import com.google.firebase.auth.FirebaseAuth
 import junit.framework.TestCase
-import org.hamcrest.CoreMatchers
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 open class SignupActivityTest {
+
     @get:Rule
-    val composeTestRule = createEmptyComposeRule()
+    val composeTestRule = createAndroidComposeRule<SignupActivity>()
 
     @Test
-    fun correctNameDisplayed() {
-        val launchGreeting = Intent(ApplicationProvider.getApplicationContext(), GreetingActivity::class.java)
-        val name = "George"
-        launchGreeting.putExtra("name", name)
-        ActivityScenario.launch<GreetingActivity>(launchGreeting).use {
-            composeTestRule.onNodeWithTag("text").assert(hasText(text = name, substring = true))
-        }
-    }
-
-    // todo test à faire
-    @Test
-    fun setAndGet() {
-        val phone = "0692000000"
-        val email = "jc@gmail.com"
-        val phoneField = "phoneTextfield"
-        val emailField = "emailTextfield"
-        // TODO Put testTags in seperate class
-        composeTestRule.onNodeWithTag(phoneField).performTextInput(phone)
+    fun setAndGetUser() {
+        val database = (composeTestRule.activity.application as CoachMeApplication).database
+        val user = UserInfo(
+            "Jean", "Dupont",
+            "jc@gmail.com", "0692000000",
+            "Lausanne", listOf())
+        composeTestRule.onNodeWithTag("firstName").performTextInput(user.firstName)
         Espresso.closeSoftKeyboard()
-        composeTestRule.onNodeWithTag(emailField).performTextInput(email)
+        composeTestRule.onNodeWithTag("lastName").performTextInput(user.lastName)
         Espresso.closeSoftKeyboard()
+        composeTestRule.onNodeWithTag("email").performTextInput(user.email)
+        Espresso.closeSoftKeyboard()
+        composeTestRule.onNodeWithTag("phone").performTextInput(user.phone)
+        Espresso.closeSoftKeyboard()
+        composeTestRule.onNodeWithTag("location").performTextInput(user.location)
+        Espresso.closeSoftKeyboard()
+        composeTestRule.onNodeWithTag("registerButton").performClick()
 
-        // Set value
-        composeTestRule.onNodeWithTag("setButton").performClick()
 
-        //Erase Email in box
-        composeTestRule.onNodeWithTag(emailField).performTextClearance()
-
-        composeTestRule.onNodeWithTag("getButton").performClick()
-
-        val retrievedEmail = composeTestRule.onNodeWithTag(emailField).assertTextContains(email)
-
+        val retrievedUser = database.getUser(user).orTimeout(10, TimeUnit.SECONDS).join()
+        TestCase.assertEquals(user, retrievedUser)
     }
 
 }

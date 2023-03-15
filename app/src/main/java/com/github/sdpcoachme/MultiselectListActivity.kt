@@ -64,7 +64,7 @@ class MultiselectListActivity : ComponentActivity() {
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = "Selected",
-                            tint = Color.Green,
+                            tint = Color.Black,
                             modifier = Modifier.size(20.dp)
                         )
                     }

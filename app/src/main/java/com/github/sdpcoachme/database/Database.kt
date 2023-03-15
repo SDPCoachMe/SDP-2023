@@ -31,4 +31,11 @@ interface Database {
      */
     fun addUser(user: UserInfo): CompletableFuture<Void>
 
+    /**
+     * Get a user from the database
+     * @param user The user to get
+     * @return A future that will complete when the user has been gotten
+     */
+    fun getUser(user: UserInfo): CompletableFuture<Any>
+
 }

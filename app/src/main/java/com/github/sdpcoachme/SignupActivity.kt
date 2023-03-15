@@ -52,8 +52,8 @@ class SignupActivity : ComponentActivity() {
                 onValueChange = { lastName = it },
                 label = { Text("Last Name") }
             )
-            TextField(
-                modifier = Modifier.testTag("sport"),
+            TextField( // todo to be removed and retrieved from google authentication variable
+                modifier = Modifier.testTag("email"),
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") }

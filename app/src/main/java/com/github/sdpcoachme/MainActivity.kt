@@ -91,6 +91,7 @@ fun AuthenticationForm(signInInfo: String, context: MainActivity) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
         Text(
             modifier = Modifier.testTag("sign_in_info"),
             text = signInInfo,
