@@ -33,8 +33,7 @@ class DashboardActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val email = intent.getStringExtra("signInInfo")
-            ?: throw java.lang.NullPointerException("Dashboard launched with no valid email")
+        val email = intent.getStringExtra("signInInfo") ?: "no valid email"
 
         setContent {
             CoachMeTheme {
@@ -138,11 +137,10 @@ fun DrawerHeader(email: String) {
 @Composable
 fun DrawerBody(
     items: List<MenuItem>,
-    modifier: Modifier = Modifier,
     itemTextStyle: TextStyle = TextStyle(fontSize = 18.sp),
     onItemClick: (MenuItem) -> Unit
 ) {
-    LazyColumn(modifier.testTag("menuList")) {
+    LazyColumn(Modifier.testTag("menuList")) {
         items(items) { item ->
             Row(
                 modifier = Modifier
