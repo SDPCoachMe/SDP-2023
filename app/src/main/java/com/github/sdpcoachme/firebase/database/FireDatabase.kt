@@ -16,16 +16,7 @@ class FireDatabase : Database {
     private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
 
     override fun get(key: String): CompletableFuture<Any> {
-        val future = CompletableFuture<Any>()
-
-        rootDatabase.child(key).get().addOnSuccessListener {
-            if (it.value == null) future.completeExceptionally(NoSuchFieldException())
-            else future.complete(it.value)
-        }.addOnFailureListener {
-            future.completeExceptionally(it)
-        }
-
-        return future
+        return getChild(rootDatabase, key)
     }
 
     override fun set(key: String, value: Any): CompletableFuture<Void> {
@@ -47,6 +38,23 @@ class FireDatabase : Database {
         val future = CompletableFuture<Void>()
         databaseChild.child(key).setValue(value).addOnSuccessListener {
             future.complete(null)
+        }.addOnFailureListener {
+            future.completeExceptionally(it)
+        }
+        return future
+    }
+
+    /**
+     * Gets a key-value pair with a given key in a given database reference
+     * @param databaseChild the database reference in which to get the key-value pair
+     * @param key the key of the value
+     * @return a completable future that completes when the child is set
+     */
+    private fun getChild(databaseChild: DatabaseReference, key: String): CompletableFuture<Any> {
+        val future = CompletableFuture<Any>()
+        databaseChild.child(key).get().addOnSuccessListener {
+            if (it.value == null) future.completeExceptionally(NoSuchFieldException())
+            else future.complete(it.value)
         }.addOnFailureListener {
             future.completeExceptionally(it)
         }
