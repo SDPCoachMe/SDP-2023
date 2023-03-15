@@ -34,6 +34,7 @@ class DashboardActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val email = intent.getStringExtra("signInInfo")
+            ?: throw java.lang.NullPointerException("Dashboard launched with no valid email")
 
         setContent {
             CoachMeTheme {
@@ -44,7 +45,7 @@ class DashboardActivity : ComponentActivity() {
 }
 
 @Composable
-fun DashboardView(email: String?) {
+fun DashboardView(email: String) {
     // equivalent to remember { ScaffoldState(...) }
     val scaffoldState = rememberScaffoldState()
     // creates a scope tied to the view's lifecycle. scope
@@ -59,7 +60,7 @@ fun DashboardView(email: String?) {
 }
 
 @Composable
-fun Dashboard(email: String?, scaffoldState: ScaffoldState, onScaffoldStateChange: () -> Unit) {
+fun Dashboard(email: String, scaffoldState: ScaffoldState, onScaffoldStateChange: () -> Unit) {
 
     Scaffold(
         scaffoldState = scaffoldState,
@@ -117,7 +118,7 @@ fun AppBar(
 }
 
 @Composable
-fun DrawerHeader(email: String?) {
+fun DrawerHeader(email: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -127,8 +128,8 @@ fun DrawerHeader(email: String?) {
         content = {
             Column(horizontalAlignment = CenterHorizontally) {
                 Text(text = "Dashboard", fontSize = 50.sp)
-                //TODO can we end up here with a null email ? Maybe throw an exception if it's the case
-                Text(text = email?: "not signed in", fontSize = 20.sp)
+                Text(modifier = Modifier.testTag("dashboardEmail"),
+                    text = email, fontSize = 20.sp)
             }
         }
     )

@@ -1,10 +1,13 @@
 package com.github.sdpcoachme
 
+import android.content.Intent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
+import androidx.test.core.app.ActivityScenario
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
@@ -62,6 +65,19 @@ class DashboardActivityTest {
     @Test
     fun drawerBodyContainsClickableMenu() {
         composeTestRule.onNodeWithTag("menuList").onChildren().assertAll(hasClickAction())
+    }
+
+    @Test
+    fun dashboardDisplaysCorrectEmailFromReceivedIntent() {
+        val email = "john.lennon@gmail.com"
+        val launchDashboard = Intent(
+            ApplicationProvider.getApplicationContext(),
+            DashboardActivity::class.java
+        )
+        launchDashboard.putExtra("signInInfo", email)
+        ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+            composeTestRule.onNodeWithTag("dashboardEmail").assert(hasText(text = email))
+        }
     }
 
 }
