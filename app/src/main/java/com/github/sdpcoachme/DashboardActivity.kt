@@ -83,7 +83,10 @@ fun Dashboard(email: String, scaffoldState: ScaffoldState, onScaffoldStateChange
                         icon = Icons.Default.Settings),
                     MenuItem(id = "help", title = "Help",
                         contentDescription = "Get help",
-                        icon = Icons.Default.Info)),
+                        icon = Icons.Default.Info),
+                MenuItem(id = "logout", title = "Log out",
+                        contentDescription = "User logs out",
+                        icon = Icons.Default.Close)),
                 onItemClick = {
                     // TODO replace the print by a call to the corresponding item activity
                     println("Clicked on ${it.title}")})},
