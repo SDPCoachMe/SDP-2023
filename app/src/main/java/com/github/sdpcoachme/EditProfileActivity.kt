@@ -83,8 +83,6 @@ fun Profile() {
                 Text(text = "Edit")
             }
         }
-
-
     }
 }
 
