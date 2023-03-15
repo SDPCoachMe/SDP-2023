@@ -2,6 +2,10 @@ package com.github.sdpcoachme
 
 import android.content.Intent
 import androidx.compose.ui.test.*
+import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.Intents.intended
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -9,6 +13,7 @@ import androidx.test.uiautomator.*
 import com.google.firebase.auth.FirebaseAuth
 import junit.framework.TestCase
 import org.hamcrest.CoreMatchers
+import org.hamcrest.core.AllOf.allOf
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -115,5 +120,17 @@ open class MainActivityTest {
         )
         TestCase.assertNotNull(confirmDialog)
         ViewMatchers.assertThat(confirmDialog.text, CoreMatchers.`is`(deleteInfoText))
+    }
+
+    //TODO implement this test
+    // @Test
+    fun signInLaunchesDashboardOnSuccess() {
+        Intents.init()
+        val email = "patrick.sebastien@gmail.com"
+        // perform here a successful login with the email
+        intended(allOf(
+            hasComponent(DashboardActivity::class.java.name),
+            hasExtra("signInInfo", email)))
+        Intents.release()
     }
 }
