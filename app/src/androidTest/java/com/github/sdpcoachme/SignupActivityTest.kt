@@ -36,7 +36,6 @@ open class SignupActivityTest {
         Espresso.closeSoftKeyboard()
         composeTestRule.onNodeWithTag("registerButton").performClick()
 
-
         val retrievedUser = database.getUser(user).orTimeout(10, TimeUnit.SECONDS).join()
         TestCase.assertEquals(user, retrievedUser)
     }
