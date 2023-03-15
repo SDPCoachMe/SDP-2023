@@ -20,7 +20,7 @@ class EditProfileActivityTest {
         composeTestRule.onNodeWithTag("email row").assertExists("Email row elem does not exist")
         composeTestRule.onNodeWithTag("first name row").assertExists("First name row elem does not exist")
         composeTestRule.onNodeWithTag("last name row").assertExists("Last name row elem does not exist")
-        composeTestRule.onNodeWithTag("fav sport row").assertExists("Fav sport row elem does not exist")
+        composeTestRule.onNodeWithTag("favorite sport row").assertExists("Fav sport row elem does not exist")
 
         //content of title row
         composeTestRule.onNodeWithText("My Profile").assertIsDisplayed()
@@ -40,7 +40,7 @@ class EditProfileActivityTest {
 
         //content of sport row
         composeTestRule.onNodeWithText("Favorite sport: ").assertIsDisplayed()
-        composeTestRule.onNodeWithTag("saved fav sport").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("saved favorite sport").assertIsDisplayed()
     }
 
     @Test
@@ -51,11 +51,11 @@ class EditProfileActivityTest {
 
         composeTestRule.onNodeWithTag("editable first name").assertIsDisplayed()
         composeTestRule.onNodeWithTag("editable last name").assertIsDisplayed()
-        composeTestRule.onNodeWithTag("editable fav sport").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("editable favorite sport").assertIsDisplayed()
     }
 
     @Test
-    fun saveButtonReturnsToCorrectElements() {
+    fun editedFieldsSavedCorrectly() {
         //change to edit mode
         composeTestRule.onNodeWithTag("edit button")
             .assertIsDisplayed()
@@ -74,10 +74,10 @@ class EditProfileActivityTest {
             .performTextInput("Updated last name")
         Espresso.closeSoftKeyboard()
 
-        composeTestRule.onNodeWithTag("editable fav sport")
+        composeTestRule.onNodeWithTag("editable favorite sport")
             .performTextClearance()
-        composeTestRule.onNodeWithTag("editable fav sport")
-            .performTextInput("Updated fav sport")
+        composeTestRule.onNodeWithTag("editable favorite sport")
+            .performTextInput("Updated favorite sport")
         Espresso.closeSoftKeyboard()
 
         //save updated profile
@@ -85,6 +85,12 @@ class EditProfileActivityTest {
             .assertIsDisplayed()
             .performClick()
 
-        correctInitialScreenContent()
+        //check that the updated fields are saved
+        composeTestRule.onNodeWithTag("saved first name")
+            .assertTextEquals("Updated first name")
+        composeTestRule.onNodeWithTag("saved last name")
+            .assertTextEquals("Updated last name")
+        composeTestRule.onNodeWithTag("saved favorite sport")
+            .assertTextEquals("Updated favorite sport")
     }
 }
