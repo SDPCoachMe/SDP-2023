@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
@@ -118,10 +119,18 @@ fun AppBar(
 @Composable
 fun DrawerHeader(email: String?) {
     Box(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp).testTag("drawerHeader"),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 40.dp)
+            .testTag("drawerHeader"),
         contentAlignment = Alignment.Center,
-        //TODO can we end up here with a null email ? Maybe throw an exception if it's the case
-        content = { Text(text = email?: "Not signed in", fontSize = 50.sp) }
+        content = {
+            Column(horizontalAlignment = CenterHorizontally) {
+                Text(text = "Dashboard", fontSize = 50.sp)
+                //TODO can we end up here with a null email ? Maybe throw an exception if it's the case
+                Text(text = email?: "not signed in", fontSize = 20.sp)
+            }
+        }
     )
 }
 
@@ -135,7 +144,8 @@ fun DrawerBody(
     LazyColumn(modifier.testTag("menuList")) {
         items(items) { item ->
             Row(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .clickable { onItemClick(item) }
                     .padding(16.dp)
             ) {
