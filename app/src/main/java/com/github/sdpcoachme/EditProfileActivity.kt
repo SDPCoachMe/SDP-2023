@@ -19,24 +19,46 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import java.util.concurrent.CompletableFuture
 
 /**
  * Activity used to view and edit the user's profile.
  */
 class EditProfileActivity : ComponentActivity() {
+
+    private lateinit var database: Database
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val email = intent.getStringExtra("email")
             ?: throw IllegalStateException("No email passed to EditProfileActivity")
 
-        setContent {
-            CoachMeTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colors.background
-                ) {
-                    Profile(email)
+        database =  (application as CoachMeApplication).database
+
+        val currentUser = database.getUser(email).thenApply {
+            val userMap = it as Map<*, *>
+            val firstName = userMap["firstName"] as String
+            val lastName = userMap["lastName"] as String
+            val email = userMap["email"] as String
+            val phone = userMap["phone"] as String
+            val location = userMap["location"] as String
+            val sportsList = userMap["sports"] as List<Map<*, *>>
+            val sports = sportsList.map { sportMap ->
+                val title = sportMap["title"] as String
+                val selected = sportMap["selected"] as Boolean
+                ListSport(title, selected)
+            }
+            val currentUser = UserInfo(firstName, lastName, email, phone, location, sports)
+
+            setContent {
+                CoachMeTheme {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colors.background
+                    ) {
+                        Profile(currentUser, database)
+                    }
                 }
             }
         }
@@ -47,12 +69,12 @@ class EditProfileActivity : ComponentActivity() {
  * Composable used to display the user's profile.
  */
 @Composable
-fun Profile(email: String) {
+fun Profile(user: UserInfo, database: Database) {
     // bind those to database
     var isEditing by remember { mutableStateOf(false) }
-    var fname by remember { mutableStateOf("Damian") }
-    var lname by remember { mutableStateOf("Kopp") }
-    var favsport by remember { mutableStateOf("Jogging") }
+    var fname by remember { mutableStateOf(user.firstName) }
+    var lname by remember { mutableStateOf(user.lastName) }
+    var favsport by remember { mutableStateOf(user.sports[0].title) }
 
     Column(
         modifier = Modifier
@@ -62,7 +84,7 @@ fun Profile(email: String) {
         horizontalAlignment = Alignment.Start
     ) {
         TitleRow()
-        EmailRow(email)
+        EmailRow(user.email)
 
         ProfileRow(rowName = "First name", isEditing = isEditing, leftTextPadding = 45.dp,
             value = fname, onValueChange = { newValue -> fname = newValue })
@@ -79,6 +101,8 @@ fun Profile(email: String) {
                     .testTag("save button"),
                 onClick = {
                     isEditing = false
+                    val newUser = UserInfo(fname, lname, user.email, user.phone, user.location, listOf(ListSport(favsport, true)))
+                    database.addUser(newUser)
                 }
             ) {
                 Text(text = "Save changes")

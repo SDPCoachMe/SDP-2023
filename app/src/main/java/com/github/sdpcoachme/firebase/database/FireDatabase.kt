@@ -28,8 +28,8 @@ class FireDatabase : Database {
         return setChild(accounts, userID, user)
     }
 
-    override fun getUser(user: UserInfo): CompletableFuture<Any> {
-        val userID = user.email.replace('.', ',')
+    override fun getUser(email: String): CompletableFuture<Any> {
+        val userID = email.replace('.', ',')
         return getChild(accounts, userID)
     }
 

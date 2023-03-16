@@ -23,7 +23,7 @@ class MockDatabase: Database {
         return set("accounts", user)
     }
 
-    override fun getUser(user: UserInfo): CompletableFuture<Any> {
+    override fun getUser(email: String): CompletableFuture<Any> {
         return get("accounts")
     }
 }

@@ -36,6 +36,6 @@ interface Database {
      * @param user The user to get
      * @return A future that will complete when the user has been gotten
      */
-    fun getUser(user: UserInfo): CompletableFuture<Any>
+    fun getUser(email: String): CompletableFuture<Any>
 
 }
