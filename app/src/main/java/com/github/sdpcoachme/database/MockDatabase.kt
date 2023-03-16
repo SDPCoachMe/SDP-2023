@@ -1,5 +1,6 @@
 package com.github.sdpcoachme.database
 
+import com.github.sdpcoachme.UserInfo
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -16,5 +17,13 @@ class MockDatabase: Database {
     override fun set(key: String, value: Any): CompletableFuture<Void> {
         db[key] = value
         return CompletableFuture.completedFuture(null)
+    }
+
+    override fun addUser(user: UserInfo): CompletableFuture<Void> {
+        return set("accounts", user)
+    }
+
+    override fun getUser(user: UserInfo): CompletableFuture<Any> {
+        return get("accounts")
     }
 }
