@@ -1,6 +1,6 @@
 package com.github.sdpcoachme.database
 
-import com.github.sdpcoachme.UserInfo
+import com.github.sdpcoachme.firebase.database.UserInfo
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -33,9 +33,9 @@ interface Database {
 
     /**
      * Get a user from the database
-     * @param user The user to get
+     * @param email The email of the user to get
      * @return A future that will complete when the user has been gotten
      */
-    fun getUser(user: UserInfo): CompletableFuture<Any>
+    fun getUser(email: String): CompletableFuture<Any>
 
 }

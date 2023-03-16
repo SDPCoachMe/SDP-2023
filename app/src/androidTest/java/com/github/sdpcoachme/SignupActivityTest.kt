@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.uiautomator.*
+import com.github.sdpcoachme.firebase.database.UserInfo
 import junit.framework.TestCase
 import org.junit.Rule
 import org.junit.Test
@@ -38,7 +39,7 @@ open class SignupActivityTest {
 
         // Important note: this get method was used instead of onTimeout due to onTiemout not
         // being found when running tests on Cirrus CI even with java version changed in build.gradle
-        val retrievedUser = database.getUser(user).get(10, TimeUnit.SECONDS)
+        val retrievedUser = database.getUser(user.email).get(10, TimeUnit.SECONDS)
         TestCase.assertEquals(user, retrievedUser)
     }
 

@@ -1,6 +1,5 @@
 package com.github.sdpcoachme.firebase.database
 
-import com.github.sdpcoachme.UserInfo
 import com.github.sdpcoachme.database.Database
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ktx.database
@@ -28,8 +27,8 @@ class FireDatabase : Database {
         return setChild(accounts, userID, user)
     }
 
-    override fun getUser(user: UserInfo): CompletableFuture<Any> {
-        val userID = user.email.replace('.', ',')
+    override fun getUser(email: String): CompletableFuture<Any> {
+        val userID = email.replace('.', ',')
         return getChild(accounts, userID)
     }
 

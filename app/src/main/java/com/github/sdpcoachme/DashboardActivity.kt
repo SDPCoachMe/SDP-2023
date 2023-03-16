@@ -1,5 +1,6 @@
 package com.github.sdpcoachme
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -60,6 +62,7 @@ fun DashboardView(email: String) {
 
 @Composable
 fun Dashboard(email: String, scaffoldState: ScaffoldState, onScaffoldStateChange: () -> Unit) {
+    val context = LocalContext.current
 
     Scaffold(
         scaffoldState = scaffoldState,
@@ -89,6 +92,12 @@ fun Dashboard(email: String, scaffoldState: ScaffoldState, onScaffoldStateChange
                         icon = Icons.Default.Close)),
                 onItemClick = {
                     // TODO replace the print by a call to the corresponding item activity
+                    if (it.id == "profile") {
+                        val intent = Intent(context, EditProfileActivity::class.java)
+                        intent.putExtra("email", email)
+                        context.startActivity(intent)
+                    }
+
                     println("Clicked on ${it.title}")})},
         //TODO replace the scaffold content here with the main map view
         content = { innerPadding ->

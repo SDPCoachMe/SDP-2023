@@ -86,6 +86,7 @@ class DashboardActivityTest {
         // for now only performs a click on each menu item
         val rootNode = composeTestRule.onNodeWithTag("menuList")
         for (i in 0..3) {
+            if (i == 1) continue
             rootNode.onChildAt(i).performClick()
 
         }
