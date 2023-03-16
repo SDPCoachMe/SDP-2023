@@ -1,10 +1,12 @@
 <resources>
-    <string name="app_name">CoachMe</string>
-    <string name="title_activity_greeting">GreetingActivity</string>
-    <string name="title_activity_dashboard">DashboardActivity</string>
-    <string name="title_activity_edit_profile">Edit Profile</string>
+    <string name="app_name">Coach Me</string>
+    <string name="title_activity_dashboard">Dashboard</string>
+    <string name="title_activity_edit_profile">Edit profile</string>
+    <string name="title_activity_signup">Sign up</string>
+    <string name="title_activity_login">Log in</string>
+    <string name="title_activity_multiselect_list">Choose sports</string>
 
-    <!--    Firebase sign in page-->
+    <!--Firebase sign in page-->
     <string name="go_to_sign_in_page">Go to sign in page</string>
     <string name="firebase_sign_in_domain">https://sdpcoachme.page.link/</string>
 

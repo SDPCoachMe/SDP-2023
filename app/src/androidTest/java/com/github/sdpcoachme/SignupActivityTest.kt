@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.uiautomator.*
+import com.github.sdpcoachme.data.UserInfo
 import junit.framework.TestCase
 import org.junit.Rule
 import org.junit.Test

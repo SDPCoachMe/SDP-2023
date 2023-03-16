@@ -24,7 +24,7 @@ import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 
-class MainActivity : ComponentActivity() {
+class LoginActivity : ComponentActivity() {
 
     private lateinit var database : Database
     private var signInInfo: String by mutableStateOf("Not signed in")
@@ -86,7 +86,7 @@ class MainActivity : ComponentActivity() {
 //TODO put test tags in separate class
 
 @Composable
-fun AuthenticationForm(signInInfo: String, context: MainActivity) {
+fun AuthenticationForm(signInInfo: String, context: LoginActivity) {
 
     Column(
         modifier = Modifier.fillMaxSize(),

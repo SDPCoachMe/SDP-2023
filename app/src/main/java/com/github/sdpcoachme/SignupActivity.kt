@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 

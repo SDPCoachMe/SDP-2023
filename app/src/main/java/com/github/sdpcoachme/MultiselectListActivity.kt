@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.github.sdpcoachme.data.ListSport
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 class MultiselectListActivity : ComponentActivity() {
@@ -73,4 +74,3 @@ class MultiselectListActivity : ComponentActivity() {
         }
     }
 }
-

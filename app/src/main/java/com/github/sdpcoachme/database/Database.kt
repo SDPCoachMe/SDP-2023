@@ -1,6 +1,6 @@
 package com.github.sdpcoachme.database
 
-import com.github.sdpcoachme.UserInfo
+import com.github.sdpcoachme.data.UserInfo
 import java.util.concurrent.CompletableFuture
 
 /**

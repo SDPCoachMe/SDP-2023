@@ -1,4 +1,4 @@
-package com.github.sdpcoachme
+package com.github.sdpcoachme.data
 
 data class ListSport(
     val title: String,
