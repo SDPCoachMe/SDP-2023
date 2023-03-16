@@ -20,8 +20,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.firebase.database.UserInfo
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import java.util.concurrent.CompletableFuture
 
 /**
  * Activity used to view and edit the user's profile.
@@ -36,20 +36,8 @@ class EditProfileActivity : ComponentActivity() {
 
         database =  (application as CoachMeApplication).database
 
-        val currentUser = database.getUser(email).thenApply {
-            val userMap = it as Map<*, *>
-            val firstName = userMap["firstName"] as String
-            val lastName = userMap["lastName"] as String
-            val email = userMap["email"] as String
-            val phone = userMap["phone"] as String
-            val location = userMap["location"] as String
-            val sportsList = userMap["sports"] as List<Map<*, *>>
-            val sports = sportsList.map { sportMap ->
-                val title = sportMap["title"] as String
-                val selected = sportMap["selected"] as Boolean
-                ListSport(title, selected)
-            }
-            val currentUser = UserInfo(firstName, lastName, email, phone, location, sports)
+        database.getUser(email).thenApply {
+            val currentUser = UserInfo.userInfoFromDBResponse(it)
 
             setContent {
                 CoachMeTheme {
