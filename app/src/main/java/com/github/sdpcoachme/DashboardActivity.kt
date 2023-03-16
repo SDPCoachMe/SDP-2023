@@ -35,7 +35,8 @@ class DashboardActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val email = intent.getStringExtra("signInInfo") ?: "no valid email"
+        // TODO handle the null better here
+        val email = intent.getStringExtra("email") ?: "no valid email"
 
         setContent {
             CoachMeTheme {
@@ -94,6 +95,12 @@ fun Dashboard(email: String, scaffoldState: ScaffoldState, onScaffoldStateChange
                         "profile" -> {
                             val intent = Intent(context, EditProfileActivity::class.java)
                             context.startActivity(intent)
+                        }
+                        "logout" -> {
+                            (context.applicationContext as CoachMeApplication).authenticator.signOut(context) {
+                                val intent = Intent(context, LoginActivity::class.java)
+                                context.startActivity(intent)
+                            }
                         }
                         else -> {
                             // TODO replace the print by a call to the corresponding item activity

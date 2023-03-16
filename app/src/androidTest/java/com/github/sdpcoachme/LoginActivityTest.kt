@@ -130,7 +130,7 @@ open class LoginActivityTest {
         // perform here a successful login with the email
         intended(allOf(
             hasComponent(DashboardActivity::class.java.name),
-            hasExtra("signInInfo", email)))
+            hasExtra("email", email)))
         Intents.release()
     }
 }

@@ -20,7 +20,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.github.sdpcoachme.firebase.auth.Authenticator
-import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.firebase.database.NoSuchKeyException
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 
@@ -56,9 +57,31 @@ class LoginActivity : ComponentActivity() {
 
     private fun launchPostLoginActivity(email : String) {
         signInInfo = email
-        val intent = Intent(this, DashboardActivity::class.java)
-        intent.putExtra("signInInfo", signInInfo)
-        this.startActivity(intent)
+        val query = database.getUser(email)
+        query.handle { result, exception ->
+            when (exception) {
+                null -> {
+                    // User is already in the database
+                    // TODO the database instance should cast to the correct type, not the caller. Moreover, with the current implementation it is not possible to cast properly.
+                    val user = result as Map<*, *>
+                    val intent = Intent(this, DashboardActivity::class.java)
+                    // TODO send user object instead of individual field. This requires that UserInfo is serializable
+                    // TODO later on, have a dedicated store or cache for all the database data
+                    intent.putExtra("email", user["email"] as String)
+                    startActivity(intent)
+                }
+                is NoSuchKeyException -> {
+                    // User is not in the database
+                    val intent = Intent(this, SignupActivity::class.java)
+                    intent.putExtra("email", email)
+                    startActivity(intent)
+                }
+                else -> {
+                    // TODO handle this error better
+                    signInInfo = "Unknown error"
+                }
+            }
+        }
     }
 
     /**

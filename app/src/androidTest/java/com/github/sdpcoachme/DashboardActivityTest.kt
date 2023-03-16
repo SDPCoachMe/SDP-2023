@@ -77,24 +77,36 @@ class DashboardActivityTest {
             ApplicationProvider.getApplicationContext(),
             DashboardActivity::class.java
         )
-        launchDashboard.putExtra("signInInfo", email)
+        launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
             composeTestRule.onNodeWithTag("dashboardEmail").assert(hasText(text = email))
         }
     }
 
-    //TODO complete this test to check the activity redirections on menu item clicks
+    // TODO refactor this in some way to allow for test tags in menu items
+    // TODO those tests are very similar, could be merged into one function
     @Test
-    fun dashboardCorrectlyRedirectsOnMenuItemClick() {
+    fun dashboardCorrectlyRedirectsOnProfileClick() {
         Intents.init()
 
         val rootNode = composeTestRule.onNodeWithTag("menuList")
         // TODO refactor this in some way to allow for test tags in menu items
         rootNode.onChildAt(1).performClick()
         intended(hasComponent(EditProfileActivity::class.java.name))
-
-        // TODO add more tests for the other menu items
         Intents.release()
     }
+
+    @Test
+    fun dashboardCorrectlyRedirectsOnLogOutClick() {
+        Intents.init()
+
+        val rootNode = composeTestRule.onNodeWithTag("menuList")
+        // TODO refactor this in some way to allow for test tags in menu items
+        rootNode.onChildAt(5).performClick()
+        intended(hasComponent(LoginActivity::class.java.name))
+
+        Intents.release()
+    }
+    // TODO add more tests for the other menu items
 
 }

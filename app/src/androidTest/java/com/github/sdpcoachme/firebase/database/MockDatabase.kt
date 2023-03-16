@@ -1,4 +1,4 @@
-package com.github.sdpcoachme.database
+package com.github.sdpcoachme.firebase.database
 
 import com.github.sdpcoachme.data.UserInfo
 import java.util.concurrent.CompletableFuture
@@ -23,7 +23,7 @@ class MockDatabase: Database {
         return set("accounts", user)
     }
 
-    override fun getUser(user: UserInfo): CompletableFuture<Any> {
+    override fun getUser(email: String): CompletableFuture<Any> {
         return get("accounts")
     }
 }
