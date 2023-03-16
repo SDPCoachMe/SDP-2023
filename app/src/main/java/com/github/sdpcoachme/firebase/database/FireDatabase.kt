@@ -1,6 +1,5 @@
 package com.github.sdpcoachme.firebase.database
 
-import com.github.sdpcoachme.UserInfo
 import com.github.sdpcoachme.database.Database
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ktx.database
