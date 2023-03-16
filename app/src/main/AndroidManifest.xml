@@ -28,6 +28,12 @@
             android:label="@string/title_activity_dashboard"
             android:theme="@style/Theme.CoachMe" />
         <activity
+            android:name=".SignupActivity"
+            android:exported="true"
+            android:theme="@style/Theme.CoachMe">
+
+        </activity>
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.CoachMe">

@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         authenticator = (application as CoachMeApplication).authenticator
-        this.database =  (application as CoachMeApplication).database
+        database =  (application as CoachMeApplication).database
 
         setContent {
             CoachMeTheme {
@@ -93,6 +93,7 @@ fun AuthenticationForm(signInInfo: String, context: MainActivity) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
         Text(
             modifier = Modifier.testTag("sign_in_info"),
             text = signInInfo,
