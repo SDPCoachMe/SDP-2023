@@ -17,6 +17,21 @@
             </AndroidTestResultsTableState>
           </value>
         </entry>
+        <entry key="-1933173796">
+          <value>
+            <AndroidTestResultsTableState>
+              <option name="preferredColumnWidths">
+                <map>
+                  <entry key="Duration" value="90" />
+                  <entry key="Pixel_2_API_33_2" value="120" />
+                  <entry key="RF8M315M9CE" value="120" />
+                  <entry key="Tests" value="360" />
+                  <entry key="samsung&#10; SM-G970F" value="120" />
+                </map>
+              </option>
+            </AndroidTestResultsTableState>
+          </value>
+        </entry>
         <entry key="-1584201032">
           <value>
             <AndroidTestResultsTableState>
@@ -24,7 +39,9 @@
                 <map>
                   <entry key="Duration" value="90" />
                   <entry key="Pixel_2_API_33_2" value="120" />
+                  <entry key="RF8M315M9CE" value="120" />
                   <entry key="Tests" value="360" />
+                  <entry key="samsung&#10; SM-G970F" value="120" />
                 </map>
               </option>
             </AndroidTestResultsTableState>
@@ -77,7 +94,9 @@
                   <entry key="Duration" value="90" />
                   <entry key="Pixel_2_API_33" value="120" />
                   <entry key="Pixel_2_API_33_2" value="120" />
+                  <entry key="RF8M315M9CE" value="120" />
                   <entry key="Tests" value="360" />
+                  <entry key="samsung&#10; SM-G970F" value="120" />
                 </map>
               </option>
             </AndroidTestResultsTableState>
@@ -96,6 +115,50 @@
             </AndroidTestResultsTableState>
           </value>
         </entry>
+        <entry key="756098828">
+          <value>
+            <AndroidTestResultsTableState>
+              <option name="preferredColumnWidths">
+                <map>
+                  <entry key="Duration" value="90" />
+                  <entry key="RF8M315M9CE" value="120" />
+                  <entry key="Tests" value="360" />
+                  <entry key="samsung&#10; SM-G970F" value="120" />
+                </map>
+              </option>
+            </AndroidTestResultsTableState>
+          </value>
+        </entry>
+        <entry key="808814532">
+          <value>
+            <AndroidTestResultsTableState>
+              <option name="preferredColumnWidths">
+                <map>
+                  <entry key="Duration" value="90" />
+                  <entry key="Pixel_2_API_33_2" value="120" />
+                  <entry key="RF8M315M9CE" value="120" />
+                  <entry key="Tests" value="360" />
+                  <entry key="samsung&#10; SM-G970F" value="120" />
+                </map>
+              </option>
+            </AndroidTestResultsTableState>
+          </value>
+        </entry>
+        <entry key="1056331552">
+          <value>
+            <AndroidTestResultsTableState>
+              <option name="preferredColumnWidths">
+                <map>
+                  <entry key="Duration" value="90" />
+                  <entry key="Pixel_2_API_33_2" value="120" />
+                  <entry key="RF8M315M9CE" value="120" />
+                  <entry key="Tests" value="360" />
+                  <entry key="samsung&#10; SM-G970F" value="120" />
+                </map>
+              </option>
+            </AndroidTestResultsTableState>
+          </value>
+        </entry>
         <entry key="1122546840">
           <value>
             <AndroidTestResultsTableState>
@@ -104,6 +167,20 @@
                   <entry key="Duration" value="90" />
                   <entry key="Pixel_2_API_33" value="120" />
                   <entry key="Tests" value="360" />
+                </map>
+              </option>
+            </AndroidTestResultsTableState>
+          </value>
+        </entry>
+        <entry key="1288573695">
+          <value>
+            <AndroidTestResultsTableState>
+              <option name="preferredColumnWidths">
+                <map>
+                  <entry key="Duration" value="90" />
+                  <entry key="RF8M315M9CE" value="120" />
+                  <entry key="Tests" value="360" />
+                  <entry key="samsung&#10; SM-G970F" value="120" />
                 </map>
               </option>
             </AndroidTestResultsTableState>
@@ -143,7 +220,9 @@
                   <entry key="Duration" value="90" />
                   <entry key="Pixel_2_API_33" value="120" />
                   <entry key="Pixel_2_API_33_2" value="120" />
+                  <entry key="RF8M315M9CE" value="120" />
                   <entry key="Tests" value="360" />
+                  <entry key="samsung&#10; SM-G970F" value="120" />
                 </map>
               </option>
             </AndroidTestResultsTableState>
