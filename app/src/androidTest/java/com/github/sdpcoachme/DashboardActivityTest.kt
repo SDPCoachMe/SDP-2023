@@ -8,6 +8,9 @@ import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.Intents.intended
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
@@ -83,13 +86,15 @@ class DashboardActivityTest {
     //TODO complete this test to check the activity redirections on menu item clicks
     @Test
     fun dashboardCorrectlyRedirectsOnMenuItemClick() {
-        // for now only performs a click on each menu item
+        Intents.init()
+
         val rootNode = composeTestRule.onNodeWithTag("menuList")
-        for (i in 0..3) {
-            rootNode.onChildAt(i).performClick()
+        // TODO refactor this in some way to allow for test tags in menu items
+        rootNode.onChildAt(1).performClick()
+        intended(hasComponent(EditProfileActivity::class.java.name))
 
-        }
-
+        // TODO add more tests for the other menu items
+        Intents.release()
     }
 
 }

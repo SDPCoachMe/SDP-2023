@@ -19,7 +19,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-open class MainActivityTest {
+open class LoginActivityTest {
     private val launchTimeout = 5000L
     private lateinit var device: UiDevice
     private lateinit var signInButtonText: String
@@ -29,7 +29,7 @@ open class MainActivityTest {
     private lateinit var deleteInfoText: String
 
     @Before
-    fun startMainActivityFromHomeScreen() {
+    fun startLoginActivityFromHomeScreen() {
         FirebaseAuth.getInstance().signOut()
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val targetContext = instrumentation.targetContext
