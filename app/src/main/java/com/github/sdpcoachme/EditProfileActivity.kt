@@ -27,13 +27,16 @@ import com.github.sdpcoachme.ui.theme.CoachMeTheme
 class EditProfileActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val email = intent.getStringExtra("email")
+            ?: throw IllegalStateException("No email passed to EditProfileActivity")
+
         setContent {
             CoachMeTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    Profile()
+                    Profile(email)
                 }
             }
         }
@@ -44,7 +47,7 @@ class EditProfileActivity : ComponentActivity() {
  * Composable used to display the user's profile.
  */
 @Composable
-fun Profile() {
+fun Profile(email: String) {
     // bind those to database
     var isEditing by remember { mutableStateOf(false) }
     var fname by remember { mutableStateOf("Damian") }
@@ -59,7 +62,7 @@ fun Profile() {
         horizontalAlignment = Alignment.Start
     ) {
         TitleRow()
-        EmailRow()
+        EmailRow(email)
 
         ProfileRow(rowName = "First name", isEditing = isEditing, leftTextPadding = 45.dp,
             value = fname, onValueChange = { newValue -> fname = newValue })
@@ -135,7 +138,7 @@ fun TitleRow() {
  * Composable used to display the user's email address.
  */
 @Composable
-fun EmailRow() {
+fun EmailRow(email: String) {
     Row (
         modifier = Modifier
             .absolutePadding(20.dp, 80.dp, 0.dp, 10.dp)
@@ -146,7 +149,7 @@ fun EmailRow() {
         Text(text = "Email: ")
         // replace this Text with read-only TextField?
         Text(
-            text = "damian.kopp@epfl.ch",
+            text = email,
             modifier = Modifier
                 .absolutePadding(80.dp, 0.dp, 0.dp, 0.dp)
                 .testTag("email address"),

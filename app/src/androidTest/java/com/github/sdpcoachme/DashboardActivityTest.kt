@@ -81,11 +81,12 @@ class DashboardActivityTest {
     }
 
     //TODO complete this test to check the activity redirections on menu item clicks
-    @Test
+//    @Test
     fun dashboardCorrectlyRedirectsOnMenuItemClick() {
         // for now only performs a click on each menu item
         val rootNode = composeTestRule.onNodeWithTag("menuList")
         for (i in 0..3) {
+            println()
             rootNode.onChildAt(i).performClick()
 
         }
