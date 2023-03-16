@@ -36,7 +36,9 @@ open class SignupActivityTest {
         Espresso.closeSoftKeyboard()
         composeTestRule.onNodeWithTag("registerButton").performClick()
 
-        val retrievedUser = database.getUser(user).orTimeout(10, TimeUnit.SECONDS).join()
+        // Important note: this get method was used instead of onTimeout due to onTiemout not
+        // being found when running tests on Cirrus CI even with java version changed in build.gradle
+        val retrievedUser = database.getUser(user).get(10, TimeUnit.SECONDS)
         TestCase.assertEquals(user, retrievedUser)
     }
 
