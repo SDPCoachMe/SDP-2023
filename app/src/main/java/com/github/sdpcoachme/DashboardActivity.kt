@@ -64,6 +64,7 @@ fun DashboardView(email: String) {
 @Composable
 fun Dashboard(email: String, scaffoldState: ScaffoldState, onScaffoldStateChange: () -> Unit) {
     val context = LocalContext.current
+
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = { AppBar(onNavigationIconClick = onScaffoldStateChange) },
@@ -94,6 +95,7 @@ fun Dashboard(email: String, scaffoldState: ScaffoldState, onScaffoldStateChange
                     when (it.id) {
                         "profile" -> {
                             val intent = Intent(context, EditProfileActivity::class.java)
+                            intent.putExtra("email", email)
                             context.startActivity(intent)
                         }
                         "logout" -> {

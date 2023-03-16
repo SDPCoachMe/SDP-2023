@@ -11,7 +11,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.hamcrest.Matchers.allOf
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -87,13 +89,21 @@ class DashboardActivityTest {
     // TODO those tests are very similar, could be merged into one function
     @Test
     fun dashboardCorrectlyRedirectsOnProfileClick() {
-        Intents.init()
+        val email = "john.lennon@gmail.com"
+        val launchDashboard = Intent(
+            ApplicationProvider.getApplicationContext(),
+            DashboardActivity::class.java
+        )
+        launchDashboard.putExtra("email", email)
+        ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+            Intents.init()
 
-        val rootNode = composeTestRule.onNodeWithTag("menuList")
-        // TODO refactor this in some way to allow for test tags in menu items
-        rootNode.onChildAt(1).performClick()
-        intended(hasComponent(EditProfileActivity::class.java.name))
-        Intents.release()
+            val rootNode = composeTestRule.onNodeWithTag("menuList")
+            // TODO refactor this in some way to allow for test tags in menu items
+            rootNode.onChildAt(1).performClick()
+            intended(allOf(hasComponent(EditProfileActivity::class.java.name), hasExtra("email", email)))
+            Intents.release()
+        }
     }
 
     @Test

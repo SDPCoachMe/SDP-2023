@@ -19,21 +19,35 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.firebase.database.UserInfo
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import java.util.concurrent.CompletableFuture
 
 /**
  * Activity used to view and edit the user's profile.
  */
 class EditProfileActivity : ComponentActivity() {
+
+    private lateinit var database: Database
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val email = intent.getStringExtra("email") ?: "ERROR: No email passed"
+
+        database =  (application as CoachMeApplication).database
+
+        val future: CompletableFuture<UserInfo> = database.getUser(email).thenApply {
+            UserInfo.userInfoFromDBResponse(it)
+        }
+
         setContent {
             CoachMeTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    Profile()
+                    Profile(email, database, future)
                 }
             }
         }
@@ -44,12 +58,23 @@ class EditProfileActivity : ComponentActivity() {
  * Composable used to display the user's profile.
  */
 @Composable
-fun Profile() {
+fun Profile(email: String, database: Database, future: CompletableFuture<UserInfo>) {
     // bind those to database
     var isEditing by remember { mutableStateOf(false) }
-    var fname by remember { mutableStateOf("Damian") }
-    var lname by remember { mutableStateOf("Kopp") }
-    var favsport by remember { mutableStateOf("Jogging") }
+    var fname by remember { mutableStateOf("") }
+    var lname by remember { mutableStateOf("") }
+    var favsport by remember { mutableStateOf("") }
+
+    var f by remember { mutableStateOf(future)}
+
+    f.thenAccept { newUser ->
+        if (newUser != null) {
+            fname = newUser.firstName
+            lname = newUser.lastName
+            favsport = newUser.sports[0].title
+            f = CompletableFuture.completedFuture(null)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -59,7 +84,7 @@ fun Profile() {
         horizontalAlignment = Alignment.Start
     ) {
         TitleRow()
-        EmailRow()
+        EmailRow(email)
 
         ProfileRow(rowName = "First name", isEditing = isEditing, leftTextPadding = 45.dp,
             value = fname, onValueChange = { newValue -> fname = newValue })
@@ -76,6 +101,8 @@ fun Profile() {
                     .testTag("save button"),
                 onClick = {
                     isEditing = false
+                    val newUser = UserInfo(fname, lname, email, "", "", listOf(ListSport(favsport, true)))
+                    database.addUser(newUser)
                 }
             ) {
                 Text(text = "Save changes")
@@ -135,7 +162,7 @@ fun TitleRow() {
  * Composable used to display the user's email address.
  */
 @Composable
-fun EmailRow() {
+fun EmailRow(email: String) {
     Row (
         modifier = Modifier
             .absolutePadding(20.dp, 80.dp, 0.dp, 10.dp)
@@ -146,7 +173,7 @@ fun EmailRow() {
         Text(text = "Email: ")
         // replace this Text with read-only TextField?
         Text(
-            text = "damian.kopp@epfl.ch",
+            text = email,
             modifier = Modifier
                 .absolutePadding(80.dp, 0.dp, 0.dp, 0.dp)
                 .testTag("email address"),
@@ -184,12 +211,14 @@ fun ProfileRow(rowName: String, isEditing: Boolean, leftTextPadding: Dp, value: 
                 onValueChange = { newValue -> onValueChange(newValue) },
                 singleLine = true,
                 maxLines = 1)
+            println("the thing is: <<editable $lowercaseRowName>>")
         } else {
             Text(
                 modifier = Modifier
                     .absolutePadding(leftTextPadding + 6.dp, 0.dp, 0.dp, 0.dp)
                     .testTag("saved $lowercaseRowName"),
                 text = value)
+            println("the thing is: <<saved $lowercaseRowName>>")
         }
     }
 }
