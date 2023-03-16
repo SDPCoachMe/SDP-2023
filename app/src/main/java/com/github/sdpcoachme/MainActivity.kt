@@ -55,8 +55,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun launchPostLoginActivity(email : String) {
-        // TODO: fill in the rest of the code to switch activities
         signInInfo = email
+        val intent = Intent(this, DashboardActivity::class.java)
+        intent.putExtra("signInInfo", signInInfo)
+        this.startActivity(intent)
     }
 
     /**

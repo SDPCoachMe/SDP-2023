@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">CoachMe</string>
     <string name="title_activity_greeting">GreetingActivity</string>
+    <string name="title_activity_dashboard">DashboardActivity</string>
+    <string name="title_activity_edit_profile">Edit Profile</string>
 
     <!--    Firebase sign in page-->
     <string name="go_to_sign_in_page">Go to sign in page</string>
