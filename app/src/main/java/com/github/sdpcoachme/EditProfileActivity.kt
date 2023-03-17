@@ -13,14 +13,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.github.sdpcoachme.database.Database
-import com.github.sdpcoachme.firebase.database.UserInfo
+import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
 
@@ -33,12 +34,22 @@ class EditProfileActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val email = intent.getStringExtra("email") ?: "ERROR: No email passed"
+        // TODO handle null better
+        val email = intent.getStringExtra("email") ?: "no valid email"
 
-        database =  (application as CoachMeApplication).database
+        database = (application as CoachMeApplication).database
 
-        val future: CompletableFuture<UserInfo> = database.getUser(email).thenApply {
-            UserInfo.userInfoFromDBResponse(it)
+        // TODO temporary solution to cast to UserInfo
+        val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email).thenApply {
+            val map = it as Map<*, *>
+            UserInfo(
+                map["firstName"] as String,
+                map["lastName"] as String,
+                map["email"] as String,
+                map["phone"] as String,
+                map["location"] as String,
+                emptyList()
+            )
         }
 
         setContent {
@@ -47,7 +58,7 @@ class EditProfileActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    Profile(email, database, future)
+                    Profile(email, futureUserInfo)
                 }
             }
         }
@@ -58,20 +69,23 @@ class EditProfileActivity : ComponentActivity() {
  * Composable used to display the user's profile.
  */
 @Composable
-fun Profile(email: String, database: Database, future: CompletableFuture<UserInfo>) {
+fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
+    val database = (LocalContext.current.applicationContext as CoachMeApplication).database
+
     // bind those to database
     var isEditing by remember { mutableStateOf(false) }
     var fname by remember { mutableStateOf("") }
     var lname by remember { mutableStateOf("") }
     var favsport by remember { mutableStateOf("") }
 
-    var f by remember { mutableStateOf(future)}
+    var f by remember { mutableStateOf(futureUserInfo)}
 
     f.thenAccept { newUser ->
         if (newUser != null) {
             fname = newUser.firstName
             lname = newUser.lastName
-            favsport = newUser.sports[0].title
+            // TODO temporary sports handling
+            favsport = ""
             f = CompletableFuture.completedFuture(null)
         }
     }
@@ -101,7 +115,8 @@ fun Profile(email: String, database: Database, future: CompletableFuture<UserInf
                     .testTag("save button"),
                 onClick = {
                     isEditing = false
-                    val newUser = UserInfo(fname, lname, email, "", "", listOf(ListSport(favsport, true)))
+                    // TODO temporary sports handling
+                    val newUser = UserInfo(fname, lname, email, "", "", listOf())
                     database.addUser(newUser)
                 }
             ) {
@@ -211,14 +226,12 @@ fun ProfileRow(rowName: String, isEditing: Boolean, leftTextPadding: Dp, value: 
                 onValueChange = { newValue -> onValueChange(newValue) },
                 singleLine = true,
                 maxLines = 1)
-            println("the thing is: <<editable $lowercaseRowName>>")
         } else {
             Text(
                 modifier = Modifier
                     .absolutePadding(leftTextPadding + 6.dp, 0.dp, 0.dp, 0.dp)
                     .testTag("saved $lowercaseRowName"),
                 text = value)
-            println("the thing is: <<saved $lowercaseRowName>>")
         }
     }
 }

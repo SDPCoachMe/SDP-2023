@@ -1,6 +1,5 @@
 package com.github.sdpcoachme.firebase.database
 
-import com.github.sdpcoachme.ListSport
 import com.github.sdpcoachme.data.UserInfo
 import java.util.concurrent.CompletableFuture
 
@@ -11,7 +10,7 @@ class MockDatabase: Database {
     private val defaultUserInfo = UserInfo(
         "John", "Doe", "example@email.com",
         "1234567890", "Some location",
-        listOf(ListSport("Some sport", true), ListSport("Some other sport", false)))
+        listOf())
 
     private val db = hashMapOf<String, Any>("accounts" to defaultUserInfo)
 
