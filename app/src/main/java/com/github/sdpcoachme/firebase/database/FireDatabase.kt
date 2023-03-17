@@ -1,6 +1,6 @@
 package com.github.sdpcoachme.firebase.database
 
-import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.data.UserInfo
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
@@ -53,12 +53,14 @@ class FireDatabase : Database {
      * Gets a key-value pair with a given key in a given database reference
      * @param databaseChild the database reference in which to get the key-value pair
      * @param key the key of the value
-     * @return a completable future that completes when the child is set
+     * @return a completable future that completes when the child is set. If the key does not exist,
+     * the future completes exceptionally with a NoSuchKeyException.
      */
+    // TODO here need to cast properly the data to the correct type!
     private fun getChild(databaseChild: DatabaseReference, key: String): CompletableFuture<Any> {
         val future = CompletableFuture<Any>()
         databaseChild.child(key).get().addOnSuccessListener {
-            if (it.value == null) future.completeExceptionally(NoSuchFieldException())
+            if (it.value == null) future.completeExceptionally(NoSuchKeyException())
             else future.complete(it.value)
         }.addOnFailureListener {
             future.completeExceptionally(it)

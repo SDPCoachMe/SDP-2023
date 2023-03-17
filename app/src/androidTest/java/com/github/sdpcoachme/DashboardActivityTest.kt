@@ -8,7 +8,12 @@ import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.Intents.intended
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.hamcrest.Matchers.allOf
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -74,23 +79,44 @@ class DashboardActivityTest {
             ApplicationProvider.getApplicationContext(),
             DashboardActivity::class.java
         )
-        launchDashboard.putExtra("signInInfo", email)
+        launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
             composeTestRule.onNodeWithTag("dashboardEmail").assert(hasText(text = email))
         }
     }
 
-    //TODO complete this test to check the activity redirections on menu item clicks
+    // TODO refactor this in some way to allow for test tags in menu items
+    // TODO those tests are very similar, could be merged into one function
     @Test
-    fun dashboardCorrectlyRedirectsOnMenuItemClick() {
-        // for now only performs a click on each menu item
-        val rootNode = composeTestRule.onNodeWithTag("menuList")
-        for (i in 0..3) {
-            if (i == 1) continue
-            rootNode.onChildAt(i).performClick()
+    fun dashboardCorrectlyRedirectsOnProfileClick() {
+        val email = "john.lennon@gmail.com"
+        val launchDashboard = Intent(
+            ApplicationProvider.getApplicationContext(),
+            DashboardActivity::class.java
+        )
+        launchDashboard.putExtra("email", email)
+        ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+            Intents.init()
 
+            val rootNode = composeTestRule.onNodeWithTag("menuList")
+            // TODO refactor this in some way to allow for test tags in menu items
+            rootNode.onChildAt(1).performClick()
+            intended(allOf(hasComponent(EditProfileActivity::class.java.name), hasExtra("email", email)))
+            Intents.release()
         }
-
     }
+
+    @Test
+    fun dashboardCorrectlyRedirectsOnLogOutClick() {
+        Intents.init()
+
+        val rootNode = composeTestRule.onNodeWithTag("menuList")
+        // TODO refactor this in some way to allow for test tags in menu items
+        rootNode.onChildAt(5).performClick()
+        intended(hasComponent(LoginActivity::class.java.name))
+
+        Intents.release()
+    }
+    // TODO add more tests for the other menu items
 
 }

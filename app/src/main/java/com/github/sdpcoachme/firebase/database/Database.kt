@@ -1,6 +1,6 @@
-package com.github.sdpcoachme.database
+package com.github.sdpcoachme.firebase.database
 
-import com.github.sdpcoachme.firebase.database.UserInfo
+import com.github.sdpcoachme.data.UserInfo
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -29,6 +29,7 @@ interface Database {
      * @param user The user to add
      * @return A future that will complete when the user has been added
      */
+    // TODO change the name since this can also be used to update a user
     fun addUser(user: UserInfo): CompletableFuture<Void>
 
     /**

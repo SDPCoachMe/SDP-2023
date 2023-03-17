@@ -35,7 +35,8 @@ class DashboardActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val email = intent.getStringExtra("signInInfo") ?: "no valid email"
+        // TODO handle the null better here
+        val email = intent.getStringExtra("email") ?: "no valid email"
 
         setContent {
             CoachMeTheme {
@@ -91,14 +92,26 @@ fun Dashboard(email: String, scaffoldState: ScaffoldState, onScaffoldStateChange
                         contentDescription = "User logs out",
                         icon = Icons.Default.Close)),
                 onItemClick = {
-                    // TODO replace the print by a call to the corresponding item activity
-                    if (it.id == "profile") {
-                        val intent = Intent(context, EditProfileActivity::class.java)
-                        intent.putExtra("email", email)
-                        context.startActivity(intent)
+                    when (it.id) {
+                        "profile" -> {
+                            val intent = Intent(context, EditProfileActivity::class.java)
+                            intent.putExtra("email", email)
+                            context.startActivity(intent)
+                        }
+                        "logout" -> {
+                            (context.applicationContext as CoachMeApplication).authenticator.signOut(context) {
+                                val intent = Intent(context, LoginActivity::class.java)
+                                context.startActivity(intent)
+                            }
+                        }
+                        else -> {
+                            // TODO replace the print by a call to the corresponding item activity
+                            println("Clicked on ${it.title}")
+                        }
                     }
-
-                    println("Clicked on ${it.title}")})},
+                }
+            )
+        },
         //TODO replace the scaffold content here with the main map view
         content = { innerPadding ->
             // pass the correct padding to the content root, here the column

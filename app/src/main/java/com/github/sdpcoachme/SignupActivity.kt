@@ -1,5 +1,6 @@
 package com.github.sdpcoachme
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -10,9 +11,10 @@ import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import com.github.sdpcoachme.database.Database
-import com.github.sdpcoachme.firebase.database.UserInfo
+import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 class SignupActivity : ComponentActivity() {
@@ -21,19 +23,24 @@ class SignupActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        database =  (application as CoachMeApplication).database
+        database = (application as CoachMeApplication).database
+
+        // TODO handle the null better here
+        val email = intent.getStringExtra("email") ?: "no valid email"
+
         setContent {
             CoachMeTheme {
-                AccountForm()
+                AccountForm(email)
             }
         }
     }
 
     @Composable
-    fun AccountForm() {
+    fun AccountForm(email: String) {
+        val context = LocalContext.current
+
         var firstName by remember { mutableStateOf("") }
         var lastName by remember { mutableStateOf("") }
-        var email by remember { mutableStateOf("") }
         var phone by remember { mutableStateOf("") }
         var location by remember { mutableStateOf("") } //todo how to accept only valid location ?? => Google Maps
         Column(
@@ -52,12 +59,6 @@ class SignupActivity : ComponentActivity() {
                 value = lastName,
                 onValueChange = { lastName = it },
                 label = { Text("Last Name") }
-            )
-            TextField( // todo to be removed and retrieved from google authentication variable
-                modifier = Modifier.testTag("email"),
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") }
             )
             TextField(
                 modifier = Modifier.testTag("phone"),
@@ -83,8 +84,20 @@ class SignupActivity : ComponentActivity() {
                         location = location,
                         sports = listOf() // todo add sports with MultiSelectListUI
                     )
-                    database.addUser(newUser)
-                })
+                    database.addUser(newUser).handle { _, exception ->
+                        when (exception) {
+                            null -> {
+                                val intent = Intent(context, DashboardActivity::class.java)
+                                intent.putExtra("email", newUser.email)
+                                startActivity(intent)
+                            }
+                            else -> {
+                                // TODO handle the exception
+                            }
+                        }
+                    }
+                }
+            )
             { Text("REGISTER") }
         }
     }
