@@ -39,7 +39,7 @@ open class SignupActivityTest {
             val user = UserInfo(
                 "Jean", "Dupont",
                 email, "0692000000",
-                "Lausanne", listOf())
+                "Lausanne", false, listOf())
             composeTestRule.onNodeWithTag("firstName").performTextInput(user.firstName)
             Espresso.closeSoftKeyboard()
             composeTestRule.onNodeWithTag("lastName").performTextInput(user.lastName)

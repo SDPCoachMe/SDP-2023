@@ -10,7 +10,7 @@ class MockDatabase: Database {
     private val defaultUserInfo = UserInfo(
         "John", "Doe", "example@email.com",
         "1234567890", "Some location",
-        listOf())
+        false, listOf())
 
     private val db = hashMapOf<String, Any>("accounts" to defaultUserInfo)
 

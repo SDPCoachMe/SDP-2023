@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
+import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.*
@@ -13,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
@@ -43,6 +45,7 @@ class SignupActivity : ComponentActivity() {
         var lastName by remember { mutableStateOf("") }
         var phone by remember { mutableStateOf("") }
         var location by remember { mutableStateOf("") } //todo how to accept only valid location ?? => Google Maps
+        var isCoach by remember { mutableStateOf(false) }
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -72,6 +75,18 @@ class SignupActivity : ComponentActivity() {
                 onValueChange = { location = it },
                 label = { Text("Location") }
             )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("I would like to be a coach")
+                Spacer(Modifier.width(16.dp))
+                Switch(
+                    checked = isCoach,
+                    onCheckedChange = { isCoach = it }
+                )
+            }
             Button(
                 modifier = Modifier.testTag("registerButton"),
                 onClick = {
@@ -82,8 +97,10 @@ class SignupActivity : ComponentActivity() {
                         email = email,
                         phone = phone,
                         location = location,
+                        isCoach = isCoach,
                         sports = listOf() // todo add sports with MultiSelectListUI
                     )
+                    println("new user: $newUser")
                     database.addUser(newUser).handle { _, exception ->
                         when (exception) {
                             null -> {

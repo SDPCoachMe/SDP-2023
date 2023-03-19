@@ -42,12 +42,15 @@ class EditProfileActivity : ComponentActivity() {
         // TODO temporary solution to cast to UserInfo
         val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email).thenApply {
             val map = it as Map<*, *>
+
             UserInfo(
                 map["firstName"] as String,
                 map["lastName"] as String,
                 map["email"] as String,
                 map["phone"] as String,
                 map["location"] as String,
+                //coach and not isCoach since Gson serializes it as "coach"
+                map["coach"] as Boolean,
                 emptyList()
             )
         }
@@ -77,6 +80,8 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
     var fname by remember { mutableStateOf("") }
     var lname by remember { mutableStateOf("") }
     var favsport by remember { mutableStateOf("") }
+    var isCoach by remember { mutableStateOf(false) }
+    var switchCoachClient by remember { mutableStateOf(false) }
 
     var f by remember { mutableStateOf(futureUserInfo)}
 
@@ -86,6 +91,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
             lname = newUser.lastName
             // TODO temporary sports handling
             favsport = ""
+            isCoach = newUser.isCoach
             f = CompletableFuture.completedFuture(null)
         }
     }
@@ -97,7 +103,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start
     ) {
-        TitleRow()
+        TitleRow(isCoach)
         EmailRow(email)
 
         ProfileRow(rowName = "First name", isEditing = isEditing, leftTextPadding = 45.dp,
@@ -108,6 +114,8 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
             value = favsport, onValueChange = { newValue -> favsport = newValue })
 
         if (isEditing) {
+            SwitchClientCoachRow(isCoach, switchCoachClient) { switchCoachClient = it }
+
             // save button
             Button(
                 modifier = Modifier
@@ -116,7 +124,9 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
                 onClick = {
                     isEditing = false
                     // TODO temporary sports handling
-                    val newUser = UserInfo(fname, lname, email, "", "", listOf())
+                    isCoach = isCoach xor switchCoachClient
+                    switchCoachClient = false
+                    val newUser = UserInfo(fname, lname, email, "", "", isCoach, listOf())
                     database.addUser(newUser)
                 }
             ) {
@@ -138,11 +148,30 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
     }
 }
 
+@Composable
+fun SwitchClientCoachRow(isCoach: Boolean, switchCoachClient: Boolean, onValueChange: (Boolean) -> Unit) {
+    Row(
+        Modifier
+            .absolutePadding(20.dp, 0.dp, 0.dp, 10.dp)
+            .testTag("switch client coach row"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start
+
+    ) {
+        Text("I would like to become a " + if (isCoach) "client" else "coach")
+        Spacer(Modifier.width(16.dp))
+        Switch(
+            checked = switchCoachClient,
+            onCheckedChange = { onValueChange(it) }
+        )
+    }
+}
+
 /**
  * Composable used to display the profile title and the user's profile picture.
  */
 @Composable
-fun TitleRow() {
+fun TitleRow(isCoach: Boolean) {
     Row (
         modifier = Modifier
             .absolutePadding(20.dp, 20.dp, 0.dp, 10.dp)
@@ -150,11 +179,18 @@ fun TitleRow() {
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ) {
-        Text(
-            text = "My Profile",
-            fontSize = 30.sp,
-            fontWeight = FontWeight.Bold
-        )
+        Column {
+            Text(
+                text = "My Profile",
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = if (isCoach) "Coach" else "Client",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Normal
+            )
+        }
         Box(
             modifier = Modifier
                 .absolutePadding(100.dp, 0.dp, 0.dp, 0.dp)
@@ -195,6 +231,7 @@ fun EmailRow(email: String) {
         )
     }
 }
+
 
 /**
  * Composable used to display a row of the user profile.
