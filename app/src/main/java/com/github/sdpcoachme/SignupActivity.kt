@@ -19,6 +19,22 @@ import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 class SignupActivity : ComponentActivity() {
 
+    class TestTags {
+        class TextFields {
+            companion object {
+                const val FIRST_NAME = "firstName"
+                const val LAST_NAME = "lastName"
+                const val PHONE = "phone"
+                const val LOCATION = "location"
+            }
+        }
+        class Buttons {
+            companion object {
+                const val SIGN_UP = "signUpButton"
+            }
+        }
+    }
+
     private lateinit var database : Database
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,31 +65,31 @@ class SignupActivity : ComponentActivity() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             TextField(
-                modifier = Modifier.testTag("firstName"),
+                modifier = Modifier.testTag(TestTags.TextFields.FIRST_NAME),
                 value = firstName,
                 onValueChange = { firstName = it },
                 label = { Text("First Name") }
             )
             TextField(
-                modifier = Modifier.testTag("lastName"),
+                modifier = Modifier.testTag(TestTags.TextFields.LAST_NAME),
                 value = lastName,
                 onValueChange = { lastName = it },
                 label = { Text("Last Name") }
             )
             TextField(
-                modifier = Modifier.testTag("phone"),
+                modifier = Modifier.testTag(TestTags.TextFields.PHONE),
                 value = phone,
                 onValueChange = { phone = it },
                 label = { Text("Phone") }
             )
             TextField(
-                modifier = Modifier.testTag("location"),
+                modifier = Modifier.testTag(TestTags.TextFields.LOCATION),
                 value = location,
                 onValueChange = { location = it },
                 label = { Text("Location") }
             )
             Button(
-                modifier = Modifier.testTag("registerButton"),
+                modifier = Modifier.testTag(TestTags.Buttons.SIGN_UP),
                 onClick = {
                     // Add the new user to the database
                     val newUser = UserInfo(
