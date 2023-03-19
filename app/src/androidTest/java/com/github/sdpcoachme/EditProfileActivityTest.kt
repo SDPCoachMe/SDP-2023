@@ -7,6 +7,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.github.sdpcoachme.data.UserInfo
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -131,6 +133,78 @@ class EditProfileActivityTest {
                 .assertTextEquals("Updated last name")
             composeTestRule.onNodeWithTag("saved favorite sport")
                 .assertTextEquals("Updated favorite sport")
+        }
+    }
+
+
+    @Test
+    fun requestForExistingEmailDisplaysCorrectInfoInUserFields() {
+        val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), EditProfileActivity::class.java)
+        val email = "some@mail.com"
+        (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
+            .addUser(
+                UserInfo(
+                "first",
+                "last",
+                email,
+                "012345",
+                "Some Place",
+                false,
+                    listOf()
+                )
+            )
+
+        editProfileIntent.putExtra("email", email)
+        ActivityScenario.launch<EditProfileActivity>(editProfileIntent).use {
+            composeTestRule.onNodeWithTag("email address").assertTextEquals(email)
+            composeTestRule.onNodeWithTag("saved first name").assertTextEquals("first")
+            composeTestRule.onNodeWithTag("saved last name").assertTextEquals("last")
+            // TODO: add the other fields once they are implemented:
+//            composeTestRule.onNodeWithTag("saved favorite sport").assertTextEquals("")
+
+            composeTestRule.onNodeWithTag("edit button")
+                .assertIsDisplayed()
+                .performClick()
+
+            composeTestRule.onNodeWithTag("editable first name").assertIsDisplayed()
+            composeTestRule.onNodeWithTag("editable last name").assertIsDisplayed()
+            composeTestRule.onNodeWithTag("editable favorite sport").assertIsDisplayed()
+
+            composeTestRule.onNodeWithTag("email address").assertTextEquals(email)
+            composeTestRule.onNodeWithTag("editable first name").assertTextEquals("first")
+            composeTestRule.onNodeWithTag("editable last name").assertTextEquals("last")
+            // TODO: add the other fields once they are implemented:
+//            composeTestRule.onNodeWithTag("editable favorite sport").assertTextEquals("")
+
+        }
+    }
+
+    @Test
+    fun requestForNonExistentEmailDisplaysEmptyUserFields() {
+        val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), EditProfileActivity::class.java)
+        val email = "non-existant@email.com"
+        editProfileIntent.putExtra("email", email)
+        ActivityScenario.launch<EditProfileActivity>(editProfileIntent).use {
+
+            composeTestRule.onNodeWithTag("email address").assertTextEquals("non-existant@email.com")
+            composeTestRule.onNodeWithTag("saved first name").assertTextEquals("")
+            composeTestRule.onNodeWithTag("saved last name").assertTextEquals("")
+            // TODO: add the other fields once they are implemented:
+//            composeTestRule.onNodeWithTag("saved favorite sport").assertTextEquals("")
+
+            composeTestRule.onNodeWithTag("edit button")
+                .assertIsDisplayed()
+                .performClick()
+
+            composeTestRule.onNodeWithTag("editable first name").assertIsDisplayed()
+            composeTestRule.onNodeWithTag("editable last name").assertIsDisplayed()
+            composeTestRule.onNodeWithTag("editable favorite sport").assertIsDisplayed()
+
+            composeTestRule.onNodeWithTag("email address").assertTextEquals("non-existant@email.com")
+            composeTestRule.onNodeWithTag("editable first name").assertTextEquals("")
+            composeTestRule.onNodeWithTag("editable last name").assertTextEquals("")
+            // TODO: add the other fields once they are implemented:
+//            composeTestRule.onNodeWithTag("editable favorite sport").assertTextEquals("")
         }
     }
 }
