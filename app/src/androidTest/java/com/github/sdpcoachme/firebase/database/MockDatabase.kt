@@ -30,6 +30,12 @@ class MockDatabase: Database {
     }
 
     override fun addUser(user: UserInfo): CompletableFuture<Void> {
+        if (user.email == "throw@Exception.com") {
+            val error = CompletableFuture<Void>()
+            error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
+            return error
+        }
+
         return set(user.email, user)
     }
 

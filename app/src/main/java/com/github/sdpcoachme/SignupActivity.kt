@@ -84,7 +84,8 @@ class SignupActivity : ComponentActivity() {
                 Spacer(Modifier.width(16.dp))
                 Switch(
                     checked = isCoach,
-                    onCheckedChange = { isCoach = it }
+                    onCheckedChange = { isCoach = it },
+                    modifier = Modifier.testTag("isCoachSwitch")
                 )
             }
             Button(
@@ -101,17 +102,12 @@ class SignupActivity : ComponentActivity() {
                         sports = listOf() // todo add sports with MultiSelectListUI
                     )
                     println("new user: $newUser")
-                    database.addUser(newUser).handle { _, exception ->
-                        when (exception) {
-                            null -> {
-                                val intent = Intent(context, DashboardActivity::class.java)
-                                intent.putExtra("email", newUser.email)
-                                startActivity(intent)
-                            }
-                            else -> {
-                                // TODO handle the exception
-                            }
-                        }
+                    database.addUser(newUser).thenApply {
+                        val intent = Intent(context, DashboardActivity::class.java)
+                        intent.putExtra("email", newUser.email)
+                        startActivity(intent)
+                    }.exceptionally {
+                        // TODO handle the exception
                     }
                 }
             )

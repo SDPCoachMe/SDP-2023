@@ -190,7 +190,6 @@ class EditProfileActivityTest {
             composeTestRule.onNodeWithTag("saved first name").assertTextEquals("")
             composeTestRule.onNodeWithTag("saved last name").assertTextEquals("")
             // TODO: add the other fields once they are implemented:
-//            composeTestRule.onNodeWithTag("saved favorite sport").assertTextEquals("")
 
             composeTestRule.onNodeWithTag("edit button")
                 .assertIsDisplayed()
@@ -204,7 +203,6 @@ class EditProfileActivityTest {
             composeTestRule.onNodeWithTag("editable first name").assertTextEquals("")
             composeTestRule.onNodeWithTag("editable last name").assertTextEquals("")
             // TODO: add the other fields once they are implemented:
-//            composeTestRule.onNodeWithTag("editable favorite sport").assertTextEquals("")
         }
     }
 }
