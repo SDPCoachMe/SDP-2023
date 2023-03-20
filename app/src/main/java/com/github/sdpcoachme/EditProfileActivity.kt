@@ -51,7 +51,7 @@ class EditProfileActivity : ComponentActivity() {
                 map["coach"] as Boolean,
                 emptyList()
             )
-        }
+        }.exceptionally { null }
 
         setContent {
             CoachMeTheme {
