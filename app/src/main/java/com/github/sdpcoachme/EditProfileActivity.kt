@@ -20,6 +20,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.EMAIL
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.FIRST_NAME
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.LAST_NAME
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.PROFILE_LABEL
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.SPORT
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
@@ -29,6 +34,36 @@ import java.util.concurrent.CompletableFuture
  * Activity used to view and edit the user's profile.
  */
 class EditProfileActivity : ComponentActivity() {
+
+    class TestTags {
+        class EditableProfileRowTag(tag: String) {
+            val FIELD = "${tag}TextField"
+            val TEXT = "${tag}Text"
+            val LABEL = "${tag}Label"
+            val ROW = "${tag}Row"
+        }
+        class UneditableProfileRowTag(tag: String) {
+            val TEXT = "${tag}Text"
+            val LABEL = "${tag}Label"
+            val ROW = "${tag}Row"
+        }
+        class Buttons {
+            companion object {
+                const val SAVE = "saveButton"
+                const val EDIT = "editButton"
+            }
+        }
+        companion object {
+            const val TITLE_ROW = "titleRow"
+            const val PROFILE_LABEL = "profileLabel"
+            const val PROFILE_PICTURE = "profilePicture"
+            const val PROFILE_COLUMN = "profileColumn"
+            val EMAIL = UneditableProfileRowTag("email")
+            val FIRST_NAME = EditableProfileRowTag("firstName")
+            val LAST_NAME = EditableProfileRowTag("lastName")
+            val SPORT = EditableProfileRowTag("sport")
+        }
+    }
 
     private lateinit var database: Database
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -93,18 +128,18 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .testTag("column"),
+            .testTag(EditProfileActivity.TestTags.PROFILE_COLUMN),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start
     ) {
         TitleRow()
         EmailRow(email)
 
-        ProfileRow(rowName = "First name", isEditing = isEditing, leftTextPadding = 45.dp,
+        ProfileRow(rowName = "First name", tag = FIRST_NAME, isEditing = isEditing, leftTextPadding = 45.dp,
             value = fname, onValueChange = { newValue -> fname = newValue })
-        ProfileRow(rowName = "Last name", isEditing = isEditing, leftTextPadding = 45.dp,
+        ProfileRow(rowName = "Last name", tag = LAST_NAME, isEditing = isEditing, leftTextPadding = 45.dp,
             value = lname, onValueChange = { newValue -> lname = newValue })
-        ProfileRow(rowName = "Favorite sport", isEditing = isEditing, leftTextPadding = 20.dp,
+        ProfileRow(rowName = "Favorite sport", tag = SPORT, isEditing = isEditing, leftTextPadding = 20.dp,
             value = favsport, onValueChange = { newValue -> favsport = newValue })
 
         if (isEditing) {
@@ -112,7 +147,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
             Button(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .testTag("save button"),
+                    .testTag(EditProfileActivity.TestTags.Buttons.SAVE),
                 onClick = {
                     isEditing = false
                     // TODO temporary sports handling
@@ -127,7 +162,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
             Button(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .testTag("edit button"),
+                    .testTag(EditProfileActivity.TestTags.Buttons.EDIT),
                 onClick = {
                     isEditing = true
                 }
@@ -146,11 +181,12 @@ fun TitleRow() {
     Row (
         modifier = Modifier
             .absolutePadding(20.dp, 20.dp, 0.dp, 10.dp)
-            .testTag("title row"),
+            .testTag(EditProfileActivity.TestTags.TITLE_ROW),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ) {
         Text(
+            modifier = Modifier.testTag(PROFILE_LABEL),
             text = "My Profile",
             fontSize = 30.sp,
             fontWeight = FontWeight.Bold
@@ -167,7 +203,7 @@ fun TitleRow() {
                     .clip(CircleShape)
                     .border(2.dp, Color.Gray, CircleShape)
                     .absolutePadding(0.dp, 0.dp, 0.dp, 0.dp)
-                    .testTag("profile pic")
+                    .testTag(EditProfileActivity.TestTags.PROFILE_PICTURE)
             )
         }
     }
@@ -181,17 +217,17 @@ fun EmailRow(email: String) {
     Row (
         modifier = Modifier
             .absolutePadding(20.dp, 80.dp, 0.dp, 10.dp)
-            .testTag("email row"),
+            .testTag(EMAIL.ROW),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ){
-        Text(text = "Email: ")
+        Text(modifier = Modifier.testTag(EMAIL.LABEL), text = "Email: ")
         // replace this Text with read-only TextField?
         Text(
             text = email,
             modifier = Modifier
                 .absolutePadding(80.dp, 0.dp, 0.dp, 0.dp)
-                .testTag("email address"),
+                .testTag(EMAIL.TEXT),
         )
     }
 }
@@ -206,22 +242,21 @@ fun EmailRow(email: String) {
  * @param onValueChange the function to call when the value of the row changes
  */
 @Composable
-fun ProfileRow(rowName: String, isEditing: Boolean, leftTextPadding: Dp, value: String, onValueChange: (String) -> Unit) {
-    val lowercaseRowName = rowName.lowercase()
+fun ProfileRow(rowName: String, tag: EditProfileActivity.TestTags.EditableProfileRowTag, isEditing: Boolean, leftTextPadding: Dp, value: String, onValueChange: (String) -> Unit) {
     Row(
         modifier = Modifier
             .absolutePadding(20.dp, 10.dp, 20.dp, 10.dp)
-            .testTag("$lowercaseRowName row"),
+            .testTag(tag.ROW),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ) {
-        Text(text = "$rowName: ", modifier = Modifier.defaultMinSize(50.dp, 20.dp))
+        Text(text = "$rowName: ", modifier = Modifier.defaultMinSize(50.dp, 20.dp).testTag(tag.LABEL))
         if (isEditing) {
             TextField(
                 modifier = Modifier
                     .absolutePadding(leftTextPadding, 0.dp, 0.dp, 0.dp)
                     .defaultMinSize(150.dp, 40.dp)
-                    .testTag("editable $lowercaseRowName"),
+                    .testTag(tag.FIELD),
                 value = value,
                 onValueChange = { newValue -> onValueChange(newValue) },
                 singleLine = true,
@@ -230,7 +265,7 @@ fun ProfileRow(rowName: String, isEditing: Boolean, leftTextPadding: Dp, value: 
             Text(
                 modifier = Modifier
                     .absolutePadding(leftTextPadding + 6.dp, 0.dp, 0.dp, 0.dp)
-                    .testTag("saved $lowercaseRowName"),
+                    .testTag(tag.TEXT),
                 text = value)
         }
     }
