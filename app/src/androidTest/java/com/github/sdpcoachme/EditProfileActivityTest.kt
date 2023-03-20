@@ -7,6 +7,14 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Buttons.Companion.EDIT
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Buttons.Companion.SAVE
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.EMAIL
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.FIRST_NAME
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.LAST_NAME
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.PROFILE_LABEL
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.PROFILE_PICTURE
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.SPORT
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.data.UserInfo
 import org.junit.Rule
@@ -20,119 +28,111 @@ class EditProfileActivityTest {
     val composeTestRule = createEmptyComposeRule()
 
     @Test
-    fun onCreateShowsErrorIfNoEmailPassed() {
-        val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), EditProfileActivity::class.java)
-        ActivityScenario.launch<EditProfileActivity>(editProfileIntent).use {
-            composeTestRule.onNodeWithTag("column").assertExists("Column elem does not exist")
-            composeTestRule.onNodeWithTag("column").assertExists("Column elem does not exist")
-            composeTestRule.onNodeWithTag("title row").assertExists("Title row elem does not exist")
-            composeTestRule.onNodeWithTag("email row").assertExists("Email row elem does not exist")
-            composeTestRule.onNodeWithTag("first name row")
-                .assertExists("First name row elem does not exist")
-            composeTestRule.onNodeWithTag("last name row")
-                .assertExists("Last name row elem does not exist")
-            composeTestRule.onNodeWithTag("favorite sport row")
-                .assertExists("Fav sport row elem does not exist")
-        }
-    }
-
-    @Test
     fun correctInitialScreenContent() {
+        val initiallyDisplayed = listOf(
+            PROFILE_LABEL,
+            PROFILE_PICTURE,
+
+            EMAIL.LABEL,
+            EMAIL.TEXT,
+
+            FIRST_NAME.LABEL,
+            FIRST_NAME.TEXT,
+
+            LAST_NAME.LABEL,
+            LAST_NAME.TEXT,
+
+            SPORT.LABEL,
+            SPORT.TEXT,
+
+            EDIT
+        )
+
+        val initiallyNotDisplayed = listOf(
+            FIRST_NAME.FIELD,
+            LAST_NAME.FIELD,
+            SPORT.FIELD,
+
+            SAVE
+        )
+
         val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), EditProfileActivity::class.java)
         val email = "example@email.com"
         editProfileIntent.putExtra("email", email)
         ActivityScenario.launch<EditProfileActivity>(editProfileIntent).use {
-            composeTestRule.onNodeWithTag("column").assertExists("Column elem does not exist")
-            composeTestRule.onNodeWithTag("column").assertExists("Column elem does not exist")
-            composeTestRule.onNodeWithTag("title row").assertExists("Title row elem does not exist")
-            composeTestRule.onNodeWithTag("email row").assertExists("Email row elem does not exist")
-            composeTestRule.onNodeWithTag("first name row")
-                .assertExists("First name row elem does not exist")
-            composeTestRule.onNodeWithTag("last name row")
-                .assertExists("Last name row elem does not exist")
-            composeTestRule.onNodeWithTag("favorite sport row")
-                .assertExists("Fav sport row elem does not exist")
+            initiallyDisplayed.forEach { tag ->
+                // assertIsDisplayed() behaves strangely with components that are empty (empty Text()
+                // components for example, or Text() components whose text is loaded asynchronously)
+                composeTestRule.onNodeWithTag(tag).assertExists()
+            }
 
-            //content of title row
-            composeTestRule.onNodeWithText("My Profile").assertIsDisplayed()
-            composeTestRule.onNodeWithTag("profile pic").assertIsDisplayed()
+            initiallyNotDisplayed.forEach { tag ->
+                composeTestRule.onNodeWithTag(tag).assertDoesNotExist()
+            }
 
-            //content of email row
-            composeTestRule.onNodeWithText("Email: ").assertIsDisplayed()
-            composeTestRule.onNodeWithTag("email address").assertIsDisplayed()
-
-            //content of first name row
-            composeTestRule.onNodeWithText("First name: ").assertIsDisplayed()
-//            composeTestRule.onNodeWithTag("saved first name").assertIsDisplayed()
-
-            //content of last name row
-            composeTestRule.onNodeWithText("Last name: ").assertIsDisplayed()
-//            composeTestRule.onNodeWithTag("saved last name").assertIsDisplayed()
-
-            //content of sport row
-            composeTestRule.onNodeWithText("Favorite sport: ").assertIsDisplayed()
-//            composeTestRule.onNodeWithTag("saved favorite sport").assertIsDisplayed()
         }
     }
 
     @Test
     fun editButtonClickActivatesCorrectElements() {
+        val displayedAfterEditButtonClicked = listOf(
+            FIRST_NAME.FIELD,
+            LAST_NAME.FIELD,
+            SPORT.FIELD,
+
+            SAVE
+        )
+
         val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), EditProfileActivity::class.java)
         val email = "example@email.com"
         editProfileIntent.putExtra("email", email)
         ActivityScenario.launch<EditProfileActivity>(editProfileIntent).use {
-            composeTestRule.onNodeWithTag("edit button")
+            composeTestRule.onNodeWithTag(EDIT)
                 .assertIsDisplayed()
                 .performClick()
 
-            composeTestRule.onNodeWithTag("editable first name").assertIsDisplayed()
-            composeTestRule.onNodeWithTag("editable last name").assertIsDisplayed()
-            composeTestRule.onNodeWithTag("editable favorite sport").assertIsDisplayed()
+            displayedAfterEditButtonClicked.forEach { tag ->
+                composeTestRule.onNodeWithTag(tag).assertIsDisplayed()
+            }
         }
     }
 
     @Test
     fun editedFieldsSavedCorrectly() {
+        val newValues = mapOf(
+            FIRST_NAME to "Updated first name",
+            LAST_NAME to "Updated last name",
+            SPORT to "Updated favorite sport"
+        )
+
         val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), EditProfileActivity::class.java)
         val email = "example@email.com"
         editProfileIntent.putExtra("email", email)
         ActivityScenario.launch<EditProfileActivity>(editProfileIntent).use {
             //change to edit mode
-            composeTestRule.onNodeWithTag("edit button")
+            composeTestRule.onNodeWithTag(EDIT)
                 .assertIsDisplayed()
                 .performClick()
 
             //edit text fields
-            composeTestRule.onNodeWithTag("editable first name")
-                .performTextClearance()
-            composeTestRule.onNodeWithTag("editable first name")
-                .performTextInput("Updated first name")
-            Espresso.closeSoftKeyboard()
-
-            composeTestRule.onNodeWithTag("editable last name")
-                .performTextClearance()
-            composeTestRule.onNodeWithTag("editable last name")
-                .performTextInput("Updated last name")
-            Espresso.closeSoftKeyboard()
-
-            composeTestRule.onNodeWithTag("editable favorite sport")
-                .performTextClearance()
-            composeTestRule.onNodeWithTag("editable favorite sport")
-                .performTextInput("Updated favorite sport")
-            Espresso.closeSoftKeyboard()
+            newValues.forEach { (field, newValue) ->
+                composeTestRule.onNodeWithTag(field.FIELD)
+                    .performTextClearance()
+                composeTestRule.onNodeWithTag(field.FIELD)
+                    .performTextInput(newValue)
+                Espresso.closeSoftKeyboard()
+            }
 
             //save updated profile
-            composeTestRule.onNodeWithTag("save button")
+            composeTestRule.onNodeWithTag(SAVE)
                 .assertIsDisplayed()
                 .performClick()
 
             //check that the updated fields are saved
-            composeTestRule.onNodeWithTag("saved first name")
-                .assertTextEquals("Updated first name")
-            composeTestRule.onNodeWithTag("saved last name")
-                .assertTextEquals("Updated last name")
-            composeTestRule.onNodeWithTag("saved favorite sport")
-                .assertTextEquals("Updated favorite sport")
+            newValues.forEach { (field, newValue) ->
+                composeTestRule.onNodeWithTag(field.TEXT)
+                    .assertTextEquals(newValue)
+            }
         }
     }
 

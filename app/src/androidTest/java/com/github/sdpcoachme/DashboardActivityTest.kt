@@ -13,6 +13,13 @@ import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.LOGOUT
+import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.PROFILE
+import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DASHBOARD_EMAIL
+import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DRAWER_HEADER
+import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MENU_LIST
+import org.hamcrest.Matcher
 import org.hamcrest.Matchers.allOf
 import org.junit.Rule
 import org.junit.Test
@@ -26,50 +33,50 @@ class DashboardActivityTest {
 
     @Test
     fun drawerOpensOnMenuClick() {
-        composeTestRule.onNodeWithTag("drawerHeader").assertIsNotDisplayed()
-        composeTestRule.onNodeWithTag("appBarMenuIcon").performClick()
-        composeTestRule.onNodeWithTag("drawerHeader").assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
+        composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
     }
 
     @Test
     fun drawerReactsOnCorrectSwipe() {
         // opens on right swipe
-        composeTestRule.onNodeWithTag("drawerHeader").assertIsNotDisplayed()
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
         composeTestRule.onRoot().performTouchInput { swipeRight() }
-        composeTestRule.onNodeWithTag("drawerHeader").assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
         // closes on left swipe
-        composeTestRule.onNodeWithTag("drawerHeader").assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
         composeTestRule.onRoot().performTouchInput { swipeLeft() }
-        composeTestRule.onNodeWithTag("drawerHeader").assertIsNotDisplayed()
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
     }
 
     @Test
     fun drawerIgnoresInvalidSwipe() {
         // ignores left swipe if closed
-        composeTestRule.onNodeWithTag("drawerHeader").assertIsNotDisplayed()
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
         composeTestRule.onRoot().performTouchInput { swipeLeft() }
-        composeTestRule.onNodeWithTag("drawerHeader").assertIsNotDisplayed()
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
         // ignores right swipe if opened
-        composeTestRule.onNodeWithTag("appBarMenuIcon").performClick()
+        composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
         composeTestRule.onRoot().performTouchInput { swipeRight() }
-        composeTestRule.onNodeWithTag("drawerHeader").assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
     }
 
     @Test
     fun drawerClosesOnOutsideTouch() {
         val width = composeTestRule.onRoot().getBoundsInRoot().width
         val height = composeTestRule.onRoot().getBoundsInRoot().height
-        composeTestRule.onNodeWithTag("appBarMenuIcon").performClick()
-        composeTestRule.onNodeWithTag("drawerHeader").assertIsDisplayed()
+        composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
         composeTestRule.onRoot().performTouchInput {
             click(position = Offset(width.toPx() - 10, height.toPx() / 2))
         }
-        composeTestRule.onNodeWithTag("drawerHeader").assertIsNotDisplayed()
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
     }
 
     @Test
     fun drawerBodyContainsClickableMenu() {
-        composeTestRule.onNodeWithTag("menuList").onChildren().assertAll(hasClickAction())
+        composeTestRule.onNodeWithTag(MENU_LIST).onChildren().assertAll(hasClickAction())
     }
 
     @Test
@@ -81,42 +88,43 @@ class DashboardActivityTest {
         )
         launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
-            composeTestRule.onNodeWithTag("dashboardEmail").assert(hasText(text = email))
+            composeTestRule.onNodeWithTag(DASHBOARD_EMAIL).assert(hasText(text = email))
         }
     }
-
-    // TODO refactor this in some way to allow for test tags in menu items
-    // TODO those tests are very similar, could be merged into one function
-    @Test
-    fun dashboardCorrectlyRedirectsOnProfileClick() {
-        val email = "john.lennon@gmail.com"
+    private fun dashboardCorrectlyRedirectsOnMenuItemClick(userEmail: String, tag: String, intentMatcher: Matcher<Intent>) {
         val launchDashboard = Intent(
             ApplicationProvider.getApplicationContext(),
             DashboardActivity::class.java
         )
-        launchDashboard.putExtra("email", email)
+        launchDashboard.putExtra("email", userEmail)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
             Intents.init()
-
-            val rootNode = composeTestRule.onNodeWithTag("menuList")
-            // TODO refactor this in some way to allow for test tags in menu items
-            rootNode.onChildAt(1).performClick()
-            intended(allOf(hasComponent(EditProfileActivity::class.java.name), hasExtra("email", email)))
+            composeTestRule.onNodeWithTag(tag).performClick()
+            intended(intentMatcher)
             Intents.release()
         }
     }
-
+    @Test
+    fun dashboardCorrectlyRedirectsOnProfileClick() {
+        val email = "john.lennon@gmail.com"
+        dashboardCorrectlyRedirectsOnMenuItemClick(
+            email,
+            PROFILE,
+            allOf(
+                hasComponent(EditProfileActivity::class.java.name),
+                hasExtra("email", email)
+            )
+        )
+    }
     @Test
     fun dashboardCorrectlyRedirectsOnLogOutClick() {
-        Intents.init()
-
-        val rootNode = composeTestRule.onNodeWithTag("menuList")
-        // TODO refactor this in some way to allow for test tags in menu items
-        rootNode.onChildAt(5).performClick()
-        intended(hasComponent(LoginActivity::class.java.name))
-
-        Intents.release()
+        dashboardCorrectlyRedirectsOnMenuItemClick(
+            "jack.daniels@outlook.com",
+            LOGOUT,
+            hasComponent(LoginActivity::class.java.name)
+        )
     }
+
     // TODO add more tests for the other menu items
 
 }

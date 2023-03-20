@@ -23,6 +23,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.FAVORITES
+import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HELP
+import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.LOGOUT
+import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.PROFILE
+import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.SCHEDULE
+import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.SETTINGS
+import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DASHBOARD_EMAIL
+import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DRAWER_HEADER
+import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.launch
 
@@ -32,7 +42,24 @@ import kotlinx.coroutines.launch
     above the main map view.
  */
 class DashboardActivity : ComponentActivity() {
-
+    class TestTags {
+        companion object {
+            const val DRAWER_HEADER = "drawerHeader"
+            const val DASHBOARD_EMAIL = "dashboardEmail"
+            const val MENU_LIST = "menuList"
+        }
+        class Buttons {
+            companion object {
+                const val HAMBURGER_MENU = "hamburgerMenu"
+                const val SCHEDULE = "schedule"
+                const val PROFILE = "profile"
+                const val FAVORITES = "favorites"
+                const val SETTINGS = "settings"
+                const val HELP = "help"
+                const val LOGOUT = "logout"
+            }
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // TODO handle the null better here
@@ -73,32 +100,32 @@ fun Dashboard(email: String, scaffoldState: ScaffoldState, onScaffoldStateChange
             DrawerHeader(email)
             DrawerBody(
                 items = listOf(
-                    MenuItem(id = "schedule", title = "Schedule",
+                    MenuItem(tag = SCHEDULE, title = "Schedule",
                         contentDescription = "See schedule",
                         icon = Icons.Default.CheckCircle),
-                    MenuItem(id = "profile", title = "Profile",
+                    MenuItem(tag = PROFILE, title = "Profile",
                         contentDescription = "Go to profile",
                         icon = Icons.Default.AccountCircle),
-                    MenuItem(id = "favorite", title = "Favorites",
+                    MenuItem(tag = FAVORITES, title = "Favorites",
                         contentDescription = "Go to favorites",
                         icon = Icons.Default.Favorite),
-                    MenuItem(id = "settings", title = "Settings",
+                    MenuItem(tag = SETTINGS, title = "Settings",
                         contentDescription = "Go to settings",
                         icon = Icons.Default.Settings),
-                    MenuItem(id = "help", title = "Help",
+                    MenuItem(tag = HELP, title = "Help",
                         contentDescription = "Get help",
                         icon = Icons.Default.Info),
-                MenuItem(id = "logout", title = "Log out",
+                MenuItem(tag = LOGOUT, title = "Log out",
                         contentDescription = "User logs out",
                         icon = Icons.Default.Close)),
                 onItemClick = {
-                    when (it.id) {
-                        "profile" -> {
+                    when (it.tag) {
+                        PROFILE -> {
                             val intent = Intent(context, EditProfileActivity::class.java)
                             intent.putExtra("email", email)
                             context.startActivity(intent)
                         }
-                        "logout" -> {
+                        LOGOUT -> {
                             (context.applicationContext as CoachMeApplication).authenticator.signOut(context) {
                                 val intent = Intent(context, LoginActivity::class.java)
                                 context.startActivity(intent)
@@ -130,7 +157,7 @@ fun AppBar(
         contentColor = MaterialTheme.colors.onPrimary,
         navigationIcon = {
             IconButton(
-                modifier = Modifier.testTag("appBarMenuIcon"),
+                modifier = Modifier.testTag(HAMBURGER_MENU),
                 onClick = onNavigationIconClick) {
                 Icon(
                     imageVector = Icons.Default.Menu,
@@ -147,12 +174,12 @@ fun DrawerHeader(email: String) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 40.dp)
-            .testTag("drawerHeader"),
+            .testTag(DRAWER_HEADER),
         contentAlignment = Alignment.Center,
         content = {
             Column(horizontalAlignment = CenterHorizontally) {
                 Text(text = "Dashboard", fontSize = 50.sp)
-                Text(modifier = Modifier.testTag("dashboardEmail"),
+                Text(modifier = Modifier.testTag(DASHBOARD_EMAIL),
                     text = email, fontSize = 20.sp)
             }
         }
@@ -165,13 +192,14 @@ fun DrawerBody(
     itemTextStyle: TextStyle = TextStyle(fontSize = 18.sp),
     onItemClick: (MenuItem) -> Unit
 ) {
-    LazyColumn(Modifier.testTag("menuList")) {
+    LazyColumn(Modifier.testTag(MENU_LIST)) {
         items(items) { item ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onItemClick(item) }
                     .padding(16.dp)
+                    .testTag(item.tag)
             ) {
                 Icon(
                     imageVector = item.icon,
@@ -187,7 +215,7 @@ fun DrawerBody(
 }
 
 data class MenuItem(
-    val id: String,
+    val tag: String,
     val title: String,
     val contentDescription: String,
     val icon: ImageVector

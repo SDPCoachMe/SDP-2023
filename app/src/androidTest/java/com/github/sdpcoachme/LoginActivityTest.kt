@@ -10,22 +10,23 @@ import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
+import com.github.sdpcoachme.LoginActivity.TestTags.Buttons.Companion.DELETE_ACCOUNT
+import com.github.sdpcoachme.LoginActivity.TestTags.Buttons.Companion.SIGN_OUT
+import com.github.sdpcoachme.LoginActivity.TestTags.Companion.INFO_TEXT
 import com.google.firebase.auth.FirebaseAuth
-import junit.framework.TestCase
 import org.hamcrest.CoreMatchers
 import org.hamcrest.core.AllOf.allOf
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
+// Since those tests use UI Automator, we need to enable testTagsAsResourceId in the corresponding activity
+// in order to be able to find the UI elements by their tags.
 @RunWith(AndroidJUnit4::class)
 open class LoginActivityTest {
     private val launchTimeout = 5000L
     private lateinit var device: UiDevice
-    private lateinit var signInButtonText: String
-    private lateinit var signOutButtonText: String
     private lateinit var signedOutInfoText: String
-    private lateinit var deleteButtonText: String
     private lateinit var deleteInfoText: String
 
     @Before
@@ -57,25 +58,10 @@ open class LoginActivityTest {
 
         // Get the strings from the resources
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        deleteButtonText = context.resources.getString(
-            context.resources.getIdentifier(
-                "delete_account_button_text",
-                "string",
-                context.packageName
-            )
-        )
 
         deleteInfoText = context.resources.getString(
             context.resources.getIdentifier(
                 "account_deleted",
-                "string",
-                context.packageName
-            )
-        )
-
-        signOutButtonText = context.resources.getString(
-            context.resources.getIdentifier(
-                "sign_out_button_text",
                 "string",
                 context.packageName
             )
@@ -88,38 +74,22 @@ open class LoginActivityTest {
                 context.packageName
             )
         )
-
-        signInButtonText = context.resources.getString(
-            context.resources.getIdentifier(
-                "sign_in_button_text",
-                "string",
-                context.packageName
-            )
-        )
     }
 
     @Test
     fun signOutOfGoogleAccountResultsInCorrectMessage() {
-        val signOutButton = device.findObject(UiSelector().text(signOutButtonText))
+        val signOutButton = device.findObject(By.res(SIGN_OUT))
         signOutButton.click()
 
-        val confirmDialog: UiObject2 = device.wait(
-            Until.findObject(By.text(signedOutInfoText)), 5000
-        )
-
-        TestCase.assertNotNull(confirmDialog)
-        ViewMatchers.assertThat(confirmDialog.text, CoreMatchers.`is`(signedOutInfoText))
+        ViewMatchers.assertThat(device.findObject(By.res(INFO_TEXT)).text, CoreMatchers.`is`(signedOutInfoText))
     }
 
     @Test
     fun deleteGoogleAccountResultsInCorrectMessage() {
-        val deleteButton = device.findObject(UiSelector().text(deleteButtonText))
+        val deleteButton = device.findObject(By.res(DELETE_ACCOUNT))
         deleteButton.click()
-        val confirmDialog: UiObject2 = device.wait(
-            Until.findObject(By.text(deleteInfoText)), 5000
-        )
-        TestCase.assertNotNull(confirmDialog)
-        ViewMatchers.assertThat(confirmDialog.text, CoreMatchers.`is`(deleteInfoText))
+
+        ViewMatchers.assertThat(device.findObject(By.res(INFO_TEXT)).text, CoreMatchers.`is`(deleteInfoText))
     }
 
     //TODO implement this test
