@@ -62,10 +62,12 @@ class LoginActivity : ComponentActivity() {
             when (exception) {
                 null -> {
                     // User is already in the database
+                    // TODO the database instance should cast to the correct type, not the caller. Moreover, with the current implementation it is not possible to cast properly.
+                    val user = result as Map<*, *>
                     val intent = Intent(this, DashboardActivity::class.java)
                     // TODO send user object instead of individual field. This requires that UserInfo is serializable
                     // TODO later on, have a dedicated store or cache for all the database data
-                    intent.putExtra("email", result.email)
+                    intent.putExtra("email", user["email"] as String)
                     startActivity(intent)
                 }
                 is NoSuchKeyException -> {

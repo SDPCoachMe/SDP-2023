@@ -52,8 +52,12 @@ open class SignupActivityTest {
 
             // Important note: this get method was used instead of onTimeout due to onTiemout not
             // being found when running tests on Cirrus CI even with java version changed in build.gradle
-            val retrievedUser = database.getUser(user.email).get(10, TimeUnit.SECONDS)
-            TestCase.assertEquals(user, retrievedUser)
+            val retrievedUser = database.getUser(user.email).get(10, TimeUnit.SECONDS) as Map<*,*>
+            TestCase.assertEquals(user.firstName, retrievedUser["firstName"])
+            TestCase.assertEquals(user.lastName, retrievedUser["lastName"])
+            TestCase.assertEquals(user.phone, retrievedUser["phone"])
+            TestCase.assertEquals(user.location, retrievedUser["location"])
+            TestCase.assertEquals(user.isCoach, retrievedUser["coach"])
 
             // Assert that we are redirected to the Dashboard with correct intent
             Intents.intended(allOf(IntentMatchers.hasComponent(DashboardActivity::class.java.name), hasExtra("email", user.email)))
@@ -91,8 +95,12 @@ open class SignupActivityTest {
 
             // Important note: this get method was used instead of onTimeout due to onTiemout not
             // being found when running tests on Cirrus CI even with java version changed in build.gradle
-            val retrievedUser = database.getUser(user.email).get(10, TimeUnit.SECONDS)
-            TestCase.assertEquals(user, retrievedUser)
+            val retrievedUser = database.getUser(user.email).get(10, TimeUnit.SECONDS) as Map<*,*>
+            TestCase.assertEquals(user.firstName, retrievedUser["firstName"])
+            TestCase.assertEquals(user.lastName, retrievedUser["lastName"])
+            TestCase.assertEquals(user.phone, retrievedUser["phone"])
+            TestCase.assertEquals(user.location, retrievedUser["location"])
+            TestCase.assertEquals(user.isCoach, retrievedUser["coach"])
 
             // Assert that we are redirected to the Dashboard with correct intent
             Intents.intended(allOf(IntentMatchers.hasComponent(DashboardActivity::class.java.name), hasExtra("email", user.email)))
@@ -131,6 +139,23 @@ open class SignupActivityTest {
             composeTestRule.onNodeWithTag("phone").assertExists()
             composeTestRule.onNodeWithTag("location").assertExists()
             composeTestRule.onNodeWithTag("registerButton").assertExists()
+            Intents.release()
+        }
+    }
+
+    @Test
+    fun assertThatTheNodesExist() {
+        //assert that the nodes exist
+        val launchSignup = Intent(ApplicationProvider.getApplicationContext(), SignupActivity::class.java)
+        val email = "example@email.com"
+
+        launchSignup.putExtra("email", email)
+        ActivityScenario.launch<SignupActivity>(launchSignup).use {
+            Intents.init()
+            composeTestRule.onNodeWithText("First Name").assertExists("No first name field")
+            composeTestRule.onNodeWithText("Last Name").assertExists("No last name field")
+            composeTestRule.onNodeWithText("Phone").assertExists("No phone field")
+            composeTestRule.onNodeWithText("Location").assertExists("No location field")
             Intents.release()
         }
     }

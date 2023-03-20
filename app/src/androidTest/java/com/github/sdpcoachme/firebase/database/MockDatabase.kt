@@ -7,15 +7,20 @@ import java.util.concurrent.CompletableFuture
  * A mock database class
  */
 class MockDatabase: Database {
-    private val defaultUserInfo = UserInfo(
-        "John", "Doe", "example@email.com",
-        "1234567890", "Some location",
-        false, listOf())
+    private val defaultUserInfo = mapOf(
+        "firstName" to "John",
+        "lastName" to "Doe",
+        "phone" to "1234567890",
+        "location" to "Some location",
+        "coach" to false,
+        "email" to "example@email.com"
+    )
 
     private val db = hashMapOf<String, Any>("example@email.com" to defaultUserInfo)
 
     override fun get(key: String): CompletableFuture<Any> {
         if (!db.containsKey(key)) {
+            println("Key $key does not exist")
             val error = CompletableFuture<Any>()
             error.completeExceptionally(NoSuchElementException("Key $key does not exist"))
             return error
@@ -36,11 +41,19 @@ class MockDatabase: Database {
             return error
         }
 
-        return set(user.email, user)
+        val map = mapOf(
+            "firstName" to user.firstName,
+            "lastName" to user.lastName,
+            "phone" to user.phone,
+            "location" to user.location,
+            "coach" to user.isCoach,
+            "email" to user.email
+        )
+
+        return set(user.email, map)
     }
 
-    override fun getUser(email: String): CompletableFuture<UserInfo> {
-        println("Getting user $email")
-        return get(email).thenApply { user -> user as UserInfo }
+    override fun getUser(email: String): CompletableFuture<Any> {
+        return get(email)
     }
 }

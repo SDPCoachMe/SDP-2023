@@ -40,8 +40,17 @@ class EditProfileActivity : ComponentActivity() {
         database = (application as CoachMeApplication).database
 
         // TODO temporary solution to cast to UserInfo
-        val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email).exceptionally {
-            UserInfo("", "", email, "", "", false, emptyList())
+        val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email).thenApply {
+            val map = it as Map<*, *>
+            UserInfo(
+                map["firstName"] as String,
+                map["lastName"] as String,
+                map["email"] as String,
+                map["phone"] as String,
+                map["location"] as String,
+                map["coach"] as Boolean,
+                emptyList()
+            )
         }
 
         setContent {

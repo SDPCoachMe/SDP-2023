@@ -27,22 +27,9 @@ class FireDatabase : Database {
         return setChild(accounts, userID, user)
     }
 
-    override fun getUser(email: String): CompletableFuture<UserInfo> {
+    override fun getUser(email: String): CompletableFuture<Any> {
         val userID = email.replace('.', ',')
-        return getChild(accounts, userID).thenApply {
-            val map = it as Map<*, *>
-
-            UserInfo(
-                map["firstName"] as String,
-                map["lastName"] as String,
-                map["email"] as String,
-                map["phone"] as String,
-                map["location"] as String,
-                //coach and not isCoach since Gson serializes it as "coach"
-                map["coach"] as Boolean,
-                emptyList()
-            )
-        }
+        return getChild(accounts, userID)
     }
 
     /**

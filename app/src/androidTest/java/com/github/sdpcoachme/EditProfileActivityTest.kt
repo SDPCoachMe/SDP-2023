@@ -141,8 +141,8 @@ class EditProfileActivityTest {
     fun requestForExistingEmailDisplaysCorrectInfoInUserFields() {
         val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), EditProfileActivity::class.java)
         val email = "some@mail.com"
-        (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
-            .addUser(
+        val db = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
+        db.addUser(
                 UserInfo(
                 "first",
                 "last",
