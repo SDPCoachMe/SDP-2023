@@ -7,22 +7,21 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Buttons.Companion.EDIT
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Buttons.Companion.SAVE
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.CLIENT_COACH
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.COACH_CLIENT_INFO
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.LAST_NAME
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.PROFILE_PICTURE
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.SPORT
-import androidx.test.platform.app.InstrumentationRegistry
-import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.CLIENT_COACH
-import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.COACH_CLIENT_INFO
 import com.github.sdpcoachme.data.UserInfo
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.lang.Thread.sleep
 
 @RunWith(AndroidJUnit4::class)
 class EditProfileActivityTest {
@@ -142,7 +141,6 @@ class EditProfileActivityTest {
         }
     }
 
-
     @Test
     fun requestForExistingEmailDisplaysCorrectInfoInUserFields() {
         val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), EditProfileActivity::class.java)
@@ -160,11 +158,9 @@ class EditProfileActivityTest {
                 )
             )
 
-
-
         editProfileIntent.putExtra("email", email)
         ActivityScenario.launch<EditProfileActivity>(editProfileIntent).use {
-            sleep(5000)
+
             composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(email)
             composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals("first")
             composeTestRule.onNodeWithTag(LAST_NAME.TEXT).assertTextEquals("last")
@@ -182,8 +178,6 @@ class EditProfileActivityTest {
             composeTestRule.onNodeWithTag(FIRST_NAME.FIELD).assertTextEquals("first")
             composeTestRule.onNodeWithTag(LAST_NAME.FIELD).assertTextEquals("last")
             // TODO: add the other fields once they are implemented:
-
-
         }
     }
 
@@ -246,9 +240,6 @@ class EditProfileActivityTest {
 
             composeTestRule.onNodeWithTag(COACH_CLIENT_INFO).assertTextEquals("Coach")
             composeTestRule.onNodeWithTag(CLIENT_COACH.TEXT).assertTextEquals("I would like to become a client")
-
         }
     }
-
-
 }

@@ -91,6 +91,7 @@ class DashboardActivityTest {
             composeTestRule.onNodeWithTag(DASHBOARD_EMAIL).assert(hasText(text = email))
         }
     }
+
     private fun dashboardCorrectlyRedirectsOnMenuItemClick(userEmail: String, tag: String, intentMatcher: Matcher<Intent>) {
         val launchDashboard = Intent(
             ApplicationProvider.getApplicationContext(),
@@ -104,6 +105,7 @@ class DashboardActivityTest {
             Intents.release()
         }
     }
+
     @Test
     fun dashboardCorrectlyRedirectsOnProfileClick() {
         val email = "john.lennon@gmail.com"
