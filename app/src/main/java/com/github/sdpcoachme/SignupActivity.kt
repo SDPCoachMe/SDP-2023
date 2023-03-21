@@ -33,6 +33,7 @@ class SignupActivity : ComponentActivity() {
         class Buttons {
             companion object {
                 const val SIGN_UP = "signUpButton"
+                const val BE_COACH = "BE_COACH_SWITCH"
             }
         }
     }
@@ -101,7 +102,7 @@ class SignupActivity : ComponentActivity() {
                 Switch(
                     checked = isCoach,
                     onCheckedChange = { isCoach = it },
-                    modifier = Modifier.testTag("isCoachSwitch")
+                    modifier = Modifier.testTag(TestTags.Buttons.BE_COACH)
                 )
             }
             Button(

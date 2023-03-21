@@ -20,6 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.CLIENT_COACH
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.COACH_CLIENT_INFO
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.LAST_NAME
@@ -47,6 +49,11 @@ class EditProfileActivity : ComponentActivity() {
             val LABEL = "${tag}Label"
             val ROW = "${tag}Row"
         }
+        class SwitchClientCoachRowTag(tag: String) {
+            val SWITCH = "${tag}Switch"
+            val TEXT = "${tag}Text"
+            val ROW = "${tag}Row"
+        }
         class Buttons {
             companion object {
                 const val SAVE = "saveButton"
@@ -58,10 +65,13 @@ class EditProfileActivity : ComponentActivity() {
             const val PROFILE_LABEL = "profileLabel"
             const val PROFILE_PICTURE = "profilePicture"
             const val PROFILE_COLUMN = "profileColumn"
+            const val COACH_CLIENT_INFO = "coachClientInfo"
             val EMAIL = UneditableProfileRowTag("email")
             val FIRST_NAME = EditableProfileRowTag("firstName")
             val LAST_NAME = EditableProfileRowTag("lastName")
             val SPORT = EditableProfileRowTag("sport")
+            val CLIENT_COACH = SwitchClientCoachRowTag("clientCoach")
+
         }
     }
 
@@ -186,16 +196,18 @@ fun SwitchClientCoachRow(isCoach: Boolean, switchCoachClient: Boolean, onValueCh
     Row(
         Modifier
             .absolutePadding(20.dp, 0.dp, 0.dp, 10.dp)
-            .testTag("switch client coach row"),
+            .testTag(CLIENT_COACH.ROW),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
 
     ) {
-        Text("I would like to become a " + if (isCoach) "client" else "coach")
+        Text("I would like to become a " + if (isCoach) "client" else "coach",
+            modifier = Modifier.testTag(CLIENT_COACH.TEXT))
         Spacer(Modifier.width(16.dp))
         Switch(
             checked = switchCoachClient,
-            onCheckedChange = { onValueChange(it) }
+            onCheckedChange = { onValueChange(it) },
+            modifier = Modifier.testTag(CLIENT_COACH.SWITCH)
         )
     }
 }
@@ -222,7 +234,8 @@ fun TitleRow(isCoach: Boolean) {
             Text(
                 text = if (isCoach) "Coach" else "Client",
                 fontSize = 16.sp,
-                fontWeight = FontWeight.Normal
+                fontWeight = FontWeight.Normal,
+                modifier = Modifier.testTag(COACH_CLIENT_INFO)
             )
         }
         Box(
