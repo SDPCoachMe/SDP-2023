@@ -151,7 +151,7 @@ class DashboardActivityTest {
     }
     @Test
     fun dashboardCorrectlyRedirectsOnProfileClick() {
-        val email = EXISTING_EMAIL
+        val email = "john.lennon@gmail.com"
         dashboardCorrectlyRedirectsOnMenuItemClick(
             email,
             PROFILE,
