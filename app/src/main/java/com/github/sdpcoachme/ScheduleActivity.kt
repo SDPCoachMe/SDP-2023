@@ -20,7 +20,6 @@ import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -283,10 +282,11 @@ fun EventPreview(
 }*/
 
 // Previews all the events in the sampleEvents list together
+/*
 @Preview(showBackground = true)
 @Composable
 fun SchedulePreview() {
     CoachMeTheme {
         Schedule(events = sampleEvents)
     }
-}
+}*/
