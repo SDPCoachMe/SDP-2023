@@ -19,6 +19,7 @@ import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.PROFIL
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MENU_LIST
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorActivity
 import org.hamcrest.Matcher
 import org.hamcrest.Matchers.allOf
 import org.junit.Rule
@@ -31,6 +32,16 @@ class DashboardActivityTest {
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
+
+    @Test
+    fun errorPageIsShownWhenDashboardIsLaunchedWithoutEmailAsExtra() {
+        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), DashboardActivity::class.java)).use {
+            // not possible to use Intents.init()... to check if the correct intent
+            // is launched as the intents are launched from within the onCreate function
+            composeTestRule.onNodeWithTag(IntentExtrasErrorActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(IntentExtrasErrorActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
+        }
+    }
 
     @Test
     fun drawerOpensOnMenuClick() {

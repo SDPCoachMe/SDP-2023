@@ -1,5 +1,6 @@
 package com.github.sdpcoachme
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -26,6 +27,7 @@ import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.LAST_NAME
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.SPORT
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorActivity
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
@@ -69,31 +71,37 @@ class EditProfileActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // TODO handle null better
-        val email = intent.getStringExtra("email") ?: "no valid email"
+        val email = intent.getStringExtra("email")
 
-        database = (application as CoachMeApplication).database
+        if (email == null) {
+            val intent = Intent(this, IntentExtrasErrorActivity::class.java)
+            intent.putExtra("errorMsg", "Profile editing did not receive an email address.\n Please return to the login page and try again.")
+            startActivity(intent)
+        } else {
 
-        // TODO temporary solution to cast to UserInfo
-        val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email).thenApply {
-            val map = it as Map<*, *>
-            UserInfo(
-                map["firstName"] as String,
-                map["lastName"] as String,
-                map["email"] as String,
-                map["phone"] as String,
-                map["location"] as String,
-                emptyList()
-            )
-        }
+            database = (application as CoachMeApplication).database
 
-        setContent {
-            CoachMeTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colors.background
-                ) {
-                    Profile(email, futureUserInfo)
+            // TODO temporary solution to cast to UserInfo
+            val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email).thenApply {
+                val map = it as Map<*, *>
+                UserInfo(
+                    map["firstName"] as String,
+                    map["lastName"] as String,
+                    map["email"] as String,
+                    map["phone"] as String,
+                    map["location"] as String,
+                    emptyList()
+                )
+            }
+
+            setContent {
+                CoachMeTheme {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colors.background
+                    ) {
+                        Profile(email, futureUserInfo)
+                    }
                 }
             }
         }

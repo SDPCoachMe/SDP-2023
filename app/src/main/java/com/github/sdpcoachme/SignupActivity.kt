@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorActivity
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
@@ -41,12 +42,18 @@ class SignupActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         database = (application as CoachMeApplication).database
 
-        // TODO handle the null better here
-        val email = intent.getStringExtra("email") ?: "no valid email"
+        val email = intent.getStringExtra("email")
 
-        setContent {
-            CoachMeTheme {
-                AccountForm(email)
+        if (email == null) {
+            val intent = Intent(this, IntentExtrasErrorActivity::class.java)
+            intent.putExtra("errorMsg", "The signup page did not receive an email address.\n Please return to the login page and try again.")
+            startActivity(intent)
+        } else {
+
+            setContent {
+                CoachMeTheme {
+                    AccountForm(email)
+                }
             }
         }
     }
