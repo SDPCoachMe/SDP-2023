@@ -19,7 +19,7 @@ import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.LAST_N
 import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.LOCATION
 import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.PHONE
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorActivity
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import junit.framework.TestCase
 import org.hamcrest.Matchers.allOf
 import org.junit.Rule
@@ -63,8 +63,8 @@ open class SignupActivityTest {
         ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), DashboardActivity::class.java)).use {
             // not possible to use Intents.init()... to check if the correct intent
             // is launched as the intents are launched from within the onCreate function
-            composeTestRule.onNodeWithTag(IntentExtrasErrorActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(IntentExtrasErrorActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
         }
     }
 

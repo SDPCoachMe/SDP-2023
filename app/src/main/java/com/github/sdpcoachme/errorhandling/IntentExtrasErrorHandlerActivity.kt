@@ -23,7 +23,7 @@ import com.github.sdpcoachme.ui.theme.CoachMeTheme
  * error message if none was received. Then the user can
  * go back to the login activity.
  */
-class IntentExtrasErrorActivity : ComponentActivity() {
+class IntentExtrasErrorHandlerActivity : ComponentActivity() {
     class TestTags {
         class TextFields {
             companion object {

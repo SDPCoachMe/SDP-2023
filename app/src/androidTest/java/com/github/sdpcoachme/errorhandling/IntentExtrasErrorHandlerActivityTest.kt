@@ -11,12 +11,12 @@ import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import com.github.sdpcoachme.EditProfileActivity
 import com.github.sdpcoachme.LoginActivity
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import org.junit.Rule
 import org.junit.Test
 
-class IntentExtrasErrorActivityTest {
+class IntentExtrasErrorHandlerActivityTest {
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
@@ -25,7 +25,7 @@ class IntentExtrasErrorActivityTest {
     fun whenLaunchedWithoutExtraItDisplaysGenericErrorMessage() {
         val genericErrorMsg = "An error occurred. Please return to the login page and retry."
 
-        val emptyErrorIntent = Intent(ApplicationProvider.getApplicationContext(), IntentExtrasErrorActivity::class.java)
+        val emptyErrorIntent = Intent(ApplicationProvider.getApplicationContext(), IntentExtrasErrorHandlerActivity::class.java)
 
         ActivityScenario.launch<EditProfileActivity>(emptyErrorIntent).use {
 
@@ -39,7 +39,7 @@ class IntentExtrasErrorActivityTest {
     @Test
     fun whenLaunchedWithExtraItDisplaysThePassedErrorMessage() {
         val errorMsg = "This is a test error message."
-        val emptyErrorIntent = Intent(ApplicationProvider.getApplicationContext(), IntentExtrasErrorActivity::class.java)
+        val emptyErrorIntent = Intent(ApplicationProvider.getApplicationContext(), IntentExtrasErrorHandlerActivity::class.java)
         emptyErrorIntent.putExtra("errorMsg", errorMsg)
 
         ActivityScenario.launch<EditProfileActivity>(emptyErrorIntent).use {
@@ -53,7 +53,7 @@ class IntentExtrasErrorActivityTest {
 
     @Test
     fun goToLoginButtonClickAfterEmptyIntentRedirectsToLoginPage() {
-        val emptyErrorIntent = Intent(ApplicationProvider.getApplicationContext(), IntentExtrasErrorActivity::class.java)
+        val emptyErrorIntent = Intent(ApplicationProvider.getApplicationContext(), IntentExtrasErrorHandlerActivity::class.java)
 
         ActivityScenario.launch<EditProfileActivity>(emptyErrorIntent).use {
             Intents.init()
@@ -69,7 +69,7 @@ class IntentExtrasErrorActivityTest {
 
     @Test
     fun goToLoginButtonClickAfterIntentWithExtraRedirectsToLoginPage() {
-        val emptyErrorIntent = Intent(ApplicationProvider.getApplicationContext(), IntentExtrasErrorActivity::class.java)
+        val emptyErrorIntent = Intent(ApplicationProvider.getApplicationContext(), IntentExtrasErrorHandlerActivity::class.java)
         val errorMsg = "This is a test error message."
         emptyErrorIntent.putExtra("errorMsg", errorMsg)
 

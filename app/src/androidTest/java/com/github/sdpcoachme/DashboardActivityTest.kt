@@ -19,7 +19,7 @@ import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.PROFIL
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MENU_LIST
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorActivity
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import org.hamcrest.Matcher
 import org.hamcrest.Matchers.allOf
 import org.junit.Rule
@@ -38,8 +38,8 @@ class DashboardActivityTest {
         ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), DashboardActivity::class.java)).use {
             // not possible to use Intents.init()... to check if the correct intent
             // is launched as the intents are launched from within the onCreate function
-            composeTestRule.onNodeWithTag(IntentExtrasErrorActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(IntentExtrasErrorActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
         }
     }
 
@@ -52,9 +52,11 @@ class DashboardActivityTest {
         )
         launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+            Intents.init()
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
+            Intents.release()
         }
     }
 
@@ -67,6 +69,7 @@ class DashboardActivityTest {
         )
         launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+            Intents.init()
             // opens on right swipe
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
             composeTestRule.onRoot().performTouchInput { swipeRight() }
@@ -75,6 +78,7 @@ class DashboardActivityTest {
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
             composeTestRule.onRoot().performTouchInput { swipeLeft() }
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
+            Intents.release()
         }
     }
 
@@ -87,6 +91,7 @@ class DashboardActivityTest {
         )
         launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+            Intents.init()
             // ignores left swipe if closed
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
             composeTestRule.onRoot().performTouchInput { swipeLeft() }
@@ -95,6 +100,7 @@ class DashboardActivityTest {
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
             composeTestRule.onRoot().performTouchInput { swipeRight() }
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
+            Intents.release()
         }
     }
 
@@ -107,6 +113,7 @@ class DashboardActivityTest {
         )
         launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+            Intents.init()
             val width = composeTestRule.onRoot().getBoundsInRoot().width
             val height = composeTestRule.onRoot().getBoundsInRoot().height
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
@@ -115,6 +122,7 @@ class DashboardActivityTest {
                 click(position = Offset(width.toPx() - 10, height.toPx() / 2))
             }
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
+            Intents.release()
         }
     }
 
@@ -127,7 +135,9 @@ class DashboardActivityTest {
         )
         launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+            Intents.init()
             composeTestRule.onNodeWithTag(MENU_LIST).onChildren().assertAll(hasClickAction())
+            Intents.release()
         }
     }
 
@@ -140,7 +150,9 @@ class DashboardActivityTest {
         )
         launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+            Intents.init()
             composeTestRule.onNodeWithTag(DASHBOARD_EMAIL).assert(hasText(text = email))
+            Intents.release()
         }
     }
     private fun dashboardCorrectlyRedirectsOnMenuItemClick(

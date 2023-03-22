@@ -16,7 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorActivity
+import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
@@ -48,9 +48,8 @@ class SignupActivity : ComponentActivity() {
         val email = intent.getStringExtra("email")
 
         if (email == null) {
-            val intent = Intent(this, IntentExtrasErrorActivity::class.java)
-            intent.putExtra("errorMsg", "The signup page did not receive an email address.\n Please return to the login page and try again.")
-            startActivity(intent)
+            val errorMsg = "The signup page did not receive an email address.\n Please return to the login page and try again."
+            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
 
             setContent {

@@ -1,6 +1,5 @@
 package com.github.sdpcoachme
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,7 +28,7 @@ import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.LAST_NAME
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.SPORT
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorActivity
+import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
@@ -84,9 +83,8 @@ class EditProfileActivity : ComponentActivity() {
         val email = intent.getStringExtra("email")
 
         if (email == null) {
-            val intent = Intent(this, IntentExtrasErrorActivity::class.java)
-            intent.putExtra("errorMsg", "Profile editing did not receive an email address.\n Please return to the login page and try again.")
-            startActivity(intent)
+            val errorMsg = "Profile editing did not receive an email address.\n Please return to the login page and try again."
+            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
 
             database = (application as CoachMeApplication).database
