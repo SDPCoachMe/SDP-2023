@@ -17,22 +17,46 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.ParentDataModifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.time.temporal.TemporalAdjusters
 import kotlin.math.roundToInt
 
 class ScheduleActivity : ComponentActivity() {
+    class TestTags {
+        class ScheduleHeader(tag: String) {
+            val ROW = "${tag}Row"
+            val BOX = "${tag}Box"
+        }
+        companion object {
+            const val SCHEDULE_COLUMN = "scheduleColumn"
+            const val SCHEDULE_HEADER = "scheduleHeader"
+            const val BASIC_SCHEDULE = "basicSchedule"
+            const val EVENT = "event"
+            const val EVENT_NAME = "eventName"
+            const val EVENT_TIME = "eventTime"
+            const val EVENT_DESCRIPTION = "eventDescription"
+
+            // ScheduleHeader
+            val HEADER_ROW = ScheduleHeader(SCHEDULE_HEADER).ROW
+            val HEADER_BOX = ScheduleHeader(SCHEDULE_HEADER).BOX
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -46,16 +70,17 @@ class ScheduleActivity : ComponentActivity() {
     }
 }
 
-private class EventDataModifier(
-    val event: Event,
-) : ParentDataModifier {
+private class EventDataModifier(val event: Event) : ParentDataModifier {
     override fun Density.modifyParentData(parentData: Any?) = event
 }
 
 private fun Modifier.eventData(event: Event) = this.then(EventDataModifier(event))
 
-val EventTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
+private val EventTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
+private val WithoutNanoSecondsFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
 private val DayFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
+
+private const val ColumnsPerWeek = 7
 
 @Composable
 fun BasicEvent(
@@ -72,20 +97,24 @@ fun BasicEvent(
         Text(
             text = "${event.start.format(EventTimeFormatter)} - ${event.end.format(EventTimeFormatter)}",
             style = MaterialTheme.typography.caption,
+            fontSize = 9f.sp,
         )
 
         Text(
             text = event.name,
             style = MaterialTheme.typography.body1,
             fontWeight = FontWeight.Bold,
+            fontSize = 12f.sp,
         )
 
+        //TODO: Only show description when event expanded
         if (event.description != null) {
             Text(
                 text = event.description,
                 style = MaterialTheme.typography.body2,
-                maxLines = 1,
+                maxLines = 5,
                 overflow = TextOverflow.Ellipsis,
+                fontSize = 10f.sp,
             )
         }
     }
@@ -101,7 +130,8 @@ fun BasicDayHeader(
         textAlign = TextAlign.Center,
         modifier = modifier
             .fillMaxWidth()
-            .padding(4.dp)
+            .padding(4.dp),
+        fontSize = 12f.sp,
     )
 }
 
@@ -133,8 +163,6 @@ fun BasicSchedule(
     dayWidth: Dp,
     hourHeight: Dp,
 ) {
-    //TODO: Make this dynamic to screen size
-    val numDays = ChronoUnit.DAYS.between(minDate, maxDate).toInt() + 1
     val dividerColor = if (MaterialTheme.colors.isLight) Color.LightGray else Color.DarkGray
     Layout(
         content = {
@@ -155,7 +183,7 @@ fun BasicSchedule(
                         strokeWidth = 1.dp.toPx()
                     )
                 }
-                repeat(numDays - 1) {
+                repeat(ColumnsPerWeek - 1) {
                     drawLine(
                         dividerColor,
                         start = Offset((it + 1) * dayWidth.toPx(), 0f),
@@ -166,7 +194,7 @@ fun BasicSchedule(
             },
     ) { measureables, constraints ->
         val height = hourHeight.roundToPx() * 24
-        val width = dayWidth.roundToPx() * numDays
+        val width = dayWidth.roundToPx() * ColumnsPerWeek
         val placeablesWithEvents = measureables.map { measurable ->
             val event = measurable.parentData as Event
             val eventDurationMinutes = ChronoUnit.MINUTES.between(event.start, event.end)
@@ -190,21 +218,23 @@ fun BasicSchedule(
 fun Schedule(
     events: List<Event>,
     modifier: Modifier = Modifier,
-    eventContent: @Composable (event: Event) -> Unit = { BasicEvent(event = it) },
-    minDate: LocalDate = events.minByOrNull(Event::start)!!.start.toLocalDate(),
-    maxDate: LocalDate = events.maxByOrNull(Event::end)!!.end.toLocalDate(),
+    eventContent: @Composable (event: Event) -> Unit = { BasicEvent(event = it) }
 ) {
-    val dayWidth = 256.dp
+    // the starting day is always the previous Monday
+    val minDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    val maxDate = minDate.plusDays(ColumnsPerWeek.toLong())
+    val dayWidth = LocalConfiguration.current.screenWidthDp.dp / ColumnsPerWeek
     val hourHeight = 64.dp
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
-    Column(modifier = modifier) {
+    Column(modifier = modifier.testTag(ScheduleActivity.TestTags.SCHEDULE_COLUMN)) {
         ScheduleHeader(
             minDate = minDate,
             maxDate = maxDate,
             dayWidth = dayWidth,
             modifier = Modifier
                 .horizontalScroll(horizontalScrollState)
+                .testTag(ScheduleActivity.TestTags.SCHEDULE_HEADER)
         )
         BasicSchedule(
             events = events,
@@ -217,51 +247,54 @@ fun Schedule(
                 .weight(1f) // Fill remaining space in the column
                 .verticalScroll(verticalScrollState)
                 .horizontalScroll(horizontalScrollState)
+                .testTag(ScheduleActivity.TestTags.BASIC_SCHEDULE)
         )
     }
 }
 
+// mainly for testing, debugging and demo purposes
+private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 private val sampleEvents = listOf(
     Event(
         name = "Google I/O Keynote",
         color = Color(0xFFAFBBF2),
-        start = LocalDateTime.parse("2021-05-18T13:00:00"),
-        end = LocalDateTime.parse("2021-05-18T15:00:00"),
+        start = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(13, 0, 0),
+        end = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(15, 0, 0),
         description = "Tune in to find out about how we're furthering our mission to organize the world’s information and make it universally accessible and useful.",
     ),
     Event(
         name = "Developer Keynote",
         color = Color(0xFFAFBBF2),
-        start = LocalDateTime.parse("2021-05-18T15:15:00"),
-        end = LocalDateTime.parse("2021-05-18T16:00:00"),
+        start = currentMonday.plusDays(2).atTime(7, 0, 0),
+        end = currentMonday.plusDays(2).atTime(9, 0, 0),
         description = "Learn about the latest updates to our developer products and platforms from Google Developers.",
     ),
     Event(
         name = "What's new in Android",
         color = Color(0xFF1B998B),
-        start = LocalDateTime.parse("2021-05-18T16:50:00"),
-        end = LocalDateTime.parse("2021-05-18T18:00:00"),
+        start = currentMonday.plusDays(2).atTime(10, 0, 0),
+        end = currentMonday.plusDays(2).atTime(12, 0, 0),
         description = "In this Keynote, Chet Haase, Dan Sandler, and Romain Guy discuss the latest Android features and enhancements for developers.",
     ),
     Event(
         name = "What's new in Machine Learning",
         color = Color(0xFFF4BFDB),
-        start = LocalDateTime.parse("2021-05-19T09:30:00"),
-        end = LocalDateTime.parse("2021-05-19T11:00:00"),
+        start = currentMonday.plusDays(2).atTime(22, 0, 0),
+        end = currentMonday.plusDays(3).atTime(4, 0, 0),
         description = "Learn about the latest and greatest in ML from Google. We’ll cover what’s available to developers when it comes to creating, understanding, and deploying models for a variety of different applications.",
     ),
     Event(
         name = "What's new in Material Design",
         color = Color(0xFF6DD3CE),
-        start = LocalDateTime.parse("2021-05-19T11:00:00"),
-        end = LocalDateTime.parse("2021-05-19T12:15:00"),
+        start = currentMonday.plusDays(3).atTime(13, 0, 0),
+        end = currentMonday.plusDays(3).atTime(15, 0, 0),
         description = "Learn about the latest design improvements to help you build personal dynamic experiences with Material Design.",
     ),
     Event(
         name = "Jetpack Compose Basics",
         color = Color(0xFF1B998B),
-        start = LocalDateTime.parse("2021-05-20T12:00:00"),
-        end = LocalDateTime.parse("2021-05-20T13:00:00"),
+        start = currentMonday.plusDays(4).atTime(9, 0, 0),
+        end = currentMonday.plusDays(4).atTime(13, 0, 0),
         description = "This Workshop will take you through the basics of building your first app with Jetpack Compose, Android's new modern UI toolkit that simplifies and accelerates UI development on Android.",
     ),
 )
