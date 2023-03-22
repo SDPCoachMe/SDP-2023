@@ -27,7 +27,7 @@ class MockDatabase: Database {
         return set("accounts", user)
     }
 
-    override fun getUser(email: String): CompletableFuture<Any> {
-        return get("accounts")
+    override fun getUser(email: String): CompletableFuture<UserInfo> {
+        return get("accounts") // todo ça ne va pas
     }
 }
