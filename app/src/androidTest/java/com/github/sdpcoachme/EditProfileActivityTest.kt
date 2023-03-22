@@ -7,14 +7,18 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Buttons.Companion.EDIT
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Buttons.Companion.SAVE
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.CLIENT_COACH
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.COACH_CLIENT_INFO
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.LAST_NAME
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.PROFILE_PICTURE
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.SPORT
+import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorActivity
 import org.junit.Rule
 import org.junit.Test
@@ -25,6 +29,15 @@ class EditProfileActivityTest {
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
+
+    private val displayedAfterEditButtonClicked = listOf(
+        FIRST_NAME.FIELD,
+        LAST_NAME.FIELD,
+        SPORT.FIELD,
+        CLIENT_COACH.SWITCH,
+
+        SAVE
+    )
 
     @Test
     fun correctInitialScreenContent() {
@@ -51,6 +64,7 @@ class EditProfileActivityTest {
             FIRST_NAME.FIELD,
             LAST_NAME.FIELD,
             SPORT.FIELD,
+            CLIENT_COACH.SWITCH,
 
             SAVE
         )
@@ -84,13 +98,6 @@ class EditProfileActivityTest {
 
     @Test
     fun editButtonClickActivatesCorrectElements() {
-        val displayedAfterEditButtonClicked = listOf(
-            FIRST_NAME.FIELD,
-            LAST_NAME.FIELD,
-            SPORT.FIELD,
-
-            SAVE
-        )
 
         val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), EditProfileActivity::class.java)
         val email = "example@email.com"
@@ -142,6 +149,108 @@ class EditProfileActivityTest {
                 composeTestRule.onNodeWithTag(field.TEXT)
                     .assertTextEquals(newValue)
             }
+        }
+    }
+
+    @Test
+    fun requestForExistingEmailDisplaysCorrectInfoInUserFields() {
+        val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), EditProfileActivity::class.java)
+        val email = "some@mail.com"
+        val db = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
+        db.addUser(
+                UserInfo(
+                    "first",
+                    "last",
+                    email,
+                    "012345",
+                    "Some Place",
+                    false,
+                    listOf()
+                )
+            )
+
+        editProfileIntent.putExtra("email", email)
+        ActivityScenario.launch<EditProfileActivity>(editProfileIntent).use {
+
+            composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(email)
+            composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals("first")
+            composeTestRule.onNodeWithTag(LAST_NAME.TEXT).assertTextEquals("last")
+            // TODO: add the other fields once they are implemented:
+
+            composeTestRule.onNodeWithTag(EDIT)
+                .assertIsDisplayed()
+                .performClick()
+
+            displayedAfterEditButtonClicked.forEach { tag ->
+                composeTestRule.onNodeWithTag(tag).assertIsDisplayed()
+            }
+
+            composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(email)
+            composeTestRule.onNodeWithTag(FIRST_NAME.FIELD).assertTextEquals("first")
+            composeTestRule.onNodeWithTag(LAST_NAME.FIELD).assertTextEquals("last")
+            // TODO: add the other fields once they are implemented:
+        }
+    }
+
+    @Test
+    fun requestForNonExistentEmailDisplaysEmptyUserFields() {
+        val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), EditProfileActivity::class.java)
+        val email = "non-existant@email.com"
+        editProfileIntent.putExtra("email", email)
+        ActivityScenario.launch<EditProfileActivity>(editProfileIntent).use {
+
+            composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(email)
+            composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals("")
+            composeTestRule.onNodeWithTag(LAST_NAME.TEXT).assertTextEquals("")
+            // TODO: add the other fields once they are implemented:
+
+            composeTestRule.onNodeWithTag(EDIT)
+                .assertIsDisplayed()
+                .performClick()
+
+            displayedAfterEditButtonClicked.forEach { tag ->
+                composeTestRule.onNodeWithTag(tag).assertIsDisplayed()
+            }
+
+            composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals("non-existant@email.com")
+            composeTestRule.onNodeWithTag(FIRST_NAME.FIELD).assertTextEquals("")
+            composeTestRule.onNodeWithTag(LAST_NAME.FIELD).assertTextEquals("")
+            // TODO: add the other fields once they are implemented:
+        }
+    }
+
+    @Test
+    fun changingToCoachAndBackToClientWorks() {
+        val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), EditProfileActivity::class.java)
+        val email = "example@email.com"
+        editProfileIntent.putExtra("email", email)
+        ActivityScenario.launch<EditProfileActivity>(editProfileIntent).use {
+
+            composeTestRule.onNodeWithTag(EDIT)
+                .assertIsDisplayed()
+                .performClick()
+
+            displayedAfterEditButtonClicked.forEach { tag ->
+                composeTestRule.onNodeWithTag(tag).assertIsDisplayed()
+            }
+
+            composeTestRule.onNodeWithTag(COACH_CLIENT_INFO).assertTextEquals("Client")
+            composeTestRule.onNodeWithTag(CLIENT_COACH.TEXT).assertTextEquals("I would like to become a coach")
+
+            composeTestRule.onNodeWithTag(CLIENT_COACH.SWITCH)
+                .assertIsDisplayed()
+                .performClick()
+
+            composeTestRule.onNodeWithTag(SAVE)
+                .assertIsDisplayed()
+                .performClick()
+
+            composeTestRule.onNodeWithTag(EDIT)
+                .assertIsDisplayed()
+                .performClick()
+
+            composeTestRule.onNodeWithTag(COACH_CLIENT_INFO).assertTextEquals("Coach")
+            composeTestRule.onNodeWithTag(CLIENT_COACH.TEXT).assertTextEquals("I would like to become a client")
         }
     }
 }

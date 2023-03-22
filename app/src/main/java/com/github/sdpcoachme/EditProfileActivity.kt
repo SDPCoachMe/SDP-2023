@@ -21,6 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.CLIENT_COACH
+import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.COACH_CLIENT_INFO
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.LAST_NAME
@@ -49,6 +51,11 @@ class EditProfileActivity : ComponentActivity() {
             val LABEL = "${tag}Label"
             val ROW = "${tag}Row"
         }
+        class SwitchClientCoachRowTag(tag: String) {
+            val SWITCH = "${tag}Switch"
+            val TEXT = "${tag}Text"
+            val ROW = "${tag}Row"
+        }
         class Buttons {
             companion object {
                 const val SAVE = "saveButton"
@@ -60,10 +67,13 @@ class EditProfileActivity : ComponentActivity() {
             const val PROFILE_LABEL = "profileLabel"
             const val PROFILE_PICTURE = "profilePicture"
             const val PROFILE_COLUMN = "profileColumn"
+            const val COACH_CLIENT_INFO = "coachClientInfo"
             val EMAIL = UneditableProfileRowTag("email")
             val FIRST_NAME = EditableProfileRowTag("firstName")
             val LAST_NAME = EditableProfileRowTag("lastName")
             val SPORT = EditableProfileRowTag("sport")
+            val CLIENT_COACH = SwitchClientCoachRowTag("clientCoach")
+
         }
     }
 
@@ -90,9 +100,10 @@ class EditProfileActivity : ComponentActivity() {
                     map["email"] as String,
                     map["phone"] as String,
                     map["location"] as String,
+                    map["coach"] as Boolean,
                     emptyList()
                 )
-            }
+            }.exceptionally { null }
 
             setContent {
                 CoachMeTheme {
@@ -120,6 +131,8 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
     var fname by remember { mutableStateOf("") }
     var lname by remember { mutableStateOf("") }
     var favsport by remember { mutableStateOf("") }
+    var isCoach by remember { mutableStateOf(false) }
+    var switchCoachClient by remember { mutableStateOf(false) }
 
     var f by remember { mutableStateOf(futureUserInfo)}
 
@@ -129,6 +142,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
             lname = newUser.lastName
             // TODO temporary sports handling
             favsport = ""
+            isCoach = newUser.isCoach
             f = CompletableFuture.completedFuture(null)
         }
     }
@@ -140,7 +154,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start
     ) {
-        TitleRow()
+        TitleRow(isCoach)
         EmailRow(email)
 
         ProfileRow(rowName = "First name", tag = FIRST_NAME, isEditing = isEditing, leftTextPadding = 45.dp,
@@ -151,6 +165,8 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
             value = favsport, onValueChange = { newValue -> favsport = newValue })
 
         if (isEditing) {
+            SwitchClientCoachRow(isCoach, switchCoachClient) { switchCoachClient = it }
+
             // save button
             Button(
                 modifier = Modifier
@@ -159,7 +175,9 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
                 onClick = {
                     isEditing = false
                     // TODO temporary sports handling
-                    val newUser = UserInfo(fname, lname, email, "", "", listOf())
+                    isCoach = isCoach xor switchCoachClient
+                    switchCoachClient = false
+                    val newUser = UserInfo(fname, lname, email, "", "", isCoach, listOf())
                     database.addUser(newUser)
                 }
             ) {
@@ -181,11 +199,32 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
     }
 }
 
+@Composable
+fun SwitchClientCoachRow(isCoach: Boolean, switchCoachClient: Boolean, onValueChange: (Boolean) -> Unit) {
+    Row(
+        Modifier
+            .absolutePadding(20.dp, 0.dp, 0.dp, 10.dp)
+            .testTag(CLIENT_COACH.ROW),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start
+
+    ) {
+        Text("I would like to become a " + if (isCoach) "client" else "coach",
+            modifier = Modifier.testTag(CLIENT_COACH.TEXT))
+        Spacer(Modifier.width(16.dp))
+        Switch(
+            checked = switchCoachClient,
+            onCheckedChange = { onValueChange(it) },
+            modifier = Modifier.testTag(CLIENT_COACH.SWITCH)
+        )
+    }
+}
+
 /**
  * Composable used to display the profile title and the user's profile picture.
  */
 @Composable
-fun TitleRow() {
+fun TitleRow(isCoach: Boolean) {
     Row (
         modifier = Modifier
             .absolutePadding(20.dp, 20.dp, 0.dp, 10.dp)
@@ -193,12 +232,20 @@ fun TitleRow() {
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ) {
-        Text(
-            modifier = Modifier.testTag(PROFILE_LABEL),
-            text = "My Profile",
-            fontSize = 30.sp,
-            fontWeight = FontWeight.Bold
-        )
+        Column {
+            Text(
+                modifier = Modifier.testTag(PROFILE_LABEL),
+                text = "My Profile",
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = if (isCoach) "Coach" else "Client",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Normal,
+                modifier = Modifier.testTag(COACH_CLIENT_INFO)
+            )
+        }
         Box(
             modifier = Modifier
                 .absolutePadding(100.dp, 0.dp, 0.dp, 0.dp)

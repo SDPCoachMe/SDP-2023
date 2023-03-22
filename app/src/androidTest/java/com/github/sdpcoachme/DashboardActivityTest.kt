@@ -160,6 +160,7 @@ class DashboardActivityTest {
             Intents.release()
         }
     }
+
     @Test
     fun dashboardCorrectlyRedirectsOnProfileClick() {
         val email = "john.lennon@gmail.com"
