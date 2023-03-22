@@ -1,6 +1,6 @@
 package com.github.sdpcoachme.data
 
-data class ListSport(
+data class ListItem(
     val title: String,
     val selected: Boolean
 )
