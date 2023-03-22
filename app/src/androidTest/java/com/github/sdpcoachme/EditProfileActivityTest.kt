@@ -148,12 +148,12 @@ class EditProfileActivityTest {
         val db = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
         db.addUser(
                 UserInfo(
-                "first",
-                "last",
-                email,
-                "012345",
-                "Some Place",
-                false,
+                    "first",
+                    "last",
+                    email,
+                    "012345",
+                    "Some Place",
+                    false,
                     listOf()
                 )
             )
