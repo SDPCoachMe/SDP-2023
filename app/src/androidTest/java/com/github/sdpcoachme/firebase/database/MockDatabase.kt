@@ -19,14 +19,26 @@ class MockDatabase: Database {
         end = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(15, 0, 0),
         description = "Tune in to find out about how we're furthering our mission to organize the world’s information and make it universally accessible and useful.",
     ))
-    private val defaultUserInfo = UserInfo(
-        "John", "Doe", "example@email.com",
-        "1234567890", "Some location",
-        emptyList(), eventList)
+    private val defaultUserInfo = mapOf(
+        "firstName" to "John",
+        "lastName" to "Doe",
+        "phone" to "1234567890",
+        "location" to "Some location",
+        "coach" to false,
+        "email" to "example@email.com",
+        "eventList" to eventList
+    )
 
-    private val db = hashMapOf<String, Any>("accounts" to defaultUserInfo)
+    private val db = hashMapOf<String, Any>("example@email.com" to defaultUserInfo)
 
     override fun get(key: String): CompletableFuture<Any> {
+        if (!db.containsKey(key)) {
+            println("Key $key does not exist")
+            val error = CompletableFuture<Any>()
+            error.completeExceptionally(NoSuchElementException("Key $key does not exist"))
+            return error
+        }
+
         return CompletableFuture.completedFuture(db[key])
     }
 
@@ -36,10 +48,25 @@ class MockDatabase: Database {
     }
 
     override fun addUser(user: UserInfo): CompletableFuture<Void> {
-        return set("accounts", user)
+        if (user.email == "throw@Exception.com") {
+            val error = CompletableFuture<Void>()
+            error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
+            return error
+        }
+
+        val map = mapOf(
+            "firstName" to user.firstName,
+            "lastName" to user.lastName,
+            "phone" to user.phone,
+            "location" to user.location,
+            "coach" to user.isCoach,
+            "email" to user.email
+        )
+
+        return set(user.email, map)
     }
 
     override fun getUser(email: String): CompletableFuture<Any> {
-        return get("accounts")
+        return get(email)
     }
 }

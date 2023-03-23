@@ -33,6 +33,7 @@ import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.SETTIN
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MENU_LIST
+import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.launch
 
@@ -63,11 +64,16 @@ class DashboardActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // TODO handle the null better here
-        val email = intent.getStringExtra("email") ?: "no valid email"
+        val email = intent.getStringExtra("email")
 
-        setContent {
-            CoachMeTheme {
-                DashboardView(email)
+        if (email == null) {
+            val errorMsg = "The dashboard did not receive an email address.\n Please return to the login page and try again."
+            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
+        } else {
+            setContent {
+                CoachMeTheme {
+                    DashboardView(email)
+                }
             }
         }
     }
@@ -139,6 +145,7 @@ fun Dashboard(email: String, scaffoldState: ScaffoldState, onScaffoldStateChange
                         else -> {
                             // TODO replace the print by a call to the corresponding item activity
                             println("Clicked on ${it.title}")
+
                         }
                     }
                 }
