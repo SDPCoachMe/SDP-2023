@@ -41,10 +41,7 @@ open class SignupActivityTest {
 
             // Correct way to get application context without issues
             val database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
-            val user = UserInfo(
-                "Jean", "Dupont",
-                email, "0692000000",
-                "Lausanne", listOf())
+            val user = UserInfo("Jean", "Dupont", email, "0692000000","Lausanne", emptyList(), emptyList())
             composeTestRule.onNodeWithTag(FIRST_NAME).performTextInput(user.firstName)
             Espresso.closeSoftKeyboard()
             composeTestRule.onNodeWithTag(LAST_NAME).performTextInput(user.lastName)

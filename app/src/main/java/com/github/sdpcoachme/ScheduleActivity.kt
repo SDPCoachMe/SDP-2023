@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.data.Event
+import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -57,8 +58,13 @@ class ScheduleActivity : ComponentActivity() {
         }
     }
 
+    private lateinit var database: Database
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val email = intent.getStringExtra("email") ?: "no valid email"
+        database = (application as CoachMeApplication).database
+
         setContent {
             CoachMeTheme {
                 // A surface container using the 'background' color from the theme

@@ -98,7 +98,8 @@ class SignupActivity : ComponentActivity() {
                         email = email,
                         phone = phone,
                         location = location,
-                        sports = listOf() // todo add sports with MultiSelectListUI
+                        sports = emptyList(), // todo add sports with MultiSelectListUI
+                        events = emptyList(),
                     )
                     database.addUser(newUser).handle { _, exception ->
                         when (exception) {

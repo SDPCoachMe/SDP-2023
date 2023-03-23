@@ -83,6 +83,7 @@ class EditProfileActivity : ComponentActivity() {
                 map["email"] as String,
                 map["phone"] as String,
                 map["location"] as String,
+                emptyList(),
                 emptyList()
             )
         }
@@ -151,7 +152,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
                 onClick = {
                     isEditing = false
                     // TODO temporary sports handling
-                    val newUser = UserInfo(fname, lname, email, "", "", listOf())
+                    val newUser = UserInfo(fname, lname, email, "", "", emptyList(), emptyList())
                     database.addUser(newUser)
                 }
             ) {
