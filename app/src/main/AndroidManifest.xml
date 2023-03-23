@@ -29,6 +29,11 @@
             android:label="@string/title_activity_signup"
             android:theme="@style/Theme.CoachMe" />
         <activity
+            android:name=".errorhandling.IntentExtrasErrorHandlerActivity"
+            android:exported="false"
+            android:label="@string/title_activity_signup"
+            android:theme="@style/Theme.CoachMe" />
+        <activity
             android:name=".EditProfileActivity"
             android:exported="false"
             android:label="@string/title_activity_edit_profile"

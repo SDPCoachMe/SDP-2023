@@ -19,6 +19,7 @@ import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.PROFILE_LABE
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.PROFILE_PICTURE
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.SPORT
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -82,6 +83,16 @@ class EditProfileActivityTest {
                 composeTestRule.onNodeWithTag(tag).assertDoesNotExist()
             }
 
+        }
+    }
+
+    @Test
+    fun errorPageIsShownWhenEditProfileIsLaunchedWithoutEmailAsExtra() {
+        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), EditProfileActivity::class.java)).use {
+            // not possible to use Intents.init()... to check if the correct intent
+            // is launched as the intents are launched from within the onCreate function
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
         }
     }
 
