@@ -1,0 +1,7 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Thu Mar 23 13:51:08 CET 2023
+org.jacoco.agent-0.8.9-SNAPSHOT.pom>=
+org.jacoco.agent-0.8.9-SNAPSHOT-javadoc.jar>=
+org.jacoco.agent-0.8.9-SNAPSHOT-sources.jar>=
+org.jacoco.agent-0.8.9-SNAPSHOT.jar>=
+org.jacoco.agent-0.8.9-SNAPSHOT-runtime.jar>=
