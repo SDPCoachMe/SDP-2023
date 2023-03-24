@@ -1,0 +1,6 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Thu Mar 23 13:51:08 CET 2023
+jacoco-maven-plugin-0.8.9-SNAPSHOT.jar>=
+jacoco-maven-plugin-0.8.9-SNAPSHOT.pom>=
+jacoco-maven-plugin-0.8.9-SNAPSHOT-sources.jar>=
+jacoco-maven-plugin-0.8.9-SNAPSHOT-javadoc.jar>=
