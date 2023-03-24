@@ -9,5 +9,5 @@ data class UserInfo(
     val email: String,
     val phone: String,
     val location: String,
-    val sports: List<ListSport>
+    val sports: List<Sports>
 )

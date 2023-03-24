@@ -28,6 +28,11 @@ class MockDatabase: Database {
     }
 
     override fun getUser(email: String): CompletableFuture<UserInfo> {
-        return get("accounts") // todo ça ne va pas
+        //return get("accounts") // todo ça ne va pas
+        TODO("Not yet implemented")
+    }
+
+    override fun userExists(email: String): CompletableFuture<Boolean> {
+        TODO("Not yet implemented")
     }
 }
