@@ -15,11 +15,11 @@ class MockAuthenticator : Authenticator {
     }
 
     override fun delete(context: Context?, onComplete: Runnable?) {
-        realAuthenticator.delete(context, onComplete)
+        onComplete?.run()
     }
 
     override fun signOut(context: Context?, onComplete: Runnable?) {
-        realAuthenticator.signOut(context, onComplete)
+        onComplete?.run()
     }
 
     override fun onSignInResult(
