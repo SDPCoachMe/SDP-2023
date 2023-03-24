@@ -149,7 +149,7 @@ fun Dashboard(email: String, scaffoldState: ScaffoldState, onScaffoldStateChange
         //TODO replace the scaffold content here with the main map view
         content = { innerPadding ->
             // pass the correct padding to the content root, here the column
-            Text(modifier = Modifier.padding(innerPadding), text = "Main map view")
+            MapView(modifier = Modifier.padding(innerPadding), context = context)
         }
     )
 }
