@@ -3,16 +3,14 @@ package com.github.sdpcoachme.firebase.database
 import com.github.sdpcoachme.data.UserInfo
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.ktx.database
-import com.google.firebase.ktx.Firebase
 import java.util.concurrent.CompletableFuture
 
 /**
  * A database class that uses Firebase
  */
-class FireDatabase : Database {
+class FireDatabase(databaseReference: DatabaseReference) : Database {
 
-    private val rootDatabase: DatabaseReference = Firebase.database.reference
+    private val rootDatabase: DatabaseReference = databaseReference
     private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
 
     override fun get(key: String): CompletableFuture<Any> {
@@ -63,7 +61,6 @@ class FireDatabase : Database {
      * @return a completable future that completes when the child is set. If the key does not exist,
      * the future completes exceptionally with a NoSuchKeyException.
      */
-    // TODO here need to cast properly the data to the correct type!
     private fun getChild(databaseChild: DatabaseReference, key: String): CompletableFuture<DataSnapshot> {
         val future = CompletableFuture<DataSnapshot>()
         databaseChild.child(key).get().addOnSuccessListener {
