@@ -122,7 +122,7 @@ class SignupActivity : ComponentActivity() {
                         phone = phone,
                         location = location,
                         isCoach = isCoach,
-                        sports = emptyList(), // todo add sports with MultiSelectListUI
+                        // todo add sports with MultiSelectListUI
                         events = emptyList(),
                     )
                     println("new user: $newUser")

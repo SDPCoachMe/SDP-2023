@@ -27,6 +27,7 @@ import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.LAST_NAME
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.SPORT
+import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
@@ -99,8 +100,7 @@ class EditProfileActivity : ComponentActivity() {
                     map["phone"] as String,
                     map["location"] as String,
                     map["coach"] as Boolean,
-                    emptyList(),
-                    emptyList(),
+                    (map["events"] as List<*>).map { event -> event as Event },
                 )
             }.exceptionally { null }
 
@@ -176,7 +176,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
                     // TODO temporary sports handling
                     isCoach = isCoach xor switchCoachClient
                     switchCoachClient = false
-                    val newUser = UserInfo(fname, lname, email, "", "", isCoach, emptyList(), emptyList())
+                    val newUser = UserInfo(fname, lname, email, "", "", isCoach, emptyList())
                     database.addUser(newUser)
                 }
             ) {

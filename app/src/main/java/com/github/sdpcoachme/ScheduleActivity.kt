@@ -10,7 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.*
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.data.Event
+import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.time.DayOfWeek
@@ -35,9 +37,52 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
+import java.util.concurrent.CompletableFuture
 import kotlin.math.roundToInt
 
 class ScheduleActivity : ComponentActivity() {
+    private lateinit var database: Database
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val email = intent.getStringExtra("email")
+
+        println("Got email: $email")
+
+        if (email == null) {
+            val errorMsg = "Profile editing did not receive an email address.\n Please return to the login page and try again."
+            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
+        } else {
+            // TODO temporary solution to cast to UserInfo
+            database = (application as CoachMeApplication).database
+            println("Got database")
+
+            //TODO: remove this when the database works
+            database.addEventsToDatabase(email, sampleEvents).thenRun {
+                println("Added events to database")
+                val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email).thenApply {
+                    val map = it as Map<*, *>
+                    UserInfo(
+                        map["firstName"] as String,
+                        map["lastName"] as String,
+                        map["email"] as String,
+                        map["phone"] as String,
+                        map["location"] as String,
+                        map["coach"] as Boolean,
+                        (map["events"] as List<*>).map { event -> event as Event },
+                    )
+                }.exceptionally { null }
+
+                setContent {
+                    CoachMeTheme {
+                        Surface(color = MaterialTheme.colors.background) {
+                            Schedule(futureUserInfo)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     class TestTags {
         class ScheduleHeader(tag: String) {
             val ROW = "${tag}Row"
@@ -57,35 +102,67 @@ class ScheduleActivity : ComponentActivity() {
             val HEADER_BOX = ScheduleHeader(SCHEDULE_HEADER).BOX
         }
     }
-
-    private lateinit var database: Database
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        val email = intent.getStringExtra("email") ?: "no valid email"
-        database = (application as CoachMeApplication).database
-
-        setContent {
-            CoachMeTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(color = MaterialTheme.colors.background) {
-                    Schedule(events = sampleEvents)
-                }
-            }
-        }
-    }
 }
 
 private class EventDataModifier(val event: Event) : ParentDataModifier {
     override fun Density.modifyParentData(parentData: Any?) = event
 }
 
-private fun Modifier.eventData(event: Event) = this.then(EventDataModifier(event))
+@Composable
+fun Schedule(
+    futureUserInfo: CompletableFuture<UserInfo>,
+    modifier: Modifier = Modifier,
+) {
+    // bind those to database
+    var events by remember { mutableStateOf(emptyList<Event>()) }
+    var eventsFuture by remember { mutableStateOf(futureUserInfo.thenApply { it.events }) }
 
+    LaunchedEffect(eventsFuture) {
+        eventsFuture.thenAccept { e ->
+            if (e != null) {
+                events = e
+                val f = CompletableFuture<List<Event>?>()
+                f.complete(null)
+                eventsFuture = f
+            }
+        }.exceptionally { null }
+    }
+
+    // the starting day is always the previous Monday
+    val minDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    val maxDate = minDate.plusDays(ColumnsPerWeek.toLong())
+    val dayWidth = LocalConfiguration.current.screenWidthDp.dp / ColumnsPerWeek
+    val hourHeight = 64.dp
+    val verticalScrollState = rememberScrollState()
+    val horizontalScrollState = rememberScrollState()
+    Column(modifier = modifier.testTag(ScheduleActivity.TestTags.SCHEDULE_COLUMN)) {
+        ScheduleHeader(
+            minDate = minDate,
+            maxDate = maxDate,
+            dayWidth = dayWidth,
+            modifier = Modifier
+                .horizontalScroll(horizontalScrollState)
+                .testTag(ScheduleActivity.TestTags.SCHEDULE_HEADER)
+        )
+        BasicSchedule(
+            events = events,
+            minDate = minDate,
+            maxDate = maxDate,
+            dayWidth = dayWidth,
+            hourHeight = hourHeight,
+            modifier = Modifier
+                .weight(1f) // Fill remaining space in the column
+                .verticalScroll(verticalScrollState)
+                .horizontalScroll(horizontalScrollState)
+                .testTag(ScheduleActivity.TestTags.BASIC_SCHEDULE)
+        )
+    }
+}
+
+private fun Modifier.eventData(event: Event) = this.then(EventDataModifier(event))
 private val EventTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
 private val WithoutNanoSecondsFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
 private val DayFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
-
 private const val ColumnsPerWeek = 7
 
 @Composable
@@ -163,7 +240,6 @@ fun ScheduleHeader(
 fun BasicSchedule(
     events: List<Event>,
     modifier: Modifier = Modifier,
-    eventContent: @Composable (event: Event) -> Unit = { BasicEvent(event = it) },
     minDate: LocalDate = events.minByOrNull(Event::start)!!.start.toLocalDate(),
     maxDate: LocalDate = events.maxByOrNull(Event::end)!!.end.toLocalDate(),
     dayWidth: Dp,
@@ -175,7 +251,7 @@ fun BasicSchedule(
             events.sortedBy(Event::start).forEach { event ->
                 // Pass the event as parent data to the eventContent composable
                 Box(modifier = Modifier.eventData(event)) {
-                    eventContent(event)
+                    BasicEvent(event = event)
                 }
             }
         },
@@ -220,45 +296,11 @@ fun BasicSchedule(
     }
 }
 
-@Composable
-fun Schedule(
-    events: List<Event>,
-    modifier: Modifier = Modifier,
-    eventContent: @Composable (event: Event) -> Unit = { BasicEvent(event = it) }
-) {
-    // the starting day is always the previous Monday
-    val minDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-    val maxDate = minDate.plusDays(ColumnsPerWeek.toLong())
-    val dayWidth = LocalConfiguration.current.screenWidthDp.dp / ColumnsPerWeek
-    val hourHeight = 64.dp
-    val verticalScrollState = rememberScrollState()
-    val horizontalScrollState = rememberScrollState()
-    Column(modifier = modifier.testTag(ScheduleActivity.TestTags.SCHEDULE_COLUMN)) {
-        ScheduleHeader(
-            minDate = minDate,
-            maxDate = maxDate,
-            dayWidth = dayWidth,
-            modifier = Modifier
-                .horizontalScroll(horizontalScrollState)
-                .testTag(ScheduleActivity.TestTags.SCHEDULE_HEADER)
-        )
-        BasicSchedule(
-            events = events,
-            eventContent = eventContent,
-            minDate = minDate,
-            maxDate = maxDate,
-            dayWidth = dayWidth,
-            hourHeight = hourHeight,
-            modifier = Modifier
-                .weight(1f) // Fill remaining space in the column
-                .verticalScroll(verticalScrollState)
-                .horizontalScroll(horizontalScrollState)
-                .testTag(ScheduleActivity.TestTags.BASIC_SCHEDULE)
-        )
-    }
-}
+
 
 // mainly for testing, debugging and demo purposes
+
+
 private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 private val sampleEvents = listOf(
     Event(
@@ -321,11 +363,32 @@ fun EventPreview(
 }*/
 
 // Previews all the events in the sampleEvents list together
-/*
-@Preview(showBackground = true)
+/*@Preview(showBackground = true)
 @Composable
 fun SchedulePreview() {
-    CoachMeTheme {
-        Schedule(events = sampleEvents)
+    val email = "damian.kopp01@gmail.com"
+    database = (application as CoachMeApplication).database
+
+    //TODO: remove this when the database works
+    addEventsToDatabase(database, email, sampleEvents).thenRun {
+        val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email).thenApply {
+            val map = it as Map<*, *>
+            UserInfo(
+                map["firstName"] as String,
+                map["lastName"] as String,
+                map["email"] as String,
+                map["phone"] as String,
+                map["location"] as String,
+                map["coach"] as Boolean,
+                (map["sports"] as List<*>).map { sport -> sport as ListSport },
+                (map["events"] as List<*>).map { event -> event as Event },
+            )
+        }.exceptionally { null }
+
+        CoachMeTheme {
+            Surface(color = MaterialTheme.colors.background) {
+                Schedule(futureUserInfo)
+            }
+        }
     }
 }*/

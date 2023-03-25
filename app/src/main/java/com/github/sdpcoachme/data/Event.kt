@@ -9,5 +9,5 @@ data class Event(
     val color: Color,
     val start: LocalDateTime,
     val end: LocalDateTime,
-    val description: String? = null,
+    val description: String = "",
 )

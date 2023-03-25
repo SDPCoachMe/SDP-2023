@@ -10,6 +10,5 @@ data class UserInfo(
     val phone: String,
     val location: String,
     val isCoach: Boolean,
-    val sports: List<ListSport>,
     val events: List<Event>,
 )

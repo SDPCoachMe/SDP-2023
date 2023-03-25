@@ -3,6 +3,7 @@ package com.github.sdpcoachme.firebase.database
 import androidx.compose.ui.graphics.Color
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
+import com.google.firebase.database.DatabaseReference
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
@@ -26,7 +27,7 @@ class MockDatabase: Database {
         "location" to "Some location",
         "coach" to false,
         "email" to "example@email.com",
-        "eventList" to eventList
+        "events" to eventList
     )
 
     private val db = hashMapOf<String, Any>("example@email.com" to defaultUserInfo)
@@ -60,7 +61,8 @@ class MockDatabase: Database {
             "phone" to user.phone,
             "location" to user.location,
             "coach" to user.isCoach,
-            "email" to user.email
+            "email" to user.email,
+            "events" to user.events
         )
 
         return set(user.email, map)
@@ -69,4 +71,16 @@ class MockDatabase: Database {
     override fun getUser(email: String): CompletableFuture<Any> {
         return get(email)
     }
+
+    override fun getAccountsRef(): DatabaseReference {
+        // Implement this if needed
+        return null!!
+    }
+
+    override fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void> {
+        // Implement this if needed
+        return CompletableFuture()
+    }
+
+
 }
