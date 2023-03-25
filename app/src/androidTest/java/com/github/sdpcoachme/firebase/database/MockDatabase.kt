@@ -42,6 +42,10 @@ class MockDatabase: Database {
     }
 
     private fun getMap(map: MutableMap<String, Any>, key: String): CompletableFuture<Any> {
-        return CompletableFuture.completedFuture(map[key])
+        val future = CompletableFuture<Any>()
+        val value = map[key]
+        if (value == null) future.completeExceptionally(NoSuchKeyException())
+        else future.complete(value)
+        return future
     }
 }
