@@ -23,7 +23,7 @@ import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
-class MultiselectListActivity : ComponentActivity() {
+class SelectSportsActivity : ComponentActivity() {
 
 
     private lateinit var database : Database

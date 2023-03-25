@@ -7,32 +7,41 @@ import java.util.concurrent.CompletableFuture
  * A mock database class
  */
 class MockDatabase: Database {
+    private val defautEmail = "example@email.com"
     private val defaultUserInfo = UserInfo(
-        "John", "Doe", "example@email.com",
+        "John", "Doe", defautEmail,
         "1234567890", "Some location",
         listOf())
 
-    private val db = hashMapOf<String, Any>("accounts" to defaultUserInfo)
+    private val root = hashMapOf<String, Any>()
+    private val accounts = hashMapOf<String, Any>(defautEmail to defaultUserInfo)
 
     override fun get(key: String): CompletableFuture<Any> {
-        return CompletableFuture.completedFuture(db[key])
+        return getMap(root, key)
     }
 
     override fun set(key: String, value: Any): CompletableFuture<Void> {
-        db[key] = value
-        return CompletableFuture.completedFuture(null)
+        return setMap(root, key, value)
     }
 
     override fun addUser(user: UserInfo): CompletableFuture<Void> {
-        return set("accounts", user)
+        return setMap(accounts, user.email, user)
     }
 
     override fun getUser(email: String): CompletableFuture<UserInfo> {
-        //return get("accounts") // todo ça ne va pas
-        TODO("Not yet implemented")
+        return getMap(accounts, email).thenApply { it as UserInfo }
+
     }
 
     override fun userExists(email: String): CompletableFuture<Boolean> {
-        TODO("Not yet implemented")
+        return getMap(accounts, email).thenApply { it != null }
+    }
+    private fun setMap(map: MutableMap<String, Any>, key: String, value: Any): CompletableFuture<Void> {
+        map[key] = value
+        return CompletableFuture.completedFuture(null)
+    }
+
+    private fun getMap(map: MutableMap<String, Any>, key: String): CompletableFuture<Any> {
+        return CompletableFuture.completedFuture(map[key])
     }
 }
