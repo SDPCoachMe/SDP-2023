@@ -59,7 +59,7 @@ class ProfileActivity : ComponentActivity() {
             companion object {
                 const val SAVE = "saveButton"
                 const val EDIT = "editButton"
-                const val MESSGE_COACH = "messageCoachButton"
+                const val MESSAGE_COACH = "messageCoachButton"
             }
         }
         companion object {
@@ -168,7 +168,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
             Button(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .testTag(ProfileActivity.TestTags.Buttons.MESSGE_COACH),
+                    .testTag(ProfileActivity.TestTags.Buttons.MESSAGE_COACH),
                 onClick = {
                     // For the moment, nothing happens
                     // but in the future this could open the in app messenger with the coach

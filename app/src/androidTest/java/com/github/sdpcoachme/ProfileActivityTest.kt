@@ -6,9 +6,11 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
+import androidx.test.espresso.intent.Intents
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.EDIT
+import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.MESSAGE_COACH
 import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.SAVE
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.CLIENT_COACH
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.COACH_CLIENT_INFO
@@ -39,26 +41,26 @@ class ProfileActivityTest {
         SAVE
     )
 
+    private val initiallyDisplayed = listOf(
+        PROFILE_LABEL,
+        PROFILE_PICTURE,
+
+        EMAIL.LABEL,
+        EMAIL.TEXT,
+
+        FIRST_NAME.LABEL,
+        FIRST_NAME.TEXT,
+
+        LAST_NAME.LABEL,
+        LAST_NAME.TEXT,
+
+        SPORT.LABEL,
+        SPORT.TEXT,
+    )
+
     @Test
     fun correctInitialScreenContent() {
-        val initiallyDisplayed = listOf(
-            PROFILE_LABEL,
-            PROFILE_PICTURE,
-
-            EMAIL.LABEL,
-            EMAIL.TEXT,
-
-            FIRST_NAME.LABEL,
-            FIRST_NAME.TEXT,
-
-            LAST_NAME.LABEL,
-            LAST_NAME.TEXT,
-
-            SPORT.LABEL,
-            SPORT.TEXT,
-
-            EDIT
-        )
+        val initiallyDisplayedForUser = initiallyDisplayed.plus(EDIT)
 
         val initiallyNotDisplayed = listOf(
             FIRST_NAME.FIELD,
@@ -73,7 +75,7 @@ class ProfileActivityTest {
         val email = "example@email.com"
         editProfileIntent.putExtra("email", email)
         ActivityScenario.launch<ProfileActivity>(editProfileIntent).use {
-            initiallyDisplayed.forEach { tag ->
+            initiallyDisplayedForUser.forEach { tag ->
                 // assertIsDisplayed() behaves strangely with components that are empty (empty Text()
                 // components for example, or Text() components whose text is loaded asynchronously)
                 composeTestRule.onNodeWithTag(tag).assertExists()
@@ -251,6 +253,44 @@ class ProfileActivityTest {
 
             composeTestRule.onNodeWithTag(COACH_CLIENT_INFO).assertTextEquals("Coach")
             composeTestRule.onNodeWithTag(CLIENT_COACH.TEXT).assertTextEquals("I would like to become a client")
+        }
+    }
+
+    @Test
+    fun coachProfileShownWhenIsViewingCoachProfileIsTrue() {
+        val displayedForUserLookingAtCoach = initiallyDisplayed.plus(MESSAGE_COACH)
+
+        val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
+        val email = "example@email.com"
+        profileIntent.putExtra("email", email)
+        profileIntent.putExtra("isViewingCoach", true)
+        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
+            displayedForUserLookingAtCoach.forEach { tag ->
+                composeTestRule.onNodeWithTag(tag).assertExists()
+            }
+        }
+    }
+
+    @Test
+    fun messageCoachButtonClickHasCorrectFunctionality() {
+        val displayedForUserLookingAtCoach = initiallyDisplayed.plus(MESSAGE_COACH)
+
+        val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
+        val email = "example@email.com"
+        profileIntent.putExtra("email", email)
+        profileIntent.putExtra("isViewingCoach", true)
+        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
+            Intents.init()
+            displayedForUserLookingAtCoach.forEach { tag ->
+                composeTestRule.onNodeWithTag(tag).assertExists()
+            }
+
+            composeTestRule.onNodeWithTag(MESSAGE_COACH)
+                .assertIsDisplayed()
+                .performClick()
+
+            // TODO: add check for the messaging activity once it is implemented
+            Intents.release()
         }
     }
 }
