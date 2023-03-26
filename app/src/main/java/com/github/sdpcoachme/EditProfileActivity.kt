@@ -34,7 +34,7 @@ import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
 
 /**
- * Activity used to view and edit the user's profile.
+ * Activity used to view and edit the user's profile or view a coach's profile.
  */
 class EditProfileActivity : ComponentActivity() {
 
@@ -59,6 +59,7 @@ class EditProfileActivity : ComponentActivity() {
             companion object {
                 const val SAVE = "saveButton"
                 const val EDIT = "editButton"
+                const val MESSGE_COACH = "messageCoachButton"
             }
         }
         companion object {
@@ -81,6 +82,7 @@ class EditProfileActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val email = intent.getStringExtra("email")
+        val isViewingCoach = intent.getBooleanExtra("isViewingCoach", false)
 
         if (email == null) {
             val errorMsg = "Profile editing did not receive an email address.\n Please return to the login page and try again."
@@ -109,7 +111,7 @@ class EditProfileActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colors.background
                     ) {
-                        Profile(email, futureUserInfo)
+                        Profile(email, futureUserInfo, isViewingCoach)
                     }
                 }
             }
@@ -121,7 +123,7 @@ class EditProfileActivity : ComponentActivity() {
  * Composable used to display the user's profile.
  */
 @Composable
-fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
+fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewingCoach: Boolean) {
     val database = (LocalContext.current.applicationContext as CoachMeApplication).database
 
     // bind those to database
@@ -152,7 +154,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start
     ) {
-        TitleRow(isCoach)
+        TitleRow(isCoach, isViewingCoach)
         EmailRow(email)
 
         ProfileRow(rowName = "First name", tag = FIRST_NAME, isEditing = isEditing, leftTextPadding = 45.dp,
@@ -162,7 +164,19 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
         ProfileRow(rowName = "Favorite sport", tag = SPORT, isEditing = isEditing, leftTextPadding = 20.dp,
             value = favsport, onValueChange = { newValue -> favsport = newValue })
 
-        if (isEditing) {
+        if (isViewingCoach) {
+            Button(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .testTag(EditProfileActivity.TestTags.Buttons.MESSGE_COACH),
+                onClick = {
+                    // For the moment, nothing happens
+                    // but in the future this could open the in app messenger with the coach
+                }
+            ) {
+                Text(text = "Message coach")
+            }
+        } else if (isEditing) {
             SwitchClientCoachRow(isCoach, switchCoachClient) { switchCoachClient = it }
 
             // save button
@@ -222,7 +236,7 @@ fun SwitchClientCoachRow(isCoach: Boolean, switchCoachClient: Boolean, onValueCh
  * Composable used to display the profile title and the user's profile picture.
  */
 @Composable
-fun TitleRow(isCoach: Boolean) {
+fun TitleRow(isCoach: Boolean, isViewingCoach: Boolean) {
     Row (
         modifier = Modifier
             .absolutePadding(20.dp, 20.dp, 0.dp, 10.dp)
@@ -231,22 +245,35 @@ fun TitleRow(isCoach: Boolean) {
         horizontalArrangement = Arrangement.Start
     ) {
         Column {
-            Text(
-                modifier = Modifier.testTag(PROFILE_LABEL),
-                text = "My Profile",
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = if (isCoach) "Coach" else "Client",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Normal,
-                modifier = Modifier.testTag(COACH_CLIENT_INFO)
-            )
+            if (isViewingCoach) {
+                Text(
+                    modifier = Modifier.testTag(PROFILE_LABEL),
+                    text = "Coach's Profile",
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            } else {
+                Text(
+                    modifier = Modifier.testTag(PROFILE_LABEL),
+                    text = "My Profile",
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = if (isCoach) "Coach" else "Client",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Normal,
+                    modifier = Modifier.testTag(COACH_CLIENT_INFO)
+                )
+            }
         }
         Box(
+//            modifier = Modifier
+//                .absolutePadding(0.dp, 0.dp, 0dp, 0.dp)
             modifier = Modifier
-                .absolutePadding(100.dp, 0.dp, 0.dp, 0.dp)
+                .fillMaxWidth()
+                .absolutePadding(0.dp, 0.dp, 25.dp, 0.dp),
+            contentAlignment = Alignment.CenterEnd
         ) {
             Image(
                 painter = painterResource(id = R.drawable.ic_launcher_background),
