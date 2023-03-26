@@ -180,7 +180,7 @@ class DashboardActivityTest {
             email,
             PROFILE,
             allOf(
-                hasComponent(EditProfileActivity::class.java.name),
+                hasComponent(ProfileActivity::class.java.name),
                 hasExtra("email", email)
             )
         )

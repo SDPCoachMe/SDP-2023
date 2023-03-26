@@ -20,13 +20,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.CLIENT_COACH
-import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.COACH_CLIENT_INFO
-import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.EMAIL
-import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.FIRST_NAME
-import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.LAST_NAME
-import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.PROFILE_LABEL
-import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.SPORT
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.CLIENT_COACH
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.COACH_CLIENT_INFO
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.EMAIL
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.FIRST_NAME
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LAST_NAME
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_LABEL
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SPORT
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
@@ -36,7 +36,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * Activity used to view and edit the user's profile or view a coach's profile.
  */
-class EditProfileActivity : ComponentActivity() {
+class ProfileActivity : ComponentActivity() {
 
     class TestTags {
         class EditableProfileRowTag(tag: String) {
@@ -150,7 +150,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .testTag(EditProfileActivity.TestTags.PROFILE_COLUMN),
+            .testTag(ProfileActivity.TestTags.PROFILE_COLUMN),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start
     ) {
@@ -168,7 +168,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
             Button(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .testTag(EditProfileActivity.TestTags.Buttons.MESSGE_COACH),
+                    .testTag(ProfileActivity.TestTags.Buttons.MESSGE_COACH),
                 onClick = {
                     // For the moment, nothing happens
                     // but in the future this could open the in app messenger with the coach
@@ -183,7 +183,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
             Button(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .testTag(EditProfileActivity.TestTags.Buttons.SAVE),
+                    .testTag(ProfileActivity.TestTags.Buttons.SAVE),
                 onClick = {
                     isEditing = false
                     // TODO temporary sports handling
@@ -200,7 +200,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
             Button(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .testTag(EditProfileActivity.TestTags.Buttons.EDIT),
+                    .testTag(ProfileActivity.TestTags.Buttons.EDIT),
                 onClick = {
                     isEditing = true
                 }
@@ -240,7 +240,7 @@ fun TitleRow(isCoach: Boolean, isViewingCoach: Boolean) {
     Row (
         modifier = Modifier
             .absolutePadding(20.dp, 20.dp, 0.dp, 10.dp)
-            .testTag(EditProfileActivity.TestTags.TITLE_ROW),
+            .testTag(ProfileActivity.TestTags.TITLE_ROW),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ) {
@@ -283,7 +283,7 @@ fun TitleRow(isCoach: Boolean, isViewingCoach: Boolean) {
                     .clip(CircleShape)
                     .border(2.dp, Color.Gray, CircleShape)
                     .absolutePadding(0.dp, 0.dp, 0.dp, 0.dp)
-                    .testTag(EditProfileActivity.TestTags.PROFILE_PICTURE)
+                    .testTag(ProfileActivity.TestTags.PROFILE_PICTURE)
             )
         }
     }
@@ -322,7 +322,7 @@ fun EmailRow(email: String) {
  * @param onValueChange the function to call when the value of the row changes
  */
 @Composable
-fun ProfileRow(rowName: String, tag: EditProfileActivity.TestTags.EditableProfileRowTag, isEditing: Boolean, leftTextPadding: Dp, value: String, onValueChange: (String) -> Unit) {
+fun ProfileRow(rowName: String, tag: ProfileActivity.TestTags.EditableProfileRowTag, isEditing: Boolean, leftTextPadding: Dp, value: String, onValueChange: (String) -> Unit) {
     Row(
         modifier = Modifier
             .absolutePadding(20.dp, 10.dp, 20.dp, 10.dp)
