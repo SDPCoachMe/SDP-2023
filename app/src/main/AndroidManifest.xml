@@ -24,11 +24,6 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
         <activity
-            android:name=".MapsActivity"
-            android:exported="false"
-            android:label="@string/title_activity_maps"
-            android:theme="@style/Theme.CoachMe" />
-        <activity
             android:name=".LoginActivity"
             android:exported="true"
             android:label="@string/title_activity_login"
