@@ -71,10 +71,10 @@ class ProfileActivityTest {
             SAVE
         )
 
-        val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
+        val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
         val email = "example@email.com"
-        editProfileIntent.putExtra("email", email)
-        ActivityScenario.launch<ProfileActivity>(editProfileIntent).use {
+        profileIntent.putExtra("email", email)
+        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
             initiallyDisplayedForUser.forEach { tag ->
                 // assertIsDisplayed() behaves strangely with components that are empty (empty Text()
                 // components for example, or Text() components whose text is loaded asynchronously)
@@ -89,7 +89,7 @@ class ProfileActivityTest {
     }
 
     @Test
-    fun errorPageIsShownWhenEditProfileIsLaunchedWithoutEmailAsExtra() {
+    fun errorPageIsShownWhenProfileActivityIsLaunchedWithoutEmailAsExtra() {
         ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)).use {
             // not possible to use Intents.init()... to check if the correct intent
             // is launched as the intents are launched from within the onCreate function
@@ -101,10 +101,10 @@ class ProfileActivityTest {
     @Test
     fun editButtonClickActivatesCorrectElements() {
 
-        val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
+        val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
         val email = "example@email.com"
-        editProfileIntent.putExtra("email", email)
-        ActivityScenario.launch<ProfileActivity>(editProfileIntent).use {
+        profileIntent.putExtra("email", email)
+        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
             composeTestRule.onNodeWithTag(EDIT)
                 .assertIsDisplayed()
                 .performClick()
@@ -123,10 +123,10 @@ class ProfileActivityTest {
             SPORT to "Updated favorite sport"
         )
 
-        val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
+        val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
         val email = "example@email.com"
-        editProfileIntent.putExtra("email", email)
-        ActivityScenario.launch<ProfileActivity>(editProfileIntent).use {
+        profileIntent.putExtra("email", email)
+        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
             //change to edit mode
             composeTestRule.onNodeWithTag(EDIT)
                 .assertIsDisplayed()
@@ -156,23 +156,23 @@ class ProfileActivityTest {
 
     @Test
     fun requestForExistingEmailDisplaysCorrectInfoInUserFields() {
-        val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
+        val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
         val email = "some@mail.com"
         val db = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
         db.addUser(
-                UserInfo(
-                    "first",
-                    "last",
-                    email,
-                    "012345",
-                    "Some Place",
-                    false,
-                    listOf()
-                )
+            UserInfo(
+                "first",
+                "last",
+                email,
+                "012345",
+                "Some Place",
+                false,
+                listOf()
             )
+        )
 
-        editProfileIntent.putExtra("email", email)
-        ActivityScenario.launch<ProfileActivity>(editProfileIntent).use {
+        profileIntent.putExtra("email", email)
+        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
 
             composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(email)
             composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals("first")
@@ -196,10 +196,10 @@ class ProfileActivityTest {
 
     @Test
     fun requestForNonExistentEmailDisplaysEmptyUserFields() {
-        val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
+        val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
         val email = "non-existant@email.com"
-        editProfileIntent.putExtra("email", email)
-        ActivityScenario.launch<ProfileActivity>(editProfileIntent).use {
+        profileIntent.putExtra("email", email)
+        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
 
             composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(email)
             composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals("")
@@ -223,10 +223,10 @@ class ProfileActivityTest {
 
     @Test
     fun changingToCoachAndBackToClientWorks() {
-        val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
+        val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
         val email = "example@email.com"
-        editProfileIntent.putExtra("email", email)
-        ActivityScenario.launch<ProfileActivity>(editProfileIntent).use {
+        profileIntent.putExtra("email", email)
+        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
 
             composeTestRule.onNodeWithTag(EDIT)
                 .assertIsDisplayed()
