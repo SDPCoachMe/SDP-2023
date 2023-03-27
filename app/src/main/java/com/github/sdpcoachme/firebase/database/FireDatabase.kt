@@ -87,7 +87,7 @@ class FireDatabase : Database {
 
                 val eventsToAdd = hashMapOf<String, Any>()
                 for (event in events) {
-                    val eventsKey = this.getAccountsRef().child(formattedEmail).child("events").push().key
+
                     val eventMap = hashMapOf<String, Any>(
                         "name" to event.name,
                         "color" to event.color.toArgb(),
@@ -95,6 +95,7 @@ class FireDatabase : Database {
                         "end" to event.end.toString(),
                         "description" to event.description,
                     )
+                    val eventsKey = this.getAccountsRef().child(formattedEmail).child("events").push().key
                     eventsToAdd["/$eventsKey"] = eventMap
                 }
                 this.getAccountsRef().child(formattedEmail).child("events").updateChildren(eventsToAdd)

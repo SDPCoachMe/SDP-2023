@@ -33,6 +33,7 @@ import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -46,21 +47,23 @@ class ScheduleActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val email = intent.getStringExtra("email")
 
-        println("Got email: $email")
-
         if (email == null) {
             val errorMsg = "Profile editing did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
             // TODO temporary solution to cast to UserInfo
             database = (application as CoachMeApplication).database
-            println("Got database")
 
             //TODO: remove this when the database works
             database.addEventsToDatabase(email, sampleEvents).thenRun {
-                println("Added events to database")
                 val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email).thenApply {
                     val map = it as Map<*, *>
+                    val eventKeys = (map["events"] as Map<*, *>).keys
+                    println("Events keys: ${(map["events"] as Map<*, *>).keys}")
+
+                    val events = eventListFromKeys(eventKeys, map)
+                    println("Created eventList")
+
                     UserInfo(
                         map["firstName"] as String,
                         map["lastName"] as String,
@@ -68,7 +71,7 @@ class ScheduleActivity : ComponentActivity() {
                         map["phone"] as String,
                         map["location"] as String,
                         map["coach"] as Boolean,
-                        (map["events"] as List<*>).map { event -> event as Event },
+                        events,
                     )
                 }.exceptionally { null }
 
@@ -81,6 +84,27 @@ class ScheduleActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun eventListFromKeys(
+        eventKeys: Set<Any?>,
+        map: Map<*, *>
+    ): List<Event> {
+        var events = listOf<Event>();
+        for (key in (eventKeys as Set<*>).map { key -> key as String }) {
+            val eventMap = (map["events"] as Map<*, *>)[key] as Map<*, *>
+            println("Event map: $eventMap")
+
+            val e = Event(
+                eventMap["name"] as String,
+                Color(eventMap["color"] as Long),
+                LocalDateTime.parse(eventMap["start"] as String, DateTimeFormatter.ISO_DATE_TIME),
+                LocalDateTime.parse(eventMap["end"] as String, DateTimeFormatter.ISO_DATE_TIME),
+                eventMap["description"] as String,
+            )
+            events = events.plus(e)
+        }
+        return events
     }
 
     class TestTags {
