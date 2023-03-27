@@ -9,8 +9,12 @@ import java.util.concurrent.CompletableFuture
 class MockDatabase: Database {
     private val defautEmail = "example@email.com"
     private val defaultUserInfo = UserInfo(
-        "John", "Doe", defautEmail,
-        "1234567890", "Some location",
+        "John",
+        "Doe",
+        defautEmail,
+        "1234567890",
+        "Some location",
+        false,
         listOf())
 
     private val root = hashMapOf<String, Any>()

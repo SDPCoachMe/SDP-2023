@@ -2,7 +2,6 @@ package com.github.sdpcoachme
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
@@ -21,6 +20,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.data.ListItem
 import com.github.sdpcoachme.data.Sports
+import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
@@ -56,14 +56,19 @@ class SelectSportsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         database = (application as CoachMeApplication).database
-        // todo handle the null better here
-        email = intent.getStringExtra("email")?: "ayskin57@gmail.com"
-        setContent {
-            CoachMeTheme {
-                FavoriteSportsSelection()
+        val email = intent.getStringExtra("email")
+        if (email == null) {
+            val errorMsg = "Profile editing did not receive an email address." +
+                    "\n Please return to the login page and try again."
+            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
+        } else {
+            setContent {
+                CoachMeTheme {
+                    FavoriteSportsSelection()
+                }
             }
-
         }
+
     }
 
     @Composable
@@ -111,8 +116,9 @@ class SelectSportsActivity : ComponentActivity() {
                                     intent.putExtra("email", email)
                                     startActivity(intent)
                                 }
-                                else -> { // TODO handle the exception with code of Luca
-                                    Log.e("MultiselectListActivity", "Error :(", exception)
+                                else -> {
+                                    ErrorHandlerLauncher().launchExtrasErrorHandler(
+                                        applicationContext, exception.toString())
                                 }
                             }
                         }

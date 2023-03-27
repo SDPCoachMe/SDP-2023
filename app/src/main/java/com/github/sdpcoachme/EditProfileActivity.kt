@@ -83,14 +83,12 @@ class EditProfileActivity : ComponentActivity() {
         val email = intent.getStringExtra("email")
 
         if (email == null) {
-            val errorMsg = "Profile editing did not receive an email address.\n Please return to the login page and try again."
+            val errorMsg = "Profile editing did not receive an email address." +
+                    "\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
-
             database = (application as CoachMeApplication).database
-
-        val futureUserInfo = database.getUser(email)
-
+            val futureUserInfo = database.getUser(email)
             setContent {
                 CoachMeTheme {
                     Surface(
