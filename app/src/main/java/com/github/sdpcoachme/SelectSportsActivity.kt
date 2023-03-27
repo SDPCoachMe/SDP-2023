@@ -56,12 +56,13 @@ class SelectSportsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         database = (application as CoachMeApplication).database
-        val email = intent.getStringExtra("email")
-        if (email == null) {
+        val emailReceived = intent.getStringExtra("email")
+        if (emailReceived == null) {
             val errorMsg = "Profile editing did not receive an email address." +
                     "\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
+            email = emailReceived
             setContent {
                 CoachMeTheme {
                     FavoriteSportsSelection()

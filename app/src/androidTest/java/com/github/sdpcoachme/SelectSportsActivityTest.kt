@@ -5,6 +5,9 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.matcher.IntentMatchers
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.matcher.ViewMatchers.assertThat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -119,7 +122,8 @@ open class SelectSportsActivityTest {
     }
 
     @Test
-    fun userInfoUpdatedWithAllSelectedSports() {
+    fun userInfoUpdatedWithAllSelectedSportsAndRedirectedToDashboardActivity() {
+        Intents.init()
         val updatedUser =
             database.addUser(userInfo)
                 .thenApply {
@@ -138,8 +142,11 @@ open class SelectSportsActivityTest {
                 }.get(10, TimeUnit.SECONDS)
 
         TestCase.assertEquals(updatedUser.sports, Sports.values().toList())
+
+        Intents.intended(allOf(
+            IntentMatchers.hasComponent(DashboardActivity::class.java.name),
+            hasExtra("email", email)
+        ))
+        Intents.release()
     }
-
-
-
 }
