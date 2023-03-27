@@ -6,6 +6,10 @@ plugins {
     id 'com.google.gms.google-services'
 }
 
+jacoco {
+    toolVersion = "0.8.9-SNAPSHOT"
+}
+
 android {
     namespace 'com.github.sdpcoachme'
     compileSdk 33
@@ -43,7 +47,7 @@ android {
         compose true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion '1.2.0'
+        kotlinCompilerExtensionVersion '1.4.3'
     }
     packagingOptions {
         resources {
@@ -55,7 +59,7 @@ android {
 dependencies {
 
     implementation 'androidx.core:core-ktx:1.9.0'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.0'
     implementation 'androidx.activity:activity-compose:1.6.1'
     //noinspection GradleDependency
     implementation "androidx.compose.ui:ui:$compose_ui_version"

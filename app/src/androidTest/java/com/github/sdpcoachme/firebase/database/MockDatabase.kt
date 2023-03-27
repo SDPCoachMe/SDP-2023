@@ -25,6 +25,11 @@ class MockDatabase: Database {
     }
 
     override fun addUser(user: UserInfo): CompletableFuture<Void> {
+        if (user.email == "throw@Exception.com") {
+            val error = CompletableFuture<Void>()
+            error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
+            return error
+        }
         return setMap(accounts, user.email, user)
     }
 
@@ -44,8 +49,12 @@ class MockDatabase: Database {
     private fun getMap(map: MutableMap<String, Any>, key: String): CompletableFuture<Any> {
         val future = CompletableFuture<Any>()
         val value = map[key]
-        if (value == null) future.completeExceptionally(NoSuchKeyException())
-        else future.complete(value)
+        if (value == null) {
+            val exception = "Key $key does not exist"
+            println(exception)
+            future.completeExceptionally(NoSuchKeyException(exception))
+        } else
+            future.complete(value)
         return future
     }
 }

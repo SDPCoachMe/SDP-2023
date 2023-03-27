@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata modelVersion="1.1.0">
+  <groupId>org.jacoco</groupId>
+  <artifactId>org.jacoco.core.test.validation</artifactId>
+  <version>0.8.9-SNAPSHOT</version>
+  <versioning>
+    <snapshot>
+      <localCopy>true</localCopy>
+    </snapshot>
+    <lastUpdated>20230323125108</lastUpdated>
+    <snapshotVersions>
+      <snapshotVersion>
+        <extension>pom</extension>
+        <value>0.8.9-SNAPSHOT</value>
+        <updated>20230323125108</updated>
+      </snapshotVersion>
+    </snapshotVersions>
+  </versioning>
+</metadata>
