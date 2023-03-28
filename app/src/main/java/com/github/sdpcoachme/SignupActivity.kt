@@ -51,7 +51,6 @@ class SignupActivity : ComponentActivity() {
             val errorMsg = "The signup page did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
-
             setContent {
                 CoachMeTheme {
                     AccountForm(email)
@@ -121,17 +120,17 @@ class SignupActivity : ComponentActivity() {
                         email = email,
                         phone = phone,
                         location = location,
-                        isCoach = isCoach,
-                        // todo add sports with MultiSelectListUI
+                        coach = isCoach,
+                        // sports added later in SelectSportsActivity
+                        sports = listOf(),
                         events = emptyList(),
                     )
-                    println("new user: $newUser")
                     database.addUser(newUser).thenApply {
-                        val intent = Intent(context, DashboardActivity::class.java)
+                        val intent = Intent(context, SelectSportsActivity::class.java)
                         intent.putExtra("email", newUser.email)
                         startActivity(intent)
                     }.exceptionally {
-                        // TODO handle the exception
+                        // call exception activity
                     }
                 }
             )
