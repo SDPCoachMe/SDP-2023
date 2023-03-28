@@ -1,22 +1,23 @@
 package com.github.sdpcoachme
 
 import android.annotation.SuppressLint
-import android.location.Location
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import com.github.sdpcoachme.data.MapState
 import com.google.android.gms.location.FusedLocationProviderClient
 
 class MapViewModel : ViewModel() {
 
-    val location: MutableState<Location> = mutableStateOf(Location(null))
+    val mapState: MutableState<MapState> = mutableStateOf(MapState(lastKnownLocation = null))
 
     @SuppressLint("MissingPermission") //permission is checked before the call
     fun getDeviceLocation(fusedLocationProviderClient: FusedLocationProviderClient) {
         try {
             fusedLocationProviderClient.lastLocation.addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    location.value = task.result
+                    println("new location found !")
+                    mapState.value = mapState.value.copy(lastKnownLocation = task.result)
                 }
             }
         } catch (e: SecurityException) {

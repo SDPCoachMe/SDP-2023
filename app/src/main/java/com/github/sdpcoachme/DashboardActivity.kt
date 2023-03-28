@@ -38,6 +38,7 @@ import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.SETTIN
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MENU_LIST
+import com.github.sdpcoachme.data.MapState
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -79,6 +80,8 @@ class DashboardActivity : ComponentActivity() {
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {
                 isGranted: Boolean -> if (isGranted) {
                     mapViewModel.getDeviceLocation(fusedLocationProviderClient)
+                } else {
+                    // todo Permission denied or only COARSE given
                 }
         }
 
@@ -113,7 +116,7 @@ class DashboardActivity : ComponentActivity() {
         } else {
             setContent {
                 CoachMeTheme {
-                    DashboardView(email, mapViewModel)
+                    DashboardView(email, mapViewModel.mapState.value)
                 }
             }
         }
@@ -121,7 +124,7 @@ class DashboardActivity : ComponentActivity() {
 }
 
 @Composable
-fun DashboardView(email: String, mapViewModel: MapViewModel) {
+fun DashboardView(email: String, mapState: MapState) {
     // equivalent to remember { ScaffoldState(...) }
     val scaffoldState = rememberScaffoldState()
     // creates a scope tied to the view's lifecycle. scope
@@ -132,7 +135,7 @@ fun DashboardView(email: String, mapViewModel: MapViewModel) {
         email = email,
         scaffoldState = scaffoldState,
         onScaffoldStateChange = { coroutineScope.launch { scaffoldState.drawerState.open()} },
-        mapViewModel = mapViewModel
+        mapState = mapState
     )
 }
 
@@ -140,7 +143,7 @@ fun DashboardView(email: String, mapViewModel: MapViewModel) {
 fun Dashboard(email: String,
               scaffoldState: ScaffoldState,
               onScaffoldStateChange: () -> Unit,
-              mapViewModel: MapViewModel
+              mapState: MapState
 ) {
     val context = LocalContext.current
 
@@ -197,7 +200,7 @@ fun Dashboard(email: String,
             // pass the correct padding to the content root, here the column
             MapView(
                 modifier = Modifier.padding(innerPadding),
-                userLocation = mapViewModel.location.value
+                mapState = mapState
             )
         }
     )
