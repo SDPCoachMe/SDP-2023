@@ -83,26 +83,12 @@ class EditProfileActivity : ComponentActivity() {
         val email = intent.getStringExtra("email")
 
         if (email == null) {
-            val errorMsg = "Profile editing did not receive an email address.\n Please return to the login page and try again."
+            val errorMsg = "Profile editing did not receive an email address." +
+                    "\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
-
             database = (application as CoachMeApplication).database
-
-            // TODO temporary solution to cast to UserInfo
-            val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email).thenApply {
-                val map = it as Map<*, *>
-                UserInfo(
-                    map["firstName"] as String,
-                    map["lastName"] as String,
-                    map["email"] as String,
-                    map["phone"] as String,
-                    map["location"] as String,
-                    map["coach"] as Boolean,
-                    emptyList()
-                )
-            }.exceptionally { null }
-
+            val futureUserInfo = database.getUser(email)
             setContent {
                 CoachMeTheme {
                     Surface(
@@ -140,7 +126,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
             lname = newUser.lastName
             // TODO temporary sports handling
             favsport = ""
-            isCoach = newUser.isCoach
+            isCoach = newUser.coach
             f = CompletableFuture.completedFuture(null)
         }
     }
