@@ -27,6 +27,7 @@ import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LAST_NAME
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SPORT
+import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
@@ -116,9 +117,12 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
     var isEditing by remember { mutableStateOf(false) }
     var fname by remember { mutableStateOf("") }
     var lname by remember { mutableStateOf("") }
-    var favsport by remember { mutableStateOf("") }
     var isCoach by remember { mutableStateOf(false) }
     var switchCoachClient by remember { mutableStateOf(false) }
+
+    // TODO temporary sports handling
+    var favsport by remember { mutableStateOf("") }
+    var sports by remember { mutableStateOf(listOf<Sports>()) }
 
     var f by remember { mutableStateOf(futureUserInfo)}
 
@@ -128,6 +132,8 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
             lname = newUser.lastName
             // TODO temporary sports handling
             favsport = ""
+            sports = newUser.sports
+
             isCoach = newUser.coach
             f = CompletableFuture.completedFuture(null)
         }
@@ -175,7 +181,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
                     // TODO temporary sports handling
                     isCoach = isCoach xor switchCoachClient
                     switchCoachClient = false
-                    val newUser = UserInfo(fname, lname, email, "", "", isCoach, listOf())
+                    val newUser = UserInfo(fname, lname, email, "", "", isCoach, sports)
                     database.addUser(newUser)
                 }
             ) {
