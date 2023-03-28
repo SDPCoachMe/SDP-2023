@@ -149,7 +149,7 @@ fun Dashboard(email: String,
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = { AppBar(onNavigationIconClick = onScaffoldStateChange) },
-        drawerGesturesEnabled = false,
+        drawerGesturesEnabled = true,
         drawerContent = {
             DrawerHeader(email)
             DrawerBody(
