@@ -1,0 +1,5 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Thu Mar 23 13:51:08 CET 2023
+org.jacoco.core.test.validation.kotlin-0.8.9-SNAPSHOT-sources.jar>=
+org.jacoco.core.test.validation.kotlin-0.8.9-SNAPSHOT.pom>=
+org.jacoco.core.test.validation.kotlin-0.8.9-SNAPSHOT.jar>=
