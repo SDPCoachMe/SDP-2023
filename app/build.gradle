@@ -7,6 +7,10 @@ plugins {
     id 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin'
 }
 
+jacoco {
+    toolVersion = "0.8.9-SNAPSHOT"
+}
+
 android {
     namespace 'com.github.sdpcoachme'
     compileSdk 33
