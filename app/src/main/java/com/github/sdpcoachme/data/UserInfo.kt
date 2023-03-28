@@ -14,5 +14,5 @@ data class UserInfo(
     val events: List<Event> = emptyList()
 ) {
     // Constructor needed to make the data class serializable
-    constructor() : this("", "", "", "", "", false, emptyList())
+    constructor() : this("", "", "", "", "", false, emptyList(), emptyList())
 }

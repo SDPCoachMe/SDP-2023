@@ -1,13 +1,13 @@
 package com.github.sdpcoachme.data
 
 
-import androidx.compose.ui.graphics.Color
-import java.time.LocalDateTime
-
 data class Event(
     val name: String,
-    val color: Color,
-    val start: LocalDateTime,
-    val end: LocalDateTime,
+    val color: String,
+    val start: String,
+    val end: String,
     val description: String = "",
-)
+) {
+    // Constructor needed to make the data class serializable
+    constructor() : this("", "", "", "")
+}

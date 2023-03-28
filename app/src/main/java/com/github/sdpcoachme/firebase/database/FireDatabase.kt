@@ -1,14 +1,9 @@
 package com.github.sdpcoachme.firebase.database
 
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.ktx.database
-import com.google.firebase.ktx.Firebase
-import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -84,26 +79,20 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     }
 
     override fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void> {
-
         return this.getUser(email).thenAccept {
             // TODO: remove this try catch block
             try {
                 val formattedEmail = email.replace('.', ',')
-
-                val eventsToAdd = hashMapOf<String, Any>()
                 for (event in events) {
-
-                    val eventMap = hashMapOf<String, Any>(
-                        "name" to event.name,
-                        "color" to event.color.toArgb(),
-                        "start" to event.start.toString(),
-                        "end" to event.end.toString(),
-                        "description" to event.description,
-                    )
-                    val eventsKey = this.getAccountsRef().child(formattedEmail).child("events").push().key
-                    eventsToAdd["/$eventsKey"] = eventMap
+                    println("Event color: ${event.color}")
                 }
-                this.getAccountsRef().child(formattedEmail).child("events").updateChildren(eventsToAdd)
+
+                val updatedUserInfo = if (it.events.isEmpty()) {
+                    it.copy(events = events)
+                } else {
+                    it.copy(events = it.events + events)
+                }
+                addUser(updatedUserInfo)
             } catch (e: Exception) {
                 e.printStackTrace()
             }

@@ -56,24 +56,18 @@ class ScheduleActivity : ComponentActivity() {
 
             //TODO: remove this when the database works
             database.addEventsToDatabase(email, sampleEvents).thenRun {
+                println("Added sample events to database")
                 val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email).thenApply {
-                    val map = it as Map<*, *>
-                    val eventKeys = (map["events"] as Map<*, *>).keys
-                    println("Events keys: ${(map["events"] as Map<*, *>).keys}")
+                    println("Got user info from database")
+                    println("Events: ${it.events}")
+                    for (event in it.events) {
+                        println("Event color retrieved: ${event.color}")
+                    }
+                    it
 
-                    val events = eventListFromKeys(eventKeys, map)
-                    println("Created eventList")
+                }.exceptionally { println("event error: $it"); null}
 
-                    UserInfo(
-                        map["firstName"] as String,
-                        map["lastName"] as String,
-                        map["email"] as String,
-                        map["phone"] as String,
-                        map["location"] as String,
-                        map["coach"] as Boolean,
-                        events,
-                    )
-                }.exceptionally { null }
+                println("Future user info: $futureUserInfo")
 
                 setContent {
                     CoachMeTheme {
@@ -86,7 +80,7 @@ class ScheduleActivity : ComponentActivity() {
         }
     }
 
-    private fun eventListFromKeys(
+    /*private fun eventListFromKeys(
         eventKeys: Set<Any?>,
         map: Map<*, *>
     ): List<Event> {
@@ -105,7 +99,7 @@ class ScheduleActivity : ComponentActivity() {
             events = events.plus(e)
         }
         return events
-    }
+    }*/
 
     class TestTags {
         class ScheduleHeader(tag: String) {
@@ -198,7 +192,7 @@ fun BasicEvent(
         modifier = modifier
             .fillMaxSize()
             .padding(end = 2.dp, bottom = 2.dp)
-            .background(event.color, shape = RoundedCornerShape(4.dp))
+            .background(Color(event.color.toULong()), shape = RoundedCornerShape(4.dp))
             .padding(4.dp)
     ) {
         Text(
@@ -215,15 +209,13 @@ fun BasicEvent(
         )
 
         //TODO: Only show description when event expanded
-        if (event.description != null) {
-            Text(
-                text = event.description,
-                style = MaterialTheme.typography.body2,
-                maxLines = 5,
-                overflow = TextOverflow.Ellipsis,
-                fontSize = 10f.sp,
-            )
-        }
+        Text(
+            text = event.description,
+            style = MaterialTheme.typography.body2,
+            maxLines = 5,
+            overflow = TextOverflow.Ellipsis,
+            fontSize = 10f.sp,
+        )
     }
 }
 
@@ -264,8 +256,8 @@ fun ScheduleHeader(
 fun BasicSchedule(
     events: List<Event>,
     modifier: Modifier = Modifier,
-    minDate: LocalDate = events.minByOrNull(Event::start)!!.start.toLocalDate(),
-    maxDate: LocalDate = events.maxByOrNull(Event::end)!!.end.toLocalDate(),
+    minDate: LocalDate = LocalDateTime.parse(events.minByOrNull(Event::start)!!.start).toLocalDate(),
+    maxDate: LocalDate = LocalDateTime.parse(events.maxByOrNull(Event::end)!!.end).toLocalDate(),
     dayWidth: Dp,
     hourHeight: Dp,
 ) {
@@ -303,16 +295,16 @@ fun BasicSchedule(
         val width = dayWidth.roundToPx() * ColumnsPerWeek
         val placeablesWithEvents = measureables.map { measurable ->
             val event = measurable.parentData as Event
-            val eventDurationMinutes = ChronoUnit.MINUTES.between(event.start, event.end)
+            val eventDurationMinutes = ChronoUnit.MINUTES.between(LocalDateTime.parse(event.start), LocalDateTime.parse(event.end))
             val eventHeight = ((eventDurationMinutes / 60f) * hourHeight.toPx()).roundToInt()
             val placeable = measurable.measure(constraints.copy(minWidth = dayWidth.roundToPx(), maxWidth = dayWidth.roundToPx(), minHeight = eventHeight, maxHeight = eventHeight))
             Pair(placeable, event)
         }
         layout(width, height) {
             placeablesWithEvents.forEach { (placeable, event) ->
-                val eventOffsetMinutes = ChronoUnit.MINUTES.between(LocalTime.MIN, event.start.toLocalTime())
+                val eventOffsetMinutes = ChronoUnit.MINUTES.between(LocalTime.MIN, LocalDateTime.parse(event.start).toLocalTime())
                 val eventY = ((eventOffsetMinutes / 60f) * hourHeight.toPx()).roundToInt()
-                val eventOffsetDays = ChronoUnit.DAYS.between(minDate, event.start.toLocalDate()).toInt()
+                val eventOffsetDays = ChronoUnit.DAYS.between(minDate, LocalDateTime.parse(event.start).toLocalDate()).toInt()
                 val eventX = eventOffsetDays * dayWidth.roundToPx()
                 placeable.place(eventX, eventY)
             }
@@ -329,44 +321,44 @@ private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSam
 private val sampleEvents = listOf(
     Event(
         name = "Google I/O Keynote",
-        color = Color(0xFFAFBBF2),
-        start = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(13, 0, 0),
-        end = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(15, 0, 0),
+        color = Color(0xFFAFBBF2).value.toString(),
+        start = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(13, 0, 0).toString(),
+        end = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(15, 0, 0).toString(),
         description = "Tune in to find out about how we're furthering our mission to organize the world’s information and make it universally accessible and useful.",
     ),
     Event(
         name = "Developer Keynote",
-        color = Color(0xFFAFBBF2),
-        start = currentMonday.plusDays(2).atTime(7, 0, 0),
-        end = currentMonday.plusDays(2).atTime(9, 0, 0),
+        color = Color(0xFFAFBBF2).value.toString(),
+        start = currentMonday.plusDays(2).atTime(7, 0, 0).toString(),
+        end = currentMonday.plusDays(2).atTime(9, 0, 0).toString(),
         description = "Learn about the latest updates to our developer products and platforms from Google Developers.",
     ),
     Event(
         name = "What's new in Android",
-        color = Color(0xFF1B998B),
-        start = currentMonday.plusDays(2).atTime(10, 0, 0),
-        end = currentMonday.plusDays(2).atTime(12, 0, 0),
+        color = Color(0xFF1B998B).value.toString(),
+        start = currentMonday.plusDays(2).atTime(10, 0, 0).toString(),
+        end = currentMonday.plusDays(2).atTime(12, 0, 0).toString(),
         description = "In this Keynote, Chet Haase, Dan Sandler, and Romain Guy discuss the latest Android features and enhancements for developers.",
     ),
     Event(
         name = "What's new in Machine Learning",
-        color = Color(0xFFF4BFDB),
-        start = currentMonday.plusDays(2).atTime(22, 0, 0),
-        end = currentMonday.plusDays(3).atTime(4, 0, 0),
+        color = Color(0xFFF4BFDB).value.toString(),
+        start = currentMonday.plusDays(2).atTime(22, 0, 0).toString(),
+        end = currentMonday.plusDays(3).atTime(4, 0, 0).toString(),
         description = "Learn about the latest and greatest in ML from Google. We’ll cover what’s available to developers when it comes to creating, understanding, and deploying models for a variety of different applications.",
     ),
     Event(
         name = "What's new in Material Design",
-        color = Color(0xFF6DD3CE),
-        start = currentMonday.plusDays(3).atTime(13, 0, 0),
-        end = currentMonday.plusDays(3).atTime(15, 0, 0),
+        color = Color(0xFF6DD3CE).value.toString(),
+        start = currentMonday.plusDays(3).atTime(13, 0, 0).toString(),
+        end = currentMonday.plusDays(3).atTime(15, 0, 0).toString(),
         description = "Learn about the latest design improvements to help you build personal dynamic experiences with Material Design.",
     ),
     Event(
         name = "Jetpack Compose Basics",
-        color = Color(0xFF1B998B),
-        start = currentMonday.plusDays(4).atTime(9, 0, 0),
-        end = currentMonday.plusDays(4).atTime(13, 0, 0),
+        color = Color(0xFF1B998B).value.toString(),
+        start = currentMonday.plusDays(4).atTime(9, 0, 0).toString(),
+        end = currentMonday.plusDays(4).atTime(13, 0, 0).toString(),
         description = "This Workshop will take you through the basics of building your first app with Jetpack Compose, Android's new modern UI toolkit that simplifies and accelerates UI development on Android.",
     ),
 )
