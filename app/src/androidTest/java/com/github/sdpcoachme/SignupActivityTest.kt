@@ -158,7 +158,7 @@ open class SignupActivityTest {
         Espresso.closeSoftKeyboard()
         composeTestRule.onNodeWithTag(LOCATION).performTextInput(user.location)
         Espresso.closeSoftKeyboard()
-        if (user.isCoach)
+        if (user.coach)
             composeTestRule.onNodeWithTag(BE_COACH).performClick()
 
         composeTestRule.onNodeWithTag(SIGN_UP).performClick()

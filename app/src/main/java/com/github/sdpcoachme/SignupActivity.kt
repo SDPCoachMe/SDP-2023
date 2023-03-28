@@ -120,7 +120,7 @@ class SignupActivity : ComponentActivity() {
                         email = email,
                         phone = phone,
                         location = location,
-                        isCoach = isCoach,
+                        coach = isCoach,
                         // sports added later in SelectSportsActivity
                         sports = listOf()
                     )

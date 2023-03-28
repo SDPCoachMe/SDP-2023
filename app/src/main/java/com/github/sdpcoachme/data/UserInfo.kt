@@ -9,7 +9,7 @@ data class UserInfo(
     val email: String = "",
     val phone: String = "",
     val location: String = "",
-    val isCoach: Boolean = false,
+    val coach: Boolean = false,
     val sports: List<Sports> = emptyList()
 ) {
     // Constructor needed to make the data class serializable

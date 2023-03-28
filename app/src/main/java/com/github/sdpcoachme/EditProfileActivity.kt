@@ -126,7 +126,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>) {
             lname = newUser.lastName
             // TODO temporary sports handling
             favsport = ""
-            isCoach = newUser.isCoach
+            isCoach = newUser.coach
             f = CompletableFuture.completedFuture(null)
         }
     }
