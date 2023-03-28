@@ -81,7 +81,7 @@ class DashboardActivity : ComponentActivity() {
                 isGranted: Boolean -> if (isGranted) {
                     mapViewModel.getDeviceLocation(fusedLocationProviderClient)
                 } else {
-                    // todo Permission denied or only COARSE given
+                    // TODO Permission denied or only COARSE given
                 }
         }
 
@@ -89,14 +89,13 @@ class DashboardActivity : ComponentActivity() {
      * This function updates the location state of the MapViewModel if the permission is granted.
      * If the permission is denied, it requests it.
      */
-    private fun updateLocation() =
+    private fun getLocation() =
         when (ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION)) {
             PackageManager.PERMISSION_GRANTED -> {
                 mapViewModel.getDeviceLocation(fusedLocationProviderClient)
             }
-            else -> {
-                requestPermissionLauncher.launch(ACCESS_FINE_LOCATION)
-            }
+            //TODO we can also ask for COARSE_LOCATION
+            else -> requestPermissionLauncher.launch(ACCESS_FINE_LOCATION)
         }
 
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
@@ -108,7 +107,7 @@ class DashboardActivity : ComponentActivity() {
         val email = intent.getStringExtra("email")
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
-        updateLocation()
+        getLocation()
 
         if (email == null) {
             val errorMsg = "The dashboard did not receive an email address.\nPlease return to the login page and try again."

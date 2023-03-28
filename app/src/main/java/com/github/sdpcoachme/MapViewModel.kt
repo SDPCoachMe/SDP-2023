@@ -6,7 +6,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.github.sdpcoachme.data.MapState
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.maps.model.LatLng
 
+/**
+ * View model for the MapView. Holds and updates a MapState which contains the last known
+ * user location.
+ */
 class MapViewModel : ViewModel() {
 
     val mapState: MutableState<MapState> = mutableStateOf(MapState(lastKnownLocation = null))
@@ -16,8 +21,11 @@ class MapViewModel : ViewModel() {
         try {
             fusedLocationProviderClient.lastLocation.addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    println("new location found !")
-                    mapState.value = mapState.value.copy(lastKnownLocation = task.result)
+                    println("Last location has been successfully retrieved")
+                    mapState.value = mapState.value.copy(lastKnownLocation = LatLng(
+                        task.result.latitude,
+                        task.result.longitude
+                    ))
                 }
             }
         } catch (e: SecurityException) {
