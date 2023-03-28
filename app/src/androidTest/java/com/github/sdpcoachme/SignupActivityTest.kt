@@ -84,13 +84,13 @@ open class SignupActivityTest {
                 "Lausanne", false, listOf())
             inputUserInfo(user)
 
-            // Important note: this get method was used instead of onTimeout due to onTiemout not
+            // Important note: this get method was used instead of onTimeout due to onTimeout not
             // being found when running tests on Cirrus CI even with java version changed in build.gradle
-            val retrievedUser = database.getUser(user.email).get(10, TimeUnit.SECONDS) as Map<*,*>
-            assertRetrievedUser(user, retrievedUser)
+            val retrievedUser = database.getUser(user.email).get(10, TimeUnit.SECONDS)
+            TestCase.assertEquals(user, retrievedUser)
 
             // Assert that we are redirected to the Dashboard with correct intent
-            Intents.intended(allOf(IntentMatchers.hasComponent(DashboardActivity::class.java.name), hasExtra("email", user.email)))
+            Intents.intended(allOf(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name), hasExtra("email", user.email)))
 
             Intents.release()
         }
@@ -114,11 +114,11 @@ open class SignupActivityTest {
 
             // Important note: this get method was used instead of onTimeout due to onTiemout not
             // being found when running tests on Cirrus CI even with java version changed in build.gradle
-            val retrievedUser = database.getUser(user.email).get(10, TimeUnit.SECONDS) as Map<*,*>
-            assertRetrievedUser(user, retrievedUser)
+            val retrievedUser = database.getUser(user.email).get(10, TimeUnit.SECONDS)
+            TestCase.assertEquals(user, retrievedUser)
 
             // Assert that we are redirected to the Dashboard with correct intent
-            Intents.intended(allOf(IntentMatchers.hasComponent(DashboardActivity::class.java.name), hasExtra("email", user.email)))
+            Intents.intended(allOf(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name), hasExtra("email", user.email)))
 
             Intents.release()
         }
@@ -149,17 +149,6 @@ open class SignupActivityTest {
         }
     }
 
-    private fun assertRetrievedUser(
-        user: UserInfo,
-        retrievedUser: Map<*, *>
-    ) {
-        TestCase.assertEquals(user.firstName, retrievedUser["firstName"])
-        TestCase.assertEquals(user.lastName, retrievedUser["lastName"])
-        TestCase.assertEquals(user.phone, retrievedUser["phone"])
-        TestCase.assertEquals(user.location, retrievedUser["location"])
-        TestCase.assertEquals(user.isCoach, retrievedUser["coach"])
-    }
-
     private fun inputUserInfo(user: UserInfo) {
         composeTestRule.onNodeWithTag(FIRST_NAME).performTextInput(user.firstName)
         Espresso.closeSoftKeyboard()
@@ -169,7 +158,7 @@ open class SignupActivityTest {
         Espresso.closeSoftKeyboard()
         composeTestRule.onNodeWithTag(LOCATION).performTextInput(user.location)
         Espresso.closeSoftKeyboard()
-        if (user.isCoach)
+        if (user.coach)
             composeTestRule.onNodeWithTag(BE_COACH).performClick()
 
         composeTestRule.onNodeWithTag(SIGN_UP).performClick()

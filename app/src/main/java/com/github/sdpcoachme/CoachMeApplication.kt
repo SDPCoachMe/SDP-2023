@@ -6,6 +6,8 @@ import com.github.sdpcoachme.firebase.auth.GoogleAuthenticator
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.firebase.database.FireDatabase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
 
 
 open class CoachMeApplication : Application() {
@@ -14,7 +16,7 @@ open class CoachMeApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
-        database = FireDatabase()
+        database = FireDatabase(Firebase.database.reference)
     }
 
     open val authenticator: Authenticator = GoogleAuthenticator()

@@ -7,31 +7,25 @@ import java.util.concurrent.CompletableFuture
  * A mock database class
  */
 class MockDatabase: Database {
-    private val defaultUserInfo = mapOf(
-        "firstName" to "John",
-        "lastName" to "Doe",
-        "phone" to "1234567890",
-        "location" to "Some location",
-        "coach" to false,
-        "email" to "example@email.com"
-    )
+    private val defautEmail = "example@email.com"
+    private val defaultUserInfo = UserInfo(
+        "John",
+        "Doe",
+        defautEmail,
+        "1234567890",
+        "Some location",
+        false,
+        listOf())
 
-    private val db = hashMapOf<String, Any>("example@email.com" to defaultUserInfo)
+    private val root = hashMapOf<String, Any>()
+    private val accounts = hashMapOf<String, Any>(defautEmail to defaultUserInfo)
 
     override fun get(key: String): CompletableFuture<Any> {
-        if (!db.containsKey(key)) {
-            println("Key $key does not exist")
-            val error = CompletableFuture<Any>()
-            error.completeExceptionally(NoSuchElementException("Key $key does not exist"))
-            return error
-        }
-
-        return CompletableFuture.completedFuture(db[key])
+        return getMap(root, key)
     }
 
     override fun set(key: String, value: Any): CompletableFuture<Void> {
-        db[key] = value
-        return CompletableFuture.completedFuture(null)
+        return setMap(root, key, value)
     }
 
     override fun addUser(user: UserInfo): CompletableFuture<Void> {
@@ -40,20 +34,31 @@ class MockDatabase: Database {
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
         }
-
-        val map = mapOf(
-            "firstName" to user.firstName,
-            "lastName" to user.lastName,
-            "phone" to user.phone,
-            "location" to user.location,
-            "coach" to user.isCoach,
-            "email" to user.email
-        )
-
-        return set(user.email, map)
+        return setMap(accounts, user.email, user)
     }
 
-    override fun getUser(email: String): CompletableFuture<Any> {
-        return get(email)
+    override fun getUser(email: String): CompletableFuture<UserInfo> {
+        return getMap(accounts, email).thenApply { it as UserInfo }
+
+    }
+
+    override fun userExists(email: String): CompletableFuture<Boolean> {
+        return getMap(accounts, email).thenApply { it != null }
+    }
+    private fun setMap(map: MutableMap<String, Any>, key: String, value: Any): CompletableFuture<Void> {
+        map[key] = value
+        return CompletableFuture.completedFuture(null)
+    }
+
+    private fun getMap(map: MutableMap<String, Any>, key: String): CompletableFuture<Any> {
+        val future = CompletableFuture<Any>()
+        val value = map[key]
+        if (value == null) {
+            val exception = "Key $key does not exist"
+            println(exception)
+            future.completeExceptionally(NoSuchKeyException(exception))
+        } else
+            future.complete(value)
+        return future
     }
 }

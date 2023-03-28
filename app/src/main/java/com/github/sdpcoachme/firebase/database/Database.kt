@@ -37,6 +37,13 @@ interface Database {
      * @param email The email of the user to get
      * @return A future that will complete when the user has been gotten
      */
-    fun getUser(email: String): CompletableFuture<Any>
+    fun getUser(email: String): CompletableFuture<UserInfo>
+
+    /**
+     * Check if a user exists in the database
+     * @param email The email of the user to check
+     * @return A future that will complete when the user has been checked
+     */
+    fun userExists(email: String): CompletableFuture<Boolean>
 
 }
