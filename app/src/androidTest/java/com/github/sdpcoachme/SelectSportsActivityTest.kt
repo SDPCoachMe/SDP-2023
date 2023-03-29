@@ -14,6 +14,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import junit.framework.TestCase
 import org.hamcrest.Matchers.*
 import org.junit.Before
@@ -167,6 +168,56 @@ open class SelectSportsActivityTest {
                     hasExtra("email", email)
                 )
             )
+            Intents.release()
+        }
+    }
+
+    @Test
+    fun errorPageIsShownWhenEditProfileIsLaunchedWithoutEmailAsExtra() {
+        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), SelectSportsActivity::class.java)).use {
+            // not possible to use Intents.init()... to check if the correct intent
+            // is launched as the intents are launched from within the onCreate function
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
+        }
+    }
+    
+    @Test
+    fun errorPageIsShownAfterDBGetUserError() {
+        errorPageLaunchChecker("throwGet@Exception.com")
+    }
+
+    @Test
+    fun errorPageIsShownAfterDBAddUserError() {
+        //errorPage is shown when no user corresponds to the email
+        errorPageLaunchChecker("throw@Exception.com")
+    }
+
+    private fun errorPageLaunchChecker(errorEmail: String) {
+        val invalidUserIntent =
+            Intent(ApplicationProvider.getApplicationContext(), SelectSportsActivity::class.java)
+        invalidUserIntent.putExtra("email", errorEmail)
+        ActivityScenario.launch<SignupActivity>(invalidUserIntent).use {
+            Intents.init()
+            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST[0].ROW)
+                .performClick() // select new sport
+
+            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.REGISTER)
+                .assertIsDisplayed()
+                .performClick()
+            Intents.intended(
+                allOf(
+                    IntentMatchers.hasComponent(IntentExtrasErrorHandlerActivity::class.java.name),
+                    hasExtra(
+                        "errorMsg",
+                        "There was a database error.\nPlease return to the login page and try again."
+                    )
+                )
+            )
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON)
+                .assertIsDisplayed()
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD)
+                .assertIsDisplayed()
             Intents.release()
         }
     }
