@@ -4,11 +4,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.data.MapState
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
+
 
 /**
  * Displays the map with the last known user location on creation.
@@ -25,7 +28,7 @@ fun MapView(modifier: Modifier, mapState: MapState) {
     }
 
     GoogleMap(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().testTag(MAP),
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
             isMyLocationEnabled = mapState.lastKnownLocation != null,

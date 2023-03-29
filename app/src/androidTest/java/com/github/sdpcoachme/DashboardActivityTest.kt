@@ -20,6 +20,7 @@ import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.LOGOUT
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.PROFILE
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DRAWER_HEADER
+import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import org.hamcrest.Matcher
@@ -196,5 +197,26 @@ class DashboardActivityTest {
     }
 
     // TODO add more tests for the other menu items
+
+    @Test
+    fun mapHasValidApiKey() {
+        check(BuildConfig.MAPS_API_KEY.isNotBlank()
+                && BuildConfig.MAPS_API_KEY != "YOUR_API_KEY") {
+            "Maps API key not specified"
+        }
+    }
+
+    @Test
+    fun mapIsDisplayed() {
+        val email = EXISTING_EMAIL
+        val launchDashboard = Intent(
+            ApplicationProvider.getApplicationContext(),
+            DashboardActivity::class.java
+        )
+        launchDashboard.putExtra("email", email)
+        ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+            composeTestRule.onNodeWithTag(MAP).assertIsDisplayed()
+        }
+    }
 
 }

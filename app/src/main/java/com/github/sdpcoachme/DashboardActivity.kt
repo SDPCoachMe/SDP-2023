@@ -58,6 +58,7 @@ class DashboardActivity : ComponentActivity() {
             const val DRAWER_HEADER = "drawerHeader"
             const val DASHBOARD_EMAIL = "dashboardEmail"
             const val MENU_LIST = "menuList"
+            const val MAP = "map"
         }
         class Buttons {
             companion object {
