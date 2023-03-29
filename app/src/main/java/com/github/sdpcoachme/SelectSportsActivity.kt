@@ -20,9 +20,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.data.ListItem
 import com.github.sdpcoachme.data.Sports
+import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import java.util.concurrent.CompletableFuture
 
 class SelectSportsActivity : ComponentActivity() {
 
@@ -57,6 +59,7 @@ class SelectSportsActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         database = (application as CoachMeApplication).database
         val emailReceived = intent.getStringExtra("email")
+        val isEditingProfile = intent.getBooleanExtra("isEditingProfile", false)
         if (emailReceived == null) {
             val errorMsg = "Profile editing did not receive an email address." +
                     "\n Please return to the login page and try again."
@@ -65,7 +68,7 @@ class SelectSportsActivity : ComponentActivity() {
             email = emailReceived
             setContent {
                 CoachMeTheme {
-                    FavoriteSportsSelection()
+                    FavoriteSportsSelection(isEditingProfile, database.getUser(email))
                 }
             }
         }
@@ -73,10 +76,12 @@ class SelectSportsActivity : ComponentActivity() {
     }
 
     @Composable
-    fun FavoriteSportsSelection() {
+    fun FavoriteSportsSelection(isEditingProfile: Boolean, userFuture: CompletableFuture<UserInfo>) {
         var sportItems by remember {
             mutableStateOf(Sports.values().map { ListItem(it, false) })
         }
+        var userInfo by remember { mutableStateOf(userFuture) }
+
         val toggleSelectSport: (Sports) -> Unit = { sport ->
             sportItems = sportItems.map { item ->
                 if (item.element == sport) {
@@ -86,6 +91,20 @@ class SelectSportsActivity : ComponentActivity() {
                 }
             }
         }
+
+        userInfo.thenAccept { user ->
+            if (user != null) {
+                sportItems = sportItems.map { item ->
+                    if (user.sports.contains(item.element)) {
+                        item.copy(selected = true)
+                    } else {
+                        item
+                    }
+                }
+                userInfo = CompletableFuture.completedFuture(null)
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -113,7 +132,11 @@ class SelectSportsActivity : ComponentActivity() {
                         .handle { _, exception ->
                             when (exception) {
                                 null -> {
-                                    val intent = Intent(applicationContext, DashboardActivity::class.java)
+                                    val targetClass =
+                                        if (isEditingProfile) EditProfileActivity::class.java
+                                        else DashboardActivity::class.java
+
+                                    val intent = Intent(applicationContext, targetClass)
                                     intent.putExtra("email", email)
                                     startActivity(intent)
                                 }

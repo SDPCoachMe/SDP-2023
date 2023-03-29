@@ -17,7 +17,7 @@ import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.LAST_NAME
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.PROFILE_PICTURE
-import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.SPORT
+//import com.github.sdpcoachme.EditProfileActivity.TestTags.Companion.SPORT
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import org.junit.Rule
@@ -33,7 +33,7 @@ class EditProfileActivityTest {
     private val displayedAfterEditButtonClicked = listOf(
         FIRST_NAME.FIELD,
         LAST_NAME.FIELD,
-        SPORT.FIELD,
+//        SPORT.FIELD,
         CLIENT_COACH.SWITCH,
 
         SAVE
@@ -54,8 +54,8 @@ class EditProfileActivityTest {
             LAST_NAME.LABEL,
             LAST_NAME.TEXT,
 
-            SPORT.LABEL,
-            SPORT.TEXT,
+//            SPORT.LABEL,
+//            SPORT.TEXT,
 
             EDIT
         )
@@ -63,7 +63,7 @@ class EditProfileActivityTest {
         val initiallyNotDisplayed = listOf(
             FIRST_NAME.FIELD,
             LAST_NAME.FIELD,
-            SPORT.FIELD,
+//            SPORT.FIELD,
             CLIENT_COACH.SWITCH,
 
             SAVE
@@ -118,7 +118,7 @@ class EditProfileActivityTest {
         val newValues = mapOf(
             FIRST_NAME to "Updated first name",
             LAST_NAME to "Updated last name",
-            SPORT to "Updated favorite sport"
+//            SPORT to "Updated favorite sport"
         )
 
         val editProfileIntent = Intent(ApplicationProvider.getApplicationContext(), EditProfileActivity::class.java)

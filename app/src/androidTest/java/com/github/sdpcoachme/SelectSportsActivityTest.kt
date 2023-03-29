@@ -2,7 +2,7 @@ package com.github.sdpcoachme
 
 import android.content.Intent
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
@@ -16,6 +16,7 @@ import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import junit.framework.TestCase
 import org.hamcrest.Matchers.*
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,7 +41,12 @@ open class SelectSportsActivityTest {
         .putExtra("email", email)
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<SelectSportsActivity>()
+    val composeTestRule = createEmptyComposeRule() //createAndroidComposeRule<SelectSportsActivity>()
+
+    @Before
+    fun setup() { // set user in db to default
+        database.addUser(userInfo)
+    }
 
     @Test
     fun tickIconsInitiallyNotDisplayed() {
@@ -93,60 +99,71 @@ open class SelectSportsActivityTest {
 
     @Test
     fun userInfoSelectedSportCorrectlyReplaced() {
-        // Note works only if there are at least 2 sports
-        val userInfo = userInfo.copy(sports = listOf(Sports.values()[1]))
-        val updatedUser =
-            database.addUser(userInfo)
-                .thenApply {
-                    val launchSignup = Intent(ApplicationProvider.getApplicationContext(),
-                        SelectSportsActivity::class.java)
-                    launchSignup.putExtra("email", email)
-                    ActivityScenario.launch<SignupActivity>(launchSignup).use {
-                        composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST[0].ROW)
-                            .performClick()
-                        composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.REGISTER)
-                            .performClick()
-                    }
-                }.thenCompose {
-                    database.getUser(email)
-                }.get(10, TimeUnit.SECONDS)
+        ActivityScenario.launch<SignupActivity>(launchSignup).use {
+            // Note works only if there are at least 2 sports
+            val userInfo =
+                userInfo.copy(sports = listOf(Sports.values()[1])) // select favorite sport
+            val updatedUser =
+                database.addUser(userInfo)
+                    .thenApply {
+                        val launchSignup = Intent(
+                            ApplicationProvider.getApplicationContext(),
+                            SelectSportsActivity::class.java
+                        )
+                        launchSignup.putExtra("email", email)
+                        ActivityScenario.launch<SignupActivity>(launchSignup).use {
+                            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST[0].ROW)
+                                .performClick() // select new sport
+                            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST[1].ROW)
+                                .performClick() // deselect previous sport
+                            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.REGISTER)
+                                .performClick()
+                        }
+                    }.thenCompose {
+                        database.getUser(email)
+                    }.get(10, TimeUnit.SECONDS)
 
-        // Check that the user has the first sport
-        assertThat(updatedUser.sports, hasItem(Sports.values()[0]))
-        // Check that the user does not have the other sports
-        Sports.values().toList().subList(1, Sports.values().size).forEach {
-            assertThat(updatedUser.sports, not(hasItem(it)))
+            // Check that the user has the first sport
+            assertThat(updatedUser.sports, hasItem(Sports.values()[0]))
+            // Check that the user does not have the other sports
+            Sports.values().toList().subList(1, Sports.values().size).forEach {
+                assertThat(updatedUser.sports, not(hasItem(it)))
+            }
         }
-
-
     }
 
     @Test
     fun userInfoUpdatedWithAllSelectedSportsAndRedirectedToDashboardActivity() {
-        Intents.init()
-        val updatedUser =
-            database.addUser(userInfo)
-                .thenApply {
-                    val launchSignup = Intent(ApplicationProvider.getApplicationContext(),
-                        SelectSportsActivity::class.java)
-                    launchSignup.putExtra("email", email)
-                    ActivityScenario.launch<SignupActivity>(launchSignup).use {
-                        SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST.forEach {
-                            composeTestRule.onNodeWithTag(it.ROW).performClick()
+        ActivityScenario.launch<SignupActivity>(launchSignup).use {
+            Intents.init()
+            val updatedUser =
+                database.addUser(userInfo)
+                    .thenApply {
+                        val launchSignup = Intent(
+                            ApplicationProvider.getApplicationContext(),
+                            SelectSportsActivity::class.java
+                        )
+                        launchSignup.putExtra("email", email)
+                        ActivityScenario.launch<SignupActivity>(launchSignup).use {
+                            SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST.forEach {
+                                composeTestRule.onNodeWithTag(it.ROW).performClick()
+                            }
+                            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.REGISTER)
+                                .performClick()
                         }
-                        composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.REGISTER)
-                            .performClick()
-                    }
-                }.thenCompose {
-                    database.getUser(email)
-                }.get(10, TimeUnit.SECONDS)
+                    }.thenCompose {
+                        database.getUser(email)
+                    }.get(10, TimeUnit.SECONDS)
 
-        TestCase.assertEquals(updatedUser.sports, Sports.values().toList())
+            TestCase.assertEquals(updatedUser.sports, Sports.values().toList())
 
-        Intents.intended(allOf(
-            IntentMatchers.hasComponent(DashboardActivity::class.java.name),
-            hasExtra("email", email)
-        ))
-        Intents.release()
+            Intents.intended(
+                allOf(
+                    IntentMatchers.hasComponent(DashboardActivity::class.java.name),
+                    hasExtra("email", email)
+                )
+            )
+            Intents.release()
+        }
     }
 }
