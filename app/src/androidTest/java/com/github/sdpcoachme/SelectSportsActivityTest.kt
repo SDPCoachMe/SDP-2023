@@ -2,7 +2,7 @@ package com.github.sdpcoachme
 
 import android.content.Intent
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
@@ -14,8 +14,10 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import junit.framework.TestCase
 import org.hamcrest.Matchers.*
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,7 +42,12 @@ open class SelectSportsActivityTest {
         .putExtra("email", email)
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<SelectSportsActivity>()
+    val composeTestRule = createEmptyComposeRule() //createAndroidComposeRule<SelectSportsActivity>()
+
+    @Before
+    fun setup() { // set user in db to default
+        database.addUser(userInfo)
+    }
 
     @Test
     fun tickIconsInitiallyNotDisplayed() {
@@ -93,60 +100,124 @@ open class SelectSportsActivityTest {
 
     @Test
     fun userInfoSelectedSportCorrectlyReplaced() {
-        // Note works only if there are at least 2 sports
-        val userInfo = userInfo.copy(sports = listOf(Sports.values()[1]))
-        val updatedUser =
-            database.addUser(userInfo)
-                .thenApply {
-                    val launchSignup = Intent(ApplicationProvider.getApplicationContext(),
-                        SelectSportsActivity::class.java)
-                    launchSignup.putExtra("email", email)
-                    ActivityScenario.launch<SignupActivity>(launchSignup).use {
-                        composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST[0].ROW)
-                            .performClick()
-                        composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.REGISTER)
-                            .performClick()
-                    }
-                }.thenCompose {
-                    database.getUser(email)
-                }.get(10, TimeUnit.SECONDS)
+        ActivityScenario.launch<SignupActivity>(launchSignup).use {
+            // Note works only if there are at least 2 sports
+            val userInfo =
+                userInfo.copy(sports = listOf(Sports.values()[1])) // select favorite sport
+            val updatedUser =
+                database.addUser(userInfo)
+                    .thenApply {
+                        val launchSignup = Intent(
+                            ApplicationProvider.getApplicationContext(),
+                            SelectSportsActivity::class.java
+                        )
+                        launchSignup.putExtra("email", email)
+                        ActivityScenario.launch<SignupActivity>(launchSignup).use {
+                            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST[0].ROW)
+                                .performClick() // select new sport
+                            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST[1].ROW)
+                                .performClick() // deselect previous sport
+                            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.REGISTER)
+                                .performClick()
+                        }
+                    }.thenCompose {
+                        database.getUser(email)
+                    }.get(10, TimeUnit.SECONDS)
 
-        // Check that the user has the first sport
-        assertThat(updatedUser.sports, hasItem(Sports.values()[0]))
-        // Check that the user does not have the other sports
-        Sports.values().toList().subList(1, Sports.values().size).forEach {
-            assertThat(updatedUser.sports, not(hasItem(it)))
+            // Check that the user has the first sport
+            assertThat(updatedUser.sports, hasItem(Sports.values()[0]))
+            // Check that the user does not have the other sports
+            Sports.values().toList().subList(1, Sports.values().size).forEach {
+                assertThat(updatedUser.sports, not(hasItem(it)))
+            }
         }
-
-
     }
 
     @Test
     fun userInfoUpdatedWithAllSelectedSportsAndRedirectedToDashboardActivity() {
-        Intents.init()
-        val updatedUser =
-            database.addUser(userInfo)
-                .thenApply {
-                    val launchSignup = Intent(ApplicationProvider.getApplicationContext(),
-                        SelectSportsActivity::class.java)
-                    launchSignup.putExtra("email", email)
-                    ActivityScenario.launch<SignupActivity>(launchSignup).use {
-                        SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST.forEach {
-                            composeTestRule.onNodeWithTag(it.ROW).performClick()
+        checkRedirectionAfterRegister(launchSignup, DashboardActivity::class.java.name)
+    }
+
+    @Test
+    fun redirectsToProfileActivityWhenIsEditingProfileIsTrue() {
+        checkRedirectionAfterRegister(launchSignup.putExtra("isEditingProfile", true), EditProfileActivity::class.java.name)
+    }
+
+    private fun checkRedirectionAfterRegister(launcher: Intent, intendedClass: String) {
+        ActivityScenario.launch<SignupActivity>(launchSignup).use {
+            Intents.init()
+            val updatedUser =
+                database.addUser(userInfo)
+                    .thenApply {
+                        ActivityScenario.launch<SignupActivity>(launcher).use {
+                            SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST.forEach {
+                                composeTestRule.onNodeWithTag(it.ROW).performClick()
+                            }
+                            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.REGISTER)
+                                .performClick()
                         }
-                        composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.REGISTER)
-                            .performClick()
-                    }
-                }.thenCompose {
-                    database.getUser(email)
-                }.get(10, TimeUnit.SECONDS)
+                    }.thenCompose {
+                        database.getUser(email)
+                    }.get(10, TimeUnit.SECONDS)
 
-        TestCase.assertEquals(updatedUser.sports, Sports.values().toList())
+            TestCase.assertEquals(updatedUser.sports, Sports.values().toList())
 
-        Intents.intended(allOf(
-            IntentMatchers.hasComponent(DashboardActivity::class.java.name),
-            hasExtra("email", email)
-        ))
-        Intents.release()
+            Intents.intended(
+                allOf(
+                    IntentMatchers.hasComponent(intendedClass),
+                    hasExtra("email", email)
+                )
+            )
+            Intents.release()
+        }
+    }
+
+    @Test
+    fun errorPageIsShownWhenEditProfileIsLaunchedWithoutEmailAsExtra() {
+        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), SelectSportsActivity::class.java)).use {
+            // not possible to use Intents.init()... to check if the correct intent
+            // is launched as the intents are launched from within the onCreate function
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
+        }
+    }
+    
+    @Test
+    fun errorPageIsShownAfterDBGetUserError() {
+        errorPageLaunchChecker("throwGet@Exception.com")
+    }
+
+    @Test
+    fun errorPageIsShownAfterDBAddUserError() {
+        errorPageLaunchChecker("throw@Exception.com")
+    }
+
+    private fun errorPageLaunchChecker(errorEmail: String) {
+        val invalidUserIntent =
+            Intent(ApplicationProvider.getApplicationContext(), SelectSportsActivity::class.java)
+        invalidUserIntent.putExtra("email", errorEmail)
+        ActivityScenario.launch<SignupActivity>(invalidUserIntent).use {
+            Intents.init()
+            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST[0].ROW)
+                .performClick() // select new sport
+
+            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.REGISTER)
+                .assertIsDisplayed()
+                .performClick()
+            Intents.intended(
+                allOf(
+                    IntentMatchers.hasComponent(IntentExtrasErrorHandlerActivity::class.java.name),
+                    hasExtra(
+                        "errorMsg",
+                        "There was a database error.\nPlease return to the login page and try again."
+                    )
+                )
+            )
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON)
+                .assertIsDisplayed()
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD)
+                .assertIsDisplayed()
+            Intents.release()
+        }
     }
 }
