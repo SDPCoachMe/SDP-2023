@@ -21,11 +21,16 @@ class MapViewModel : ViewModel() {
         try {
             fusedLocationProviderClient.lastLocation.addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    println("Last location has been successfully retrieved")
-                    mapState.value = mapState.value.copy(lastKnownLocation = LatLng(
-                        task.result.latitude,
-                        task.result.longitude
-                    ))
+                    if (task.result != null) {
+                        println("Last location has been successfully retrieved")
+                        mapState.value = mapState.value.copy(lastKnownLocation = LatLng(
+                            task.result.latitude,
+                            task.result.longitude
+                        ))
+                    } else {
+                        println("Location is disabled on the device")
+                        // TODO handle this case
+                    }
                 }
             }
         } catch (e: SecurityException) {
