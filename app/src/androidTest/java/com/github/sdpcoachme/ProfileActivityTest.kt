@@ -7,11 +7,13 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.matcher.IntentMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.EDIT
 import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.MESSAGE_COACH
 import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.SAVE
+import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.SELECT_SPORTS
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.CLIENT_COACH
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.COACH_CLIENT_INFO
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.EMAIL
@@ -19,7 +21,6 @@ import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LAST_NAME
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_PICTURE
-import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SPORT
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import org.junit.Rule
@@ -35,11 +36,14 @@ class ProfileActivityTest {
     private val displayedAfterEditButtonClicked = listOf(
         FIRST_NAME.FIELD,
         LAST_NAME.FIELD,
-        SPORT.FIELD,
         CLIENT_COACH.SWITCH,
 
         SAVE
     )
+
+    private val defaultEmail = "example@email.com"
+    private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
+        .putExtra("email", defaultEmail)
 
     private val initiallyDisplayed = listOf(
         PROFILE_LABEL,
@@ -53,9 +57,6 @@ class ProfileActivityTest {
 
         LAST_NAME.LABEL,
         LAST_NAME.TEXT,
-
-        SPORT.LABEL,
-        SPORT.TEXT,
     )
 
     @Test
@@ -65,16 +66,12 @@ class ProfileActivityTest {
         val initiallyNotDisplayed = listOf(
             FIRST_NAME.FIELD,
             LAST_NAME.FIELD,
-            SPORT.FIELD,
             CLIENT_COACH.SWITCH,
 
             SAVE
         )
 
-        val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
-        val email = "example@email.com"
-        profileIntent.putExtra("email", email)
-        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             initiallyDisplayedForUser.forEach { tag ->
                 // assertIsDisplayed() behaves strangely with components that are empty (empty Text()
                 // components for example, or Text() components whose text is loaded asynchronously)
@@ -100,11 +97,7 @@ class ProfileActivityTest {
 
     @Test
     fun editButtonClickActivatesCorrectElements() {
-
-        val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
-        val email = "example@email.com"
-        profileIntent.putExtra("email", email)
-        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(EDIT)
                 .assertIsDisplayed()
                 .performClick()
@@ -120,13 +113,8 @@ class ProfileActivityTest {
         val newValues = mapOf(
             FIRST_NAME to "Updated first name",
             LAST_NAME to "Updated last name",
-            SPORT to "Updated favorite sport"
         )
-
-        val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
-        val email = "example@email.com"
-        profileIntent.putExtra("email", email)
-        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             //change to edit mode
             composeTestRule.onNodeWithTag(EDIT)
                 .assertIsDisplayed()
@@ -156,25 +144,22 @@ class ProfileActivityTest {
 
     @Test
     fun requestForExistingEmailDisplaysCorrectInfoInUserFields() {
-        val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
-        val email = "some@mail.com"
         val db = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
         db.addUser(
-            UserInfo(
-                "first",
-                "last",
-                email,
-                "012345",
-                "Some Place",
-                false,
-                listOf()
+                UserInfo(
+                    "first",
+                    "last",
+                    defaultEmail,
+                    "012345",
+                    "Some Place",
+                    false,
+                    listOf()
+                )
             )
-        )
 
-        profileIntent.putExtra("email", email)
-        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
 
-            composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(email)
+            composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(defaultEmail)
             composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals("first")
             composeTestRule.onNodeWithTag(LAST_NAME.TEXT).assertTextEquals("last")
             // TODO: add the other fields once they are implemented:
@@ -187,7 +172,7 @@ class ProfileActivityTest {
                 composeTestRule.onNodeWithTag(tag).assertIsDisplayed()
             }
 
-            composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(email)
+            composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(defaultEmail)
             composeTestRule.onNodeWithTag(FIRST_NAME.FIELD).assertTextEquals("first")
             composeTestRule.onNodeWithTag(LAST_NAME.FIELD).assertTextEquals("last")
             // TODO: add the other fields once they are implemented:
@@ -223,10 +208,7 @@ class ProfileActivityTest {
 
     @Test
     fun changingToCoachAndBackToClientWorks() {
-        val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
-        val email = "example@email.com"
-        profileIntent.putExtra("email", email)
-        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
 
             composeTestRule.onNodeWithTag(EDIT)
                 .assertIsDisplayed()
@@ -290,6 +272,47 @@ class ProfileActivityTest {
                 .performClick()
 
             // TODO: add check for the messaging activity once it is implemented
+            Intents.release()
+        }
+    }
+
+    @Test
+    fun selectSportsButtonRedirectsToSelectSportsActivity() {
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
+            Intents.init()
+
+            composeTestRule.onNodeWithTag(SELECT_SPORTS)
+                .assertIsDisplayed()
+                .performClick()
+
+            Intents.intended(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name))
+            Intents.release()
+        }
+    }
+
+    @Test
+    fun selectSportsButtonNotPresentInEditMode() {
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
+            Intents.init()
+            composeTestRule.onNodeWithTag(SELECT_SPORTS)
+                .assertIsDisplayed()
+
+            composeTestRule.onNodeWithTag(EDIT)
+                .assertIsDisplayed()
+                .performClick()
+
+            composeTestRule.onNodeWithTag(SELECT_SPORTS)
+                .assertDoesNotExist()
+
+            composeTestRule.onNodeWithTag(SAVE)
+                .assertIsDisplayed()
+                .performClick()
+
+            composeTestRule.onNodeWithTag(SELECT_SPORTS)
+                .assertIsDisplayed()
+                .performClick()
+
+            Intents.intended(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name))
             Intents.release()
         }
     }

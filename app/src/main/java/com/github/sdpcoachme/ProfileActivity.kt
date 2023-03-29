@@ -26,8 +26,6 @@ import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LAST_NAME
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_LABEL
-import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SPORT
-import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
@@ -61,6 +59,7 @@ class ProfileActivity : ComponentActivity() {
                 const val SAVE = "saveButton"
                 const val EDIT = "editButton"
                 const val MESSAGE_COACH = "messageCoachButton"
+                const val SELECT_SPORTS = "selectSportsButton"
             }
         }
         companion object {
@@ -72,7 +71,6 @@ class ProfileActivity : ComponentActivity() {
             val EMAIL = UneditableProfileRowTag("email")
             val FIRST_NAME = EditableProfileRowTag("firstName")
             val LAST_NAME = EditableProfileRowTag("lastName")
-            val SPORT = EditableProfileRowTag("sport")
             val CLIENT_COACH = SwitchClientCoachRowTag("clientCoach")
 
         }
@@ -111,6 +109,7 @@ class ProfileActivity : ComponentActivity() {
  */
 @Composable
 fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewingCoach: Boolean) {
+    val context = LocalContext.current
     val database = (LocalContext.current.applicationContext as CoachMeApplication).database
 
     // bind those to database
@@ -120,9 +119,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
     var isCoach by remember { mutableStateOf(false) }
     var switchCoachClient by remember { mutableStateOf(false) }
 
-    // TODO temporary sports handling
-    var favsport by remember { mutableStateOf("") }
-    var sports by remember { mutableStateOf(listOf<Sports>()) }
+    var userInfo by remember { mutableStateOf(UserInfo()) }
 
     var f by remember { mutableStateOf(futureUserInfo)}
 
@@ -131,11 +128,9 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
             fname = newUser.firstName
             lname = newUser.lastName
             // TODO temporary sports handling
-            favsport = ""
-            sports = newUser.sports
-
             isCoach = newUser.coach
             f = CompletableFuture.completedFuture(null)
+            userInfo = newUser
         }
     }
 
@@ -153,8 +148,6 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
             value = fname, onValueChange = { newValue -> fname = newValue })
         ProfileRow(rowName = "Last name", tag = LAST_NAME, isEditing = isEditing, leftTextPadding = 45.dp,
             value = lname, onValueChange = { newValue -> lname = newValue })
-        ProfileRow(rowName = "Favorite sport", tag = SPORT, isEditing = isEditing, leftTextPadding = 20.dp,
-            value = favsport, onValueChange = { newValue -> favsport = newValue })
 
         if (isViewingCoach) {
             Button(
@@ -178,16 +171,29 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
                     .testTag(ProfileActivity.TestTags.Buttons.SAVE),
                 onClick = {
                     isEditing = false
-                    // TODO temporary sports handling
                     isCoach = isCoach xor switchCoachClient
                     switchCoachClient = false
-                    val newUser = UserInfo(fname, lname, email, "", "", isCoach, sports)
+                    val newUser = UserInfo(fname, lname, email, "", "", isCoach, userInfo.sports)
                     database.addUser(newUser)
                 }
             ) {
                 Text(text = "Save changes")
             }
         } else {
+            Button(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .testTag(ProfileActivity.TestTags.Buttons.SELECT_SPORTS),
+                onClick = {
+                    val selSportsIntent = Intent(context, SelectSportsActivity::class.java)
+                    selSportsIntent.putExtra("email", email)
+                    selSportsIntent.putExtra("isEditingProfile", true)
+                    context.startActivity(selSportsIntent)
+                }
+            ) {
+                Text(text = "Select sports")
+            }
+
             // edit button
             Button(
                 modifier = Modifier
@@ -260,8 +266,6 @@ fun TitleRow(isCoach: Boolean, isViewingCoach: Boolean) {
             }
         }
         Box(
-//            modifier = Modifier
-//                .absolutePadding(0.dp, 0.dp, 0dp, 0.dp)
             modifier = Modifier
                 .fillMaxWidth()
                 .absolutePadding(0.dp, 0.dp, 25.dp, 0.dp),
