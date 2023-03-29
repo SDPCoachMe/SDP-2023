@@ -1,4 +1,4 @@
-package com.github.sdpcoachme
+package com.github.sdpcoachme.ui
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
