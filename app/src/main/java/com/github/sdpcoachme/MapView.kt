@@ -34,6 +34,7 @@ fun MapView(modifier: Modifier, mapState: MapState) {
     ) {
         // moves camera to last known location
         if (mapState.lastKnownLocation != null) {
+            // relaunches the effect when the key changes. So here only once
             LaunchedEffect(true) {
                 cameraPositionState.animate(
                     CameraUpdateFactory.newLatLngZoom(mapState.lastKnownLocation, 17f)

@@ -94,7 +94,6 @@ class DashboardActivity : ComponentActivity() {
             PackageManager.PERMISSION_GRANTED -> {
                 mapViewModel.getDeviceLocation(fusedLocationProviderClient)
             }
-            //TODO we can also ask for COARSE_LOCATION
             else -> requestPermissionLauncher.launch(ACCESS_FINE_LOCATION)
         }
 
