@@ -38,6 +38,11 @@ class MockDatabase: Database {
     }
 
     override fun getUser(email: String): CompletableFuture<UserInfo> {
+        if (email == "throwGet@Exception.com") {
+            val error = CompletableFuture<UserInfo>()
+            error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
+            return error
+        }
         return getMap(accounts, email).thenApply { it as UserInfo }
 
     }
