@@ -1,4 +1,4 @@
-package com.github.sdpcoachme
+package com.github.sdpcoachme.map
 
 import android.annotation.SuppressLint
 import androidx.compose.runtime.MutableState
