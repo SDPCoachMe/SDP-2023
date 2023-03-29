@@ -7,9 +7,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -18,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -48,7 +51,7 @@ class ScheduleActivity : ComponentActivity() {
         val email = intent.getStringExtra("email")
 
         if (email == null) {
-            val errorMsg = "Profile editing did not receive an email address.\n Please return to the login page and try again."
+            val errorMsg = "Schedule did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
             database = (application as CoachMeApplication).database
@@ -69,24 +72,15 @@ class ScheduleActivity : ComponentActivity() {
     }
 
     class TestTags {
-        class ScheduleHeader(tag: String) {
-            val ROW = "${tag}Row"
-        }
         class BasicSchedule(tag: String) {
-            val Layout = "${tag}Layout"
-            val COLUMN = "${tag}Column"
+            val layout = "${tag}Layout"
         }
         companion object {
             const val SCHEDULE_COLUMN = "scheduleColumn"
             const val SCHEDULE_HEADER = "scheduleHeader"
             const val BASIC_SCHEDULE = "basicSchedule"
-            const val EVENT = "event"
-            const val EVENT_NAME = "eventName"
-            const val EVENT_TIME = "eventTime"
-            const val EVENT_DESCRIPTION = "eventDescription"
 
-            val SCHEDULE_HEADER_ROW = ScheduleHeader(SCHEDULE_HEADER).ROW
-            val BASIC_SCHEDULE_LAYOUT = BasicSchedule(BASIC_SCHEDULE).Layout
+            val BASIC_SCHEDULE_LAYOUT = BasicSchedule(BASIC_SCHEDULE).layout
         }
     }
 }
@@ -100,6 +94,7 @@ fun Schedule(
     futureUserInfo: CompletableFuture<UserInfo>,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     // bind those to database
     var events by remember { mutableStateOf(emptyList<Event>()) }
     var eventsFuture by remember { mutableStateOf(futureUserInfo.thenApply { it.events }) }
@@ -112,7 +107,13 @@ fun Schedule(
                 f.complete(null)
                 eventsFuture = f
             }
-        }.exceptionally { null }
+        }.exceptionally {
+            //TODO in next sprint: handle error
+            /*val errorMsg = "Schedule couldn't get the user information from the database." +
+                "\n Please return to the login page and try again."
+            ErrorHandlerLauncher().launchExtrasErrorHandler(context, errorMsg)*/
+            null
+        }
     }
 
     // the starting day is always the previous Monday
@@ -146,8 +147,7 @@ fun Schedule(
 }
 
 private fun Modifier.eventData(event: Event) = this.then(EventDataModifier(event))
-private val EventTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
-private val WithoutNanoSecondsFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+private val EventTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 private val DayFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
 private const val ColumnsPerWeek = 7
 
@@ -164,7 +164,7 @@ fun BasicEvent(
             .padding(4.dp)
     ) {
         Text(
-            text = "${event.start.format(EventTimeFormatter)} - ${event.end.format(EventTimeFormatter)}",
+            text = "${LocalDateTime.parse(event.start).toLocalTime().format(EventTimeFormatter)} - ${LocalDateTime.parse(event.end).toLocalTime().format(EventTimeFormatter)}",
             style = MaterialTheme.typography.caption,
             fontSize = 9f.sp,
         )
@@ -192,6 +192,7 @@ fun BasicDayHeader(
     day: LocalDate,
     modifier: Modifier = Modifier,
 ) {
+    val textWeight = if (day == LocalDate.now()) FontWeight.Bold else FontWeight.Normal
     Text(
         text = day.format(DayFormatter),
         textAlign = TextAlign.Center,
@@ -199,6 +200,7 @@ fun BasicDayHeader(
             .fillMaxWidth()
             .padding(4.dp),
         fontSize = 12f.sp,
+        fontWeight = textWeight,
     )
 }
 
@@ -213,8 +215,9 @@ fun ScheduleHeader(
     Row(modifier = modifier) {
         val numDays = ChronoUnit.DAYS.between(minDate, maxDate).toInt() + 1
         repeat(numDays) { i ->
+            val day = minDate.plusDays(i.toLong())
             Box(modifier = Modifier.width(dayWidth)) {
-                dayHeader(minDate.plusDays(i.toLong()))
+                dayHeader(day)
             }
         }
     }

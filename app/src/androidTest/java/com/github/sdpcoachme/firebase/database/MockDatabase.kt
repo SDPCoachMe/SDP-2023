@@ -1,12 +1,7 @@
 package com.github.sdpcoachme.firebase.database
 
-import androidx.compose.ui.graphics.Color
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
-import com.google.firebase.database.DatabaseReference
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.temporal.TemporalAdjusters
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -38,7 +33,7 @@ class MockDatabase: Database {
     }
 
     override fun addUser(user: UserInfo): CompletableFuture<Void> {
-        if (user.email == "throw@Exception.com") {
+            if (user.email == "throw@Exception.com") {
             val error = CompletableFuture<Void>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
@@ -47,6 +42,11 @@ class MockDatabase: Database {
     }
 
     override fun getUser(email: String): CompletableFuture<UserInfo> {
+        if (email == "throwGet@Exception.com") {
+            val error = CompletableFuture<UserInfo>()
+            error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
+            return error
+        }
         return getMap(accounts, email).thenApply { it as UserInfo }
 
     }
@@ -60,10 +60,6 @@ class MockDatabase: Database {
             val newUserInfo = user.copy(events = user.events + events)
             setMap(accounts, email, newUserInfo)
         }
-    }
-
-    fun getDefaultEmail(): String {
-        return defaultEmail
     }
 
     private fun setMap(map: MutableMap<String, Any>, key: String, value: Any): CompletableFuture<Void> {

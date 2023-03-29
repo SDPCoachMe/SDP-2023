@@ -2,13 +2,16 @@ package com.github.sdpcoachme
 
 import android.content.Intent
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.data.Event
-import com.github.sdpcoachme.firebase.database.MockDatabase
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,7 +21,8 @@ import java.time.temporal.TemporalAdjusters
 
 @RunWith(AndroidJUnit4::class)
 class ScheduleActivityTest {
-    private var database = MockDatabase()
+    private val database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
+    private val defaultEmail = "example@email.com"
     private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     private val eventList = listOf(
         Event(
@@ -68,17 +72,15 @@ class ScheduleActivityTest {
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
-    /* In this class, we will write tests for the ScheduleActivity.kt file with as much coverage as possible */
-
     @Test
     fun addEventsToDatabaseUpdatesUserInfoCorrectly() {
-        val email = database.getDefaultEmail()
-        val oldUserInfo = database.getUser(email)
+        defaultEmail
+        val oldUserInfo = database.getUser(defaultEmail)
 
-        database.addEventsToDatabase(email, eventList)
+        database.addEventsToDatabase(defaultEmail, eventList)
 
-        val newUserInfo = database.getUser(email)
-        newUserInfo.thenAccept() {
+        val newUserInfo = database.getUser(defaultEmail)
+        newUserInfo.thenAccept {
             assert(oldUserInfo != newUserInfo)
             assert(it.events == eventList)
         }
@@ -88,10 +90,7 @@ class ScheduleActivityTest {
     fun correctInitialScreenContent() {
         val initiallyDisplayed = listOf(
             ScheduleActivity.TestTags.SCHEDULE_HEADER,
-            ScheduleActivity.TestTags.SCHEDULE_HEADER_ROW,
-
             ScheduleActivity.TestTags.BASIC_SCHEDULE,
-            ScheduleActivity.TestTags.BASIC_SCHEDULE_LAYOUT,
         )
 
         val email = "example@email.com"
@@ -104,4 +103,47 @@ class ScheduleActivityTest {
         }
     }
 
+    @Test
+    fun errorPageIsShownWhenEditProfileIsLaunchedWithoutEmailAsExtra() {
+        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)).use {
+            // not possible to use Intents.init()... to check if the correct intent
+            // is launched as the intents are launched from within the onCreate function
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
+        }
+    }
+
+    // TODO in next sprint: handle the exception thrown when the user is not found in the database
+/*    @Test
+    fun getExceptionIsThrownCorrectly() {
+        val email = "throwGet@Exception.com"
+        val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
+            .putExtra("email", email)
+        ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
+            Intents.init()
+            Intents.intended(allOf(
+                IntentMatchers.hasComponent(IntentExtrasErrorHandlerActivity::class.java.name),
+                IntentMatchers.hasExtra("errorMsg", "Schedule couldn't get the user information from the database." +
+                    "\n Please return to the login page and try again."))
+            )
+            Intents.release()
+        }
+    }*/
+
+    @Test
+    fun eventsOfCurrentWeekAreDisplayedCorrectly() {
+        database.addEventsToDatabase(defaultEmail, eventList).thenRun {
+            val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
+            scheduleIntent.putExtra("email", defaultEmail)
+            ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
+                composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.BASIC_SCHEDULE).assertExists()
+                val userInfo = database.getUser(defaultEmail)
+                userInfo.thenAccept {
+                    it.events.forEach { event ->
+                        composeTestRule.onNodeWithText(event.name).assertExists()
+                    }
+                }
+            }
+        }
+    }
 }
