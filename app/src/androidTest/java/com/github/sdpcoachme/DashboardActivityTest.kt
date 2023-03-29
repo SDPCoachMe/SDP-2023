@@ -106,7 +106,6 @@ class DashboardActivityTest {
         )
         launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
-            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
             // ignores right swipe if opened
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
             composeTestRule.onRoot().performTouchInput { swipeRight() }
@@ -207,7 +206,7 @@ class DashboardActivityTest {
     }
 
     @Test
-    fun mapIsDisplayed() {
+    fun onlyMapIsDisplayedOnCreation() {
         val email = EXISTING_EMAIL
         val launchDashboard = Intent(
             ApplicationProvider.getApplicationContext(),
@@ -216,6 +215,7 @@ class DashboardActivityTest {
         launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
             composeTestRule.onNodeWithTag(MAP).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
         }
     }
 
