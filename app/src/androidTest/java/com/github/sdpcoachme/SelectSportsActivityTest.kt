@@ -189,7 +189,6 @@ open class SelectSportsActivityTest {
 
     @Test
     fun errorPageIsShownAfterDBAddUserError() {
-        //errorPage is shown when no user corresponds to the email
         errorPageLaunchChecker("throw@Exception.com")
     }
 
