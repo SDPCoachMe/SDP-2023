@@ -38,6 +38,17 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         return getChild(accounts, userID).thenApply { it.exists() }
     }
 
+    override fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void> {
+        return this.getUser(email).thenAccept {
+            val updatedUserInfo = if (it.events.isEmpty()) {
+                it.copy(events = events)
+            } else {
+                it.copy(events = it.events + events)
+            }
+            addUser(updatedUserInfo)
+        }
+    }
+
     /**
      * Sets a key-value pair with a given key in a given database reference
      * @param databaseChild the database reference in which to set the key-value pair
@@ -72,32 +83,5 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         }
         return future
     }
-
-    //Damian's stuff
-    override fun getAccountsRef(): DatabaseReference {
-        return accounts
-    }
-
-    override fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void> {
-        return this.getUser(email).thenAccept {
-            // TODO: remove this try catch block
-            try {
-                val formattedEmail = email.replace('.', ',')
-                for (event in events) {
-                    println("Event color: ${event.color}")
-                }
-
-                val updatedUserInfo = if (it.events.isEmpty()) {
-                    it.copy(events = events)
-                } else {
-                    it.copy(events = it.events + events)
-                }
-                addUser(updatedUserInfo)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
 }
 

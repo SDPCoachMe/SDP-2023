@@ -51,23 +51,11 @@ class ScheduleActivity : ComponentActivity() {
             val errorMsg = "Profile editing did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
-            // TODO temporary solution to cast to UserInfo
             database = (application as CoachMeApplication).database
 
-            //TODO: remove this when the database works
+            //TODO: For demo, let this function run once to add sample events to the database
             database.addEventsToDatabase(email, sampleEvents).thenRun {
-                println("Added sample events to database")
-                val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email).thenApply {
-                    println("Got user info from database")
-                    println("Events: ${it.events}")
-                    for (event in it.events) {
-                        println("Event color retrieved: ${event.color}")
-                    }
-                    it
-
-                }.exceptionally { println("event error: $it"); null}
-
-                println("Future user info: $futureUserInfo")
+                val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email)
 
                 setContent {
                     CoachMeTheme {
@@ -80,31 +68,13 @@ class ScheduleActivity : ComponentActivity() {
         }
     }
 
-    /*private fun eventListFromKeys(
-        eventKeys: Set<Any?>,
-        map: Map<*, *>
-    ): List<Event> {
-        var events = listOf<Event>();
-        for (key in (eventKeys as Set<*>).map { key -> key as String }) {
-            val eventMap = (map["events"] as Map<*, *>)[key] as Map<*, *>
-            println("Event map: $eventMap")
-
-            val e = Event(
-                eventMap["name"] as String,
-                Color(eventMap["color"] as Long),
-                LocalDateTime.parse(eventMap["start"] as String, DateTimeFormatter.ISO_DATE_TIME),
-                LocalDateTime.parse(eventMap["end"] as String, DateTimeFormatter.ISO_DATE_TIME),
-                eventMap["description"] as String,
-            )
-            events = events.plus(e)
-        }
-        return events
-    }*/
-
     class TestTags {
         class ScheduleHeader(tag: String) {
             val ROW = "${tag}Row"
-            val BOX = "${tag}Box"
+        }
+        class BasicSchedule(tag: String) {
+            val Layout = "${tag}Layout"
+            val COLUMN = "${tag}Column"
         }
         companion object {
             const val SCHEDULE_COLUMN = "scheduleColumn"
@@ -115,9 +85,8 @@ class ScheduleActivity : ComponentActivity() {
             const val EVENT_TIME = "eventTime"
             const val EVENT_DESCRIPTION = "eventDescription"
 
-            // ScheduleHeader
-            val HEADER_ROW = ScheduleHeader(SCHEDULE_HEADER).ROW
-            val HEADER_BOX = ScheduleHeader(SCHEDULE_HEADER).BOX
+            val SCHEDULE_HEADER_ROW = ScheduleHeader(SCHEDULE_HEADER).ROW
+            val BASIC_SCHEDULE_LAYOUT = BasicSchedule(BASIC_SCHEDULE).Layout
         }
     }
 }
@@ -165,7 +134,6 @@ fun Schedule(
         BasicSchedule(
             events = events,
             minDate = minDate,
-            maxDate = maxDate,
             dayWidth = dayWidth,
             hourHeight = hourHeight,
             modifier = Modifier
@@ -257,7 +225,6 @@ fun BasicSchedule(
     events: List<Event>,
     modifier: Modifier = Modifier,
     minDate: LocalDate = LocalDateTime.parse(events.minByOrNull(Event::start)!!.start).toLocalDate(),
-    maxDate: LocalDate = LocalDateTime.parse(events.maxByOrNull(Event::end)!!.end).toLocalDate(),
     dayWidth: Dp,
     hourHeight: Dp,
 ) {
@@ -271,7 +238,7 @@ fun BasicSchedule(
                 }
             }
         },
-        modifier = modifier
+        modifier = modifier.testTag(ScheduleActivity.TestTags.BASIC_SCHEDULE_LAYOUT)
             .drawBehind {   //add dividers (lines) between days and hours
                 repeat(23) {
                     drawLine(
@@ -312,12 +279,9 @@ fun BasicSchedule(
     }
 }
 
-
+private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
 // mainly for testing, debugging and demo purposes
-
-
-private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 private val sampleEvents = listOf(
     Event(
         name = "Google I/O Keynote",
@@ -362,49 +326,3 @@ private val sampleEvents = listOf(
         description = "This Workshop will take you through the basics of building your first app with Jetpack Compose, Android's new modern UI toolkit that simplifies and accelerates UI development on Android.",
     ),
 )
-
-/*class EventsProvider : PreviewParameterProvider<Event> {
-    override val values = sampleEvents.asSequence()
-}
-
-// Previews all the events in the sampleEvents list separately
-@Preview(showBackground = true)
-@Composable
-fun EventPreview(
-    @PreviewParameter(EventsProvider::class) event: Event,
-) {
-    CoachMeTheme {
-        BasicEvent(event = event, modifier = Modifier.sizeIn(maxHeight = 64.dp))
-    }
-}*/
-
-// Previews all the events in the sampleEvents list together
-/*@Preview(showBackground = true)
-@Composable
-fun SchedulePreview() {
-    val email = "damian.kopp01@gmail.com"
-    database = (application as CoachMeApplication).database
-
-    //TODO: remove this when the database works
-    addEventsToDatabase(database, email, sampleEvents).thenRun {
-        val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email).thenApply {
-            val map = it as Map<*, *>
-            UserInfo(
-                map["firstName"] as String,
-                map["lastName"] as String,
-                map["email"] as String,
-                map["phone"] as String,
-                map["location"] as String,
-                map["coach"] as Boolean,
-                (map["sports"] as List<*>).map { sport -> sport as ListSport },
-                (map["events"] as List<*>).map { event -> event as Event },
-            )
-        }.exceptionally { null }
-
-        CoachMeTheme {
-            Surface(color = MaterialTheme.colors.background) {
-                Schedule(futureUserInfo)
-            }
-        }
-    }
-}*/

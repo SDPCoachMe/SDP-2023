@@ -13,34 +13,21 @@ import java.util.concurrent.CompletableFuture
  * A mock database class
  */
 class MockDatabase: Database {
-    private val eventList = listOf<Event>(Event(
-        name = "Google I/O Keynote",
-        color = Color(0xFFAFBBF2),
-        start = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(13, 0, 0),
-        end = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(15, 0, 0),
-        description = "Tune in to find out about how we're furthering our mission to organize the world’s information and make it universally accessible and useful.",
-    ))
-    private val defaultUserInfo = mapOf(
-        "firstName" to "John",
-        "lastName" to "Doe",
-        "phone" to "1234567890",
-        "location" to "Some location",
-        "coach" to false,
-        "email" to "example@email.com",
-        "events" to eventList
-    )
-    private val defautEmail = "example@email.com"
+
+    private val defaultEmail = "example@email.com"
     private val defaultUserInfo = UserInfo(
         "John",
         "Doe",
-        defautEmail,
+        defaultEmail,
         "1234567890",
         "Some location",
         false,
-        listOf())
+        emptyList(),
+        emptyList()
+    )
 
     private val root = hashMapOf<String, Any>()
-    private val accounts = hashMapOf<String, Any>(defautEmail to defaultUserInfo)
+    private val accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
 
     override fun get(key: String): CompletableFuture<Any> {
         return getMap(root, key)
@@ -67,6 +54,18 @@ class MockDatabase: Database {
     override fun userExists(email: String): CompletableFuture<Boolean> {
         return getMap(accounts, email).thenApply { it != null }
     }
+
+    override fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void> {
+        return getUser(email).thenCompose { user ->
+            val newUserInfo = user.copy(events = user.events + events)
+            setMap(accounts, email, newUserInfo)
+        }
+    }
+
+    fun getDefaultEmail(): String {
+        return defaultEmail
+    }
+
     private fun setMap(map: MutableMap<String, Any>, key: String, value: Any): CompletableFuture<Void> {
         map[key] = value
         return CompletableFuture.completedFuture(null)
@@ -83,17 +82,4 @@ class MockDatabase: Database {
             future.complete(value)
         return future
     }
-
-    //Damian's stuff
-    override fun getAccountsRef(): DatabaseReference {
-        // Implement this if needed
-        return null!!
-    }
-
-    override fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void> {
-        // Implement this if needed
-        return CompletableFuture()
-    }
-
-
 }

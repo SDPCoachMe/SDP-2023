@@ -10,7 +10,6 @@ import java.util.concurrent.CompletableFuture
  */
 interface Database {
 
-
     /**
      * Get a value from the database
      * @param key The key of the value to get
@@ -48,8 +47,12 @@ interface Database {
      */
     fun userExists(email: String): CompletableFuture<Boolean>
 
-    fun getAccountsRef(): DatabaseReference
-
+    /**
+     * Add events to the database
+     * @param email The email of the user to add the events to
+     * @param events The events to add
+     * @return A future that will complete when the events have been added
+     */
     fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void>
 
 }
