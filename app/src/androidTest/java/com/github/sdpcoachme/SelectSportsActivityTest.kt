@@ -134,17 +134,21 @@ open class SelectSportsActivityTest {
 
     @Test
     fun userInfoUpdatedWithAllSelectedSportsAndRedirectedToDashboardActivity() {
+        checkRedirectionAfterRegister(launchSignup, DashboardActivity::class.java.name)
+    }
+
+    @Test
+    fun redirectsToProfileActivityWhenIsEditingProfileIsTrue() {
+        checkRedirectionAfterRegister(launchSignup.putExtra("isEditingProfile", true), EditProfileActivity::class.java.name)
+    }
+
+    private fun checkRedirectionAfterRegister(launcher: Intent, intendedClass: String) {
         ActivityScenario.launch<SignupActivity>(launchSignup).use {
             Intents.init()
             val updatedUser =
                 database.addUser(userInfo)
                     .thenApply {
-                        val launchSignup = Intent(
-                            ApplicationProvider.getApplicationContext(),
-                            SelectSportsActivity::class.java
-                        )
-                        launchSignup.putExtra("email", email)
-                        ActivityScenario.launch<SignupActivity>(launchSignup).use {
+                        ActivityScenario.launch<SignupActivity>(launcher).use {
                             SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST.forEach {
                                 composeTestRule.onNodeWithTag(it.ROW).performClick()
                             }
@@ -159,7 +163,7 @@ open class SelectSportsActivityTest {
 
             Intents.intended(
                 allOf(
-                    IntentMatchers.hasComponent(DashboardActivity::class.java.name),
+                    IntentMatchers.hasComponent(intendedClass),
                     hasExtra("email", email)
                 )
             )
