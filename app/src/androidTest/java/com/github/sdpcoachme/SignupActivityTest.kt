@@ -11,12 +11,12 @@ import androidx.test.espresso.intent.matcher.IntentMatchers
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.uiautomator.*
 import com.github.sdpcoachme.SignupActivity.TestTags.Buttons.Companion.BE_COACH
 import com.github.sdpcoachme.SignupActivity.TestTags.Buttons.Companion.SIGN_UP
 import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.FIRST_NAME
 import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.LAST_NAME
-import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.LOCATION
 import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.PHONE
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
@@ -37,7 +37,6 @@ open class SignupActivityTest {
         FIRST_NAME,
         LAST_NAME,
         PHONE,
-        LOCATION,
         SIGN_UP,
     )
 
@@ -156,11 +155,13 @@ open class SignupActivityTest {
         Espresso.closeSoftKeyboard()
         composeTestRule.onNodeWithTag(PHONE).performTextInput(user.phone)
         Espresso.closeSoftKeyboard()
-        composeTestRule.onNodeWithTag(LOCATION).performTextInput(user.location)
-        Espresso.closeSoftKeyboard()
         if (user.coach)
             composeTestRule.onNodeWithTag(BE_COACH).performClick()
 
         composeTestRule.onNodeWithTag(SIGN_UP).performClick()
+
+        // TODO: update this test to handle Autocomplete Activity before merging this branch
+        // Testing Google Places Autocomplete Activity requires UI automator
+        val device = UiDevice.getInstance(getInstrumentation())
     }
 }

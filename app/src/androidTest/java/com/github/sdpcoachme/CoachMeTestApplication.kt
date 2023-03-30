@@ -3,11 +3,8 @@ package com.github.sdpcoachme
 import com.github.sdpcoachme.firebase.auth.Authenticator
 import com.github.sdpcoachme.firebase.auth.MockAuthenticator
 import com.github.sdpcoachme.firebase.database.Database
-import com.github.sdpcoachme.firebase.database.FireDatabase
 import com.github.sdpcoachme.firebase.database.MockDatabase
-import com.google.firebase.database.ktx.database
-import com.google.firebase.ktx.Firebase
-import kotlin.reflect.typeOf
+import com.google.android.libraries.places.api.Places
 
 class CoachMeTestApplication : CoachMeApplication() {
     // For DI in testing, add reference to mocks here
@@ -29,6 +26,9 @@ class CoachMeTestApplication : CoachMeApplication() {
         }
          */
         database = MockDatabase()
+
+        // Initialize Places SDK (mocking would be way too complex here)
+        Places.initialize(applicationContext, BuildConfig.MAPS_API_KEY)
     }
     override val authenticator: Authenticator = MockAuthenticator()
 }

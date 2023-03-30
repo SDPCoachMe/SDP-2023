@@ -5,6 +5,7 @@ import com.github.sdpcoachme.firebase.auth.Authenticator
 import com.github.sdpcoachme.firebase.auth.GoogleAuthenticator
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.firebase.database.FireDatabase
+import com.google.android.libraries.places.api.Places
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
@@ -17,6 +18,9 @@ open class CoachMeApplication : Application() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
         database = FireDatabase(Firebase.database.reference)
+
+        // Initialize Places SDK
+        Places.initialize(applicationContext, BuildConfig.MAPS_API_KEY)
     }
 
     open val authenticator: Authenticator = GoogleAuthenticator()
