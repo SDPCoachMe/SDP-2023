@@ -81,7 +81,8 @@ open class SignupActivityTest {
             val user = UserInfo(
                 "Jean", "Dupont",
                 email, "0692000000",
-                "Lausanne", false, listOf())
+                "Lausanne", false, emptyList()
+            )
             inputUserInfo(user)
 
             // Important note: this get method was used instead of onTimeout due to onTimeout not
@@ -109,7 +110,9 @@ open class SignupActivityTest {
             val user = UserInfo(
                 "Jean", "Dupont",
                 email, "0692000000",
-                "Lausanne", true, listOf())
+                "Lausanne", true,
+                emptyList()
+            )
             inputUserInfo(user)
 
             // Important note: this get method was used instead of onTimeout due to onTiemout not
@@ -136,7 +139,8 @@ open class SignupActivityTest {
             val user = UserInfo(
                 "Jean", "Dupont",
                 email, "0692000000",
-                "Lausanne", false, listOf()
+                "Lausanne", false,
+                emptyList()
             )
             inputUserInfo(user)
 

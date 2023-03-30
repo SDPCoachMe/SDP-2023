@@ -1,5 +1,6 @@
 package com.github.sdpcoachme.firebase.database
 
+import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseReference
@@ -35,6 +36,13 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     override fun userExists(email: String): CompletableFuture<Boolean> {
         val userID = email.replace('.', ',')
         return getChild(accounts, userID).thenApply { it.exists() }
+    }
+
+    override fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void> {
+        return this.getUser(email).thenAccept {
+            val updatedUserInfo = it.copy(events = it.events + events)
+            addUser(updatedUserInfo)
+        }
     }
 
     /**

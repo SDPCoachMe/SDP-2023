@@ -122,14 +122,15 @@ class SignupActivity : ComponentActivity() {
                         location = location,
                         coach = isCoach,
                         // sports added later in SelectSportsActivity
-                        sports = listOf()
+                        sports = listOf(),
+                        events = emptyList(),
                     )
                     database.addUser(newUser).thenApply {
                         val intent = Intent(context, SelectSportsActivity::class.java)
                         intent.putExtra("email", newUser.email)
                         startActivity(intent)
                     }.exceptionally {
-
+                        // call exception activity
                     }
                 }
             )

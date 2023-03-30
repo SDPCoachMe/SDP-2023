@@ -137,6 +137,11 @@ fun Dashboard(email: String, scaffoldState: ScaffoldState, onScaffoldStateChange
                                 context.startActivity(intent)
                             }
                         }
+                        SCHEDULE -> {
+                            val intent = Intent(context, ScheduleActivity::class.java)
+                            intent.putExtra("email", email)
+                            context.startActivity(intent)
+                        }
                         else -> {
                             // TODO replace the print by a call to the corresponding item activity
                             println("Clicked on ${it.title}")

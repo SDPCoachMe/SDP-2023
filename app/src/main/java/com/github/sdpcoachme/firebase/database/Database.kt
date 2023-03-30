@@ -1,13 +1,14 @@
 package com.github.sdpcoachme.firebase.database
 
+import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
+import com.google.firebase.database.DatabaseReference
 import java.util.concurrent.CompletableFuture
 
 /**
  * A database interface
  */
 interface Database {
-
 
     /**
      * Get a value from the database
@@ -45,5 +46,13 @@ interface Database {
      * @return A future that will complete when the user has been checked
      */
     fun userExists(email: String): CompletableFuture<Boolean>
+
+    /**
+     * Add events to the database
+     * @param email The email of the user to add the events to
+     * @param events The events to add
+     * @return A future that will complete when the events have been added
+     */
+    fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void>
 
 }
