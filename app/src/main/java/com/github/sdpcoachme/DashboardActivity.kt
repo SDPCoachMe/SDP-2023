@@ -1,9 +1,13 @@
 package com.github.sdpcoachme
 
+import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.COACHES_LIST
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HELP
@@ -33,8 +38,13 @@ import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.SETTIN
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MENU_LIST
+import com.github.sdpcoachme.data.MapState
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
+import com.github.sdpcoachme.map.MapViewModel
+import com.github.sdpcoachme.ui.MapView
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
 
 /**
@@ -48,6 +58,7 @@ class DashboardActivity : ComponentActivity() {
             const val DRAWER_HEADER = "drawerHeader"
             const val DASHBOARD_EMAIL = "dashboardEmail"
             const val MENU_LIST = "menuList"
+            const val MAP = "map"
         }
         class Buttons {
             companion object {
@@ -61,18 +72,52 @@ class DashboardActivity : ComponentActivity() {
             }
         }
     }
+
+    /**
+     * Create an activity for result : display window to request asked permission.
+     * If granted, launches the callback (here getDeviceLocation(...) which retrieves the user's
+     * location). The contract is a predefined "function" which takes a permission as input and
+     * outputs if the user has granted it or not.
+     */
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+                isGranted: Boolean -> if (isGranted) {
+                    mapViewModel.getDeviceLocation(fusedLocationProviderClient)
+                } else {
+                    // TODO Permission denied or only COARSE given
+                }
+        }
+
+    /**
+     * This function updates the location state of the MapViewModel if the permission is granted.
+     * If the permission is denied, it requests it.
+     */
+    private fun getLocation() =
+        when (ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION)) {
+            PackageManager.PERMISSION_GRANTED -> {
+                mapViewModel.getDeviceLocation(fusedLocationProviderClient)
+            }
+            else -> requestPermissionLauncher.launch(ACCESS_FINE_LOCATION)
+        }
+
+    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+    private val mapViewModel: MapViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // TODO handle the null better here
         val email = intent.getStringExtra("email")
 
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+        getLocation()
+
         if (email == null) {
-            val errorMsg = "The dashboard did not receive an email address.\n Please return to the login page and try again."
+            val errorMsg = "The dashboard did not receive an email address.\nPlease return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
             setContent {
                 CoachMeTheme {
-                    DashboardView(email)
+                    DashboardView(email, mapViewModel.mapState.value)
                 }
             }
         }
@@ -80,7 +125,7 @@ class DashboardActivity : ComponentActivity() {
 }
 
 @Composable
-fun DashboardView(email: String) {
+fun DashboardView(email: String, mapState: MapState) {
     // equivalent to remember { ScaffoldState(...) }
     val scaffoldState = rememberScaffoldState()
     // creates a scope tied to the view's lifecycle. scope
@@ -90,18 +135,23 @@ fun DashboardView(email: String) {
     Dashboard(
         email = email,
         scaffoldState = scaffoldState,
-        onScaffoldStateChange = { coroutineScope.launch { scaffoldState.drawerState.open()} }
+        onScaffoldStateChange = { coroutineScope.launch { scaffoldState.drawerState.open()} },
+        mapState = mapState
     )
 }
 
 @Composable
-fun Dashboard(email: String, scaffoldState: ScaffoldState, onScaffoldStateChange: () -> Unit) {
+fun Dashboard(email: String,
+              scaffoldState: ScaffoldState,
+              onScaffoldStateChange: () -> Unit,
+              mapState: MapState
+) {
     val context = LocalContext.current
 
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = { AppBar(onNavigationIconClick = onScaffoldStateChange) },
-        drawerGesturesEnabled = true,
+        drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
         drawerContent = {
             DrawerHeader(email)
             DrawerBody(
@@ -158,7 +208,10 @@ fun Dashboard(email: String, scaffoldState: ScaffoldState, onScaffoldStateChange
         //TODO replace the scaffold content here with the main map view
         content = { innerPadding ->
             // pass the correct padding to the content root, here the column
-            Text(modifier = Modifier.padding(innerPadding), text = "Main map view")
+            MapView(
+                modifier = Modifier.padding(innerPadding),
+                mapState = mapState
+            )
         }
     )
 }
