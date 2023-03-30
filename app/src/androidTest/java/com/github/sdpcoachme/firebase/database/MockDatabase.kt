@@ -21,6 +21,7 @@ class MockDatabase: Database {
         emptyList()
     )
 
+    // TODO: type any is not ideal, needs refactoring
     private val root = hashMapOf<String, Any>()
     private val accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
 
@@ -49,6 +50,12 @@ class MockDatabase: Database {
         }
         return getMap(accounts, email).thenApply { it as UserInfo }
 
+    }
+
+    override fun getAllUsers(): CompletableFuture<List<UserInfo>> {
+        val future = CompletableFuture<List<UserInfo>>()
+        future.complete(accounts.values.map { it as UserInfo })
+        return future
     }
 
     override fun userExists(email: String): CompletableFuture<Boolean> {

@@ -23,7 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.FAVORITES
+import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.COACHES_LIST
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HELP
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.LOGOUT
@@ -54,7 +54,7 @@ class DashboardActivity : ComponentActivity() {
                 const val HAMBURGER_MENU = "hamburgerMenu"
                 const val SCHEDULE = "schedule"
                 const val PROFILE = "profile"
-                const val FAVORITES = "favorites"
+                const val COACHES_LIST = "coacheslist"
                 const val SETTINGS = "settings"
                 const val HELP = "help"
                 const val LOGOUT = "logout"
@@ -112,9 +112,9 @@ fun Dashboard(email: String, scaffoldState: ScaffoldState, onScaffoldStateChange
                     MenuItem(tag = PROFILE, title = "Profile",
                         contentDescription = "Go to profile",
                         icon = Icons.Default.AccountCircle),
-                    MenuItem(tag = FAVORITES, title = "Favorites",
-                        contentDescription = "Go to favorites",
-                        icon = Icons.Default.Favorite),
+                    MenuItem(tag = COACHES_LIST, title = "Nearby coaches",
+                        contentDescription = "See a list of coaches available close to you",
+                        icon = Icons.Default.People),
                     MenuItem(tag = SETTINGS, title = "Settings",
                         contentDescription = "Go to settings",
                         icon = Icons.Default.Settings),
@@ -140,6 +140,10 @@ fun Dashboard(email: String, scaffoldState: ScaffoldState, onScaffoldStateChange
                         SCHEDULE -> {
                             val intent = Intent(context, ScheduleActivity::class.java)
                             intent.putExtra("email", email)
+                            context.startActivity(intent)
+                        }
+                        COACHES_LIST -> {
+                            val intent = Intent(context, CoachesListActivity::class.java)
                             context.startActivity(intent)
                         }
                         else -> {
