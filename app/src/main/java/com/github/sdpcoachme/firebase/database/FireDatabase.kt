@@ -40,11 +40,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
 
     override fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void> {
         return this.getUser(email).thenAccept {
-            val updatedUserInfo = if (it.events.isEmpty()) {
-                it.copy(events = events)
-            } else {
-                it.copy(events = it.events + events)
-            }
+            val updatedUserInfo = it.copy(events = it.events + events)
             addUser(updatedUserInfo)
         }
     }

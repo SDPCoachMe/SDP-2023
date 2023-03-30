@@ -12,6 +12,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import junit.framework.TestCase.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -81,8 +82,8 @@ class ScheduleActivityTest {
 
         val newUserInfo = database.getUser(defaultEmail)
         newUserInfo.thenAccept {
-            assert(oldUserInfo != newUserInfo)
-            assert(it.events == eventList)
+            assertTrue(oldUserInfo != newUserInfo)
+            assertTrue(it.events == eventList)
         }
     }
 
