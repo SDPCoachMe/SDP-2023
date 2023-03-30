@@ -23,9 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
@@ -66,7 +64,7 @@ fun UserInfoListItem(user: UserInfo) {
             .clickable {
                 // TODO: open user profile in details
             }
-            .padding(16.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
             .height(100.dp)
             ,
         verticalAlignment = Alignment.CenterVertically
@@ -97,7 +95,9 @@ fun UserInfoListItem(user: UserInfo) {
                 Icon(
                     imageVector = Icons.Default.Place,
                     tint = Color.Gray,
-                    contentDescription = "${user.firstName} ${user.lastName}'s location")
+                    contentDescription = "${user.firstName} ${user.lastName}'s location",
+                    modifier = Modifier.size(20.dp)
+                )
                 Spacer(modifier = Modifier.width(4.dp))
                 // Temporary, until we implement proper location handling
                 Text(
@@ -115,7 +115,8 @@ fun UserInfoListItem(user: UserInfo) {
                     Icon(
                         imageVector = it.sportIcon,
                         tint = Color.Gray,
-                        contentDescription = it.sportName
+                        contentDescription = it.sportName,
+                        modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                 }
@@ -123,27 +124,4 @@ fun UserInfoListItem(user: UserInfo) {
         }
     }
     Divider()
-}
-
-@Preview(showBackground = true)
-@Composable
-fun UserInfoListItemPreview() {
-    CoachMeTheme {
-        LazyColumn {
-            item {
-                UserInfoListItem(
-                    UserInfo(
-                        "John",
-                        "Doe",
-                        "placeholder",
-                        "placeholder",
-                        "Some very long address somewhere in the world which doesn't fit in this line",
-                        true,
-                        listOf(Sports.TENNIS, Sports.SKI, Sports.RUNNING),
-                        listOf()
-                    )
-                )
-            }
-        }
-    }
 }
