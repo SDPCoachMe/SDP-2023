@@ -2,7 +2,6 @@ package com.github.sdpcoachme.firebase.database
 
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
-import com.google.firebase.database.DatabaseReference
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -39,6 +38,12 @@ interface Database {
      * @return A future that will complete when the user has been gotten
      */
     fun getUser(email: String): CompletableFuture<UserInfo>
+
+    /**
+     * Get all users from the database
+     * @return A future that will complete with a list of all users in the database
+     */
+    fun getAllUsers(): CompletableFuture<List<UserInfo>>
 
     /**
      * Check if a user exists in the database

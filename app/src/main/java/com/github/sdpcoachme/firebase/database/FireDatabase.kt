@@ -32,6 +32,17 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         return getChild(accounts, userID).thenApply { it.getValue(UserInfo::class.java) }
     }
 
+    override fun getAllUsers(): CompletableFuture<List<UserInfo>> {
+        // TODO: might need refactoring to be more modular
+        val future = CompletableFuture<List<UserInfo>>()
+        accounts.get().addOnSuccessListener { snapshot ->
+            val users = snapshot.children.map { it.getValue(UserInfo::class.java)!! /* can't be null */ }
+            future.complete(users)
+        }.addOnFailureListener {
+            future.completeExceptionally(it)
+        }
+        return future
+    }
 
     override fun userExists(email: String): CompletableFuture<Boolean> {
         val userID = email.replace('.', ',')
