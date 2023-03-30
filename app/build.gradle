@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId "com.github.sdpcoachme"
-        minSdk 24
+        minSdk 26
         targetSdk 33
         versionCode 1
         versionName "1.0"
@@ -37,6 +37,7 @@ android {
         }
     }
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
@@ -55,6 +56,7 @@ android {
         }
     }
 }
+
 
 dependencies {
 
@@ -78,6 +80,7 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_ui_version"
     //noinspection GradleDependency
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_ui_version"
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.2'
 
 
     //FIREBASE :

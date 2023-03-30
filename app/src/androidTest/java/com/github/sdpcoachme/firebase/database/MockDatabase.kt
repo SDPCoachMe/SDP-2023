@@ -1,5 +1,6 @@
 package com.github.sdpcoachme.firebase.database
 
+import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import java.util.concurrent.CompletableFuture
 
@@ -7,18 +8,21 @@ import java.util.concurrent.CompletableFuture
  * A mock database class
  */
 class MockDatabase: Database {
-    private val defautEmail = "example@email.com"
+
+    private val defaultEmail = "example@email.com"
     private val defaultUserInfo = UserInfo(
         "John",
         "Doe",
-        defautEmail,
+        defaultEmail,
         "1234567890",
         "Some location",
         false,
-        listOf())
+        emptyList(),
+        emptyList()
+    )
 
     private val root = hashMapOf<String, Any>()
-    private val accounts = hashMapOf<String, Any>(defautEmail to defaultUserInfo)
+    private val accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
 
     override fun get(key: String): CompletableFuture<Any> {
         return getMap(root, key)
@@ -29,7 +33,7 @@ class MockDatabase: Database {
     }
 
     override fun addUser(user: UserInfo): CompletableFuture<Void> {
-        if (user.email == "throw@Exception.com") {
+            if (user.email == "throw@Exception.com") {
             val error = CompletableFuture<Void>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
@@ -50,6 +54,14 @@ class MockDatabase: Database {
     override fun userExists(email: String): CompletableFuture<Boolean> {
         return getMap(accounts, email).thenApply { it != null }
     }
+
+    override fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void> {
+        return getUser(email).thenCompose { user ->
+            val newUserInfo = user.copy(events = user.events + events)
+            setMap(accounts, email, newUserInfo)
+        }
+    }
+
     private fun setMap(map: MutableMap<String, Any>, key: String, value: Any): CompletableFuture<Void> {
         map[key] = value
         return CompletableFuture.completedFuture(null)
