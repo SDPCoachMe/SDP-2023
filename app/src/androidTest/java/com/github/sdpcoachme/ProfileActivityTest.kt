@@ -19,6 +19,7 @@ import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.COACH_CLIENT_INF
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LAST_NAME
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LOCATION
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_PICTURE
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SELECTED_SPORTS
@@ -58,6 +59,9 @@ class ProfileActivityTest {
 
         LAST_NAME.LABEL,
         LAST_NAME.TEXT,
+
+        LOCATION.LABEL,
+        LOCATION.TEXT,
 
         SELECTED_SPORTS.LABEL,
         SELECTED_SPORTS.ROW,
@@ -148,24 +152,24 @@ class ProfileActivityTest {
 
     @Test
     fun requestForExistingEmailDisplaysCorrectInfoInUserFields() {
+        val user = UserInfo(
+            "first",
+            "last",
+            defaultEmail,
+            "012345",
+            "Some Place",
+            false,
+            listOf()
+        )
         val db = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
-        db.addUser(
-                UserInfo(
-                    "first",
-                    "last",
-                    defaultEmail,
-                    "012345",
-                    "Some Place",
-                    false,
-                    listOf()
-                )
-            )
+        db.addUser(user)
 
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
 
             composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(defaultEmail)
-            composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals("first")
-            composeTestRule.onNodeWithTag(LAST_NAME.TEXT).assertTextEquals("last")
+            composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals(user.firstName)
+            composeTestRule.onNodeWithTag(LAST_NAME.TEXT).assertTextEquals(user.lastName)
+            composeTestRule.onNodeWithTag(LOCATION.TEXT).assertTextEquals(user.location)
             // TODO: add the other fields once they are implemented:
 
             composeTestRule.onNodeWithTag(EDIT)
@@ -177,8 +181,9 @@ class ProfileActivityTest {
             }
 
             composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(defaultEmail)
-            composeTestRule.onNodeWithTag(FIRST_NAME.FIELD).assertTextEquals("first")
-            composeTestRule.onNodeWithTag(LAST_NAME.FIELD).assertTextEquals("last")
+            composeTestRule.onNodeWithTag(FIRST_NAME.FIELD).assertTextEquals(user.firstName)
+            composeTestRule.onNodeWithTag(LAST_NAME.FIELD).assertTextEquals(user.lastName)
+            composeTestRule.onNodeWithTag(LOCATION.FIELD).assertTextEquals(user.location)
             // TODO: add the other fields once they are implemented:
         }
     }
@@ -193,6 +198,7 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(email)
             composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals("")
             composeTestRule.onNodeWithTag(LAST_NAME.TEXT).assertTextEquals("")
+            composeTestRule.onNodeWithTag(LOCATION.TEXT).assertTextEquals("")
             // TODO: add the other fields once they are implemented:
 
             composeTestRule.onNodeWithTag(EDIT)
@@ -206,6 +212,7 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals("non-existant@email.com")
             composeTestRule.onNodeWithTag(FIRST_NAME.FIELD).assertTextEquals("")
             composeTestRule.onNodeWithTag(LAST_NAME.FIELD).assertTextEquals("")
+            composeTestRule.onNodeWithTag(LOCATION.FIELD).assertTextEquals("")
             // TODO: add the other fields once they are implemented:
         }
     }

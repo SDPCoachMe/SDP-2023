@@ -26,6 +26,7 @@ import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.COACH_CLIENT_INF
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LAST_NAME
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LOCATION
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SELECTED_SPORTS
 import com.github.sdpcoachme.data.UserInfo
@@ -77,6 +78,7 @@ class ProfileActivity : ComponentActivity() {
             val EMAIL = UneditableProfileRowTag("email")
             val FIRST_NAME = EditableProfileRowTag("firstName")
             val LAST_NAME = EditableProfileRowTag("lastName")
+            val LOCATION = EditableProfileRowTag("location")
             val CLIENT_COACH = SwitchClientCoachRowTag("clientCoach")
             val SELECTED_SPORTS = SelectedSportsRowTag("selectedSports")
 
@@ -123,6 +125,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
     var isEditing by remember { mutableStateOf(false) }
     var fname by remember { mutableStateOf("") }
     var lname by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
     var isCoach by remember { mutableStateOf(false) }
     var switchCoachClient by remember { mutableStateOf(false) }
 
@@ -134,7 +137,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
         if (newUser != null) {
             fname = newUser.firstName
             lname = newUser.lastName
-            // TODO temporary sports handling
+            location = newUser.location
             isCoach = newUser.coach
             f = CompletableFuture.completedFuture(null)
             userInfo = newUser
@@ -151,10 +154,12 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
         TitleRow(isCoach, isViewingCoach)
         EmailRow(email)
 
-        ProfileRow(rowName = "First name", tag = FIRST_NAME, isEditing = isEditing, leftTextPadding = 45.dp,
+        ProfileRow(rowName = "First name", tag = FIRST_NAME, isEditing = isEditing, leftTextPadding = 37.dp,
             value = fname, onValueChange = { newValue -> fname = newValue })
-        ProfileRow(rowName = "Last name", tag = LAST_NAME, isEditing = isEditing, leftTextPadding = 45.dp,
+        ProfileRow(rowName = "Last name", tag = LAST_NAME, isEditing = isEditing, leftTextPadding = 37.dp,
             value = lname, onValueChange = { newValue -> lname = newValue })
+        ProfileRow(rowName = "Location", tag = LOCATION, isEditing = isEditing, leftTextPadding = 50.dp,
+            value = location, onValueChange = { newValue -> location = newValue })
 
         SportsRow(rowName = "Sports", tag = SELECTED_SPORTS, userInfo = userInfo)
 
@@ -182,7 +187,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
                     isEditing = false
                     isCoach = isCoach xor switchCoachClient
                     switchCoachClient = false
-                    val newUser = UserInfo(fname, lname, email, "", "", isCoach, userInfo.sports)
+                    val newUser = UserInfo(fname, lname, email, "", location, isCoach, userInfo.sports)
                     database.addUser(newUser)
                 }
             ) {
