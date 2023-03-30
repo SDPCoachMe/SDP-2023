@@ -3,11 +3,7 @@ package com.github.sdpcoachme
 import com.github.sdpcoachme.firebase.auth.Authenticator
 import com.github.sdpcoachme.firebase.auth.MockAuthenticator
 import com.github.sdpcoachme.firebase.database.Database
-import com.github.sdpcoachme.firebase.database.FireDatabase
 import com.github.sdpcoachme.firebase.database.MockDatabase
-import com.google.firebase.database.ktx.database
-import com.google.firebase.ktx.Firebase
-import kotlin.reflect.typeOf
 
 class CoachMeTestApplication : CoachMeApplication() {
     // For DI in testing, add reference to mocks here
