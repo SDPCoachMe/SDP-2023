@@ -17,7 +17,7 @@ android {
 
     defaultConfig {
         applicationId "com.github.sdpcoachme"
-        minSdk 24
+        minSdk 26
         targetSdk 33
         versionCode 1
         versionName "1.0"
@@ -38,6 +38,7 @@ android {
         }
     }
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
@@ -58,6 +59,7 @@ android {
     }
 }
 
+
 dependencies {
     implementation 'androidx.core:core-ktx:1.9.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.0'
@@ -70,6 +72,7 @@ dependencies {
     implementation "androidx.compose.ui:ui:$compose_ui_version"
     //noinspection GradleDependency
     implementation "androidx.compose.ui:ui-tooling-preview:$compose_ui_version"
+    implementation "androidx.compose.material:material-icons-extended:$compose_ui_version"
     implementation 'androidx.compose.material:material:1.3.1'
     implementation 'androidx.core:core-ktx:1.9.0'
     implementation 'com.google.firebase:firebase-database-ktx:20.1.0'
@@ -85,6 +88,7 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_ui_version"
     //noinspection GradleDependency
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_ui_version"
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.2'
 
 
     //FIREBASE :

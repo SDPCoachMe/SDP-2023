@@ -15,6 +15,7 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
+import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.COACHES_LIST
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.LOGOUT
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.PROFILE
@@ -192,6 +193,15 @@ class DashboardActivityTest {
             EXISTING_EMAIL,
             LOGOUT,
             hasComponent(LoginActivity::class.java.name)
+        )
+    }
+
+    @Test
+    fun dashboardCorrectlyRedirectsOnCoachesListClick() {
+        dashboardCorrectlyRedirectsOnMenuItemClick(
+            EXISTING_EMAIL,
+            COACHES_LIST,
+            hasComponent(CoachesListActivity::class.java.name)
         )
     }
 

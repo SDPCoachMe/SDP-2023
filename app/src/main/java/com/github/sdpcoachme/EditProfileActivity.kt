@@ -72,7 +72,7 @@ class EditProfileActivity : ComponentActivity() {
             val EMAIL = UneditableProfileRowTag("email")
             val FIRST_NAME = EditableProfileRowTag("firstName")
             val LAST_NAME = EditableProfileRowTag("lastName")
-//            val SPORT = EditableProfileRowTag("sport")
+            val SPORT = EditableProfileRowTag("sport")
             val CLIENT_COACH = SwitchClientCoachRowTag("clientCoach")
 
         }
