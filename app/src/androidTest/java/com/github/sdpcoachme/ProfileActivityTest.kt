@@ -21,6 +21,7 @@ import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LAST_NAME
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_PICTURE
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SELECTED_SPORTS
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import org.junit.Rule
@@ -57,6 +58,9 @@ class ProfileActivityTest {
 
         LAST_NAME.LABEL,
         LAST_NAME.TEXT,
+
+        SELECTED_SPORTS.LABEL,
+        SELECTED_SPORTS.ROW,
     )
 
     @Test
@@ -240,7 +244,7 @@ class ProfileActivityTest {
 
     @Test
     fun coachProfileShownWhenIsViewingCoachProfileIsTrue() {
-        val displayedForUserLookingAtCoach = initiallyDisplayed.plus(MESSAGE_COACH)
+        val displayedForUserLookingAtCoach = initiallyDisplayed.plus(listOf(MESSAGE_COACH, SELECTED_SPORTS.ROW, SELECTED_SPORTS.LABEL))
 
         val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
         val email = "example@email.com"

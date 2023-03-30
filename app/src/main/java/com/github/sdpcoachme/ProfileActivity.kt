@@ -27,6 +27,7 @@ import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LAST_NAME
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_LABEL
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SELECTED_SPORTS
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
@@ -55,6 +56,10 @@ class ProfileActivity : ComponentActivity() {
             val TEXT = "${tag}Text"
             val ROW = "${tag}Row"
         }
+        class SelectedSportsRowTag(tag: String) {
+            val LABEL = "${tag}Text"
+            val ROW = "${tag}Row"
+        }
         class Buttons {
             companion object {
                 const val SAVE = "saveButton"
@@ -73,6 +78,7 @@ class ProfileActivity : ComponentActivity() {
             val FIRST_NAME = EditableProfileRowTag("firstName")
             val LAST_NAME = EditableProfileRowTag("lastName")
             val CLIENT_COACH = SwitchClientCoachRowTag("clientCoach")
+            val SELECTED_SPORTS = SelectedSportsRowTag("selectedSports")
 
         }
     }
@@ -150,6 +156,8 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
         ProfileRow(rowName = "Last name", tag = LAST_NAME, isEditing = isEditing, leftTextPadding = 45.dp,
             value = lname, onValueChange = { newValue -> lname = newValue })
 
+        SportsRow(rowName = "Sports", tag = SELECTED_SPORTS, userInfo = userInfo)
+
         if (isViewingCoach) {
             Button(
                 modifier = Modifier
@@ -192,7 +200,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
                     context.startActivity(selSportsIntent)
                 }
             ) {
-                Text(text = "Select sports")
+                Text(text = "Change sports")
             }
 
             // edit button
@@ -327,7 +335,9 @@ fun ProfileRow(rowName: String, tag: ProfileActivity.TestTags.EditableProfileRow
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ) {
-        Text(text = "$rowName: ", modifier = Modifier.defaultMinSize(50.dp, 20.dp).testTag(tag.LABEL))
+        Text(text = "$rowName: ", modifier = Modifier
+            .defaultMinSize(50.dp, 20.dp)
+            .testTag(tag.LABEL))
         if (isEditing) {
             TextField(
                 modifier = Modifier
@@ -344,6 +354,30 @@ fun ProfileRow(rowName: String, tag: ProfileActivity.TestTags.EditableProfileRow
                     .absolutePadding(leftTextPadding + 6.dp, 0.dp, 0.dp, 0.dp)
                     .testTag(tag.TEXT),
                 text = value)
+        }
+    }
+}
+
+@Composable
+fun SportsRow(rowName: String, tag: ProfileActivity.TestTags.SelectedSportsRowTag, userInfo: UserInfo) {
+    Row(
+        modifier = Modifier
+            .absolutePadding(20.dp, 10.dp, 20.dp, 10.dp)
+            .testTag(tag.ROW),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Text(text = "$rowName: ", modifier = Modifier
+            .defaultMinSize(125.dp, 20.dp)
+            .testTag(tag.LABEL))
+        userInfo.sports.map {
+            Icon(
+                imageVector = it.sportIcon,
+                tint = Color.Gray,
+                contentDescription = it.sportName,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
         }
     }
 }
