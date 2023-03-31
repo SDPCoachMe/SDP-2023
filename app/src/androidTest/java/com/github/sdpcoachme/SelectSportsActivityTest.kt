@@ -146,7 +146,7 @@ open class SelectSportsActivityTest {
 
     @Test
     fun redirectsToProfileActivityWhenIsEditingProfileIsTrue() {
-        checkRedirectionAfterRegister(launchSignup.putExtra("isEditingProfile", true), EditProfileActivity::class.java.name)
+        checkRedirectionAfterRegister(launchSignup.putExtra("isEditingProfile", true), ProfileActivity::class.java.name)
     }
 
     private fun checkRedirectionAfterRegister(launcher: Intent, intendedClass: String) {

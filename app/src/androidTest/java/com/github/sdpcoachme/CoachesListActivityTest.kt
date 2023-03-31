@@ -2,14 +2,21 @@ package com.github.sdpcoachme
 
 import android.content.Intent
 import android.os.SystemClock
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
+import org.hamcrest.CoreMatchers.allOf
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,8 +40,8 @@ class CoachesListActivityTest {
                 // TODO: this is temporary ! We need to find a better way to wait for activities to fetch from the database
                 SystemClock.sleep(500)
                 coaches.forEach { coach ->
-                    composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}").assertExists()
-                    composeTestRule.onNodeWithText(coach.location).assertExists()
+                    composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}").assertIsDisplayed()
+                    composeTestRule.onNodeWithText(coach.location).assertIsDisplayed()
                 }
             }
         }
@@ -50,15 +57,43 @@ class CoachesListActivityTest {
                 // Check that all non coach users are not displayed
 
                 SystemClock.sleep(500)
-                coaches.forEach { coach ->
-                    composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}").assertDoesNotExist()
-                    composeTestRule.onNodeWithText(coach.location).assertDoesNotExist()
+                nonCoaches.forEach { coach ->
+                    composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}").assertIsNotDisplayed()
+                    composeTestRule.onNodeWithText(coach.location).assertIsNotDisplayed()
                 }
             }
         }
     }
 
-    // TODO: add tests to see whether clicking on a coach opens the correct activity
+    @Test
+    fun whenClickingOnACoachProfileActivityShowsCoachToClient() {
+
+        // Populate the database
+        populateDatabase().thenRun {
+            // Launch the activity
+            val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
+            ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
+                Intents.init()
+                SystemClock.sleep(500)
+
+                // Click on the first coach
+                val coach = coaches[0]
+                composeTestRule.onNodeWithText(coach.location).assertIsDisplayed()
+                composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
+                    .assertIsDisplayed()
+                    .performClick()
+
+                // Check that the ProfileActivity is launched with the correct extras
+                Intents.intended(allOf(
+                    hasComponent(ProfileActivity::class.java.name),
+                    hasExtra("email", coach.email),
+                    hasExtra("isViewingCoach", true)
+                ))
+
+                Intents.release()
+            }
+        }
+    }
 
     private val coaches = listOf(
         UserInfo(

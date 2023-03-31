@@ -9,7 +9,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
-import com.github.sdpcoachme.EditProfileActivity
+import com.github.sdpcoachme.ProfileActivity
 import com.github.sdpcoachme.LoginActivity
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
@@ -27,7 +27,7 @@ class IntentExtrasErrorHandlerActivityTest {
 
         val emptyErrorIntent = Intent(ApplicationProvider.getApplicationContext(), IntentExtrasErrorHandlerActivity::class.java)
 
-        ActivityScenario.launch<EditProfileActivity>(emptyErrorIntent).use {
+        ActivityScenario.launch<ProfileActivity>(emptyErrorIntent).use {
 
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertExists()
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertTextEquals(genericErrorMsg)
@@ -42,7 +42,7 @@ class IntentExtrasErrorHandlerActivityTest {
         val emptyErrorIntent = Intent(ApplicationProvider.getApplicationContext(), IntentExtrasErrorHandlerActivity::class.java)
         emptyErrorIntent.putExtra("errorMsg", errorMsg)
 
-        ActivityScenario.launch<EditProfileActivity>(emptyErrorIntent).use {
+        ActivityScenario.launch<ProfileActivity>(emptyErrorIntent).use {
 
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertExists()
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertTextEquals(errorMsg)
@@ -55,7 +55,7 @@ class IntentExtrasErrorHandlerActivityTest {
     fun goToLoginButtonClickAfterEmptyIntentRedirectsToLoginPage() {
         val emptyErrorIntent = Intent(ApplicationProvider.getApplicationContext(), IntentExtrasErrorHandlerActivity::class.java)
 
-        ActivityScenario.launch<EditProfileActivity>(emptyErrorIntent).use {
+        ActivityScenario.launch<ProfileActivity>(emptyErrorIntent).use {
             Intents.init()
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertExists()
 
@@ -73,7 +73,7 @@ class IntentExtrasErrorHandlerActivityTest {
         val errorMsg = "This is a test error message."
         emptyErrorIntent.putExtra("errorMsg", errorMsg)
 
-        ActivityScenario.launch<EditProfileActivity>(emptyErrorIntent).use {
+        ActivityScenario.launch<ProfileActivity>(emptyErrorIntent).use {
             Intents.init()
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertExists()
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertTextEquals(errorMsg)

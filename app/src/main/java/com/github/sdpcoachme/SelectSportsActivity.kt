@@ -132,7 +132,7 @@ class SelectSportsActivity : ComponentActivity() {
                         .thenApply { user -> database.addUser(user) }
                         .thenApply {
                             val targetClass =
-                                if (isEditingProfile) EditProfileActivity::class.java
+                                if (isEditingProfile) ProfileActivity::class.java
                                 else DashboardActivity::class.java
 
                             val intent = Intent(context, targetClass)

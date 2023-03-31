@@ -1,5 +1,6 @@
 package com.github.sdpcoachme
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -58,11 +60,16 @@ class CoachesListActivity : ComponentActivity() {
 
 @Composable
 fun UserInfoListItem(user: UserInfo) {
+    val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
                 // TODO: open user profile in details
+                val displayCoachIntent = Intent(context, ProfileActivity::class.java)
+                displayCoachIntent.putExtra("email", user.email)
+                displayCoachIntent.putExtra("isViewingCoach", true)
+                context.startActivity(displayCoachIntent)
             }
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .height(100.dp)

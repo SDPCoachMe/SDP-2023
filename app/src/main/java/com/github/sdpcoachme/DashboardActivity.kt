@@ -177,7 +177,7 @@ fun Dashboard(email: String,
                 onItemClick = {
                     when (it.tag) {
                         PROFILE -> {
-                            val intent = Intent(context, EditProfileActivity::class.java)
+                            val intent = Intent(context, ProfileActivity::class.java)
                             intent.putExtra("email", email)
                             context.startActivity(intent)
                         }
