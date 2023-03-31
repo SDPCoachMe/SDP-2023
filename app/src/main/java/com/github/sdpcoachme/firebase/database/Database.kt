@@ -2,6 +2,8 @@ package com.github.sdpcoachme.firebase.database
 
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.Message
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -60,4 +62,20 @@ interface Database {
      */
     fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void>
 
+    /**
+     * Get chat with the given id from the database
+     *
+     * @param chatId The id of the chat to get
+     * @return A future that will complete with the chat
+     */
+    fun getChat(chatId: String): CompletableFuture<Chat>
+
+    /**
+     * Place the new message into the database
+     *
+     * @param chatId The id of the chat to add the message to
+     * @param message The message to add
+     * @return A future that will complete when the message has been added
+     */
+    fun sendMessage(chatId: String, message: Message): CompletableFuture<Void>
 }

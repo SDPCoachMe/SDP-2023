@@ -2,6 +2,8 @@ package com.github.sdpcoachme.firebase.database
 
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.Message
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -67,6 +69,16 @@ class MockDatabase: Database {
             val newUserInfo = user.copy(events = user.events + events)
             setMap(accounts, email, newUserInfo)
         }
+    }
+
+    override fun getChat(chatId: String): CompletableFuture<Chat> {
+        // TODO: implement
+        return CompletableFuture.completedFuture(Chat())
+    }
+
+    override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
+        // TODO: implement
+        return CompletableFuture.completedFuture(null)
     }
 
     private fun setMap(map: MutableMap<String, Any>, key: String, value: Any): CompletableFuture<Void> {

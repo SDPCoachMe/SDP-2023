@@ -2,6 +2,8 @@ package com.github.sdpcoachme.firebase.database
 
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.Message
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseReference
 import java.util.concurrent.CompletableFuture
@@ -54,6 +56,16 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             val updatedUserInfo = it.copy(events = it.events + events)
             addUser(updatedUserInfo)
         }
+    }
+
+    override fun getChat(chatId: String): CompletableFuture<Chat> {
+        // TODO: implement
+        return CompletableFuture.completedFuture(Chat())
+    }
+
+    override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
+        // TODO: implement
+        return CompletableFuture.completedFuture(null)
     }
 
     /**
