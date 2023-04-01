@@ -6,6 +6,8 @@ import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseReference
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -57,21 +59,20 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             addUser(updatedUserInfo)
         }
     }
+
+    val timestampFormatter = DateTimeFormatter.ofPattern("HH:mm")
     var messages = listOf(
-        Message("luca.aengu@gmail.com", "Hello ----------------------------- -----------------------------------------------------------------------------------------"),
-        Message("luca.aengu@gmail.com", "Hello"),
-        Message("lucaengu@gmail.com", "How are you? ------------------- ----------------------------------------------------------------------------------------------------------"),
-
-        Message("luca.aengu@gmail.com", "Hello ----------------------------- -----------------------------------------------------------------------------------------"),
-        Message("luca.aengu@gmail.com", "Hello ----------------------------- -----------------------------------------------------------------------------------------"),
-        Message("lucaengu@gmail.com", "How are you? ------------------- ----------------------------------------------------------------------------------------------------------"),
-
-        Message("luca.aengu@gmail.com", "Hello ----------------------------- -----------------------------------------------------------------------------------------"),
-        Message("luca.aengu@gmail.com", "Hello ----------------------------- -----------------------------------------------------------------------------------------"),
-        Message("lucaengu@gmail.com", "How are you? ------------------- ----------------------------------------------------------------------------------------------------------"),
-
-        Message("luca.aengu@gmail.com", "Hello ----------------------------- -----------------------------------------------------------------------------------------"),
-        Message("lucaengu@gmail.com", "How are you? ------------------- ----------------------------------------------------------------------------------------------------------")
+        Message("luca.aengu@gmail.com", "Hello ----------------------------- -----------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
+        Message("luca.aengu@gmail.com", "Hello", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
+        Message("lucaengu@gmail.com", "How are you? ------------------- ----------------------------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
+        Message("luca.aengu@gmail.com", "Hello ----------------------------- -----------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
+        Message("luca.aengu@gmail.com", "Hello ----------------------------- -----------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
+        Message("lucaengu@gmail.com", "How are you? ------------------- ----------------------------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
+        Message("luca.aengu@gmail.com", "Hello ----------------------------- -----------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
+        Message("luca.aengu@gmail.com", "Hello ----------------------------- --------------------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
+        Message("lucaengu@gmail.com", "How are you? ------------------- ----------------------------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
+        Message("luca.aengu@gmail.com", "Hello ----------------------------- -------------------------------------------------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
+        Message("lucaengu@gmail.com", "How are you? ------------------- ", LocalDateTime.now().toLocalTime().format(timestampFormatter))
     )
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {

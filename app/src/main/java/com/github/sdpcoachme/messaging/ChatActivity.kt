@@ -1,9 +1,11 @@
 package com.github.sdpcoachme.messaging
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,9 +17,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.ProfileActivity
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
@@ -168,10 +172,17 @@ fun ChatView(currentUserEmail: String,
 
 @Composable
 fun ContactField(toUser: UserInfo) {
+    val context = LocalContext.current
     Row(
         modifier = Modifier
 //            .padding(horizontal = 20.dp, vertical = 20.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .clickable {
+                val coachProfileIntent = Intent(context, ProfileActivity::class.java)
+                coachProfileIntent.putExtra("email", toUser.email)
+                coachProfileIntent.putExtra("isViewingCoach", true)
+                context.startActivity(coachProfileIntent)
+            },
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.Start
     ) {
@@ -195,6 +206,7 @@ fun ChatMessages(
     chatId: String
 ) {
     Column(modifier = Modifier.padding(20.dp)) {
+        val modifier = Modifier.weight(1f)
         messages.forEach { message ->
             Row(
                 modifier = Modifier
@@ -203,17 +215,34 @@ fun ChatMessages(
                     .testTag(CHAT_MESSAGE.ROW),
                 horizontalArrangement = if (message.sender == currentUserEmail) Arrangement.End else Arrangement.Start,
             ) {
-                Text(
-                    text = message.content,
-                    modifier = Modifier
-                        .testTag(CHAT_MESSAGE.LABEL)
-                        .fillMaxWidth(0.7f)
-                        .background(
-                            color = if (message.sender == currentUserEmail) Color.Cyan else Color.LightGray,
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                        .padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
-                )
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = if (message.sender == currentUserEmail) Alignment.BottomEnd else Alignment.BottomStart
+                ) {
+                    Text(
+                        text = message.content,
+                        modifier = Modifier
+                            .testTag(CHAT_MESSAGE.LABEL)
+                            .fillMaxWidth(0.7f)
+                            .background(
+                                color = if (message.sender == currentUserEmail) Color.Cyan else Color.LightGray,
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                            .padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp)
+                    )
+                    //TODO make the message wrap around the timestamp (currently has overlays)
+                    Text(
+                        text = message.timestamp,
+                        modifier = Modifier
+                            .fillMaxWidth(if (message.sender == currentUserEmail) 0.15f else 0.45f)
+                            .padding(start = 5.dp, end = 5.dp, top = 5.dp, bottom = 5.dp)
+//                            .background(
+//                                color = if (message.sender == currentUserEmail) Color.Cyan else Color.LightGray,
+//                                shape = RoundedCornerShape(10.dp)
+//                            )
+                            .align(Alignment.BottomEnd)
+                    )
+                }
             }
         }
     }
@@ -246,7 +275,11 @@ fun ChatField(chat: Chat, currentUserEmail: String, database: Database, chatId: 
                     shape = RoundedCornerShape(30.dp),
                     color = Color.LightGray
                 ),
-            colors = TextFieldDefaults.textFieldColors(backgroundColor = Color.Transparent, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
+            colors = TextFieldDefaults.textFieldColors(
+                backgroundColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
+            ),
         )
 
         // Send Button
@@ -256,11 +289,10 @@ fun ChatField(chat: Chat, currentUserEmail: String, database: Database, chatId: 
                 onClick = {
                     database.sendMessage(
                         chatId,
-                        Message(currentUserEmail, message, LocalDateTime.now().toLocalTime().format(timestampFormatter)))
-                        .thenAccept {
-                            onSend()
-
-                        }
+                        Message(currentUserEmail, message, LocalDateTime.now().toLocalTime().format(timestampFormatter))
+                    ).thenAccept {
+                        onSend()
+                    }
                     message = ""
                 },
                 modifier = Modifier
