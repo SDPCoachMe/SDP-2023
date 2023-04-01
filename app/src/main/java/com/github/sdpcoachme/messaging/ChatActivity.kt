@@ -3,16 +3,18 @@ package com.github.sdpcoachme.messaging
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
@@ -121,9 +123,20 @@ fun ChatView(currentUserEmail: String,
         // Chat Messages
 
         ContactField(toUser)
-        ChatMessages(chat.messages, currentUserEmail, database, chatId)
-
-        Spacer(modifier = Modifier.weight(1f))
+//        ChatMessages(chat.messages, currentUserEmail, database, chatId)
+//
+//        Spacer(modifier = Modifier.weight(1f))
+//        Box(Modifier.fillMaxWidth().weight(1f)) {
+//            ChatMessages(chat.messages, currentUserEmail, database, chatId)
+//        }
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .weight(1f)
+        ) {
+            // Content which is pretty large in height (Scrollable)
+            ChatMessages(chat.messages, currentUserEmail, database, chatId)
+        }
 
         ChatField(chat, currentUserEmail, database, chatId)
     }
@@ -149,10 +162,12 @@ fun ChatMessages(
                     text = message.content,
                     modifier = Modifier
                         .testTag(CHAT_MESSAGE.LABEL)
-                        .padding(10.dp)
-                        .weight(0.8f, false)
-                        .fillMaxWidth(0.7f),
-//                        .wrapContentWidth(if (message.sender == currentUserEmail) Alignment.End else Alignment.Start)
+                        .fillMaxWidth(0.7f)
+                        .background(
+                            color = if (message.sender == currentUserEmail) Color.Cyan else Color.LightGray,
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                        .padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
                 )
             }
         }
@@ -166,7 +181,7 @@ fun ChatField(chat: Chat, currentUserEmail: String, database: Database, chatId: 
 
     Row(
         modifier = Modifier
-            .padding(horizontal = 20.dp, vertical = 20.dp)
+            .padding(start = 20.dp, end = 20.dp, bottom = 20.dp)
             .fillMaxWidth()
             .testTag(CHAT_FIELD.ROW),
         verticalAlignment = Alignment.Bottom,
@@ -179,6 +194,11 @@ fun ChatField(chat: Chat, currentUserEmail: String, database: Database, chatId: 
             placeholder = { Text("Message") },
             modifier = Modifier.weight(0.8f)
                 .testTag(CHAT_FIELD.LABEL)
+                .background(
+                    shape = RoundedCornerShape(30.dp),
+                    color = Color.LightGray
+                ),
+            colors = TextFieldDefaults.textFieldColors(backgroundColor = Color.Transparent, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
         )
 
         // Send Button
@@ -209,12 +229,20 @@ fun ChatField(chat: Chat, currentUserEmail: String, database: Database, chatId: 
 fun ContactField(toUser: UserInfo) {
     Row(
         modifier = Modifier
-            .padding(horizontal = 20.dp, vertical = 20.dp)
+//            .padding(horizontal = 20.dp, vertical = 20.dp)
             .fillMaxWidth(),
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.Start
     ) {
-        Text(toUser.firstName + " " + toUser.lastName)
+        Text(
+            text = toUser.firstName + " " + toUser.lastName,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    color = Color.LightGray,
+                )
+                .padding(start = 30.dp, end = 10.dp, top = 20.dp, bottom = 20.dp),
+        )
     }
 }
 
