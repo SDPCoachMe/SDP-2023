@@ -6,8 +6,8 @@ package com.github.sdpcoachme.data.messaging
 data class Message(
     val sender: String = "",
     val content: String = "",
-    val timestamp: Long = 0,
+    val timestamp: String = "",
 ) {
     // Constructor needed to make the data class serializable
-    constructor() : this("", "", 0)
+    constructor() : this("", "", "")
 }

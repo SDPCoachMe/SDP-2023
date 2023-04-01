@@ -24,8 +24,11 @@ import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SEND
+import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_BOX
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_MESSAGE
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -39,6 +42,9 @@ class ChatActivity : ComponentActivity() {
             val ROW = "${tag}Row"
         }
 
+        class ChatBox(tag: String) {
+            val LABEL = "${tag}Label"
+        }
         class ChatMessageRow(tag: String) {
             val LABEL = "${tag}Label"
             val ROW = "${tag}Row"
@@ -52,6 +58,7 @@ class ChatActivity : ComponentActivity() {
         companion object {
             val CHAT_FIELD = ChatFieldRow("chatField")
             val CHAT_MESSAGE = ChatMessageRow("chatMessage")
+            val CHAT_BOX = ChatBox("chatBox")
 
         }
     }
@@ -76,6 +83,8 @@ class ChatActivity : ComponentActivity() {
     }
 }
 
+
+
 @Composable
 fun ChatView(currentUserEmail: String,
              toUserEmail: String,
@@ -85,16 +94,15 @@ fun ChatView(currentUserEmail: String,
              fromUserFuture: CompletableFuture<UserInfo>,
              toUserFuture: CompletableFuture<UserInfo>
 ) {
+    val scrollState = rememberScrollState()
+
     var chat by remember { mutableStateOf(Chat()) }
     var fromUser by remember { mutableStateOf(UserInfo()) }
     var toUser by remember { mutableStateOf(UserInfo()) }
 
-
-
     var chatF by remember { mutableStateOf(chatFuture) }
     var fromUserF by remember { mutableStateOf(fromUserFuture) }
     var toUserF by remember { mutableStateOf(toUserFuture) }
-
 
     chatF.thenAccept {
         if (it != null) {
@@ -117,28 +125,65 @@ fun ChatView(currentUserEmail: String,
         }
     }
 
-    Column(modifier = Modifier
-        .fillMaxHeight()) {
+    LaunchedEffect(chat) {
+        scrollState.scrollTo(scrollState.maxValue)
+    }
 
-        // Chat Messages
+    Column(modifier = Modifier
+        .fillMaxHeight()
+    ) {
 
         ContactField(toUser)
-//        ChatMessages(chat.messages, currentUserEmail, database, chatId)
-//
-//        Spacer(modifier = Modifier.weight(1f))
-//        Box(Modifier.fillMaxWidth().weight(1f)) {
-//            ChatMessages(chat.messages, currentUserEmail, database, chatId)
-//        }
+
+        // Chat Messages
         Column(
             modifier = Modifier
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
+//                .verticalScroll(rememberScrollState())
                 .weight(1f)
+                .testTag(CHAT_BOX.LABEL)
         ) {
             // Content which is pretty large in height (Scrollable)
             ChatMessages(chat.messages, currentUserEmail, database, chatId)
         }
 
-        ChatField(chat, currentUserEmail, database, chatId)
+        ChatField(
+            chat = chat,
+            currentUserEmail = currentUserEmail,
+            database = database,
+            chatId = chatId,
+            onSend = {
+                chatF = database.getChat(chatId)
+            })
+    }
+}
+
+
+
+
+
+
+
+
+
+@Composable
+fun ContactField(toUser: UserInfo) {
+    Row(
+        modifier = Modifier
+//            .padding(horizontal = 20.dp, vertical = 20.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Text(
+            text = toUser.firstName + " " + toUser.lastName,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    color = Color.LightGray,
+                )
+                .padding(start = 30.dp, end = 10.dp, top = 20.dp, bottom = 20.dp),
+        )
     }
 }
 
@@ -177,7 +222,10 @@ fun ChatMessages(
 
 @Composable
 fun ChatField(chat: Chat, currentUserEmail: String, database: Database, chatId: String, onSend: () -> Unit = {}) {
+    val timestampFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
     var message by remember { mutableStateOf("") }
+
 
     Row(
         modifier = Modifier
@@ -206,7 +254,13 @@ fun ChatField(chat: Chat, currentUserEmail: String, database: Database, chatId: 
 
             IconButton(
                 onClick = {
-                    database.sendMessage(chatId, Message(currentUserEmail, message))
+                    database.sendMessage(
+                        chatId,
+                        Message(currentUserEmail, message, LocalDateTime.now().toLocalTime().format(timestampFormatter)))
+                        .thenAccept {
+                            onSend()
+
+                        }
                     message = ""
                 },
                 modifier = Modifier
@@ -222,27 +276,6 @@ fun ChatField(chat: Chat, currentUserEmail: String, database: Database, chatId: 
                 )
             }
         }
-    }
-}
-
-@Composable
-fun ContactField(toUser: UserInfo) {
-    Row(
-        modifier = Modifier
-//            .padding(horizontal = 20.dp, vertical = 20.dp)
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.Start
-    ) {
-        Text(
-            text = toUser.firstName + " " + toUser.lastName,
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    color = Color.LightGray,
-                )
-                .padding(start = 30.dp, end = 10.dp, top = 20.dp, bottom = 20.dp),
-        )
     }
 }
 
