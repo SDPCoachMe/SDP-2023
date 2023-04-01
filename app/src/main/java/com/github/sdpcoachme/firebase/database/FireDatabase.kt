@@ -60,7 +60,14 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {
         // TODO: implement
-        return CompletableFuture.completedFuture(Chat())
+        val chat = Chat().copy(
+            id = chatId,
+            messages = listOf(
+                Message("luca.aengu@gmail.com", "Hello ----------------------------- -----------------------------------------------------------------------------------------"),
+                Message("lucaengu@gmail.com", "How are you? ------------------- ----------------------------------------------------------------------------------------------------------")
+            )
+        )
+        return CompletableFuture.completedFuture(chat)
     }
 
     override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
