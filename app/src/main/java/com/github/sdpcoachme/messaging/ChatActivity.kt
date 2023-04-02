@@ -206,8 +206,79 @@ fun ChatMessages(
     chatId: String
 ) {
     Column(modifier = Modifier.padding(20.dp)) {
-        val modifier = Modifier.weight(1f)
+//        val modifier = Modifier.weight(1f)
+//        var lastLineWidth by remember {
+//            mutableStateOf(0)
+//        }
+//        var secondLastLineWidth by remember {
+//            mutableStateOf(0)
+//        }
+//
+//
+//
+//
+//        var lastLinePercentage by remember { mutableStateOf(0f) }
+//        var lastLine by remember {
+//            mutableStateOf(0)
+//        }
+//        var lastLineStart by remember {
+//            mutableStateOf(0)
+//        }
+//        var lastLineEnd by remember {
+//            mutableStateOf(0)
+//        }
+//
+//        var textWidth by remember {
+//            mutableStateOf(0)
+//        }
+//        var totalWidth by remember { mutableStateOf(0f) }
+//
+//
+//        var text by remember { mutableStateOf("") }
+//
+//        TextField(value = text, onValueChange = { text = it })
+//
+//        Text(
+//            text = text,
+//            modifier = modifier,
+//            onTextLayout = { textLayoutResult ->
+//                lastLine = textLayoutResult.lineCount - 1
+//                lastLineWidth = (textLayoutResult.getLineEnd(lastLine) - textLayoutResult.getLineStart(lastLine))//textLayoutResult.getLineRight(lastLine) - textLayoutResult.getLineLeft(lastLine)
+//                secondLastLineWidth = if (lastLine > 0) {
+//                    textLayoutResult.getLineEnd(lastLine - 1) - textLayoutResult.getLineStart(lastLine - 1)
+//                } else {
+//                    0
+//                }
+//            }
+//        )
+//
+//        Text(
+//            text = "${lastLinePercentage}%",
+////            modifier = Modifier.align(Alignment.BottomEnd),
+//        )
+//        Text(
+//            text = "last line $lastLine",
+//        )
+//        Text(
+//            text = "last line start" + (if (lastLineWidth > secondLastLineWidth - 5) "\n$" else "" ) + "$lastLineStart",
+//        )
+//        Text(
+//            text = "last line end $lastLineEnd",
+//        )
+//        Text(
+//            text = "last line width $lastLineWidth",
+//        )
+//        Text(
+//            text = "second last $secondLastLineWidth",
+//        )
+
         messages.forEach { message ->
+            var lastLine by remember { mutableStateOf(0) }
+//            var lastLine = 0
+            var lastLineWidth by remember { mutableStateOf(0) }
+            var secondLastLineWidth by remember { mutableStateOf(0) }
+//            var shouldWrapLastLine = lastLineWidth > secondLastLineWidth - 5
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -220,7 +291,7 @@ fun ChatMessages(
                     contentAlignment = if (message.sender == currentUserEmail) Alignment.BottomEnd else Alignment.BottomStart
                 ) {
                     Text(
-                        text = message.content,
+                        text = message.content + (if (lastLineWidth > 0 && lastLineWidth > secondLastLineWidth - 13) "\n" else ""),
                         modifier = Modifier
                             .testTag(CHAT_MESSAGE.LABEL)
                             .fillMaxWidth(0.7f)
@@ -228,7 +299,18 @@ fun ChatMessages(
                                 color = if (message.sender == currentUserEmail) Color.Cyan else Color.LightGray,
                                 shape = RoundedCornerShape(10.dp)
                             )
-                            .padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp)
+                            .padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
+                        onTextLayout = { textLayoutResult ->
+                            if (lastLineWidth == 0) {
+                                lastLine = textLayoutResult.lineCount - 1
+                                lastLineWidth = (textLayoutResult.getLineEnd(lastLine) - textLayoutResult.getLineStart(lastLine))//textLayoutResult.getLineRight(lastLine) - textLayoutResult.getLineLeft(lastLine)
+                                secondLastLineWidth = if (lastLine > 0) {
+                                    textLayoutResult.getLineEnd(lastLine - 1) - textLayoutResult.getLineStart(lastLine - 1)
+                                } else {
+                                    0
+                                }
+                            }
+                        }
                     )
                     //TODO make the message wrap around the timestamp (currently has overlays)
                     Text(
@@ -269,7 +351,8 @@ fun ChatField(chat: Chat, currentUserEmail: String, database: Database, chatId: 
             value = message,
             onValueChange = { message = it },
             placeholder = { Text("Message") },
-            modifier = Modifier.weight(0.8f)
+            modifier = Modifier
+                .weight(0.8f)
                 .testTag(CHAT_FIELD.LABEL)
                 .background(
                     shape = RoundedCornerShape(30.dp),
