@@ -1,6 +1,61 @@
 package com.github.sdpcoachme.firebase.database
 
+import com.github.sdpcoachme.data.Event
+import com.github.sdpcoachme.data.UserInfo
+import java.util.concurrent.CompletableFuture
 
+/**
+ * A caching database that wraps another database
+ */
 class CachingDatabase(private val wrappedDatabase: Database) : Database {
+    private val cachedUsers = mutableMapOf<String, UserInfo>()
+
+    // todo get and set methods should probably be removed from the interface
+    override fun get(key: String): CompletableFuture<Any> {
+        return wrappedDatabase.get(key)
+    }
+
+    // todo big problem if we modify user through this method and then try to get it from the cache
+    // temporary solution: clear the cache if we modify the user through this method
+    override fun set(key: String, value: Any): CompletableFuture<Void> {
+        cachedUsers.clear()
+        return wrappedDatabase.set(key, value)
+    }
+
+    override fun addUser(user: UserInfo): CompletableFuture<Void> {
+        return wrappedDatabase.addUser(user).thenAccept { cachedUsers[user.email] = user }
+    }
+
+    override fun getUser(email: String): CompletableFuture<UserInfo> {
+        if (cachedUsers.containsKey(email)) {
+            return CompletableFuture.completedFuture(cachedUsers[email])
+        }
+        return wrappedDatabase.getUser(email).thenApply {
+            it.also { cachedUsers[email] = it }
+        }
+    }
+
+    override fun getAllUsers(): CompletableFuture<List<UserInfo>> {
+        return wrappedDatabase.getAllUsers().thenApply {
+            it.also {
+                cachedUsers.clear()
+                cachedUsers.putAll(it.associateBy { it.email }) }
+        }
+    }
+
+    override fun userExists(email: String): CompletableFuture<Boolean> {
+        if (cachedUsers.containsKey(email)) {
+            return CompletableFuture.completedFuture(true)
+        }
+        return wrappedDatabase.userExists(email)
+    }
+
+    // Note: to efficiently use caching, we do not use the wrappedDatabase's addEventsToUser method
+    override fun addEventsToUser(email: String, events: List<Event>): CompletableFuture<Void> {
+        return getUser(email).thenCompose {
+            val updatedUserInfo = it.copy(events = it.events + events)
+            addUser(updatedUserInfo)
+        }
+    }
 
 }

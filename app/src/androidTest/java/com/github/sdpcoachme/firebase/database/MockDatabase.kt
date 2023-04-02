@@ -62,7 +62,7 @@ class MockDatabase: Database {
         return getMap(accounts, email).thenApply { it != null }
     }
 
-    override fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void> {
+    override fun addEventsToUser(email: String, events: List<Event>): CompletableFuture<Void> {
         return getUser(email).thenCompose { user ->
             val newUserInfo = user.copy(events = user.events + events)
             setMap(accounts, email, newUserInfo)

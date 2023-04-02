@@ -14,31 +14,21 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private val rootDatabase: DatabaseReference = databaseReference
     private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
 
-    // Cache for the users (write-through)
-    private var usersCache = mutableMapOf<String, UserInfo>()
-    private var usersLoaded = false
-
     override fun get(key: String): CompletableFuture<Any> {
         return getChild(rootDatabase, key).thenApply { it.value }
     }
 
-    // todo big problem if we modify user through this method and then try to get it from the cache
-    // temporary solution: clear the cache if we modify the user through this method
+
     override fun set(key: String, value: Any): CompletableFuture<Void> {
-        usersCache.clear()
-        usersLoaded = false
         return setChild(rootDatabase, key, value)
     }
 
     override fun addUser(user: UserInfo): CompletableFuture<Void> {
         val userID = user.email.replace('.', ',')
-        return setChild(accounts, userID, user).thenAccept { usersCache[user.email] = user }
+        return setChild(accounts, userID, user)
     }
 
     override fun getUser(email: String): CompletableFuture<UserInfo> {
-        if (usersLoaded || usersCache.containsKey(email)) {
-            return CompletableFuture.completedFuture(usersCache[email])
-        }
         val userID = email.replace('.', ',')
         return getChild(accounts, userID).thenApply { it.getValue(UserInfo::class.java) }
     }
@@ -47,23 +37,16 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         return getRef(accounts)
             .thenApply { snapshot ->
                 snapshot.children.map { it.getValue(UserInfo::class.java)!! /* can't be null */ }
-            }.thenApply { users ->
-                usersLoaded = true
-                usersCache = users.associateBy { it.email }.toMutableMap()
-                users
             }
     }
 
     override fun userExists(email: String): CompletableFuture<Boolean> {
-        if (usersCache.containsKey(email)) {
-            return CompletableFuture.completedFuture(true)
-        }
         val userID = email.replace('.', ',')
         return getChild(accounts, userID).thenApply { it.exists() }
     }
 
-    override fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void> {
-        return getUser(email).thenAccept {
+    override fun addEventsToUser(email: String, events: List<Event>): CompletableFuture<Void> {
+        return getUser(email).thenCompose {
             val updatedUserInfo = it.copy(events = it.events + events)
             addUser(updatedUserInfo)
         }

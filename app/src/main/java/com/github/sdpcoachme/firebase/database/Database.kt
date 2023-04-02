@@ -58,6 +58,6 @@ interface Database {
      * @param events The events to add
      * @return A future that will complete when the events have been added
      */
-    fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void>
+    fun addEventsToUser(email: String, events: List<Event>): CompletableFuture<Void>
 
 }

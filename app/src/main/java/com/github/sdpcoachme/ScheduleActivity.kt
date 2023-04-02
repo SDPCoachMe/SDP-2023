@@ -56,7 +56,7 @@ class ScheduleActivity : ComponentActivity() {
             database = (application as CoachMeApplication).database
 
             //TODO: For demo, let this function run once to add sample events to the database
-            database.addEventsToDatabase(email, sampleEvents).thenRun {
+            database.addEventsToUser(email, sampleEvents).thenRun {
                 val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email)
 
                 setContent {

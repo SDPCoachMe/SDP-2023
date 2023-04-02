@@ -78,7 +78,7 @@ class ScheduleActivityTest {
         defaultEmail
         val oldUserInfo = database.getUser(defaultEmail)
 
-        database.addEventsToDatabase(defaultEmail, eventList)
+        database.addEventsToUser(defaultEmail, eventList)
 
         val newUserInfo = database.getUser(defaultEmail)
         newUserInfo.thenAccept {
@@ -133,7 +133,7 @@ class ScheduleActivityTest {
 
     @Test
     fun eventsOfCurrentWeekAreDisplayedCorrectly() {
-        database.addEventsToDatabase(defaultEmail, eventList).thenRun {
+        database.addEventsToUser(defaultEmail, eventList).thenRun {
             val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
             scheduleIntent.putExtra("email", defaultEmail)
             ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
