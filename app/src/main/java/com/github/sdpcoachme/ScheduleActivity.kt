@@ -288,6 +288,14 @@ fun BasicSchedule(
  * A map to keep track of events that span multiple days. Has to be changed once the events are modified.
  */
 private val multiDayEventMap = mutableMapOf<Event, List<ShownEvent>>()
+
+/**
+ * Function to convert a list of DB events to a list of events that can be shown on the schedule.
+ * If an event spans multiple days, it will be split into multiple events of type ShownEvent, one for each day.
+ *
+ * @param events The list of events to convert
+ * @return The list of events that can be shown on the schedule
+ */
 fun eventsToWrappedEvents(events: List<Event>) : List<ShownEvent> {
     val eventsToShow = mutableListOf<ShownEvent>()
     events.forEach {
@@ -297,42 +305,8 @@ fun eventsToWrappedEvents(events: List<Event>) : List<ShownEvent> {
         val endDay = end.toLocalDate()
 
         if (startDay != endDay) {
-            val daysToFill = ChronoUnit.DAYS.between(startDay, endDay).toInt() - 1
-            val startEvent = ShownEvent(
-                name = it.name,
-                color = it.color,
-                start = start.toString(),
-                startText = start.toString(),
-                end = start.withHour(23).withMinute(59).withSecond(59).toString(),
-                endText = end.toString(),
-                description = it.description,
-            )
-            val endEvent = ShownEvent(
-                name = it.name,
-                color = it.color,
-                start = end.withHour(0).withMinute(0).withSecond(0).toString(),
-                startText = start.toString(),
-                end = end.toString(),
-                endText = end.toString(),
-                description = it.description,
-            )
-            eventsToShow.add(startEvent)
-            if (daysToFill > 0) {
-                val middleEvents = (1..daysToFill).map { day ->
-                    ShownEvent(
-                        name = it.name,
-                        color = it.color,
-                        start = startDay.plusDays(day.toLong()).atTime(0, 0, 0).toString(),
-                        startText = start.toString(),
-                        end = startDay.plusDays(day.toLong()).atTime(23, 59, 59).toString(),
-                        endText = end.toString(),
-                        description = it.description,
-                    )
-                }
-                eventsToShow.addAll(middleEvents)
-                multiDayEventMap[it] = listOf<ShownEvent>(startEvent, endEvent) + middleEvents
-            }
-            eventsToShow.add(endEvent)
+            val wrappedEvents = wrapEvent(startDay, endDay, it, start, end)
+            eventsToShow.addAll(wrappedEvents)
         } else {
             val shownEvent = ShownEvent(
                 name = it.name,
@@ -348,6 +322,60 @@ fun eventsToWrappedEvents(events: List<Event>) : List<ShownEvent> {
     }
     return eventsToShow
 }
+
+/**
+ * Function to wrap an event that spans multiple days into multiple events of type ShownEvent, one for each day.
+ *
+ * @param startDay The day the event starts on
+ * @param endDay The day the event ends on
+ * @param event The event to wrap
+ * @param start The start time of the event
+ * @param end The end time of the event
+ * @return A list of showable events that represent the event that spans multiple days
+ *
+ */
+private fun wrapEvent(startDay: LocalDate, endDay: LocalDate?, event: Event, start: LocalDateTime, end: LocalDateTime): List<ShownEvent> {
+    val eventsToShow = mutableListOf<ShownEvent>()
+    val daysToFill = ChronoUnit.DAYS.between(startDay, endDay).toInt() - 1
+    val startEvent = ShownEvent(
+        name = event.name,
+        color = event.color,
+        start = start.toString(),
+        startText = start.toString(),
+        end = start.withHour(23).withMinute(59).withSecond(59).toString(),
+        endText = end.toString(),
+        description = event.description,
+    )
+    val endEvent = ShownEvent(
+        name = event.name,
+        color = event.color,
+        start = end.withHour(0).withMinute(0).withSecond(0).toString(),
+        startText = start.toString(),
+        end = end.toString(),
+        endText = end.toString(),
+        description = event.description,
+    )
+    eventsToShow.add(startEvent)
+    if (daysToFill > 0) {
+        val middleEvents = (1..daysToFill).map { day ->
+            ShownEvent(
+                name = event.name,
+                color = event.color,
+                start = startDay.plusDays(day.toLong()).atTime(0, 0, 0).toString(),
+                startText = start.toString(),
+                end = startDay.plusDays(day.toLong()).atTime(23, 59, 59).toString(),
+                endText = end.toString(),
+                description = event.description,
+            )
+        }
+        eventsToShow.addAll(middleEvents)
+        multiDayEventMap[event] = listOf<ShownEvent>(startEvent, endEvent) + middleEvents
+    }
+    eventsToShow.add(endEvent)
+
+    return eventsToShow
+}
+
 
 // mainly for testing, debugging and demo purposes
 private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
