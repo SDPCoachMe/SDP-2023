@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.*
@@ -34,7 +33,7 @@ import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.S
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_BOX
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_MESSAGE
-import com.google.android.gms.tasks.Task
+import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
@@ -45,15 +44,22 @@ import java.util.concurrent.CompletableFuture
 class ChatActivity : ComponentActivity() {
 
     class TestTags {
+
+        class ContactFieldRow(tag: String) {
+            val LABEL = "${tag}Label"
+            val ROW = "${tag}Row"
+        }
+
         class ChatFieldRow(tag: String) {
             val LABEL = "${tag}Label"
             val ROW = "${tag}Row"
         }
 
         class ChatBox(tag: String) {
-            val LABEL = "${tag}Label"
-            val BOX = "${tag}Box"
-            val COLUMN = "${tag}Column"
+            val CONTAINER = "${tag}Container"
+            val SCROLL_COLUMN = "${tag}ScrollColumn"
+            val MESSAGES_BOX = "${tag}Box"
+            val MESSAGES_COLUMN = "${tag}Column"
         }
         class ChatMessageRow(tag: String) {
             val ROW = "${tag}Row"
@@ -68,6 +74,7 @@ class ChatActivity : ComponentActivity() {
             }
         }
         companion object {
+            val CONTACT_FIELD = ContactFieldRow("contactField")
             val CHAT_FIELD = ChatFieldRow("chatField")
             val CHAT_MESSAGE = ChatMessageRow("chatMessage")
             val CHAT_BOX = ChatBox("chatBox")
@@ -89,17 +96,15 @@ class ChatActivity : ComponentActivity() {
             val chatId = if (currentUserEmail < toUserEmail) "$currentUserEmail$toUserEmail" else "$toUserEmail$currentUserEmail"
 
             setContent {
-                ChatView(currentUserEmail, toUserEmail, chatId, database, database.getChat(chatId), database.getUser(currentUserEmail), database.getUser(toUserEmail))
+                ChatView(currentUserEmail, chatId, database, database.getChat(chatId), database.getUser(currentUserEmail), database.getUser(toUserEmail))
             }
         }
     }
 }
 
 
-
 @Composable
 fun ChatView(currentUserEmail: String,
-             toUserEmail: String,
              chatId: String,
              database: Database,
              chatFuture: CompletableFuture<Chat>,
@@ -144,76 +149,13 @@ fun ChatView(currentUserEmail: String,
         ChatBoxContainer(
             chat = chat,
             currentUserEmail = currentUserEmail,
-            database = database,
-            chatId = chatId,
             modifier = Modifier
                 .fillMaxSize()
                 .weight(1f)
-                .testTag(CHAT_BOX.BOX)
+                .testTag(CHAT_BOX.CONTAINER)
         )
 
-
-//    val scrollState = rememberScrollState()
-//    var onClickScroll by remember { mutableStateOf(false) }
-//    val endReached by remember {
-//        derivedStateOf {
-//            scrollState.value == scrollState.maxValue
-//        }
-//    }
-//
-//    LaunchedEffect(chat, onClickScroll) {
-//        scrollState.scrollTo(scrollState.maxValue)
-//    }
-//
-//    Column(modifier = Modifier
-//        .fillMaxHeight()
-//    ) {
-//
-//        ContactField(toUser)
-//
-//        // Chat Messages Container
-//        Box(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .weight(1f)
-//                .testTag(CHAT_BOX.BOX)
-//        ) {
-//            // Chat Messages
-//            Column(
-//                modifier = Modifier
-//                    .verticalScroll(scrollState)
-//                    .testTag(CHAT_BOX.LABEL)
-//            ) {
-//
-//                ChatMessages(
-//                    messages = chat.messages,
-//                    currentUserEmail = currentUserEmail,
-//                    database = database,
-//                    chatId = chatId,
-//                    scroll = { onClickScroll = !onClickScroll }
-//                )
-//            }
-//
-//            // Scroll to Bottom Button (only visible if not at bottom)
-//            if (!endReached) {
-//                IconButton(
-//                    onClick = { onClickScroll = !onClickScroll },
-//                    modifier = Modifier
-//                        .align(Alignment.BottomEnd)
-//                        .padding(8.dp)
-//                        .testTag(SCROLL_TO_BOTTOM)
-//                ) {
-//                    Icon(
-//                        Icons.Filled.ArrowDropDown,
-//                        contentDescription = "Scroll to bottom"
-//                    )
-//                }
-//            }
-//        }
-
-
         ChatField(
-            chat = chat,
             currentUserEmail = currentUserEmail,
             database = database,
             chatId = chatId,
@@ -223,11 +165,46 @@ fun ChatView(currentUserEmail: String,
     }
 }
 
-
-
-
 @Composable
-fun ChatBoxContainer(chat: Chat, currentUserEmail: String, database: Database, chatId: String, modifier: Modifier) {
+fun ContactField(toUser: UserInfo) {
+    val context = LocalContext.current
+    Row(
+        modifier = Modifier
+            .testTag(CONTACT_FIELD.ROW)
+            .fillMaxWidth()
+            .clickable {
+                val coachProfileIntent = Intent(context, ProfileActivity::class.java)
+                coachProfileIntent.putExtra("email", toUser.email)
+                coachProfileIntent.putExtra("isViewingCoach", true)
+                context.startActivity(coachProfileIntent)
+            },
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Text(
+            text = toUser.firstName + " " + toUser.lastName,
+            modifier = Modifier
+                .testTag(CONTACT_FIELD.LABEL)
+                .fillMaxWidth()
+                .background(
+                    color = Color.LightGray,
+                )
+                .padding(start = 30.dp, end = 10.dp, top = 20.dp, bottom = 20.dp)
+        )
+    }
+}
+
+/**
+ * Container for the chat box
+ *
+ * enables scrolling within the chat box and the scroll-to-bottom button
+ */
+@Composable
+fun ChatBoxContainer(
+    chat: Chat,
+    currentUserEmail: String,
+    modifier: Modifier
+) {
     val scrollState = rememberScrollState()
     var onClickScroll by remember { mutableStateOf(false) }
     val endReached by remember {
@@ -235,30 +212,23 @@ fun ChatBoxContainer(chat: Chat, currentUserEmail: String, database: Database, c
             scrollState.value == scrollState.maxValue
         }
     }
+
     LaunchedEffect(chat, onClickScroll) {
         scrollState.scrollTo(scrollState.maxValue)
     }
 
     Box(
         modifier = modifier
-//        Modifier
-//            .fillMaxSize()
-////            .weight(1f)
-//            .testTag(CHAT_BOX.BOX)
     ) {
-        // Chat Messages
         Column(
             modifier = Modifier
                 .verticalScroll(scrollState)
-                .testTag(CHAT_BOX.LABEL)
+                .testTag(CHAT_BOX.SCROLL_COLUMN)
         ) {
-
+            // Chat Messages
             ChatMessages(
                 messages = chat.messages,
-                currentUserEmail = currentUserEmail,
-                database = database,
-                chatId = chatId,
-                scroll = { onClickScroll = !onClickScroll }
+                currentUserEmail = currentUserEmail
             )
         }
 
@@ -280,54 +250,24 @@ fun ChatBoxContainer(chat: Chat, currentUserEmail: String, database: Database, c
     }
 }
 
-
-
-
-@Composable
-fun ContactField(toUser: UserInfo) {
-    val context = LocalContext.current
-    Row(
-        modifier = Modifier
-//            .padding(horizontal = 20.dp, vertical = 20.dp)
-            .fillMaxWidth()
-            .clickable {
-                val coachProfileIntent = Intent(context, ProfileActivity::class.java)
-                coachProfileIntent.putExtra("email", toUser.email)
-                coachProfileIntent.putExtra("isViewingCoach", true)
-                context.startActivity(coachProfileIntent)
-            },
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.Start
-    ) {
-        Text(
-            text = toUser.firstName + " " + toUser.lastName,
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    color = Color.LightGray,
-                )
-                .padding(start = 30.dp, end = 10.dp, top = 20.dp, bottom = 20.dp),
-        )
-    }
-}
-
+/**
+ * Displays the messages in the chat
+ */
 @Composable
 fun ChatMessages(
     messages: List<Message>,
-    currentUserEmail: String,
-    database: Database,
-    chatId: String,
-    scroll: () -> Unit
+    currentUserEmail: String
 ) {
     Box(
         modifier = Modifier
+            .testTag(CHAT_BOX.MESSAGES_BOX)
             .fillMaxSize()
-//            .testTag(CHAT_BOX.BOX)
     ) {
         Column(modifier = Modifier
             .padding(20.dp)
-            .testTag(CHAT_BOX.COLUMN)
+            .testTag(CHAT_BOX.MESSAGES_COLUMN)
         ) {
+            // Chat Messages
             messages.forEach { message ->
 
                 Row(
@@ -341,6 +281,7 @@ fun ChatMessages(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = if (message.sender == currentUserEmail) Alignment.BottomEnd else Alignment.BottomStart
                     ) {
+                        // message content
                         Text(
                             text = message.content.trim() + "\n",
                             modifier = Modifier
@@ -353,6 +294,7 @@ fun ChatMessages(
                                 .padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
                         )
 
+                        // timestamp for message
                         Text(
                             text = message.timestamp,
                             modifier = Modifier
@@ -365,28 +307,15 @@ fun ChatMessages(
                 }
             }
         }
-
-//        IconButton(
-//            onClick = {
-//                scroll()
-//            },
-//            modifier = Modifier
-//                .align(Alignment.BottomEnd)
-//                .padding(8.dp)
-//                .testTag(SEND)
-//        ) {
-//            Icon(
-//                Icons.Filled.Send,
-//                contentDescription = "Send Message"
-//            )
-//        }
     }
 }
 
 
-
+/**
+ * Chat field where user can type and send messages
+ */
 @Composable
-fun ChatField(chat: Chat, currentUserEmail: String, database: Database, chatId: String, onSend: () -> Unit = {}) {
+fun ChatField(currentUserEmail: String, database: Database, chatId: String, onSend: () -> Unit = {}) {
     val timestampFormatter = DateTimeFormatter.ofPattern("HH:mm")
     var message by remember { mutableStateOf("") }
 
