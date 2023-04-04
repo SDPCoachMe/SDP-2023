@@ -80,6 +80,7 @@ class MockDatabase: Database {
         // TODO: implement
         return CompletableFuture.completedFuture(null)
     }
+    override fun sendFirstMessages(): CompletableFuture<Void> { return CompletableFuture.completedFuture(null)}
 
     private fun setMap(map: MutableMap<String, Any>, key: String, value: Any): CompletableFuture<Void> {
         map[key] = value

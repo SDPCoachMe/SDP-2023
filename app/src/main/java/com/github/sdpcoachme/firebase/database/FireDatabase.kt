@@ -17,6 +17,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
 
     private val rootDatabase: DatabaseReference = databaseReference
     private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
+    private val chats: DatabaseReference = rootDatabase.child("coachme").child("messages")
 
     override fun get(key: String): CompletableFuture<Any> {
         return getChild(rootDatabase, key).thenApply { it.value }
@@ -61,6 +62,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     }
 
     val timestampFormatter = DateTimeFormatter.ofPattern("HH:mm")
+    val key = "lucaengu@gmail,comluca,aengu@gmail,com"
     var messages = listOf(
         Message("luca.aengu@gmail.com", "Hello ----------------------------- -----------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
         Message("luca.aengu@gmail.com", "Hello", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
@@ -75,20 +77,26 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         Message("luca.aengu@gmail.com", "Hello ----------------------------- -------------------------------------------------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
         Message("lucaengu@gmail.com", "How are you? ------------------- ", LocalDateTime.now().toLocalTime().format(timestampFormatter))
     )
+    override fun sendFirstMessages(): CompletableFuture<Void> {
+
+        return sendMessage(key, messages[0])
+            .exceptionally { println("error for sending: $it"); null }
+
+    }
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {
-        // TODO: implement
-        val chat = Chat().copy(
-            id = chatId,
-            messages = messages
-        )
-        return CompletableFuture.completedFuture(chat)
+        val id = chatId.replace('.', ',')
+        return getChild(chats, id).thenApply { it.getValue(Chat::class.java)!! }
+            .exceptionally { Chat() }
     }
 
     override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
         // TODO: implement
-        messages = messages + message
-        return CompletableFuture.completedFuture(null)
+        val id = chatId.replace('.', ',')
+        return getChat(id).thenCompose { chat ->
+            val updatedChat = chat.copy(messages = chat.messages + message)
+            setChild(chats, id, updatedChat)
+        }
     }
 
     /**

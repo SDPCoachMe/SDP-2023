@@ -78,4 +78,6 @@ interface Database {
      * @return A future that will complete when the message has been added
      */
     fun sendMessage(chatId: String, message: Message): CompletableFuture<Void>
+
+    fun sendFirstMessages(): CompletableFuture<Void>
 }
