@@ -23,6 +23,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     }
 
     override fun addUser(user: UserInfo): CompletableFuture<Void> {
+        cachedUsers.remove(user.email)
         return wrappedDatabase.addUser(user).thenAccept { cachedUsers[user.email] = user }
     }
 
@@ -56,6 +57,16 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
             val updatedUserInfo = it.copy(events = it.events + events)
             addUser(updatedUserInfo)
         }
+    }
+
+    /**
+     * Check if a user is cached
+     * Useful for testing
+     * @param email The email of the user to check
+     * @return True if the user is cached, false otherwise
+     */
+    fun isCached(email: String): Boolean {
+        return cachedUsers.containsKey(email)
     }
 
 }

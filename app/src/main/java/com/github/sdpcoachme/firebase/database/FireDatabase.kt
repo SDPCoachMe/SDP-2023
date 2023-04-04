@@ -65,6 +65,18 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     }
 
     /**
+     * Gets a key-value pair with a given key in a given database reference
+     * @param databaseChild the database reference in which to get the key-value pair
+     * @param key the key of the value
+     * @return a completable future that completes when the child is set. If the key does not exist,
+     * the future completes exceptionally with a NoSuchKeyException.
+     */
+    private fun getChild(databaseChild: DatabaseReference, key: String): CompletableFuture<DataSnapshot> {
+        val ref = databaseChild.child(key)
+        return getRef(ref)
+    }
+
+    /**
      * Sets a value in a given database reference
      * @param databaseRef the database reference in which to set the value
      * @param value the value to set
@@ -78,18 +90,6 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             future.completeExceptionally(it)
         }
         return future
-    }
-
-    /**
-     * Gets a key-value pair with a given key in a given database reference
-     * @param databaseChild the database reference in which to get the key-value pair
-     * @param key the key of the value
-     * @return a completable future that completes when the child is set. If the key does not exist,
-     * the future completes exceptionally with a NoSuchKeyException.
-     */
-    private fun getChild(databaseChild: DatabaseReference, key: String): CompletableFuture<DataSnapshot> {
-        val ref = databaseChild.child(key)
-        return getRef(ref)
     }
 
     /**
