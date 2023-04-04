@@ -12,6 +12,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,10 +29,12 @@ import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SCROLL_TO_BOTTOM
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SEND
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_BOX
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_MESSAGE
+import com.google.android.gms.tasks.Task
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
@@ -48,15 +52,19 @@ class ChatActivity : ComponentActivity() {
 
         class ChatBox(tag: String) {
             val LABEL = "${tag}Label"
+            val BOX = "${tag}Box"
+            val COLUMN = "${tag}Column"
         }
         class ChatMessageRow(tag: String) {
-            val LABEL = "${tag}Label"
             val ROW = "${tag}Row"
+            val LABEL = "${tag}Label"
+            val TIMESTAMP = "${tag}Timestamp"
         }
 
         class Buttons {
             companion object {
                 const val SEND = "sendButton"
+                const val SCROLL_TO_BOTTOM = "scrollToBottomButton"
             }
         }
         companion object {
@@ -98,8 +106,6 @@ fun ChatView(currentUserEmail: String,
              fromUserFuture: CompletableFuture<UserInfo>,
              toUserFuture: CompletableFuture<UserInfo>
 ) {
-    val scrollState = rememberScrollState()
-
     var chat by remember { mutableStateOf(Chat()) }
     var fromUser by remember { mutableStateOf(UserInfo()) }
     var toUser by remember { mutableStateOf(UserInfo()) }
@@ -129,27 +135,82 @@ fun ChatView(currentUserEmail: String,
         }
     }
 
-    LaunchedEffect(chat) {
-        scrollState.scrollTo(scrollState.maxValue)
-    }
-
     Column(modifier = Modifier
         .fillMaxHeight()
     ) {
 
         ContactField(toUser)
 
-        // Chat Messages
-        Column(
+        ChatBoxContainer(
+            chat = chat,
+            currentUserEmail = currentUserEmail,
+            database = database,
+            chatId = chatId,
             modifier = Modifier
-                .verticalScroll(scrollState)
-//                .verticalScroll(rememberScrollState())
+                .fillMaxSize()
                 .weight(1f)
-                .testTag(CHAT_BOX.LABEL)
-        ) {
-            // Content which is pretty large in height (Scrollable)
-            ChatMessages(chat.messages, currentUserEmail, database, chatId)
-        }
+                .testTag(CHAT_BOX.BOX)
+        )
+
+
+//    val scrollState = rememberScrollState()
+//    var onClickScroll by remember { mutableStateOf(false) }
+//    val endReached by remember {
+//        derivedStateOf {
+//            scrollState.value == scrollState.maxValue
+//        }
+//    }
+//
+//    LaunchedEffect(chat, onClickScroll) {
+//        scrollState.scrollTo(scrollState.maxValue)
+//    }
+//
+//    Column(modifier = Modifier
+//        .fillMaxHeight()
+//    ) {
+//
+//        ContactField(toUser)
+//
+//        // Chat Messages Container
+//        Box(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .weight(1f)
+//                .testTag(CHAT_BOX.BOX)
+//        ) {
+//            // Chat Messages
+//            Column(
+//                modifier = Modifier
+//                    .verticalScroll(scrollState)
+//                    .testTag(CHAT_BOX.LABEL)
+//            ) {
+//
+//                ChatMessages(
+//                    messages = chat.messages,
+//                    currentUserEmail = currentUserEmail,
+//                    database = database,
+//                    chatId = chatId,
+//                    scroll = { onClickScroll = !onClickScroll }
+//                )
+//            }
+//
+//            // Scroll to Bottom Button (only visible if not at bottom)
+//            if (!endReached) {
+//                IconButton(
+//                    onClick = { onClickScroll = !onClickScroll },
+//                    modifier = Modifier
+//                        .align(Alignment.BottomEnd)
+//                        .padding(8.dp)
+//                        .testTag(SCROLL_TO_BOTTOM)
+//                ) {
+//                    Icon(
+//                        Icons.Filled.ArrowDropDown,
+//                        contentDescription = "Scroll to bottom"
+//                    )
+//                }
+//            }
+//        }
+
 
         ChatField(
             chat = chat,
@@ -165,7 +226,59 @@ fun ChatView(currentUserEmail: String,
 
 
 
+@Composable
+fun ChatBoxContainer(chat: Chat, currentUserEmail: String, database: Database, chatId: String, modifier: Modifier) {
+    val scrollState = rememberScrollState()
+    var onClickScroll by remember { mutableStateOf(false) }
+    val endReached by remember {
+        derivedStateOf {
+            scrollState.value == scrollState.maxValue
+        }
+    }
+    LaunchedEffect(chat, onClickScroll) {
+        scrollState.scrollTo(scrollState.maxValue)
+    }
 
+    Box(
+        modifier = modifier
+//        Modifier
+//            .fillMaxSize()
+////            .weight(1f)
+//            .testTag(CHAT_BOX.BOX)
+    ) {
+        // Chat Messages
+        Column(
+            modifier = Modifier
+                .verticalScroll(scrollState)
+                .testTag(CHAT_BOX.LABEL)
+        ) {
+
+            ChatMessages(
+                messages = chat.messages,
+                currentUserEmail = currentUserEmail,
+                database = database,
+                chatId = chatId,
+                scroll = { onClickScroll = !onClickScroll }
+            )
+        }
+
+        // Scroll to Bottom Button (only visible if not at bottom)
+        if (!endReached) {
+            IconButton(
+                onClick = { onClickScroll = !onClickScroll },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(8.dp)
+                    .testTag(SCROLL_TO_BOTTOM)
+            ) {
+                Icon(
+                    Icons.Filled.ArrowDropDown,
+                    contentDescription = "Scroll to bottom"
+                )
+            }
+        }
+    }
+}
 
 
 
@@ -203,140 +316,79 @@ fun ChatMessages(
     messages: List<Message>,
     currentUserEmail: String,
     database: Database,
-    chatId: String
+    chatId: String,
+    scroll: () -> Unit
 ) {
-    Column(modifier = Modifier.padding(20.dp)) {
-//        val modifier = Modifier.weight(1f)
-//        var lastLineWidth by remember {
-//            mutableStateOf(0)
-//        }
-//        var secondLastLineWidth by remember {
-//            mutableStateOf(0)
-//        }
-//
-//
-//
-//
-//        var lastLinePercentage by remember { mutableStateOf(0f) }
-//        var lastLine by remember {
-//            mutableStateOf(0)
-//        }
-//        var lastLineStart by remember {
-//            mutableStateOf(0)
-//        }
-//        var lastLineEnd by remember {
-//            mutableStateOf(0)
-//        }
-//
-//        var textWidth by remember {
-//            mutableStateOf(0)
-//        }
-//        var totalWidth by remember { mutableStateOf(0f) }
-//
-//
-//        var text by remember { mutableStateOf("") }
-//
-//        TextField(value = text, onValueChange = { text = it })
-//
-//        Text(
-//            text = text,
-//            modifier = modifier,
-//            onTextLayout = { textLayoutResult ->
-//                lastLine = textLayoutResult.lineCount - 1
-//                lastLineWidth = (textLayoutResult.getLineEnd(lastLine) - textLayoutResult.getLineStart(lastLine))//textLayoutResult.getLineRight(lastLine) - textLayoutResult.getLineLeft(lastLine)
-//                secondLastLineWidth = if (lastLine > 0) {
-//                    textLayoutResult.getLineEnd(lastLine - 1) - textLayoutResult.getLineStart(lastLine - 1)
-//                } else {
-//                    0
-//                }
-//            }
-//        )
-//
-//        Text(
-//            text = "${lastLinePercentage}%",
-////            modifier = Modifier.align(Alignment.BottomEnd),
-//        )
-//        Text(
-//            text = "last line $lastLine",
-//        )
-//        Text(
-//            text = "last line start" + (if (lastLineWidth > secondLastLineWidth - 5) "\n$" else "" ) + "$lastLineStart",
-//        )
-//        Text(
-//            text = "last line end $lastLineEnd",
-//        )
-//        Text(
-//            text = "last line width $lastLineWidth",
-//        )
-//        Text(
-//            text = "second last $secondLastLineWidth",
-//        )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+//            .testTag(CHAT_BOX.BOX)
+    ) {
+        Column(modifier = Modifier
+            .padding(20.dp)
+            .testTag(CHAT_BOX.COLUMN)
+        ) {
+            messages.forEach { message ->
 
-        messages.forEach { message ->
-            var lastLine by remember { mutableStateOf(0) }
-//            var lastLine = 0
-            var lastLineWidth by remember { mutableStateOf(0) }
-            var secondLastLineWidth by remember { mutableStateOf(0) }
-//            var shouldWrapLastLine = lastLineWidth > secondLastLineWidth - 5
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 10.dp)
-                    .testTag(CHAT_MESSAGE.ROW),
-                horizontalArrangement = if (message.sender == currentUserEmail) Arrangement.End else Arrangement.Start,
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = if (message.sender == currentUserEmail) Alignment.BottomEnd else Alignment.BottomStart
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp)
+                        .testTag(CHAT_MESSAGE.ROW),
+                    horizontalArrangement = if (message.sender == currentUserEmail) Arrangement.End else Arrangement.Start,
                 ) {
-                    Text(
-                        text = message.content + (if (lastLineWidth > 0 && lastLineWidth > secondLastLineWidth - 13) "\n" else ""),
-                        modifier = Modifier
-                            .testTag(CHAT_MESSAGE.LABEL)
-                            .fillMaxWidth(0.7f)
-                            .background(
-                                color = if (message.sender == currentUserEmail) Color.Cyan else Color.LightGray,
-                                shape = RoundedCornerShape(10.dp)
-                            )
-                            .padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
-                        onTextLayout = { textLayoutResult ->
-                            if (lastLineWidth == 0) {
-                                lastLine = textLayoutResult.lineCount - 1
-                                lastLineWidth = (textLayoutResult.getLineEnd(lastLine) - textLayoutResult.getLineStart(lastLine))//textLayoutResult.getLineRight(lastLine) - textLayoutResult.getLineLeft(lastLine)
-                                secondLastLineWidth = if (lastLine > 0) {
-                                    textLayoutResult.getLineEnd(lastLine - 1) - textLayoutResult.getLineStart(lastLine - 1)
-                                } else {
-                                    0
-                                }
-                            }
-                        }
-                    )
-                    //TODO make the message wrap around the timestamp (currently has overlays)
-                    Text(
-                        text = message.timestamp,
-                        modifier = Modifier
-                            .fillMaxWidth(if (message.sender == currentUserEmail) 0.15f else 0.45f)
-                            .padding(start = 5.dp, end = 5.dp, top = 5.dp, bottom = 5.dp)
-//                            .background(
-//                                color = if (message.sender == currentUserEmail) Color.Cyan else Color.LightGray,
-//                                shape = RoundedCornerShape(10.dp)
-//                            )
-                            .align(Alignment.BottomEnd)
-                    )
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = if (message.sender == currentUserEmail) Alignment.BottomEnd else Alignment.BottomStart
+                    ) {
+                        Text(
+                            text = message.content.trim() + "\n",
+                            modifier = Modifier
+                                .testTag(CHAT_MESSAGE.LABEL)
+                                .fillMaxWidth(0.7f)
+                                .background(
+                                    color = if (message.sender == currentUserEmail) Color.Cyan else Color.LightGray,
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                                .padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
+                        )
+
+                        Text(
+                            text = message.timestamp,
+                            modifier = Modifier
+                                .testTag(CHAT_MESSAGE.TIMESTAMP)
+                                .fillMaxWidth(if (message.sender == currentUserEmail) 0.15f else 0.45f)
+                                .padding(start = 5.dp, end = 5.dp, top = 5.dp, bottom = 5.dp)
+                                .align(Alignment.BottomEnd)
+                        )
+                    }
                 }
             }
         }
+
+//        IconButton(
+//            onClick = {
+//                scroll()
+//            },
+//            modifier = Modifier
+//                .align(Alignment.BottomEnd)
+//                .padding(8.dp)
+//                .testTag(SEND)
+//        ) {
+//            Icon(
+//                Icons.Filled.Send,
+//                contentDescription = "Send Message"
+//            )
+//        }
     }
 }
+
 
 
 @Composable
 fun ChatField(chat: Chat, currentUserEmail: String, database: Database, chatId: String, onSend: () -> Unit = {}) {
     val timestampFormatter = DateTimeFormatter.ofPattern("HH:mm")
-
     var message by remember { mutableStateOf("") }
-
 
     Row(
         modifier = Modifier
@@ -346,7 +398,7 @@ fun ChatField(chat: Chat, currentUserEmail: String, database: Database, chatId: 
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.Start
     ) {
-        // Text Field
+        // Chat Text Field
         TextField(
             value = message,
             onValueChange = { message = it },
@@ -366,13 +418,12 @@ fun ChatField(chat: Chat, currentUserEmail: String, database: Database, chatId: 
         )
 
         // Send Button
-        if (message.isNotEmpty()) {
-
+        if (message.trim().isNotEmpty()) {
             IconButton(
                 onClick = {
                     database.sendMessage(
                         chatId,
-                        Message(currentUserEmail, message, LocalDateTime.now().toLocalTime().format(timestampFormatter))
+                        Message(currentUserEmail, message.trim(), LocalDateTime.now().toLocalTime().format(timestampFormatter))
                     ).thenAccept {
                         onSend()
                     }
@@ -382,8 +433,6 @@ fun ChatField(chat: Chat, currentUserEmail: String, database: Database, chatId: 
                     .padding(start = 8.dp)
                     .weight(0.2f)
                     .testTag(SEND)
-                // place it on the right side of the screen
-
             ) {
                 Icon(
                     Icons.Filled.Send,
