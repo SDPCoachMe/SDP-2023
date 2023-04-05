@@ -4,12 +4,19 @@ import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 import java.util.concurrent.CompletableFuture
 
 /**
  * A mock database class
  */
-class MockDatabase: Database {
+class MockDatabase() : Database {
+    var email: String = ""
+    override var currentUserEmail: String
+        get() = email
+        set(value) {email = value}
 
     private val defaultEmail = "example@email.com"
     private val defaultUserInfo = UserInfo(
@@ -26,6 +33,7 @@ class MockDatabase: Database {
     // TODO: type any is not ideal, needs refactoring
     private val root = hashMapOf<String, Any>()
     private val accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
+
 
     override fun get(key: String): CompletableFuture<Any> {
         return getMap(root, key)
@@ -80,9 +88,24 @@ class MockDatabase: Database {
         // TODO: implement
         return CompletableFuture.completedFuture(null)
     }
-    override fun sendFirstMessages(): CompletableFuture<Void> { return CompletableFuture.completedFuture(null)}
 
-    private fun setMap(map: MutableMap<String, Any>, key: String, value: Any): CompletableFuture<Void> {
+    override fun addChatListener(chatId: String, onChange: (Chat) -> Unit): ValueEventListener {
+        // TODO: implement
+        val id = chatId.replace('.', ',')
+        val valueEventListener = object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                val chat = dataSnapshot.getValue(Chat::class.java)
+                chat?.let { onChange(it) }
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Handle errors here
+            }
+        }
+        return valueEventListener
+    }
+
+        private fun setMap(map: MutableMap<String, Any>, key: String, value: Any): CompletableFuture<Void> {
         map[key] = value
         return CompletableFuture.completedFuture(null)
     }
@@ -97,5 +120,9 @@ class MockDatabase: Database {
         } else
             future.complete(value)
         return future
+    }
+
+    init {
+        this.currentUserEmail = ""
     }
 }

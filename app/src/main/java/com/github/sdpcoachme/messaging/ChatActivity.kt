@@ -128,6 +128,8 @@ fun ChatView(currentUserEmail: String,
         if (it != null) {
             chat = it
             chatF = CompletableFuture.completedFuture(null)
+
+            database.addChatListener(chatId) { newChat -> chat = newChat }
         }
     }
 

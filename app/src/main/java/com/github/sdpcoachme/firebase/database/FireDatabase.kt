@@ -5,7 +5,9 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
@@ -14,6 +16,11 @@ import java.util.concurrent.CompletableFuture
  * A database class that uses Firebase
  */
 class FireDatabase(databaseReference: DatabaseReference) : Database {
+
+    var email: String = ""
+    override var currentUserEmail: String
+        get() = email
+        set(value) {email = value}
 
     private val rootDatabase: DatabaseReference = databaseReference
     private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
@@ -77,12 +84,6 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         Message("luca.aengu@gmail.com", "Hello ----------------------------- -------------------------------------------------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
         Message("lucaengu@gmail.com", "How are you? ------------------- ", LocalDateTime.now().toLocalTime().format(timestampFormatter))
     )
-    override fun sendFirstMessages(): CompletableFuture<Void> {
-
-        return sendMessage(key, messages[0])
-            .exceptionally { println("error for sending: $it"); null }
-
-    }
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {
         val id = chatId.replace('.', ',')
@@ -91,13 +92,30 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     }
 
     override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
-        // TODO: implement
         val id = chatId.replace('.', ',')
         return getChat(id).thenCompose { chat ->
             val updatedChat = chat.copy(messages = chat.messages + message)
             setChild(chats, id, updatedChat)
         }
     }
+
+    override fun addChatListener(chatId: String, onChange: (Chat) -> Unit): ValueEventListener {
+        val id = chatId.replace('.', ',')
+        val chatRef = chats.child(id)
+        val valueEventListener = object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                val chat = dataSnapshot.getValue(Chat::class.java)
+                chat?.let { onChange(it) }
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Handle errors here
+            }
+        }
+        chatRef.addValueEventListener(valueEventListener)
+        return valueEventListener
+    }
+
 
     /**
      * Sets a key-value pair with a given key in a given database reference
