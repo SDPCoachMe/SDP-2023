@@ -20,6 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.ProfileActivity
@@ -34,6 +36,8 @@ import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_BOX
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_MESSAGE
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
+import com.github.sdpcoachme.ui.theme.Purple500
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
@@ -65,6 +69,7 @@ class ChatActivity : ComponentActivity() {
             val ROW = "${tag}Row"
             val LABEL = "${tag}Label"
             val TIMESTAMP = "${tag}Timestamp"
+            val DATE_ROW = "${tag}DateRow"
         }
 
         class Buttons {
@@ -187,9 +192,11 @@ fun ContactField(toUser: UserInfo) {
                 .testTag(CONTACT_FIELD.LABEL)
                 .fillMaxWidth()
                 .background(
-                    color = Color.LightGray,
+                    color = Purple500,
                 )
-                .padding(start = 30.dp, end = 10.dp, top = 20.dp, bottom = 20.dp)
+                .padding(start = 30.dp, end = 10.dp, top = 20.dp, bottom = 20.dp),
+            color = Color.White,
+            fontWeight = FontWeight.Bold
         )
     }
 }
@@ -258,6 +265,9 @@ fun ChatMessages(
     messages: List<Message>,
     currentUserEmail: String
 ) {
+    val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy")
+    val timestampFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
     Box(
         modifier = Modifier
             .testTag(CHAT_BOX.MESSAGES_BOX)
@@ -268,18 +278,38 @@ fun ChatMessages(
             .testTag(CHAT_BOX.MESSAGES_COLUMN)
         ) {
             // Chat Messages
+            var lastDate: LocalDateTime = LocalDateTime.MIN
             messages.forEach { message ->
+                val isFromCurrentUser = message.sender == currentUserEmail
+                val currDateTime = LocalDateTime.parse(message.timestamp)
+
+                if (currDateTime.isAfter(lastDate) && currDateTime.dayOfMonth != lastDate.dayOfMonth) {
+                    lastDate = currDateTime
+                    Text(
+                        text = lastDate.format(dateFormatter),
+                        modifier = Modifier
+                            .testTag(CHAT_MESSAGE.DATE_ROW)
+                            .align(Alignment.CenterHorizontally)
+                            .padding(bottom = 10.dp)
+                            .background(
+                                color = Color(0xFFE6E7E7),
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                            .padding(5.dp),
+                        textAlign = TextAlign.Center,
+                    )
+                }
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 10.dp)
                         .testTag(CHAT_MESSAGE.ROW),
-                    horizontalArrangement = if (message.sender == currentUserEmail) Arrangement.End else Arrangement.Start,
+                    horizontalArrangement = if (isFromCurrentUser) Arrangement.End else Arrangement.Start,
                 ) {
                     Box(
                         modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = if (message.sender == currentUserEmail) Alignment.BottomEnd else Alignment.BottomStart
+                        contentAlignment = if (isFromCurrentUser) Alignment.BottomEnd else Alignment.BottomStart
                     ) {
                         // message content
                         Text(
@@ -288,15 +318,16 @@ fun ChatMessages(
                                 .testTag(CHAT_MESSAGE.LABEL)
                                 .fillMaxWidth(0.7f)
                                 .background(
-                                    color = if (message.sender == currentUserEmail) Color.Cyan else Color.LightGray,
-                                    shape = RoundedCornerShape(10.dp)
+                                    color = if (isFromCurrentUser) Color(0xFFBBC5FD) else Color.LightGray,
+                                    shape = RoundedCornerShape(10.dp, 10.dp, if (isFromCurrentUser) 0.dp else 10.dp, if (isFromCurrentUser) 10.dp else 0.dp)
                                 )
                                 .padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
+
                         )
 
                         // timestamp for message
                         Text(
-                            text = message.timestamp,
+                            text = LocalDateTime.parse(message.timestamp).toLocalTime().format(timestampFormatter),
                             modifier = Modifier
                                 .testTag(CHAT_MESSAGE.TIMESTAMP)
                                 .fillMaxWidth(if (message.sender == currentUserEmail) 0.15f else 0.45f)
@@ -310,13 +341,11 @@ fun ChatMessages(
     }
 }
 
-
 /**
  * Chat field where user can type and send messages
  */
 @Composable
 fun ChatField(currentUserEmail: String, database: Database, chatId: String, onSend: () -> Unit = {}) {
-    val timestampFormatter = DateTimeFormatter.ofPattern("HH:mm")
     var message by remember { mutableStateOf("") }
 
     Row(
@@ -352,7 +381,7 @@ fun ChatField(currentUserEmail: String, database: Database, chatId: String, onSe
                 onClick = {
                     database.sendMessage(
                         chatId,
-                        Message(currentUserEmail, message.trim(), LocalDateTime.now().toLocalTime().format(timestampFormatter))
+                        Message(currentUserEmail, message.trim(), LocalDateTime.now().toString())
                     ).thenAccept {
                         onSend()
                     }

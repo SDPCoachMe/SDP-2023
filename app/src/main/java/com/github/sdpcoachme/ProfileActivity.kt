@@ -100,12 +100,12 @@ class ProfileActivity : ComponentActivity() {
         } else {
             database = (application as CoachMeApplication).database
             val futureUserInfo = database.getUser(email)
-
-            println("ProfileActivity: trying to add messages")
-            database.sendFirstMessages()
-
-
-
+//
+//            println("ProfileActivity: trying to add messages")
+//            database.sendFirstMessages()
+// TODO: remove this
+//
+//
 
             setContent {
                 CoachMeTheme {
@@ -180,7 +180,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
                     // For the moment, nothing happens
                     // but in the future this could open the in app messenger with the coach
                     //TODO: get own email!!!
-                    val userEmail = "luca.aengu@gmail.com"
+                    val userEmail = database.currentUserEmail
                     val intent = Intent(context, ChatActivity::class.java)
                     intent.putExtra("currentUserEmail", userEmail)
                     intent.putExtra("toUserEmail", email)

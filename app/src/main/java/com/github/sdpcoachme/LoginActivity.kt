@@ -102,6 +102,7 @@ class LoginActivity : ComponentActivity() {
     }
 
     private fun launchActivity(email: String, activity: Class<*>) {
+        database.currentUserEmail = email
         val intent = Intent(this, activity)
         intent.putExtra("email", email)
         startActivity(intent)
