@@ -15,11 +15,13 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
+import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.COACHES_LIST
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.LOGOUT
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.PROFILE
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DRAWER_HEADER
+import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import org.hamcrest.Matcher
@@ -105,7 +107,6 @@ class DashboardActivityTest {
         )
         launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
-            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
             // ignores right swipe if opened
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
             composeTestRule.onRoot().performTouchInput { swipeRight() }
@@ -181,7 +182,7 @@ class DashboardActivityTest {
             email,
             PROFILE,
             allOf(
-                hasComponent(EditProfileActivity::class.java.name),
+                hasComponent(ProfileActivity::class.java.name),
                 hasExtra("email", email)
             )
         )
@@ -195,6 +196,37 @@ class DashboardActivityTest {
         )
     }
 
+    @Test
+    fun dashboardCorrectlyRedirectsOnCoachesListClick() {
+        dashboardCorrectlyRedirectsOnMenuItemClick(
+            EXISTING_EMAIL,
+            COACHES_LIST,
+            hasComponent(CoachesListActivity::class.java.name)
+        )
+    }
+
     // TODO add more tests for the other menu items
+
+    @Test
+    fun mapHasValidApiKey() {
+        check(BuildConfig.MAPS_API_KEY.isNotBlank()
+                && BuildConfig.MAPS_API_KEY != "YOUR_API_KEY") {
+            "Maps API key not specified"
+        }
+    }
+
+    @Test
+    fun onlyMapIsDisplayedOnCreation() {
+        val email = EXISTING_EMAIL
+        val launchDashboard = Intent(
+            ApplicationProvider.getApplicationContext(),
+            DashboardActivity::class.java
+        )
+        launchDashboard.putExtra("email", email)
+        ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+            composeTestRule.onNodeWithTag(MAP).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
+        }
+    }
 
 }

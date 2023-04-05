@@ -10,7 +10,6 @@ import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.uiautomator.*
 import com.github.sdpcoachme.SignupActivity.TestTags.Buttons.Companion.BE_COACH
@@ -76,11 +75,12 @@ open class SignupActivityTest {
             Intents.init()
 
             // Correct way to get application context without issues
-            val database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
+            val database = (getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
             val user = UserInfo(
                 "Jean", "Dupont",
                 email, "0692000000",
-                "Lausanne", false, listOf())
+                "Lausanne", false, emptyList()
+            )
             inputUserInfo(user)
 
             // Important note: this get method was used instead of onTimeout due to onTimeout not
@@ -104,11 +104,13 @@ open class SignupActivityTest {
             Intents.init()
 
             // Correct way to get application context without issues
-            val database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
+            val database = (getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
             val user = UserInfo(
                 "Jean", "Dupont",
                 email, "0692000000",
-                "Lausanne", true, listOf())
+                "Lausanne", true,
+                emptyList()
+            )
             inputUserInfo(user)
 
             // Important note: this get method was used instead of onTimeout due to onTiemout not
@@ -135,7 +137,8 @@ open class SignupActivityTest {
             val user = UserInfo(
                 "Jean", "Dupont",
                 email, "0692000000",
-                "Lausanne", false, listOf()
+                "Lausanne", false,
+                emptyList()
             )
             inputUserInfo(user)
 

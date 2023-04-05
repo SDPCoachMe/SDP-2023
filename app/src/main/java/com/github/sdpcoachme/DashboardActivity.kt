@@ -28,7 +28,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.FAVORITES
+import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.COACHES_LIST
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HELP
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.LOGOUT
@@ -41,6 +41,7 @@ import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.data.MapState
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.map.MapViewModel
+import com.github.sdpcoachme.ui.MapView
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -57,13 +58,14 @@ class DashboardActivity : ComponentActivity() {
             const val DRAWER_HEADER = "drawerHeader"
             const val DASHBOARD_EMAIL = "dashboardEmail"
             const val MENU_LIST = "menuList"
+            const val MAP = "map"
         }
         class Buttons {
             companion object {
                 const val HAMBURGER_MENU = "hamburgerMenu"
                 const val SCHEDULE = "schedule"
                 const val PROFILE = "profile"
-                const val FAVORITES = "favorites"
+                const val COACHES_LIST = "coacheslist"
                 const val SETTINGS = "settings"
                 const val HELP = "help"
                 const val LOGOUT = "logout"
@@ -160,9 +162,9 @@ fun Dashboard(email: String,
                     MenuItem(tag = PROFILE, title = "Profile",
                         contentDescription = "Go to profile",
                         icon = Icons.Default.AccountCircle),
-                    MenuItem(tag = FAVORITES, title = "Favorites",
-                        contentDescription = "Go to favorites",
-                        icon = Icons.Default.Favorite),
+                    MenuItem(tag = COACHES_LIST, title = "Nearby coaches",
+                        contentDescription = "See a list of coaches available close to you",
+                        icon = Icons.Default.People),
                     MenuItem(tag = SETTINGS, title = "Settings",
                         contentDescription = "Go to settings",
                         icon = Icons.Default.Settings),
@@ -175,7 +177,7 @@ fun Dashboard(email: String,
                 onItemClick = {
                     when (it.tag) {
                         PROFILE -> {
-                            val intent = Intent(context, EditProfileActivity::class.java)
+                            val intent = Intent(context, ProfileActivity::class.java)
                             intent.putExtra("email", email)
                             context.startActivity(intent)
                         }
@@ -184,6 +186,15 @@ fun Dashboard(email: String,
                                 val intent = Intent(context, LoginActivity::class.java)
                                 context.startActivity(intent)
                             }
+                        }
+                        SCHEDULE -> {
+                            val intent = Intent(context, ScheduleActivity::class.java)
+                            intent.putExtra("email", email)
+                            context.startActivity(intent)
+                        }
+                        COACHES_LIST -> {
+                            val intent = Intent(context, CoachesListActivity::class.java)
+                            context.startActivity(intent)
                         }
                         else -> {
                             // TODO replace the print by a call to the corresponding item activity

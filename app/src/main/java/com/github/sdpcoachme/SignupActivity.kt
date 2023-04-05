@@ -25,6 +25,7 @@ import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.model.PlaceTypes
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.libraries.places.widget.Autocomplete
 import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
@@ -155,8 +156,11 @@ class SignupActivity : ComponentActivity() {
                 modifier = Modifier.testTag(TestTags.Buttons.SIGN_UP),
                 onClick = {
                     // Launch autocomplete activity, then wait for result
-                    val fields = listOf(Place.Field.ID, Place.Field.NAME)
-                    val autocompleteIntent = Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields)
+                    val fields = listOf(Place.Field.ID) // TODO: decide what fields we cache in the database
+                    val filters = listOf(PlaceTypes.ADDRESS)
+                    val autocompleteIntent = Autocomplete
+                        .IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields)
+                        .setTypesFilter(filters)
                         .build(context)
                     placesAutocompleteStartForResult.launch(autocompleteIntent)
                     autocompleteResult.thenCompose {
@@ -170,7 +174,8 @@ class SignupActivity : ComponentActivity() {
                                 location = place.id!!, // it can't be null anyways
                                 coach = isCoach,
                                 // sports added later in SelectSportsActivity
-                                sports = listOf()
+                                sports = listOf(),
+                                events = listOf()
                             )
                             database.addUser(newUser)
                     }.thenApply {

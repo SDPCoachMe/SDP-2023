@@ -1,5 +1,6 @@
 package com.github.sdpcoachme.firebase.database
 
+import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseReference
@@ -31,10 +32,28 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         return getChild(accounts, userID).thenApply { it.getValue(UserInfo::class.java) }
     }
 
+    override fun getAllUsers(): CompletableFuture<List<UserInfo>> {
+        // TODO: might need refactoring to be more modular
+        val future = CompletableFuture<List<UserInfo>>()
+        accounts.get().addOnSuccessListener { snapshot ->
+            val users = snapshot.children.map { it.getValue(UserInfo::class.java)!! /* can't be null */ }
+            future.complete(users)
+        }.addOnFailureListener {
+            future.completeExceptionally(it)
+        }
+        return future
+    }
 
     override fun userExists(email: String): CompletableFuture<Boolean> {
         val userID = email.replace('.', ',')
         return getChild(accounts, userID).thenApply { it.exists() }
+    }
+
+    override fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void> {
+        return this.getUser(email).thenAccept {
+            val updatedUserInfo = it.copy(events = it.events + events)
+            addUser(updatedUserInfo)
+        }
     }
 
     /**
