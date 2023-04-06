@@ -66,6 +66,7 @@ interface Database {
      */
     fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void>
 
+    fun getChatContacts(email: String): CompletableFuture<List<UserInfo>>
     /**
      * Get chat with the given id from the database
      *

@@ -68,6 +68,22 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         }
     }
 
+    override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
+        return getUser(currentUserEmail).thenApply {
+            it.chatContacts
+        }.thenCompose { list ->
+            val mappedF = list.map { email ->
+                getUser(email) //TODO: how to change this to not use .get() ???
+            }
+            // done to make sure that all the futures are completed before calling join
+            val allOf = CompletableFuture.allOf(*mappedF.toTypedArray())
+
+            allOf.thenApply {
+                mappedF.map { it.join() }
+            }
+        }
+    }
+
     val timestampFormatter = DateTimeFormatter.ofPattern("HH:mm")
     val key = "lucaengu@gmail,comluca,aengu@gmail,com"
     var messages = listOf(

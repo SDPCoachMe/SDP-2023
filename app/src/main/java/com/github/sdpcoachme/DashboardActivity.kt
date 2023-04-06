@@ -173,7 +173,10 @@ fun Dashboard(email: String,
                         icon = Icons.Default.Info),
                 MenuItem(tag = LOGOUT, title = "Log out",
                         contentDescription = "User logs out",
-                        icon = Icons.Default.Close)),
+                        icon = Icons.Default.Close),
+                MenuItem(tag = "Messaging", title = "Messaging",
+                    contentDescription = "Go to Messaging section",
+                    icon = Icons.Default.Message)),
                 onItemClick = {
                     when (it.tag) {
                         PROFILE -> {
@@ -194,6 +197,11 @@ fun Dashboard(email: String,
                         }
                         COACHES_LIST -> {
                             val intent = Intent(context, CoachesListActivity::class.java)
+                            context.startActivity(intent)
+                        }
+                        "Messaging" -> {
+                            val intent = Intent(context, CoachesListActivity::class.java)
+                            intent.putExtra("isViewingContacts", true)
                             context.startActivity(intent)
                         }
                         else -> {

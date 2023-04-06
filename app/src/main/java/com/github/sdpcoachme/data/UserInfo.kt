@@ -12,8 +12,8 @@ data class UserInfo(
     val coach: Boolean = false,
     val sports: List<Sports> = emptyList(),
     val events: List<Event> = emptyList(),
-    val chats: List<String> = emptyList(),
+    val chatContacts: List<String> = listOf(), // TODO: order based on message timestamp
 ) {
     // Constructor needed to make the data class serializable
-    constructor() : this("", "", "", "", "", false, emptyList(), emptyList())
+    constructor() : this("", "", "", "", "", false, emptyList(), emptyList(), listOf())
 }

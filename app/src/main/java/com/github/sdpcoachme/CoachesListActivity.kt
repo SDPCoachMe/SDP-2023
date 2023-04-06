@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -23,38 +24,80 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import com.github.sdpcoachme.ui.theme.Purple500
 import java.util.concurrent.CompletableFuture
 
 class CoachesListActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val futureListOfCoaches = (application as CoachMeApplication).database
-            .getAllUsers().thenApply {
-                it.filter { user -> user.coach }
+
+        val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
+        val database = (application as CoachMeApplication).database
+        val contacts =
+            if (isViewingContacts) {
+                database.getChatContacts(email = database.currentUserEmail)
+            } else {
+                database.getAllUsers().thenApply {
+                    it.filter { user -> user.coach }
+                }
             }
         setContent {
             var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
 
             // TODO: Need to handle the future correctly in cases like this (might need to use coroutines)
-            var f by remember { mutableStateOf(futureListOfCoaches) }
+            var f by remember { mutableStateOf(contacts) }
             f.thenAccept {
                 listOfCoaches = it
                 f = CompletableFuture.completedFuture(null)
             }
 
             CoachMeTheme {
-                LazyColumn {
-                    items(listOfCoaches) { user ->
-                        UserInfoListItem(user)
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+//                        .padding(0.dp)
+                ) {
+                    TitleRow(isViewingContacts = isViewingContacts)
+
+                    LazyColumn {
+                        items(listOfCoaches) { user ->
+                            UserInfoListItem(user)
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun TitleRow(isViewingContacts: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+//            .padding(horizontal = 16.dp, vertical = 20.dp)
+            .background(color = Purple500),
+//            .height(20.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = if (isViewingContacts) "Contacts" else "Nearby Coaches",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 20.dp),
+            color = Color.White
+        )
     }
 }
 

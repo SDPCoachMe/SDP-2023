@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.*
@@ -23,6 +24,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.ProfileActivity
 import com.github.sdpcoachme.data.UserInfo
@@ -37,7 +39,6 @@ import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIEL
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_MESSAGE
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
 import com.github.sdpcoachme.ui.theme.Purple500
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
@@ -83,7 +84,6 @@ class ChatActivity : ComponentActivity() {
             val CHAT_FIELD = ChatFieldRow("chatField")
             val CHAT_MESSAGE = ChatMessageRow("chatMessage")
             val CHAT_BOX = ChatBox("chatBox")
-
         }
     }
 
@@ -99,6 +99,16 @@ class ChatActivity : ComponentActivity() {
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
             val chatId = if (currentUserEmail < toUserEmail) "$currentUserEmail$toUserEmail" else "$toUserEmail$currentUserEmail"
+
+            database.getUser(currentUserEmail).thenAccept() { user ->
+                if (!user.chatContacts.contains(toUserEmail)) {
+                    val newUser = user.copy(chatContacts = user.chatContacts + toUserEmail)
+                    println("newUser: $newUser")
+                    database.addUser(newUser).thenAccept {
+                        println("added user")
+                    }
+                }
+            }
 
             setContent {
                 ChatView(currentUserEmail, chatId, database, database.getChat(chatId), database.getUser(currentUserEmail), database.getUser(toUserEmail))
@@ -129,7 +139,9 @@ fun ChatView(currentUserEmail: String,
             chat = it
             chatF = CompletableFuture.completedFuture(null)
 
-            database.addChatListener(chatId) { newChat -> chat = newChat }
+            database.addChatListener(chatId) {
+                newChat -> chat = newChat
+            }
         }
     }
 
@@ -168,7 +180,9 @@ fun ChatView(currentUserEmail: String,
             chatId = chatId,
             onSend = {
                 chatF = database.getChat(chatId)
-            })
+            },
+            toUser = toUser
+        )
     }
 }
 
@@ -179,6 +193,7 @@ fun ContactField(toUser: UserInfo) {
         modifier = Modifier
             .testTag(CONTACT_FIELD.ROW)
             .fillMaxWidth()
+            .background(color = Purple500)
             .clickable {
                 val coachProfileIntent = Intent(context, ProfileActivity::class.java)
                 coachProfileIntent.putExtra("email", toUser.email)
@@ -186,17 +201,32 @@ fun ContactField(toUser: UserInfo) {
                 context.startActivity(coachProfileIntent)
             },
         verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.Start
+        horizontalArrangement = Arrangement.Center
     ) {
+        // make a button icon for the back button
+        IconButton(
+            onClick = {
+                // press the back button
+            },
+            modifier = Modifier
+                .testTag(CONTACT_FIELD.LABEL)
+                .padding(start = 5.dp)
+                .align(Alignment.CenterVertically)
+        ) {
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Back",
+                tint = Color.White
+            )
+        }
+
         Text(
             text = toUser.firstName + " " + toUser.lastName,
+            fontSize = 20.sp,
             modifier = Modifier
                 .testTag(CONTACT_FIELD.LABEL)
                 .fillMaxWidth()
-                .background(
-                    color = Purple500,
-                )
-                .padding(start = 30.dp, end = 10.dp, top = 20.dp, bottom = 20.dp),
+                .padding(start = 20.dp, end = 10.dp, top = 20.dp, bottom = 20.dp),
             color = Color.White,
             fontWeight = FontWeight.Bold
         )
@@ -321,7 +351,12 @@ fun ChatMessages(
                                 .fillMaxWidth(0.7f)
                                 .background(
                                     color = if (isFromCurrentUser) Color(0xFFBBC5FD) else Color.LightGray,
-                                    shape = RoundedCornerShape(10.dp, 10.dp, if (isFromCurrentUser) 0.dp else 10.dp, if (isFromCurrentUser) 10.dp else 0.dp)
+                                    shape = RoundedCornerShape(
+                                        10.dp,
+                                        10.dp,
+                                        if (isFromCurrentUser) 0.dp else 10.dp,
+                                        if (isFromCurrentUser) 10.dp else 0.dp
+                                    )
                                 )
                                 .padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
 
@@ -347,7 +382,7 @@ fun ChatMessages(
  * Chat field where user can type and send messages
  */
 @Composable
-fun ChatField(currentUserEmail: String, database: Database, chatId: String, onSend: () -> Unit = {}) {
+fun ChatField(currentUserEmail: String, database: Database, chatId: String, onSend: () -> Unit = {}, toUser: UserInfo) {
     var message by remember { mutableStateOf("") }
 
     Row(
@@ -388,6 +423,16 @@ fun ChatField(currentUserEmail: String, database: Database, chatId: String, onSe
                         onSend()
                     }
                     message = ""
+                    // place this chat at the top of the users chat list whenever they send a message
+                    database.getUser(database.currentUserEmail).thenCompose {
+                        database.addUser(it.copy(chatContacts = listOf(toUser.email) + it.chatContacts.filter { e -> e != toUser.email }))
+                    }
+                    //same for the toUser
+                    database.getUser(toUser.email).thenCompose {
+                        database.addUser(it.copy(chatContacts = listOf(database.currentUserEmail) + it.chatContacts.filter { e -> e != database.currentUserEmail }))
+                    }
+
+
                 },
                 modifier = Modifier
                     .padding(start = 8.dp)
