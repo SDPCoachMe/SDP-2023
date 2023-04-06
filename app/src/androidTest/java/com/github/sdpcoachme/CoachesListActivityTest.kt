@@ -16,6 +16,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.messaging.ChatActivity
 import org.hamcrest.CoreMatchers.allOf
 import org.junit.Rule
 import org.junit.Test
@@ -88,6 +89,34 @@ class CoachesListActivityTest {
                     hasComponent(ProfileActivity::class.java.name),
                     hasExtra("email", coach.email),
                     hasExtra("isViewingCoach", true)
+                ))
+
+                Intents.release()
+            }
+        }
+    }
+
+    @Test
+    fun whenViewingContactsAndClickingOnClientChatActivityIsLaunched() {
+        // Populate the database
+        populateDatabase().thenRun {
+            // Launch the activity
+            val contactIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
+            contactIntent.putExtra("isViewingContacts", true)
+            ActivityScenario.launch<ScheduleActivity>(contactIntent).use {
+                Intents.init()
+
+                // Click on the first coach
+                val coach = coaches[0]
+                composeTestRule.onNodeWithText(coach.location).assertIsDisplayed()
+                composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
+                    .assertIsDisplayed()
+                    .performClick()
+
+                // Check that the ChatActivity is launched with the correct extras
+                Intents.intended(allOf(
+                    hasComponent(ChatActivity::class.java.name),
+                    hasExtra("toUserEmail", coach.email),
                 ))
 
                 Intents.release()

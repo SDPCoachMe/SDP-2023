@@ -105,7 +105,12 @@ class MockDatabase() : Database {
         return valueEventListener
     }
 
-        private fun setMap(map: MutableMap<String, Any>, key: String, value: Any): CompletableFuture<Void> {
+    override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
+        // TODO: implement
+        return CompletableFuture.completedFuture(emptyList())
+    }
+
+    private fun setMap(map: MutableMap<String, Any>, key: String, value: Any): CompletableFuture<Void> {
         map[key] = value
         return CompletableFuture.completedFuture(null)
     }
