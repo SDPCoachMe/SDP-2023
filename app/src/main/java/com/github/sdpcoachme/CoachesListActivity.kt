@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -70,7 +69,7 @@ class CoachesListActivity : ComponentActivity() {
 
                     LazyColumn {
                         items(listOfCoaches) { user ->
-                            UserInfoListItem(user)
+                            UserInfoListItem(user, isViewingContacts)
                         }
                     }
                 }
@@ -102,17 +101,22 @@ fun TitleRow(isViewingContacts: Boolean) {
 }
 
 @Composable
-fun UserInfoListItem(user: UserInfo) {
+fun UserInfoListItem(user: UserInfo, isViewingContacts: Boolean) {
     val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                // TODO: open user profile in details
-                val displayCoachIntent = Intent(context, ProfileActivity::class.java)
-                displayCoachIntent.putExtra("email", user.email)
-                displayCoachIntent.putExtra("isViewingCoach", true)
-                context.startActivity(displayCoachIntent)
+                if (isViewingContacts) {
+                    val displayChatIntent = Intent(context, ChatActivity::class.java)
+                    displayChatIntent.putExtra("toUserEmail", user.email)
+                    context.startActivity(displayChatIntent)
+                } else {
+                    val displayCoachIntent = Intent(context, ProfileActivity::class.java)
+                    displayCoachIntent.putExtra("email", user.email)
+                    displayCoachIntent.putExtra("isViewingCoach", true)
+                    context.startActivity(displayCoachIntent)
+                }
             }
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .height(100.dp)

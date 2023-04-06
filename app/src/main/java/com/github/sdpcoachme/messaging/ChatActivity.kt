@@ -1,5 +1,6 @@
 package com.github.sdpcoachme.messaging
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -89,12 +90,12 @@ class ChatActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // get from and to user ids from intent
-        val currentUserEmail = intent.getStringExtra("currentUserEmail")
-        val toUserEmail = intent.getStringExtra("toUserEmail")
-        val database = (application as CoachMeApplication).database
 
-        if (currentUserEmail == null || toUserEmail == null) {
+        val database = (application as CoachMeApplication).database
+        val currentUserEmail = database.currentUserEmail
+        val toUserEmail = intent.getStringExtra("toUserEmail")
+
+        if (currentUserEmail == "" || toUserEmail == null) {
             val errorMsg = "The Chat Interface did not receive both needed users.\nPlease return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
@@ -207,6 +208,7 @@ fun ContactField(toUser: UserInfo) {
         IconButton(
             onClick = {
                 // press the back button
+                (context as Activity).finish()
             },
             modifier = Modifier
                 .testTag(CONTACT_FIELD.LABEL)
