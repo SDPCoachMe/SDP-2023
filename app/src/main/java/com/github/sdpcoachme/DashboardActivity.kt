@@ -32,6 +32,7 @@ import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.COACHE
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HELP
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.LOGOUT
+import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.MESSAGING
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.PROFILE
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.SCHEDULE
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.SETTINGS
@@ -66,6 +67,7 @@ class DashboardActivity : ComponentActivity() {
                 const val SCHEDULE = "schedule"
                 const val PROFILE = "profile"
                 const val COACHES_LIST = "coacheslist"
+                const val MESSAGING = "Messaging"
                 const val SETTINGS = "settings"
                 const val HELP = "help"
                 const val LOGOUT = "logout"
@@ -199,7 +201,7 @@ fun Dashboard(email: String,
                             val intent = Intent(context, CoachesListActivity::class.java)
                             context.startActivity(intent)
                         }
-                        "Messaging" -> {
+                        MESSAGING -> {
                             val intent = Intent(context, CoachesListActivity::class.java)
                             intent.putExtra("isViewingContacts", true)
                             context.startActivity(intent)

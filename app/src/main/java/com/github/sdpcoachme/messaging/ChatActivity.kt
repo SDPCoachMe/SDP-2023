@@ -118,7 +118,9 @@ class ChatActivity : ComponentActivity() {
     }
 }
 
-
+/**
+ * Composable responsible for displaying the chat between two users
+ */
 @Composable
 fun ChatView(currentUserEmail: String,
              chatId: String,
@@ -187,6 +189,9 @@ fun ChatView(currentUserEmail: String,
     }
 }
 
+/**
+ * Composable responsible for displaying the Contact Field
+ */
 @Composable
 fun ContactField(toUser: UserInfo) {
     val context = LocalContext.current
