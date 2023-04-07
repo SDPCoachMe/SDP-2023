@@ -4,7 +4,6 @@ import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
-import com.google.firebase.database.ValueEventListener
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -84,5 +83,5 @@ interface Database {
      */
     fun sendMessage(chatId: String, message: Message): CompletableFuture<Void>
 
-    fun addChatListener(chatId: String, onChange: (Chat) -> Unit): ValueEventListener
+    fun addChatListener(chatId: String, onChange: (Chat) -> Unit)
 }

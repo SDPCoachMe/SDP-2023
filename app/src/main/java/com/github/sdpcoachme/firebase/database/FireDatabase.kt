@@ -8,8 +8,6 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -84,23 +82,6 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         }
     }
 
-    val timestampFormatter = DateTimeFormatter.ofPattern("HH:mm")
-    val key = "lucaengu@gmail,comluca,aengu@gmail,com"
-    var messages = listOf(
-        Message("luca.aengu@gmail.com", "Hello ----------------------------- -----------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
-        Message("luca.aengu@gmail.com", "Hello", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
-        Message("lucaengu@gmail.com", "How are you? ------------------- ----------------------------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
-        Message("luca.aengu@gmail.com", "Hello ----------------------------- -----------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
-        Message("luca.aengu@gmail.com", "Hello ----------------------------- -----------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
-        Message("lucaengu@gmail.com", "How are you? ------------------- ----------------------------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
-        Message("luca.aengu@gmail.com", "Hello ----------------------------- -----------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
-        Message("luca.aengu@gmail.com", "Hello ----------------------------- ------------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
-        Message("luca.aengu@gmail.com", "Hello ----------------------------- -------------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
-        Message("lucaengu@gmail.com", "How are you? ------------------- ----------------------------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
-        Message("luca.aengu@gmail.com", "Hello ----------------------------- -------------------------------------------------------------------------------------------------------------------------------", LocalDateTime.now().toLocalTime().format(timestampFormatter)),
-        Message("lucaengu@gmail.com", "How are you? ------------------- ", LocalDateTime.now().toLocalTime().format(timestampFormatter))
-    )
-
     override fun getChat(chatId: String): CompletableFuture<Chat> {
         val id = chatId.replace('.', ',')
         return getChild(chats, id).thenApply { it.getValue(Chat::class.java)!! }
@@ -115,7 +96,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         }
     }
 
-    override fun addChatListener(chatId: String, onChange: (Chat) -> Unit): ValueEventListener {
+    override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
         val id = chatId.replace('.', ',')
         val chatRef = chats.child(id)
         val valueEventListener = object : ValueEventListener {
@@ -129,7 +110,6 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             }
         }
         chatRef.addValueEventListener(valueEventListener)
-        return valueEventListener
     }
 
 

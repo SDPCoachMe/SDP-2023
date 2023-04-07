@@ -74,11 +74,6 @@
             android:label="@string/title_activity_multiselect_list"
             android:theme="@style/Theme.CoachMe" />
         <activity
-            android:name=".messaging.ChatsOverviewActivity"
-            android:exported="true"
-            android:label="@string/title_activity_chats_overview"
-            android:theme="@style/Theme.CoachMe" />
-        <activity
             android:name=".messaging.ChatActivity"
             android:exported="true"
             android:label="@string/title_activity_chat"

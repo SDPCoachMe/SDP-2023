@@ -4,9 +4,6 @@ import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -29,6 +26,21 @@ class MockDatabase() : Database {
         emptyList(),
         emptyList()
     )
+
+    private val toEmail = "to@email.com"
+    val toUser = UserInfo(
+        "Jane",
+        "Doe",
+        toEmail,
+        "0987654321",
+        "Some location",
+        false,
+        emptyList(),
+        emptyList()
+    )
+
+    private val chatMap = hashMapOf<String, Chat>()
+
 
     // TODO: type any is not ideal, needs refactoring
     private val root = hashMapOf<String, Any>()
@@ -80,34 +92,28 @@ class MockDatabase() : Database {
     }
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {
-        // TODO: implement
-        return CompletableFuture.completedFuture(Chat())
+        // TODO: add exception case
+        return CompletableFuture.completedFuture(chatMap.getOrDefault(chatId, Chat()))
     }
 
     override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
-        // TODO: implement
+        // TODO: add exception case
+        val chat = chatMap.getOrDefault(chatId, Chat())
+        chatMap[chatId] = chat.copy(messages = chat.messages + message)
         return CompletableFuture.completedFuture(null)
     }
 
-    override fun addChatListener(chatId: String, onChange: (Chat) -> Unit): ValueEventListener {
+    override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
         // TODO: implement
         val id = chatId.replace('.', ',')
-        val valueEventListener = object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                val chat = dataSnapshot.getValue(Chat::class.java)
-                chat?.let { onChange(it) }
-            }
+        val chat = chatMap.getOrDefault(id, Chat())
 
-            override fun onCancelled(databaseError: DatabaseError) {
-                // Handle errors here
-            }
-        }
-        return valueEventListener
+        onChange(chat)
     }
 
     override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
-        // TODO: implement
-        return CompletableFuture.completedFuture(emptyList())
+        // TODO: add exception case (and maybe more users)
+        return CompletableFuture.completedFuture(listOf(toUser))
     }
 
     private fun setMap(map: MutableMap<String, Any>, key: String, value: Any): CompletableFuture<Void> {

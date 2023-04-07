@@ -33,6 +33,7 @@ import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.BACK
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SCROLL_TO_BOTTOM
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SEND
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_BOX
@@ -78,6 +79,7 @@ class ChatActivity : ComponentActivity() {
             companion object {
                 const val SEND = "sendButton"
                 const val SCROLL_TO_BOTTOM = "scrollToBottomButton"
+                const val BACK = "backButton"
             }
         }
         companion object {
@@ -216,7 +218,7 @@ fun ContactField(toUser: UserInfo) {
                 (context as Activity).finish()
             },
             modifier = Modifier
-                .testTag(CONTACT_FIELD.LABEL)
+                .testTag(BACK)
                 .padding(start = 5.dp)
                 .align(Alignment.CenterVertically)
         ) {
