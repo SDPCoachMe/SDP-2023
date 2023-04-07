@@ -35,7 +35,7 @@ class CoachesListActivityTest {
         populateDatabase().thenRun {
             // Launch the activity
             val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
-            ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
+            ActivityScenario.launch<CoachesListActivity>(scheduleIntent).use {
                 // Check that all coaches are displayed
 
                 // TODO: this is temporary ! We need to find a better way to wait for activities to fetch from the database
@@ -54,7 +54,7 @@ class CoachesListActivityTest {
         populateDatabase().thenRun {
             // Launch the activity
             val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
-            ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
+            ActivityScenario.launch<CoachesListActivity>(scheduleIntent).use {
                 // Check that all non coach users are not displayed
 
                 SystemClock.sleep(500)
@@ -73,7 +73,7 @@ class CoachesListActivityTest {
         populateDatabase().thenRun {
             // Launch the activity
             val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
-            ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
+            ActivityScenario.launch<CoachesListActivity>(scheduleIntent).use {
                 Intents.init()
                 SystemClock.sleep(500)
 
@@ -103,7 +103,7 @@ class CoachesListActivityTest {
             // Launch the activity
             val contactIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
             contactIntent.putExtra("isViewingContacts", true)
-            ActivityScenario.launch<ScheduleActivity>(contactIntent).use {
+            ActivityScenario.launch<CoachesListActivity>(contactIntent).use {
                 Intents.init()
 
                 // Click on the first coach

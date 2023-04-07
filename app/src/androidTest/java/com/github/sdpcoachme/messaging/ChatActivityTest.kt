@@ -5,22 +5,34 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.Espresso
+import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.DashboardActivity
+import com.github.sdpcoachme.CoachesListActivity
+import com.github.sdpcoachme.ProfileActivity
+import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.MESSAGE_COACH
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.BACK
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SCROLL_TO_BOTTOM
+import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SEND
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_BOX
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
+import org.hamcrest.CoreMatchers.allOf
+import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.lessThan
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Duration
 import java.time.LocalDateTime
 
 @RunWith(AndroidJUnit4::class)
@@ -36,7 +48,7 @@ class ChatActivityTest {
         "to@email.com",
         "0987654321",
         "Bernstrasse 10, 3114 Wichtrach",
-        false,
+        true,
         emptyList(),
         emptyList()
     )
@@ -51,8 +63,7 @@ class ChatActivityTest {
         emptyList(),
         emptyList()
     )
-    private val chatId = (currentUser.email + toUser.email).replace(".", ",")
-
+    private val chatId = (currentUser.email + toUser.email)
 
 
     @Before
@@ -67,7 +78,7 @@ class ChatActivityTest {
         val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
         chatIntent.putExtra("toUserEmail", toUser.email)
 
-        ActivityScenario.launch<DashboardActivity>(chatIntent).use {
+        ActivityScenario.launch<ChatActivity>(chatIntent).use {
             composeTestRule.onNodeWithTag(BACK).assertIsDisplayed()
             composeTestRule.onNodeWithTag(CONTACT_FIELD.LABEL, useUnmergedTree = true).assertTextEquals(toUser.firstName + " " + toUser.lastName)
             composeTestRule.onNodeWithTag(CHAT_FIELD.LABEL, useUnmergedTree = true).assertIsDisplayed()
@@ -80,7 +91,7 @@ class ChatActivityTest {
         val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
         chatIntent.putExtra("toUserEmail", toUser.email)
 
-        ActivityScenario.launch<DashboardActivity>(chatIntent).use {
+        ActivityScenario.launch<ChatActivity>(chatIntent).use {
             composeTestRule.onNodeWithTag(SCROLL_TO_BOTTOM, useUnmergedTree = true).assertDoesNotExist()
 
         }
@@ -99,7 +110,7 @@ class ChatActivityTest {
         val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
         chatIntent.putExtra("toUserEmail", toUser.email)
 
-        ActivityScenario.launch<DashboardActivity>(chatIntent).use {
+        ActivityScenario.launch<ChatActivity>(chatIntent).use {
             composeTestRule.onNodeWithTag(SCROLL_TO_BOTTOM, useUnmergedTree = true).assertDoesNotExist()
 
             composeTestRule.onNodeWithTag(CHAT_BOX.CONTAINER).performTouchInput { swipeDown() }
@@ -109,5 +120,121 @@ class ChatActivityTest {
         }
     }
 
+    @Test
+    fun clickingOnContactRowOpensProfileOfThatContact() {
+        val chatIntent =
+            Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
+        chatIntent.putExtra("toUserEmail", toUser.email)
 
+        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+            Intents.init()
+
+            composeTestRule.onNodeWithTag(CONTACT_FIELD.LABEL, useUnmergedTree = true)
+                .assertIsDisplayed()
+                .performClick()
+
+            Intents.intended(
+                allOf(
+                    hasComponent(ProfileActivity::class.java.name),
+                    hasExtra("email", toUser.email),
+                    hasExtra("isViewingCoach", true)
+                )
+            )
+            Intents.release()
+        }
+    }
+
+        @Test
+        fun backButtonInContactRowReturnsToProfileViewWhenComingFromThere() {
+            val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
+            chatIntent.putExtra("isViewingCoach", true)
+            chatIntent.putExtra("email", toUser.email)
+
+            ActivityScenario.launch<ProfileActivity>(chatIntent).use {
+                Intents.init()
+                composeTestRule.onNodeWithTag(MESSAGE_COACH)
+                    .assertIsDisplayed()
+                    .performClick()
+
+                Intents.intended(
+                    allOf(
+                        hasComponent(ChatActivity::class.java.name),
+                        hasExtra("toUserEmail", toUser.email)
+                    )
+                )
+
+                composeTestRule.onNodeWithTag(BACK)
+                    .assertIsDisplayed()
+                    .performClick()
+
+                composeTestRule.onNodeWithTag(MESSAGE_COACH)
+                    .assertIsDisplayed()
+                Intents.release()
+        }
+    }
+
+    @Test
+    fun backButtonReturnsToCoachesListActivityWhenComingFromThere() {
+        val contactsIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
+        contactsIntent.putExtra("isViewingContacts", true)
+
+        ActivityScenario.launch<CoachesListActivity>(contactsIntent).use {
+            Intents.init()
+            composeTestRule.onNodeWithText("${toUser.firstName} ${toUser.lastName}")
+                .assertIsDisplayed()
+                .performClick()
+
+            Intents.intended(
+                allOf(
+                    hasComponent(ChatActivity::class.java.name),
+                    hasExtra("toUserEmail", toUser.email)
+                )
+            )
+
+            composeTestRule.onNodeWithTag(BACK)
+                .assertIsDisplayed()
+                .performClick()
+
+            composeTestRule.onNodeWithText("${toUser.firstName} ${toUser.lastName}")
+                .assertIsDisplayed()
+            Intents.release()
+        }
+    }
+
+    @Test
+    fun sendingMessagePlacesItInDbAndDisplaysItOnScreen() {
+        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
+        chatIntent.putExtra("toUserEmail", toUser.email)
+        val messageContent = "Send Message test!"
+
+        val msg1 = Message(toUser.email, "", LocalDateTime.now().toString())
+        val msg2 = Message(currentUser.email, "", LocalDateTime.now().toString())
+
+        for (i in 0..20) {
+            database.sendMessage(chatId, (msg1.copy(content = "toUser msg $i")))
+            database.sendMessage(chatId, (msg2.copy(content = "currentUser msg $i")))
+        }
+
+        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+            composeTestRule.onNodeWithTag(CHAT_FIELD.LABEL)
+                .assertIsDisplayed()
+                .performTextInput(messageContent)
+            Espresso.closeSoftKeyboard()
+
+            composeTestRule.onNodeWithTag(SEND)
+                .assertIsDisplayed()
+                .performClick()
+
+            val chat = database.getChat(chatId).get()
+            val message = chat.messages.last()
+            assertThat(message.sender, `is`(currentUser.email))
+            assertThat(message.content, `is`(messageContent))
+
+            val timeSinceSend = Duration.between(LocalDateTime.parse(message.timestamp), LocalDateTime.now())
+            assertThat(timeSinceSend.seconds, lessThan(1))
+
+            composeTestRule.onNodeWithText(messageContent, substring = true, useUnmergedTree = true)
+                .assertIsDisplayed()
+        }
+    }
 }

@@ -100,12 +100,6 @@ class ProfileActivity : ComponentActivity() {
         } else {
             database = (application as CoachMeApplication).database
             val futureUserInfo = database.getUser(email)
-//
-//            println("ProfileActivity: trying to add messages")
-//            database.sendFirstMessages()
-// TODO: remove this
-//
-//
 
             setContent {
                 CoachMeTheme {

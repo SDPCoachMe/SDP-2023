@@ -40,6 +40,7 @@ class MockDatabase() : Database {
     )
 
     private val chatMap = hashMapOf<String, Chat>()
+    private var onChange: (Chat) -> Unit = {}
 
 
     // TODO: type any is not ideal, needs refactoring
@@ -99,14 +100,15 @@ class MockDatabase() : Database {
     override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
         // TODO: add exception case
         val chat = chatMap.getOrDefault(chatId, Chat())
-        chatMap[chatId] = chat.copy(messages = chat.messages + message)
+        chatMap[chatId] = chat.copy(id = chatId, messages = chat.messages + message)
+        onChange(chat)
         return CompletableFuture.completedFuture(null)
     }
 
     override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
         // TODO: implement
-        val id = chatId.replace('.', ',')
-        val chat = chatMap.getOrDefault(id, Chat())
+        this.onChange = onChange
+        val chat = chatMap.getOrDefault(chatId, Chat())
 
         onChange(chat)
     }

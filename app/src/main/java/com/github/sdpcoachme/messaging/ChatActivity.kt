@@ -106,10 +106,7 @@ class ChatActivity : ComponentActivity() {
             database.getUser(currentUserEmail).thenAccept() { user ->
                 if (!user.chatContacts.contains(toUserEmail)) {
                     val newUser = user.copy(chatContacts = user.chatContacts + toUserEmail)
-                    println("newUser: $newUser")
-                    database.addUser(newUser).thenAccept {
-                        println("added user")
-                    }
+                    database.addUser(newUser)
                 }
             }
 
@@ -205,6 +202,8 @@ fun ContactField(toUser: UserInfo) {
             .clickable {
                 val coachProfileIntent = Intent(context, ProfileActivity::class.java)
                 coachProfileIntent.putExtra("email", toUser.email)
+                // TODO: once users can also message other users and not just coaches,
+                //       this should be adapted to also work for users
                 coachProfileIntent.putExtra("isViewingCoach", true)
                 context.startActivity(coachProfileIntent)
             },
