@@ -207,14 +207,6 @@ class ChatActivityTest {
         chatIntent.putExtra("toUserEmail", toUser.email)
         val messageContent = "Send Message test!"
 
-        val msg1 = Message(toUser.email, "", LocalDateTime.now().toString())
-        val msg2 = Message(currentUser.email, "", LocalDateTime.now().toString())
-
-        for (i in 0..20) {
-            database.sendMessage(chatId, (msg1.copy(content = "toUser msg $i")))
-            database.sendMessage(chatId, (msg2.copy(content = "currentUser msg $i")))
-        }
-
         ActivityScenario.launch<ChatActivity>(chatIntent).use {
             composeTestRule.onNodeWithTag(CHAT_FIELD.LABEL)
                 .assertIsDisplayed()

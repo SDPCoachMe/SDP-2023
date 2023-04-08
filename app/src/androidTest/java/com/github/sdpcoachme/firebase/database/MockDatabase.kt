@@ -101,7 +101,6 @@ class MockDatabase() : Database {
         // TODO: add exception case
         val chat = chatMap.getOrDefault(chatId, Chat())
         chatMap[chatId] = chat.copy(id = chatId, messages = chat.messages + message)
-        onChange(chat)
         return CompletableFuture.completedFuture(null)
     }
 
