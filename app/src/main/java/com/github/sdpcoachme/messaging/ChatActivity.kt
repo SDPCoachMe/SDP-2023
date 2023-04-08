@@ -1,6 +1,5 @@
 package com.github.sdpcoachme.messaging
 
-import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -27,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.CoachesListActivity
 import com.github.sdpcoachme.ProfileActivity
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
@@ -96,6 +96,7 @@ class ChatActivity : ComponentActivity() {
         val database = (application as CoachMeApplication).database
         val currentUserEmail = database.currentUserEmail
         val toUserEmail = intent.getStringExtra("toUserEmail")
+        val isFromMsgContacts = intent.getBooleanExtra("isFromMsgContacts", false)
 
         if (currentUserEmail == "" || toUserEmail == null) {
             val errorMsg = "The Chat Interface did not receive both needed users.\nPlease return to the login page and try again."
@@ -111,7 +112,7 @@ class ChatActivity : ComponentActivity() {
             }
 
             setContent {
-                ChatView(currentUserEmail, chatId, database, database.getChat(chatId), database.getUser(currentUserEmail), database.getUser(toUserEmail))
+                ChatView(currentUserEmail, chatId, database, database.getChat(chatId), database.getUser(currentUserEmail), database.getUser(toUserEmail), isFromMsgContacts)
             }
         }
     }
@@ -126,7 +127,8 @@ fun ChatView(currentUserEmail: String,
              database: Database,
              chatFuture: CompletableFuture<Chat>,
              fromUserFuture: CompletableFuture<UserInfo>,
-             toUserFuture: CompletableFuture<UserInfo>
+             toUserFuture: CompletableFuture<UserInfo>,
+             isFromMsgContacts: Boolean
 ) {
     var chat by remember { mutableStateOf(Chat()) }
     var fromUser by remember { mutableStateOf(UserInfo()) }
@@ -165,7 +167,7 @@ fun ChatView(currentUserEmail: String,
         .fillMaxHeight()
     ) {
 
-        ContactField(toUser)
+        ContactField(toUser, isFromMsgContacts)
 
         ChatBoxContainer(
             chat = chat,
@@ -192,7 +194,7 @@ fun ChatView(currentUserEmail: String,
  * Composable responsible for displaying the Contact Field
  */
 @Composable
-fun ContactField(toUser: UserInfo) {
+fun ContactField(toUser: UserInfo, isFromMsgContacts: Boolean) {
     val context = LocalContext.current
     Row(
         modifier = Modifier
@@ -213,8 +215,13 @@ fun ContactField(toUser: UserInfo) {
         // make a button icon for the back button
         IconButton(
             onClick = {
-                // press the back button
-                (context as Activity).finish()
+                // go back to the listed contacts (msg contacts or coaches)
+                val intent = Intent(context, CoachesListActivity::class.java)
+                if (isFromMsgContacts) {
+                    intent.putExtra("isViewingContacts", true)
+                }
+                context.startActivity(intent)
+
             },
             modifier = Modifier
                 .testTag(BACK)

@@ -110,6 +110,7 @@ fun UserInfoListItem(user: UserInfo, isViewingContacts: Boolean) {
                 if (isViewingContacts) {
                     val displayChatIntent = Intent(context, ChatActivity::class.java)
                     displayChatIntent.putExtra("toUserEmail", user.email)
+                    displayChatIntent.putExtra("isFromMsgContacts", true)
                     context.startActivity(displayChatIntent)
                 } else {
                     val displayCoachIntent = Intent(context, ProfileActivity::class.java)
