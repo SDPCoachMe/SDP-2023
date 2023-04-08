@@ -35,7 +35,7 @@ class CoachesListActivityTest {
         populateDatabase().thenRun {
             // Launch the activity
             val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
-            ActivityScenario.launch<CoachesListActivity>(scheduleIntent).use {
+            ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
                 // Check that all coaches are displayed
 
                 // TODO: this is temporary ! We need to find a better way to wait for activities to fetch from the database
@@ -54,7 +54,7 @@ class CoachesListActivityTest {
         populateDatabase().thenRun {
             // Launch the activity
             val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
-            ActivityScenario.launch<CoachesListActivity>(scheduleIntent).use {
+            ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
                 // Check that all non coach users are not displayed
 
                 SystemClock.sleep(500)
@@ -73,7 +73,7 @@ class CoachesListActivityTest {
         populateDatabase().thenRun {
             // Launch the activity
             val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
-            ActivityScenario.launch<CoachesListActivity>(scheduleIntent).use {
+            ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
                 Intents.init()
                 SystemClock.sleep(500)
 
@@ -103,11 +103,22 @@ class CoachesListActivityTest {
             // Launch the activity
             val contactIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
             contactIntent.putExtra("isViewingContacts", true)
-            ActivityScenario.launch<CoachesListActivity>(contactIntent).use {
+            ActivityScenario.launch<ScheduleActivity>(contactIntent).use {
                 Intents.init()
+                SystemClock.sleep(500)
 
-                // Click on the first coach
-                val coach = coaches[0]
+                // TODO: refactor this smartly!!!
+                val toEmail = "to@email.com"
+                val coach = UserInfo(
+                    "Jane",
+                    "Doe",
+                    toEmail,
+                    "0987654321",
+                    "Some location",
+                    false,
+                    emptyList(),
+                    emptyList()
+                )
                 composeTestRule.onNodeWithText(coach.location).assertIsDisplayed()
                 composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
                     .assertIsDisplayed()
@@ -177,7 +188,7 @@ class CoachesListActivityTest {
 
     private fun populateDatabase(): CompletableFuture<Void> {
         val database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
-
+        database.currentUserEmail = "example@email.com"
         // Add a few coaches to the database
         val futures1 = coaches.map { database.addUser(it) }
 
