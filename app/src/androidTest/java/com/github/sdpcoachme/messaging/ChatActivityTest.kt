@@ -229,4 +229,18 @@ class ChatActivityTest {
                 .assertIsDisplayed()
         }
     }
+
+    @Test
+    fun whenOnChangeCalledWithNewChatMessageChatIsUpdated() {
+        //when on change called with new chat message chat is updated
+        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
+        chatIntent.putExtra("toUserEmail", toUser.email)
+
+        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+            database.addChatListener("run-previous-on-change") {}
+
+            composeTestRule.onNodeWithText("test onChange method", substring = true, useUnmergedTree = true)
+                .assertIsDisplayed()
+        }
+    }
 }

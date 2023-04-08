@@ -4,6 +4,7 @@ import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
+import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -39,7 +40,8 @@ class MockDatabase() : Database {
         emptyList()
     )
 
-    private val chatMap = hashMapOf<String, Chat>()
+    private var chat = Chat(participants = listOf(defaultEmail, toEmail))
+    private var chatId = ""
     private var onChange: (Chat) -> Unit = {}
 
 
@@ -94,22 +96,25 @@ class MockDatabase() : Database {
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {
         // TODO: add exception case
-        return CompletableFuture.completedFuture(chatMap.getOrDefault(chatId, Chat()))
+            return CompletableFuture.completedFuture(chat)
     }
 
     override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
         // TODO: add exception case
-        val chat = chatMap.getOrDefault(chatId, Chat())
-        chatMap[chatId] = chat.copy(id = chatId, messages = chat.messages + message)
+        chat = chat.copy(id = chatId, messages = chat.messages + message)
         return CompletableFuture.completedFuture(null)
     }
 
     override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
-        // TODO: implement
-        this.onChange = onChange
-        val chat = chatMap.getOrDefault(chatId, Chat())
-
-        onChange(chat)
+        if (chatId == "run-previous-on-change") {
+            val msg = Message(sender = chat.participants[0], content = "test onChange method", timestamp = LocalDateTime.now().toString())
+            chat = chat.copy(id = this.chatId ,messages = chat.messages + msg)
+        } else {
+            this.chatId = chatId
+            chat = chat.copy(id = chatId)
+            this.onChange = onChange
+        }
+        this.onChange(chat)
     }
 
     override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
