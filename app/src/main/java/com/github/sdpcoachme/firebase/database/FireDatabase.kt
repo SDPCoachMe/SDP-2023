@@ -13,6 +13,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
 
     private val rootDatabase: DatabaseReference = databaseReference
     private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
+    private var currEmail = ""
 
     override fun get(key: String): CompletableFuture<Any> {
         return getChild(rootDatabase, key).thenApply { it.value }
@@ -50,6 +51,14 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             val updatedUserInfo = it.copy(events = it.events + events)
             addUser(updatedUserInfo)
         }
+    }
+
+    override fun getCurrentEmail(): String {
+        return currEmail
+    }
+
+    override fun setCurrentEmail(email: String) {
+        currEmail = email
     }
 
     /**

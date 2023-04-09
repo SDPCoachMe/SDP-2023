@@ -53,7 +53,13 @@ class LoginActivity : ComponentActivity() {
     ) { res ->
         authenticator.onSignInResult(
             res,
-            { email -> launchPostLoginActivity(email ?: "") },
+            { email ->
+                if (email != null) {
+                    database.setCurrentEmail(email)
+                    launchPostLoginActivity(email)
+                }
+                launchPostLoginActivity("")
+            },
             { errorMsg -> signInInfo = errorMsg.toString() }
         )
     }
@@ -91,9 +97,9 @@ class LoginActivity : ComponentActivity() {
         val query = database.getUser(email)
         query.handle { result, exception ->
             if (exception == null) {
-                launchActivity(result.email, DashboardActivity::class.java)
+                launchActivity(DashboardActivity::class.java)
             } else if (exception.cause is NoSuchKeyException) {
-                launchActivity(email, SignupActivity::class.java)
+                launchActivity(SignupActivity::class.java)
             } else {
                 signInInfo = "Unknown error"
             }
@@ -101,9 +107,8 @@ class LoginActivity : ComponentActivity() {
 
     }
 
-    private fun launchActivity(email: String, activity: Class<*>) {
+    private fun launchActivity(activity: Class<*>) {
         val intent = Intent(this, activity)
-        intent.putExtra("email", email)
         startActivity(intent)
     }
 

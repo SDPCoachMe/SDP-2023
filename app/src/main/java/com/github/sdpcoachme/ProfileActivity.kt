@@ -86,18 +86,19 @@ class ProfileActivity : ComponentActivity() {
     }
 
     private lateinit var database: Database
+    private lateinit var email: String
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val email = intent.getStringExtra("email")
+        database = (application as CoachMeApplication).database
+        email = database.getCurrentEmail()
         val isViewingCoach = intent.getBooleanExtra("isViewingCoach", false)
 
-        if (email == null) {
+        if (email == "") {
             val errorMsg = "Profile editing did not receive an email address." +
                     "\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
-            database = (application as CoachMeApplication).database
             val futureUserInfo = database.getUser(email)
             setContent {
                 CoachMeTheme {
@@ -200,7 +201,6 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
                     .testTag(ProfileActivity.TestTags.Buttons.SELECT_SPORTS),
                 onClick = {
                     val selSportsIntent = Intent(context, SelectSportsActivity::class.java)
-                    selSportsIntent.putExtra("email", email)
                     selSportsIntent.putExtra("isEditingProfile", true)
                     context.startActivity(selSportsIntent)
                 }

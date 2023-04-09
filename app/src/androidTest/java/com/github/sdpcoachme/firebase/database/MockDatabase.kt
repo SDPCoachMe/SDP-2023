@@ -20,6 +20,7 @@ class MockDatabase: Database {
         emptyList(),
         emptyList()
     )
+    private var currEmail = ""
 
     // TODO: type any is not ideal, needs refactoring
     private val root = hashMapOf<String, Any>()
@@ -84,5 +85,13 @@ class MockDatabase: Database {
         } else
             future.complete(value)
         return future
+    }
+
+    override fun getCurrentEmail(): String {
+        return currEmail
+    }
+
+    override fun setCurrentEmail(email: String) {
+        currEmail = email
     }
 }

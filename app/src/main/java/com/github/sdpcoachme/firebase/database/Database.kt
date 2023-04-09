@@ -60,4 +60,16 @@ interface Database {
      */
     fun addEventsToUser(email: String, events: List<Event>): CompletableFuture<Void>
 
+    /**
+     * Get the current user's email
+     * @return The current user's email
+     */
+    fun getCurrentEmail(): String
+
+    /**
+     * Set the current user's email
+     * @param email The email to set
+     */
+    fun setCurrentEmail(email: String)
+
 }

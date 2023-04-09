@@ -40,14 +40,14 @@ class SignupActivity : ComponentActivity() {
     }
 
     private lateinit var database : Database
+    private lateinit var email: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         database = (application as CoachMeApplication).database
+        email = database.getCurrentEmail()
 
-        val email = intent.getStringExtra("email")
-
-        if (email == null) {
+        if (email == "") {
             val errorMsg = "The signup page did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
@@ -127,7 +127,6 @@ class SignupActivity : ComponentActivity() {
                     )
                     database.addUser(newUser).thenApply {
                         val intent = Intent(context, SelectSportsActivity::class.java)
-                        intent.putExtra("email", newUser.email)
                         startActivity(intent)
                     }.exceptionally {
                         // call exception activity

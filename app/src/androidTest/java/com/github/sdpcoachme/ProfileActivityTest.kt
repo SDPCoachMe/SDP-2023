@@ -25,6 +25,7 @@ import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_PICTURE
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SELECTED_SPORTS
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,7 +46,13 @@ class ProfileActivityTest {
 
     private val defaultEmail = "example@email.com"
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
-        .putExtra("email", defaultEmail)
+    private val database = (InstrumentationRegistry.getInstrumentation()
+        .targetContext.applicationContext as CoachMeApplication).database
+
+    @Before
+    fun setup() {
+        database.setCurrentEmail(defaultEmail)
+    }
 
     private val initiallyDisplayed = listOf(
         PROFILE_LABEL,
@@ -94,8 +101,9 @@ class ProfileActivityTest {
     }
 
     @Test
-    fun errorPageIsShownWhenProfileActivityIsLaunchedWithoutEmailAsExtra() {
-        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)).use {
+    fun errorPageIsShownWhenEditProfileIsLaunchedWithEmptyCurrentEmail() {
+        database.setCurrentEmail("")
+        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)).use {
             // not possible to use Intents.init()... to check if the correct intent
             // is launched as the intents are launched from within the onCreate function
             composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
@@ -192,7 +200,7 @@ class ProfileActivityTest {
     fun requestForNonExistentEmailDisplaysEmptyUserFields() {
         val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
         val email = "non-existant@email.com"
-        profileIntent.putExtra("email", email)
+        database.setCurrentEmail(email)
         ActivityScenario.launch<ProfileActivity>(profileIntent).use {
 
             composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(email)
@@ -255,7 +263,7 @@ class ProfileActivityTest {
 
         val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
         val email = "example@email.com"
-        profileIntent.putExtra("email", email)
+        database.setCurrentEmail(email)
         profileIntent.putExtra("isViewingCoach", true)
         ActivityScenario.launch<ProfileActivity>(profileIntent).use {
             displayedForUserLookingAtCoach.forEach { tag ->
@@ -270,7 +278,7 @@ class ProfileActivityTest {
 
         val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
         val email = "example@email.com"
-        profileIntent.putExtra("email", email)
+        database.setCurrentEmail(email)
         profileIntent.putExtra("isViewingCoach", true)
         ActivityScenario.launch<ProfileActivity>(profileIntent).use {
             Intents.init()

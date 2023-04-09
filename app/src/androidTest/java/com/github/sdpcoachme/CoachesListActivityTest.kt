@@ -28,6 +28,9 @@ class CoachesListActivityTest {
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
+    private val database = (InstrumentationRegistry.getInstrumentation()
+        .targetContext.applicationContext as CoachMeApplication).database
+
     @Test
     fun allCoachesExists() {
         // Populate the database
@@ -78,6 +81,8 @@ class CoachesListActivityTest {
 
                 // Click on the first coach
                 val coach = coaches[0]
+                database.setCurrentEmail(coach.email)
+
                 composeTestRule.onNodeWithText(coach.location).assertIsDisplayed()
                 composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
                     .assertIsDisplayed()
@@ -86,7 +91,6 @@ class CoachesListActivityTest {
                 // Check that the ProfileActivity is launched with the correct extras
                 Intents.intended(allOf(
                     hasComponent(ProfileActivity::class.java.name),
-                    hasExtra("email", coach.email),
                     hasExtra("isViewingCoach", true)
                 ))
 
@@ -147,7 +151,6 @@ class CoachesListActivityTest {
     )
 
     private fun populateDatabase(): CompletableFuture<Void> {
-        val database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
 
         // Add a few coaches to the database
         val futures1 = coaches.map { database.addUser(it) }

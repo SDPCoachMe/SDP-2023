@@ -13,6 +13,7 @@ import com.google.firebase.ktx.Firebase
 open class CoachMeApplication : Application() {
     // For DI in testing, add reference to dependencies here
     open lateinit var database: Database
+    open lateinit var email: String
     override fun onCreate() {
         super.onCreate()
         FirebaseApp.initializeApp(this)

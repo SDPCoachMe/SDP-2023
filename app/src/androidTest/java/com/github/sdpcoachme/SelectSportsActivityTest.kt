@@ -35,11 +35,12 @@ open class SelectSportsActivityTest {
         phone = "0123456789",
         sports = listOf()
     )
-    val database = (InstrumentationRegistry.getInstrumentation()
+    private val database = (InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as CoachMeApplication).database
+
+
     val launchSignup = Intent(ApplicationProvider.getApplicationContext(),
         SelectSportsActivity::class.java)
-        .putExtra("email", email)
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule() //createAndroidComposeRule<SelectSportsActivity>()
@@ -47,6 +48,7 @@ open class SelectSportsActivityTest {
     @Before
     fun setup() { // set user in db to default
         database.addUser(userInfo)
+        database.setCurrentEmail(email)
     }
 
     @Test
@@ -168,19 +170,15 @@ open class SelectSportsActivityTest {
 
             TestCase.assertEquals(updatedUser.sports, Sports.values().toList())
 
-            Intents.intended(
-                allOf(
-                    IntentMatchers.hasComponent(intendedClass),
-                    hasExtra("email", email)
-                )
-            )
+            Intents.intended(IntentMatchers.hasComponent(intendedClass))
             Intents.release()
         }
     }
 
     @Test
-    fun errorPageIsShownWhenEditProfileIsLaunchedWithoutEmailAsExtra() {
-        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), SelectSportsActivity::class.java)).use {
+    fun errorPageIsShownWhenEditProfileIsLaunchedWithEmptyCurrentEmail() {
+        database.setCurrentEmail("")
+        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)).use {
             // not possible to use Intents.init()... to check if the correct intent
             // is launched as the intents are launched from within the onCreate function
             composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
@@ -201,7 +199,7 @@ open class SelectSportsActivityTest {
     private fun errorPageLaunchChecker(errorEmail: String) {
         val invalidUserIntent =
             Intent(ApplicationProvider.getApplicationContext(), SelectSportsActivity::class.java)
-        invalidUserIntent.putExtra("email", errorEmail)
+        database.setCurrentEmail(errorEmail)
         ActivityScenario.launch<SignupActivity>(invalidUserIntent).use {
             Intents.init()
             composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST[0].ROW)

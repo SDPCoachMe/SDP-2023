@@ -45,16 +45,16 @@ import kotlin.math.roundToInt
 
 class ScheduleActivity : ComponentActivity() {
     private lateinit var database: Database
+    private lateinit var email: String
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val email = intent.getStringExtra("email")
+        database = (application as CoachMeApplication).database
+        email = database.getCurrentEmail()
 
-        if (email == null) {
+        if (email == "") {
             val errorMsg = "Schedule did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
-            database = (application as CoachMeApplication).database
-
             //TODO: For demo, let this function run once to add sample events to the database
             database.addEventsToUser(email, sampleEvents).thenRun {
                 val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email)

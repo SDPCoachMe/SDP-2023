@@ -59,6 +59,14 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         }
     }
 
+    override fun getCurrentEmail(): String {
+        return wrappedDatabase.getCurrentEmail()
+    }
+
+    override fun setCurrentEmail(email: String) {
+        wrappedDatabase.setCurrentEmail(email)
+    }
+
     /**
      * Check if a user is cached
      * Useful for testing
