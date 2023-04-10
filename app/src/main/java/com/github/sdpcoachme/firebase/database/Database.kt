@@ -83,5 +83,8 @@ interface Database {
      */
     fun sendMessage(chatId: String, message: Message): CompletableFuture<Void>
 
+    fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void>
+
     fun addChatListener(chatId: String, onChange: (Chat) -> Unit)
+    fun removeChatListener(chatId: String)
 }

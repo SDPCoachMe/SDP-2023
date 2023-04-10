@@ -105,14 +105,25 @@ class ChatActivity : ComponentActivity() {
             val chatId = if (currentUserEmail < toUserEmail) "$currentUserEmail$toUserEmail" else "$toUserEmail$currentUserEmail"
 
             database.getUser(currentUserEmail).thenAccept() { user ->
+                // Add the other user to the current user's chat contacts
                 if (!user.chatContacts.contains(toUserEmail)) {
                     val newUser = user.copy(chatContacts = user.chatContacts + toUserEmail)
                     database.addUser(newUser)
                 }
             }
 
+            // Mark all messages addressed to recipient as read
+            database.markMessagesAsRead(chatId, currentUserEmail)
+
             setContent {
-                ChatView(currentUserEmail, chatId, database, database.getChat(chatId), database.getUser(currentUserEmail), database.getUser(toUserEmail), isFromMsgContacts)
+                ChatView(
+                    currentUserEmail,
+                    chatId,
+                    database,
+                    database.getChat(chatId),
+                    database.getUser(currentUserEmail),
+                    database.getUser(toUserEmail)
+                )
             }
         }
     }
@@ -122,13 +133,13 @@ class ChatActivity : ComponentActivity() {
  * Composable responsible for displaying the chat between two users
  */
 @Composable
-fun ChatView(currentUserEmail: String,
-             chatId: String,
-             database: Database,
-             chatFuture: CompletableFuture<Chat>,
-             fromUserFuture: CompletableFuture<UserInfo>,
-             toUserFuture: CompletableFuture<UserInfo>,
-             isFromMsgContacts: Boolean
+fun ChatView(
+    currentUserEmail: String,
+    chatId: String,
+    database: Database,
+    chatFuture: CompletableFuture<Chat>,
+    fromUserFuture: CompletableFuture<UserInfo>,
+    toUserFuture: CompletableFuture<UserInfo>
 ) {
     var chat by remember { mutableStateOf(Chat()) }
     var fromUser by remember { mutableStateOf(UserInfo()) }
@@ -143,8 +154,10 @@ fun ChatView(currentUserEmail: String,
             chat = it
             chatF = CompletableFuture.completedFuture(null)
 
+            database.removeChatListener(chatId) // done to remove the old one
             database.addChatListener(chatId) {
                 newChat -> chat = newChat
+                database.markMessagesAsRead(chatId, currentUserEmail)
             }
         }
     }
@@ -167,7 +180,7 @@ fun ChatView(currentUserEmail: String,
         .fillMaxHeight()
     ) {
 
-        ContactField(toUser, isFromMsgContacts)
+        ContactField(toUser, chatId, database)
 
         ChatBoxContainer(
             chat = chat,
@@ -194,7 +207,7 @@ fun ChatView(currentUserEmail: String,
  * Composable responsible for displaying the Contact Field
  */
 @Composable
-fun ContactField(toUser: UserInfo, isFromMsgContacts: Boolean) {
+fun ContactField(toUser: UserInfo, chatId: String, database: Database) {
     val context = LocalContext.current
     Row(
         modifier = Modifier
@@ -212,14 +225,13 @@ fun ContactField(toUser: UserInfo, isFromMsgContacts: Boolean) {
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.Center
     ) {
-        // make a button icon for the back button
+        // Button icon for the back button
         IconButton(
             onClick = {
+                database.removeChatListener(chatId)
                 // go back to the listed contacts (msg contacts or coaches)
                 val intent = Intent(context, CoachesListActivity::class.java)
-                if (isFromMsgContacts) {
-                    intent.putExtra("isViewingContacts", true)
-                }
+                intent.putExtra("isViewingContacts", true)
                 context.startActivity(intent)
 
             },
@@ -313,7 +325,6 @@ fun ChatMessages(
     currentUserEmail: String
 ) {
     val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy")
-    val timestampFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     Box(
         modifier = Modifier
@@ -330,6 +341,7 @@ fun ChatMessages(
                 val isFromCurrentUser = message.sender == currentUserEmail
                 val currDateTime = LocalDateTime.parse(message.timestamp)
 
+                // check if new date should be displayed in chat
                 if (currDateTime.isAfter(lastDate) && currDateTime.dayOfMonth != lastDate.dayOfMonth) {
                     lastDate = currDateTime
                     Text(
@@ -347,48 +359,61 @@ fun ChatMessages(
                     )
                 }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 10.dp)
-                        .testTag(CHAT_MESSAGE.ROW),
-                    horizontalArrangement = if (isFromCurrentUser) Arrangement.End else Arrangement.Start,
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = if (isFromCurrentUser) Alignment.BottomEnd else Alignment.BottomStart
-                    ) {
-                        // message content
-                        Text(
-                            text = message.content.trim() + "\n",
-                            modifier = Modifier
-                                .testTag(CHAT_MESSAGE.LABEL)
-                                .fillMaxWidth(0.7f)
-                                .background(
-                                    color = if (isFromCurrentUser) Color(0xFFBBC5FD) else Color.LightGray,
-                                    shape = RoundedCornerShape(
-                                        10.dp,
-                                        10.dp,
-                                        if (isFromCurrentUser) 0.dp else 10.dp,
-                                        if (isFromCurrentUser) 10.dp else 0.dp
-                                    )
-                                )
-                                .padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
-
-                        )
-
-                        // timestamp for message
-                        Text(
-                            text = LocalDateTime.parse(message.timestamp).toLocalTime().format(timestampFormatter),
-                            modifier = Modifier
-                                .testTag(CHAT_MESSAGE.TIMESTAMP)
-                                .fillMaxWidth(if (message.sender == currentUserEmail) 0.15f else 0.45f)
-                                .padding(start = 5.dp, end = 5.dp, top = 5.dp, bottom = 5.dp)
-                                .align(Alignment.BottomEnd)
-                        )
-                    }
-                }
+                MessageRow(
+                    message = message,
+                    currentUserEmail = currentUserEmail,
+                    isFromCurrentUser = isFromCurrentUser
+                )
             }
+        }
+    }
+}
+
+@Composable
+fun MessageRow(message: Message,
+               currentUserEmail: String,
+               isFromCurrentUser: Boolean) {
+    val timestampFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 10.dp)
+            .testTag(CHAT_MESSAGE.ROW),
+        horizontalArrangement = if (isFromCurrentUser) Arrangement.End else Arrangement.Start,
+    ) {
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = if (isFromCurrentUser) Alignment.BottomEnd else Alignment.BottomStart
+        ) {
+            // message content
+            Text(
+                text = message.content.trim() + "\n",
+                modifier = Modifier
+                    .testTag(CHAT_MESSAGE.LABEL)
+                    .fillMaxWidth(0.7f)
+                    .background(
+                        color = if (isFromCurrentUser) Color(0xFFBBC5FD) else Color.LightGray,
+                        shape = RoundedCornerShape(
+                            10.dp,
+                            10.dp,
+                            if (isFromCurrentUser) 0.dp else 10.dp,
+                            if (isFromCurrentUser) 10.dp else 0.dp
+                        )
+                    )
+                    .padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
+
+                )
+
+            // timestamp for message
+            Text(
+                text = LocalDateTime.parse(message.timestamp).toLocalTime().format(timestampFormatter),
+                modifier = Modifier
+                    .testTag(CHAT_MESSAGE.TIMESTAMP)
+                    .fillMaxWidth(if (message.sender == currentUserEmail) 0.15f else 0.45f)
+                    .padding(start = 5.dp, end = 5.dp, top = 5.dp, bottom = 5.dp)
+                    .align(Alignment.BottomEnd)
+            )
         }
     }
 }
@@ -397,7 +422,11 @@ fun ChatMessages(
  * Chat field where user can type and send messages
  */
 @Composable
-fun ChatField(currentUserEmail: String, database: Database, chatId: String, onSend: () -> Unit = {}, toUser: UserInfo) {
+fun ChatField(currentUserEmail: String,
+              database: Database,
+              chatId: String,
+              onSend: () -> Unit = {},
+              toUser: UserInfo) {
     var message by remember { mutableStateOf("") }
 
     Row(
@@ -433,7 +462,7 @@ fun ChatField(currentUserEmail: String, database: Database, chatId: String, onSe
                 onClick = {
                     database.sendMessage(
                         chatId,
-                        Message(currentUserEmail, message.trim(), LocalDateTime.now().toString())
+                        Message(currentUserEmail, message.trim(), LocalDateTime.now().toString(), false)
                     ).thenAccept {
                         onSend()
                     }

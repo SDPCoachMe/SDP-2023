@@ -23,6 +23,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private val rootDatabase: DatabaseReference = databaseReference
     private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
     private val chats: DatabaseReference = rootDatabase.child("coachme").child("messages")
+    var valueEventListener: ValueEventListener? = null
 
     override fun get(key: String): CompletableFuture<Any> {
         return getChild(rootDatabase, key).thenApply { it.value }
@@ -96,7 +97,28 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         }
     }
 
+    override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
+        val id = chatId.replace('.', ',')
+        return getChat(id).thenCompose { chat ->
+            val readBys = chat.messages.filter { it.sender != email }.map { it.readByRecipient }
+
+            if (readBys.isNotEmpty() && readBys.contains(false)) { // check if update is needed
+                val updatedMessages = chat.messages.map { message ->
+                    if (message.sender != email) {
+                        message.copy(readByRecipient = true)
+                    } else {
+                        message
+                    }
+                }
+                setChild(chats, id, chat.copy(messages = updatedMessages))
+            } else {
+                CompletableFuture.completedFuture(null)
+            }
+        }
+    }
+
     override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
+        println("Adding listener!!!")
         val id = chatId.replace('.', ',')
         val chatRef = chats.child(id)
         val valueEventListener = object : ValueEventListener {
@@ -109,7 +131,18 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
                 // Handle errors here
             }
         }
+
+        this.valueEventListener = valueEventListener
         chatRef.addValueEventListener(valueEventListener)
+    }
+
+    override fun removeChatListener(chatId: String) {
+        val id = chatId.replace('.', ',')
+        val chatRef = chats.child(id)
+        if (valueEventListener != null) {
+            println("Removing listener!!!")
+            chatRef.removeEventListener(valueEventListener!!)
+        }
     }
 
 

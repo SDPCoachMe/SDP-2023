@@ -12,7 +12,6 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.*
-import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.MESSAGE_COACH
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
@@ -151,41 +150,7 @@ class ChatActivityTest {
     }
 
     @Test
-    fun backButtonReturnsToCoachesListWhenComingFromThere() {
-        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
-
-        ActivityScenario.launch<CoachesListActivity>(chatIntent).use {
-            Intents.init()
-
-            composeTestRule.onNodeWithText("${toUser.firstName} ${toUser.lastName}")
-                .assertIsDisplayed()
-                .performClick()
-
-            composeTestRule.onNodeWithTag(MESSAGE_COACH)
-                .assertIsDisplayed()
-                .performClick()
-
-            Intents.intended(
-                allOf(
-                    hasComponent(ChatActivity::class.java.name),
-                    hasExtra("toUserEmail", toUser.email)
-                )
-            )
-
-            composeTestRule.onNodeWithTag(BACK)
-                .assertIsDisplayed()
-                .performClick()
-
-            Intents.intended(
-                hasComponent(CoachesListActivity::class.java.name),
-            )
-
-            Intents.release()
-        }
-    }
-
-    @Test
-    fun backButtonReturnsToContactsListActivityWhenComingFromThere() {
+    fun backButtonReturnsToListedContactsWhenPressed() {
         val contactsIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
         contactsIntent.putExtra("isViewingContacts", true)
 
