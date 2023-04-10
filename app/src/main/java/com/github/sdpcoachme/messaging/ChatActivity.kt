@@ -14,6 +14,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -373,6 +374,8 @@ fun MessageRow(message: Message,
                currentUserEmail: String,
                isFromCurrentUser: Boolean) {
     val timestampFormatter = DateTimeFormatter.ofPattern("HH:mm")
+    val timeAndUnreadMarkColor = Color(0xFF6C6C6D)
+    val readMarkColor = Color(0xFF0027FF)
 
     Row(
         modifier = Modifier
@@ -407,12 +410,27 @@ fun MessageRow(message: Message,
             // timestamp for message
             Text(
                 text = LocalDateTime.parse(message.timestamp).toLocalTime().format(timestampFormatter),
+                color = timeAndUnreadMarkColor,//Color(0xFF777676),
                 modifier = Modifier
                     .testTag(CHAT_MESSAGE.TIMESTAMP)
-                    .fillMaxWidth(if (message.sender == currentUserEmail) 0.15f else 0.45f)
-                    .padding(start = 5.dp, end = 5.dp, top = 5.dp, bottom = 5.dp)
+                    .fillMaxWidth(if (message.sender == currentUserEmail) 0.19f else 0.45f)
+                    .padding(start = 5.dp, end = 0.dp, top = 5.dp, bottom = 2.dp)
                     .align(Alignment.BottomEnd)
             )
+
+            if (message.sender == currentUserEmail) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = if (message.readByRecipient) readMarkColor else timeAndUnreadMarkColor,
+                    modifier = Modifier
+                        .testTag(CHAT_MESSAGE.TIMESTAMP)
+                        .fillMaxWidth(0.07f)
+                        .padding(start = 0.dp, end = 0.dp, top = 5.dp, bottom = 2.dp)
+                        .align(Alignment.BottomEnd)
+                        .height(16.dp),
+                )
+            }
         }
     }
 }
