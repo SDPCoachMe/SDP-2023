@@ -96,7 +96,6 @@ class ChatActivity : ComponentActivity() {
         val database = (application as CoachMeApplication).database
         val currentUserEmail = database.currentUserEmail
         val toUserEmail = intent.getStringExtra("toUserEmail")
-        val isFromMsgContacts = intent.getBooleanExtra("isFromMsgContacts", false)
 
         if (currentUserEmail == "" || toUserEmail == null) {
             val errorMsg = "The Chat Interface did not receive both needed users.\nPlease return to the login page and try again."
