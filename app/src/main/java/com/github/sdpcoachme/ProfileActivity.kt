@@ -91,10 +91,15 @@ class ProfileActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         database = (application as CoachMeApplication).database
-        email = database.getCurrentEmail()
         val isViewingCoach = intent.getBooleanExtra("isViewingCoach", false)
+        email =
+            if (isViewingCoach) intent.getStringExtra("email").toString()
+            else database.getCurrentEmail()
 
-        if (email == "") {
+
+        // note : in the case where a coach is viewed but the email is not found
+        // the value of the email will be "null" (see toString method of String)
+        if (email.isEmpty() || email == "null") {
             val errorMsg = "Profile editing did not receive an email address." +
                     "\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)

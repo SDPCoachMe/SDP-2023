@@ -113,7 +113,7 @@ class DashboardActivity : ComponentActivity() {
         email = database.getCurrentEmail()
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         getLocation()
-        if (email == "") {
+        if (email.isEmpty()) {
             val errorMsg = "The dashboard did not receive an email address.\nPlease return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {

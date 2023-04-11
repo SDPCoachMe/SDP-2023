@@ -51,7 +51,7 @@ class ScheduleActivity : ComponentActivity() {
         database = (application as CoachMeApplication).database
         email = database.getCurrentEmail()
 
-        if (email == "") {
+        if (email.isEmpty()) {
             val errorMsg = "Schedule did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
