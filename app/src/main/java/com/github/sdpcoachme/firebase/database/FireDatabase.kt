@@ -15,15 +15,6 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
     private var currEmail = ""
 
-    override fun get(key: String): CompletableFuture<Any> {
-        return getChild(rootDatabase, key).thenApply { it.value }
-    }
-
-
-    override fun set(key: String, value: Any): CompletableFuture<Void> {
-        return setChild(rootDatabase, key, value)
-    }
-
     override fun addUser(user: UserInfo): CompletableFuture<Void> {
         val userID = user.email.replace('.', ',')
         return setChild(accounts, userID, user)

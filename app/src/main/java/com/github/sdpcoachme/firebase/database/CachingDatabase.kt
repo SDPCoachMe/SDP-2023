@@ -10,25 +10,13 @@ import java.util.concurrent.CompletableFuture
 class CachingDatabase(private val wrappedDatabase: Database) : Database {
     private val cachedUsers = mutableMapOf<String, UserInfo>()
 
-    // todo get and set methods should probably be removed from the interface
-    override fun get(key: String): CompletableFuture<Any> {
-        return wrappedDatabase.get(key)
-    }
-
-    // todo big problem if we modify user through this method and then try to get it from the cache
-    // temporary solution: clear the cache if we modify the user through this method
-    override fun set(key: String, value: Any): CompletableFuture<Void> {
-        cachedUsers.clear()
-        return wrappedDatabase.set(key, value)
-    }
-
     override fun addUser(user: UserInfo): CompletableFuture<Void> {
         cachedUsers.remove(user.email)
         return wrappedDatabase.addUser(user).thenAccept { cachedUsers[user.email] = user }
     }
 
     override fun getUser(email: String): CompletableFuture<UserInfo> {
-        if (cachedUsers.containsKey(email)) {
+        if (isCached(email)) {
             return CompletableFuture.completedFuture(cachedUsers[email])
         }
         return wrappedDatabase.getUser(email).thenApply {
@@ -45,7 +33,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     }
 
     override fun userExists(email: String): CompletableFuture<Boolean> {
-        if (cachedUsers.containsKey(email)) {
+        if (isCached(email)) {
             return CompletableFuture.completedFuture(true)
         }
         return wrappedDatabase.userExists(email)

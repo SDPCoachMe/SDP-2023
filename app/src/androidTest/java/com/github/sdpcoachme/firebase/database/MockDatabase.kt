@@ -22,17 +22,7 @@ class MockDatabase: Database {
     )
     private var currEmail = ""
 
-    // TODO: type any is not ideal, needs refactoring
-    private val root = hashMapOf<String, Any>()
     private val accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
-
-    override fun get(key: String): CompletableFuture<Any> {
-        return getMap(root, key)
-    }
-
-    override fun set(key: String, value: Any): CompletableFuture<Void> {
-        return setMap(root, key, value)
-    }
 
     override fun addUser(user: UserInfo): CompletableFuture<Void> {
             if (user.email == "throw@Exception.com") {
