@@ -263,7 +263,7 @@ class ProfileActivityTest {
 
         val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
         val email = "example@email.com"
-        database.setCurrentEmail(email)
+        profileIntent.putExtra("email", email)
         profileIntent.putExtra("isViewingCoach", true)
         ActivityScenario.launch<ProfileActivity>(profileIntent).use {
             displayedForUserLookingAtCoach.forEach { tag ->
@@ -278,7 +278,7 @@ class ProfileActivityTest {
 
         val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
         val email = "example@email.com"
-        database.setCurrentEmail(email)
+        profileIntent.putExtra("email", email)
         profileIntent.putExtra("isViewingCoach", true)
         ActivityScenario.launch<ProfileActivity>(profileIntent).use {
             Intents.init()
