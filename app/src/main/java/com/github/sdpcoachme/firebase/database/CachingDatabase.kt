@@ -11,7 +11,6 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     private val cachedUsers = mutableMapOf<String, UserInfo>()
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
-        cachedUsers.remove(user.email)
         return wrappedDatabase.updateUser(user).thenAccept { cachedUsers[user.email] = user }
     }
 
