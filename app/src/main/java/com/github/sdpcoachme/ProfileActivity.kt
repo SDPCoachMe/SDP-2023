@@ -86,18 +86,24 @@ class ProfileActivity : ComponentActivity() {
     }
 
     private lateinit var database: Database
+    private lateinit var email: String
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val email = intent.getStringExtra("email")
+        database = (application as CoachMeApplication).database
         val isViewingCoach = intent.getBooleanExtra("isViewingCoach", false)
+        email =
+            if (isViewingCoach) intent.getStringExtra("email").toString()
+            else database.getCurrentEmail()
 
-        if (email == null) {
+
+        // note : in the case where a coach is viewed but the email is not found
+        // the value of the email will be "null" (see toString method of String)
+        if (email.isEmpty() || email == "null") {
             val errorMsg = "Profile editing did not receive an email address." +
                     "\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
-            database = (application as CoachMeApplication).database
             val futureUserInfo = database.getUser(email)
             setContent {
                 CoachMeTheme {
@@ -188,7 +194,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
                     isCoach = isCoach xor switchCoachClient
                     switchCoachClient = false
                     val newUser = UserInfo(fname, lname, email, "", location, isCoach, userInfo.sports)
-                    database.addUser(newUser)
+                    database.updateUser(newUser)
                 }
             ) {
                 Text(text = "Save changes")
@@ -200,7 +206,6 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
                     .testTag(ProfileActivity.TestTags.Buttons.SELECT_SPORTS),
                 onClick = {
                     val selSportsIntent = Intent(context, SelectSportsActivity::class.java)
-                    selSportsIntent.putExtra("email", email)
                     selSportsIntent.putExtra("isEditingProfile", true)
                     context.startActivity(selSportsIntent)
                 }

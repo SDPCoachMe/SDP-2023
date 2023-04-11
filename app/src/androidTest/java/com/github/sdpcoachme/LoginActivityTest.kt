@@ -5,7 +5,6 @@ import androidx.compose.ui.test.*
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
-import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -15,7 +14,6 @@ import com.github.sdpcoachme.LoginActivity.TestTags.Buttons.Companion.SIGN_OUT
 import com.github.sdpcoachme.LoginActivity.TestTags.Companion.INFO_TEXT
 import com.google.firebase.auth.FirebaseAuth
 import org.hamcrest.CoreMatchers
-import org.hamcrest.core.AllOf.allOf
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -96,11 +94,9 @@ open class LoginActivityTest {
     // @Test
     fun signInLaunchesDashboardOnSuccess() {
         Intents.init()
-        val email = "patrick.sebastien@gmail.com"
+        //val email = "patrick.sebastien@gmail.com"
         // perform here a successful login with the email
-        intended(allOf(
-            hasComponent(DashboardActivity::class.java.name),
-            hasExtra("email", email)))
+        intended(hasComponent(DashboardActivity::class.java.name))
         Intents.release()
     }
 }
