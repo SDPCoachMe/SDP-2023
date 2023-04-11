@@ -16,21 +16,23 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.firebase.database.MockDatabase
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.BACK
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SCROLL_TO_BOTTOM
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SEND
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_BOX
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIELD
+import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_MESSAGE
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.lessThan
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.lang.Thread.sleep
 import java.time.Duration
 import java.time.LocalDateTime
 
@@ -71,6 +73,14 @@ class ChatActivityTest {
         database.addUser(toUser)
     }
 
+    @After
+    fun tearDown() {
+        if (database is MockDatabase) {
+            (database as MockDatabase).restoreDefaultChatSetup()
+            println("MockDatabase was torn down")
+        }
+    }
+
     @Test
     fun startingElementsArePresent() {
         val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
@@ -91,7 +101,6 @@ class ChatActivityTest {
 
         ActivityScenario.launch<ChatActivity>(chatIntent).use {
             composeTestRule.onNodeWithTag(SCROLL_TO_BOTTOM, useUnmergedTree = true).assertDoesNotExist()
-
         }
     }
 
@@ -156,22 +165,17 @@ class ChatActivityTest {
 
         ActivityScenario.launch<CoachesListActivity>(contactsIntent).use {
             Intents.init()
-            sleep(3000)
             composeTestRule.onNodeWithText("${toUser.firstName} ${toUser.lastName}")
                 .assertIsDisplayed()
                 .performClick()
-
-            sleep(3000)
 
             Intents.intended(
                 allOf(
                     hasComponent(ChatActivity::class.java.name),
                     hasExtra("toUserEmail", toUser.email)
-//                    hasExtra("isViewingContacts", true)
                 )
             )
 
-            sleep(3000)
             composeTestRule.onNodeWithTag(BACK)
                 .assertIsDisplayed()
                 .performClick()
@@ -228,6 +232,34 @@ class ChatActivityTest {
             database.addChatListener("run-previous-on-change") {}
 
             composeTestRule.onNodeWithText("test onChange method", substring = true, useUnmergedTree = true)
+                .assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun messageSentByOtherUserDoesNotContainIsReadCheckMark() {
+        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
+        chatIntent.putExtra("toUserEmail", toUser.email)
+
+        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+
+            database.sendMessage(chatId, Message(toUser.email, "", LocalDateTime.now().toString()))
+
+            composeTestRule.onNodeWithTag(CHAT_MESSAGE.IS_READ, useUnmergedTree = true)
+                .assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun messageSentByCurrentUserContainsIsReadCheckMark() {
+        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
+        chatIntent.putExtra("toUserEmail", toUser.email)
+
+        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+
+            database.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString()))
+
+            composeTestRule.onNodeWithTag(CHAT_MESSAGE.IS_READ, useUnmergedTree = true)
                 .assertIsDisplayed()
         }
     }

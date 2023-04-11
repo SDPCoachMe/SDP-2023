@@ -74,6 +74,7 @@ class ChatActivity : ComponentActivity() {
             val LABEL = "${tag}Label"
             val TIMESTAMP = "${tag}Timestamp"
             val DATE_ROW = "${tag}DateRow"
+            val IS_READ = "${tag}IsRead"
         }
 
         class Buttons {
@@ -424,7 +425,7 @@ fun MessageRow(message: Message,
                     contentDescription = null,
                     tint = if (message.readByRecipient) readMarkColor else timeAndUnreadMarkColor,
                     modifier = Modifier
-                        .testTag(CHAT_MESSAGE.TIMESTAMP)
+                        .testTag(CHAT_MESSAGE.IS_READ)
                         .fillMaxWidth(0.07f)
                         .padding(start = 0.dp, end = 0.dp, top = 5.dp, bottom = 2.dp)
                         .align(Alignment.BottomEnd)

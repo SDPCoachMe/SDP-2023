@@ -44,6 +44,12 @@ class MockDatabase() : Database {
     private var chatId = ""
     private var onChange: (Chat) -> Unit = {}
 
+    fun restoreDefaultChatSetup() {
+        chat = Chat(participants = listOf(defaultEmail, toEmail))
+        chatId = ""
+        onChange = {}
+    }
+
 
     // TODO: type any is not ideal, needs refactoring
     private val root = hashMapOf<String, Any>()
@@ -102,13 +108,14 @@ class MockDatabase() : Database {
     override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
         // TODO: add exception case
         chat = chat.copy(id = chatId, messages = chat.messages + message)
+        this.onChange(chat)
         return CompletableFuture.completedFuture(null)
     }
 
     override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
         if (chatId == "run-previous-on-change") {
             val msg = Message(sender = chat.participants[0], content = "test onChange method", timestamp = LocalDateTime.now().toString())
-            chat = chat.copy(id = this.chatId ,messages = chat.messages + msg)
+            chat = chat.copy(id = this.chatId , messages = chat.messages + msg)
         } else {
             this.chatId = chatId
             chat = chat.copy(id = chatId)
@@ -120,6 +127,23 @@ class MockDatabase() : Database {
     override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
         // TODO: add exception case (and maybe more users)
         return CompletableFuture.completedFuture(listOf(toUser))
+    }
+
+
+    override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
+        chat = chat.copy(messages = chat.messages.map { message ->
+            if (message.sender == email) {
+                message.copy(readByRecipient = true)
+            } else {
+                message
+            }
+        })
+
+        return CompletableFuture.completedFuture(null)
+    }
+
+    override fun removeChatListener(chatId: String) {
+        // no need to do anything
     }
 
     private fun setMap(map: MutableMap<String, Any>, key: String, value: Any): CompletableFuture<Void> {
