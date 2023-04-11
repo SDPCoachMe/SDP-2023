@@ -33,15 +33,9 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     }
 
     override fun getAllUsers(): CompletableFuture<List<UserInfo>> {
-        // TODO: might need refactoring to be more modular
-        val future = CompletableFuture<List<UserInfo>>()
-        accounts.get().addOnSuccessListener { snapshot ->
-            val users = snapshot.children.map { it.getValue(UserInfo::class.java)!! /* can't be null */ }
-            future.complete(users)
-        }.addOnFailureListener {
-            future.completeExceptionally(it)
+        return getAllChildren(accounts).thenApply { users ->
+            users.values.map { it.getValue(UserInfo::class.java)!! /* can't be null */ }
         }
-        return future
     }
 
     override fun userExists(email: String): CompletableFuture<Boolean> {
@@ -54,6 +48,23 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             val updatedUserInfo = it.copy(events = it.events + events)
             addUser(updatedUserInfo)
         }
+    }
+
+    /**
+     * Gets all children of a given database reference
+     * @param databaseChild the database reference whose children to get
+     * @return a completable future that completes when the children are retrieved. The future
+     * contains a map of the children, with the key being the key of the child and the value being
+     * the child itself
+     */
+    private fun getAllChildren(databaseChild: DatabaseReference): CompletableFuture<Map<String, DataSnapshot>> {
+        val future = CompletableFuture<Map<String, DataSnapshot>>()
+        databaseChild.get().addOnSuccessListener {
+            future.complete(it.children.associateBy { child -> child.key!! /* can't be null */ })
+        }.addOnFailureListener {
+            future.completeExceptionally(it)
+        }
+        return future
     }
 
     /**
