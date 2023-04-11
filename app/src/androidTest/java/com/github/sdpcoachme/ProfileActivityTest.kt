@@ -170,7 +170,7 @@ class ProfileActivityTest {
             listOf()
         )
         val db = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
-        db.addUser(user)
+        db.updateUser(user)
 
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
 

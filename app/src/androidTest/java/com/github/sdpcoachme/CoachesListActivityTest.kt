@@ -81,8 +81,6 @@ class CoachesListActivityTest {
 
                 // Click on the first coach
                 val coach = coaches[0]
-                database.setCurrentEmail(coach.email)
-
                 composeTestRule.onNodeWithText(coach.location).assertIsDisplayed()
                 composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
                     .assertIsDisplayed()
@@ -91,6 +89,7 @@ class CoachesListActivityTest {
                 // Check that the ProfileActivity is launched with the correct extras
                 Intents.intended(allOf(
                     hasComponent(ProfileActivity::class.java.name),
+                    hasExtra("email", coach.email),
                     hasExtra("isViewingCoach", true)
                 ))
 
@@ -153,10 +152,10 @@ class CoachesListActivityTest {
     private fun populateDatabase(): CompletableFuture<Void> {
 
         // Add a few coaches to the database
-        val futures1 = coaches.map { database.addUser(it) }
+        val futures1 = coaches.map { database.updateUser(it) }
 
         // Add non-coach user to the database
-        val futures2 = nonCoaches.map { database.addUser(it) }
+        val futures2 = nonCoaches.map { database.updateUser(it) }
 
         return CompletableFuture.allOf(*futures1.toTypedArray(), *futures2.toTypedArray())
     }

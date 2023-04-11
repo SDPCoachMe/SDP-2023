@@ -42,7 +42,7 @@ class CachingDatabaseTest {
             emptyList(),
             emptyList()
         )
-        val retrievedUser = cachingDatabase.addUser(user)
+        val retrievedUser = cachingDatabase.updateUser(user)
             .thenCompose { cachingDatabase.getUser(email) }
             .get(5, TimeUnit.SECONDS)
         assertTrue(cachingDatabase.isCached(email))
@@ -65,7 +65,7 @@ class CachingDatabaseTest {
         )
         val updatedUser = cachingDatabase.getUser(exampleEmail)
             .thenCompose {
-                cachingDatabase.addUser(newUser) }
+                cachingDatabase.updateUser(newUser) }
             .thenCompose { cachingDatabase.getUser(exampleEmail) }
             .get(5, TimeUnit.SECONDS)
         assertTrue(cachingDatabase.isCached(exampleEmail))

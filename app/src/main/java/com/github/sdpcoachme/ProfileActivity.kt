@@ -194,7 +194,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
                     isCoach = isCoach xor switchCoachClient
                     switchCoachClient = false
                     val newUser = UserInfo(fname, lname, email, "", location, isCoach, userInfo.sports)
-                    database.addUser(newUser)
+                    database.updateUser(newUser)
                 }
             ) {
                 Text(text = "Save changes")

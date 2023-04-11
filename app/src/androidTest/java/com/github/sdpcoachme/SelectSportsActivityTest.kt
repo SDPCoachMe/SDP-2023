@@ -47,7 +47,7 @@ open class SelectSportsActivityTest {
 
     @Before
     fun setup() { // set user in db to default
-        database.addUser(userInfo)
+        database.updateUser(userInfo)
         database.setCurrentEmail(email)
     }
 
@@ -113,7 +113,7 @@ open class SelectSportsActivityTest {
             val userInfo =
                 userInfo.copy(sports = listOf(Sports.values()[1])) // select favorite sport
             val updatedUser =
-                database.addUser(userInfo)
+                database.updateUser(userInfo)
                     .thenApply {
                         val launchSignup = Intent(
                             ApplicationProvider.getApplicationContext(),
@@ -155,7 +155,7 @@ open class SelectSportsActivityTest {
         ActivityScenario.launch<SignupActivity>(launchSignup).use {
             Intents.init()
             val updatedUser =
-                database.addUser(userInfo)
+                database.updateUser(userInfo)
                     .thenApply {
                         ActivityScenario.launch<SignupActivity>(launcher).use {
                             SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST.forEach {

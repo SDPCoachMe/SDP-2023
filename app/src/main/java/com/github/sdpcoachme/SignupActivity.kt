@@ -125,7 +125,7 @@ class SignupActivity : ComponentActivity() {
                         sports = listOf(),
                         events = emptyList(),
                     )
-                    database.addUser(newUser).thenApply {
+                    database.updateUser(newUser).thenApply {
                         val intent = Intent(context, SelectSportsActivity::class.java)
                         startActivity(intent)
                     }.exceptionally {

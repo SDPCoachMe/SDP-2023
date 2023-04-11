@@ -10,9 +10,9 @@ import java.util.concurrent.CompletableFuture
 class CachingDatabase(private val wrappedDatabase: Database) : Database {
     private val cachedUsers = mutableMapOf<String, UserInfo>()
 
-    override fun addUser(user: UserInfo): CompletableFuture<Void> {
+    override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         cachedUsers.remove(user.email)
-        return wrappedDatabase.addUser(user).thenAccept { cachedUsers[user.email] = user }
+        return wrappedDatabase.updateUser(user).thenAccept { cachedUsers[user.email] = user }
     }
 
     override fun getUser(email: String): CompletableFuture<UserInfo> {
@@ -43,7 +43,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     override fun addEventsToUser(email: String, events: List<Event>): CompletableFuture<Void> {
         return getUser(email).thenCompose {
             val updatedUserInfo = it.copy(events = it.events + events)
-            addUser(updatedUserInfo)
+            updateUser(updatedUserInfo)
         }
     }
 
