@@ -5,6 +5,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.Switch
 import androidx.compose.material.Text
@@ -12,8 +14,11 @@ import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
@@ -68,6 +73,7 @@ class SignupActivity : ComponentActivity() {
         var phone by remember { mutableStateOf("") }
         var location by remember { mutableStateOf("") } //todo how to accept only valid location ?? => Google Maps
         var isCoach by remember { mutableStateOf(false) }
+        val focusManager = LocalFocusManager.current
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -77,25 +83,41 @@ class SignupActivity : ComponentActivity() {
                 modifier = Modifier.testTag(TestTags.TextFields.FIRST_NAME),
                 value = firstName,
                 onValueChange = { firstName = it },
-                label = { Text("First Name") }
+                label = { Text("First Name") },
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                )
             )
             TextField(
                 modifier = Modifier.testTag(TestTags.TextFields.LAST_NAME),
                 value = lastName,
                 onValueChange = { lastName = it },
-                label = { Text("Last Name") }
+                label = { Text("Last Name") },
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                )
             )
             TextField(
                 modifier = Modifier.testTag(TestTags.TextFields.PHONE),
                 value = phone,
                 onValueChange = { phone = it },
-                label = { Text("Phone") }
+                label = { Text("Phone") },
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                )
             )
             TextField(
                 modifier = Modifier.testTag(TestTags.TextFields.LOCATION),
                 value = location,
                 onValueChange = { location = it },
-                label = { Text("Location") }
+                label = { Text("Location") },
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.clearFocus() }
+                )
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),

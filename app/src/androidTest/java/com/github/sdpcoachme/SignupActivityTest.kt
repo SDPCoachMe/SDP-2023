@@ -31,6 +31,8 @@ open class SignupActivityTest {
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
+    private val launchSignup = Intent(ApplicationProvider.getApplicationContext(), SignupActivity::class.java)
+
     private val database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
 
     private val initiallyDisplayed = listOf(
@@ -43,7 +45,6 @@ open class SignupActivityTest {
 
     @Test
     fun assertThatTheNodesExist() {
-        val launchSignup = Intent(ApplicationProvider.getApplicationContext(), SignupActivity::class.java)
         val email = "example@email.com"
         database.setCurrentEmail(email)
         ActivityScenario.launch<SignupActivity>(launchSignup).use {
@@ -69,7 +70,6 @@ open class SignupActivityTest {
 
     @Test
     fun setAndGetUser() {
-        val launchSignup = Intent(ApplicationProvider.getApplicationContext(), SignupActivity::class.java)
         val email = "jc@gmail.com"
         database.setCurrentEmail(email)
         ActivityScenario.launch<SignupActivity>(launchSignup).use {
@@ -97,7 +97,6 @@ open class SignupActivityTest {
 
     @Test
     fun setAndGetUserAsCoachWorks() {
-        val launchSignup = Intent(ApplicationProvider.getApplicationContext(), SignupActivity::class.java)
         val email = "jc@gmail.com"
         database.setCurrentEmail(email)
         ActivityScenario.launch<SignupActivity>(launchSignup).use {
@@ -127,7 +126,6 @@ open class SignupActivityTest {
 
     @Test
     fun afterDbExceptionUserStaysInSignUpActivity() {
-        val launchSignup = Intent(ApplicationProvider.getApplicationContext(), SignupActivity::class.java)
         val email = "throw@Exception.com"
         database.setCurrentEmail(email)
         ActivityScenario.launch<SignupActivity>(launchSignup).use {
@@ -149,6 +147,8 @@ open class SignupActivityTest {
             Intents.release()
         }
     }
+
+
 
     private fun inputUserInfo(user: UserInfo) {
         composeTestRule.onNodeWithTag(FIRST_NAME).performTextInput(user.firstName)
