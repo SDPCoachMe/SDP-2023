@@ -12,10 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -411,7 +408,7 @@ fun MessageRow(message: Message,
             // timestamp for message
             Text(
                 text = LocalDateTime.parse(message.timestamp).toLocalTime().format(timestampFormatter),
-                color = timeAndUnreadMarkColor,//Color(0xFF777676),
+                color = timeAndUnreadMarkColor,
                 modifier = Modifier
                     .testTag(CHAT_MESSAGE.TIMESTAMP)
                     .fillMaxWidth(if (message.sender == currentUserEmail) 0.19f else 0.45f)
@@ -419,10 +416,13 @@ fun MessageRow(message: Message,
                     .align(Alignment.BottomEnd)
             )
 
+            // read by recipient icon
+            // once online/offline mode implemented, we could add the single + double check mark funcitonality
+            // similar to whatsapp
             if (message.sender == currentUserEmail) {
                 Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
+                    imageVector = if (message.readByRecipient) Icons.Default.DoneAll else Icons.Default.Check,
+                    contentDescription = "Read by recipient icon",
                     tint = if (message.readByRecipient) readMarkColor else timeAndUnreadMarkColor,
                     modifier = Modifier
                         .testTag(CHAT_MESSAGE.IS_READ)
