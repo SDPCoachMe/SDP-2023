@@ -15,13 +15,9 @@ import java.util.concurrent.CompletableFuture
  */
 class FireDatabase(databaseReference: DatabaseReference) : Database {
 
-    var email: String = ""
-    override var currentUserEmail: String
-        get() = email
-        set(value) {email = value}
-
     private val rootDatabase: DatabaseReference = databaseReference
     private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
+    private var currEmail = ""
     private val chats: DatabaseReference = rootDatabase.child("coachme").child("messages")
     var valueEventListener: ValueEventListener? = null
 
@@ -29,11 +25,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         return getChild(rootDatabase, key).thenApply { it.value }
     }
 
-    override fun set(key: String, value: Any): CompletableFuture<Void> {
-        return setChild(rootDatabase, key, value)
-    }
-
-    override fun addUser(user: UserInfo): CompletableFuture<Void> {
+    override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         val userID = user.email.replace('.', ',')
         return setChild(accounts, userID, user)
     }
@@ -44,15 +36,10 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     }
 
     override fun getAllUsers(): CompletableFuture<List<UserInfo>> {
-        // TODO: might need refactoring to be more modular
-        val future = CompletableFuture<List<UserInfo>>()
-        accounts.get().addOnSuccessListener { snapshot ->
-            val users = snapshot.children.map { it.getValue(UserInfo::class.java)!! /* can't be null */ }
-            future.complete(users)
-        }.addOnFailureListener {
-            future.completeExceptionally(it)
-        }
-        return future
+        return getRef(accounts)
+            .thenApply { snapshot ->
+                snapshot.children.map { it.getValue(UserInfo::class.java)!! /* can't be null */ }
+            }
     }
 
     override fun userExists(email: String): CompletableFuture<Boolean> {
@@ -60,11 +47,19 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         return getChild(accounts, userID).thenApply { it.exists() }
     }
 
-    override fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void> {
-        return this.getUser(email).thenAccept {
+    override fun addEventsToUser(email: String, events: List<Event>): CompletableFuture<Void> {
+        return getUser(email).thenCompose {
             val updatedUserInfo = it.copy(events = it.events + events)
-            addUser(updatedUserInfo)
+            updateUser(updatedUserInfo)
         }
+    }
+
+    override fun getCurrentEmail(): String {
+        return currEmail
+    }
+
+    override fun setCurrentEmail(email: String) {
+        currEmail = email
     }
 
     override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
@@ -154,13 +149,8 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
      * @return a completable future that completes when the child is set
      */
     private fun setChild(databaseChild: DatabaseReference, key: String, value: Any): CompletableFuture<Void> {
-        val future = CompletableFuture<Void>()
-        databaseChild.child(key).setValue(value).addOnSuccessListener {
-            future.complete(null)
-        }.addOnFailureListener {
-            future.completeExceptionally(it)
-        }
-        return future
+        val ref = databaseChild.child(key)
+        return setRef(ref, value)
     }
 
     /**
@@ -171,8 +161,35 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
      * the future completes exceptionally with a NoSuchKeyException.
      */
     private fun getChild(databaseChild: DatabaseReference, key: String): CompletableFuture<DataSnapshot> {
+        val ref = databaseChild.child(key)
+        return getRef(ref)
+    }
+
+    /**
+     * Sets a value in a given database reference
+     * @param databaseRef the database reference in which to set the value
+     * @param value the value to set
+     * @return a completable future that completes when the child is set
+     */
+    private fun setRef(databaseRef: DatabaseReference, value: Any): CompletableFuture<Void> {
+        val future = CompletableFuture<Void>()
+        databaseRef.setValue(value).addOnSuccessListener {
+            future.complete(null)
+        }.addOnFailureListener {
+            future.completeExceptionally(it)
+        }
+        return future
+    }
+
+    /**
+     * Gets a value in a given database reference
+     * @param databaseRef the database reference in which to get the value
+     * @return a completable future that completes when the child is set. If the key does not exist,
+     * the future completes exceptionally with a NoSuchKeyException.
+     */
+    private fun getRef(databaseRef: DatabaseReference): CompletableFuture<DataSnapshot> {
         val future = CompletableFuture<DataSnapshot>()
-        databaseChild.child(key).get().addOnSuccessListener {
+        databaseRef.get().addOnSuccessListener {
             if (it.value == null) future.completeExceptionally(NoSuchKeyException())
             else future.complete(it)
         }.addOnFailureListener {

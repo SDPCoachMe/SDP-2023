@@ -58,21 +58,13 @@ class SelectSportsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         database = (application as CoachMeApplication).database
-        val emailReceived = intent.getStringExtra("email")
+        email = database.getCurrentEmail()
         val isEditingProfile = intent.getBooleanExtra("isEditingProfile", false)
-        if (emailReceived == null) {
-            val errorMsg = "Sports selecting did not receive an email address." +
-                    "\n Please return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
-        } else {
-            email = emailReceived
-            setContent {
-                CoachMeTheme {
-                    FavoriteSportsSelection(isEditingProfile, database.getUser(email))
-                }
+        setContent {
+            CoachMeTheme {
+                FavoriteSportsSelection(isEditingProfile, database.getUser(email))
             }
         }
-
     }
 
     @Composable
@@ -129,14 +121,12 @@ class SelectSportsActivity : ComponentActivity() {
                         .thenApply { user -> user.copy(
                             sports = sportItems.filter { it.selected }.map { it.element })
                         }
-                        .thenApply { user -> database.addUser(user) }
+                        .thenApply { user -> database.updateUser(user) }
                         .thenApply {
                             val targetClass =
                                 if (isEditingProfile) ProfileActivity::class.java
                                 else DashboardActivity::class.java
-
                             val intent = Intent(context, targetClass)
-                            intent.putExtra("email", email)
                             startActivity(intent)
                         }.exceptionally {
                             println("inside the error handler $it")

@@ -12,8 +12,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
-import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.COACHES_LIST
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HAMBURGER_MENU
@@ -26,7 +26,6 @@ import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import org.hamcrest.Matcher
-import org.hamcrest.Matchers.allOf
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -35,7 +34,11 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class DashboardActivityTest {
+
     private val EXISTING_EMAIL = "example@email.com"
+
+    private val database = (InstrumentationRegistry.getInstrumentation()
+        .targetContext.applicationContext as CoachMeApplication).database
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
@@ -48,6 +51,11 @@ class DashboardActivityTest {
     val mRuntimePermissionRule: GrantPermissionRule = GrantPermissionRule.grant(ACCESS_FINE_LOCATION)
 
     @Before
+    fun setUp() {
+        database.setCurrentEmail(EXISTING_EMAIL)
+    }
+
+    @Before
     fun initIntents() {
         Intents.init()
     }
@@ -58,8 +66,9 @@ class DashboardActivityTest {
     }
 
     @Test
-    fun errorPageIsShownWhenDashboardIsLaunchedWithoutEmailAsExtra() {
-        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), DashboardActivity::class.java)).use {
+    fun errorPageIsShownWhenEditProfileIsLaunchedWithEmptyCurrentEmail() {
+        database.setCurrentEmail("")
+        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)).use {
             // not possible to use Intents.init()... to check if the correct intent
             // is launched as the intents are launched from within the onCreate function
             composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
@@ -69,12 +78,10 @@ class DashboardActivityTest {
 
     @Test
     fun drawerOpensOnMenuClick() {
-        val email = EXISTING_EMAIL
         val launchDashboard = Intent(
             ApplicationProvider.getApplicationContext(),
             DashboardActivity::class.java
         )
-        launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
@@ -84,12 +91,10 @@ class DashboardActivityTest {
 
     @Test
     fun drawerClosesOnLeftSwipe() {
-        val email = EXISTING_EMAIL
         val launchDashboard = Intent(
             ApplicationProvider.getApplicationContext(),
             DashboardActivity::class.java
         )
-        launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
             // closes on left swipe
@@ -101,12 +106,10 @@ class DashboardActivityTest {
 
     @Test
     fun drawerIgnoresInvalidSwipe() {
-        val email = EXISTING_EMAIL
         val launchDashboard = Intent(
             ApplicationProvider.getApplicationContext(),
             DashboardActivity::class.java
         )
-        launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
             // ignores right swipe if opened
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
@@ -117,12 +120,10 @@ class DashboardActivityTest {
 
     @Test
     fun drawerClosesOnOutsideTouch() {
-        val email = EXISTING_EMAIL
         val launchDashboard = Intent(
             ApplicationProvider.getApplicationContext(),
             DashboardActivity::class.java
         )
-        launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
             val width = composeTestRule.onRoot().getBoundsInRoot().width
             val height = composeTestRule.onRoot().getBoundsInRoot().height
@@ -137,12 +138,10 @@ class DashboardActivityTest {
 
     @Test
     fun drawerBodyContainsClickableMenu() {
-        val email = EXISTING_EMAIL
         val launchDashboard = Intent(
             ApplicationProvider.getApplicationContext(),
             DashboardActivity::class.java
         )
-        launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
             composeTestRule.onNodeWithTag(MENU_LIST).onChildren().assertAll(hasClickAction())
         }
@@ -155,13 +154,11 @@ class DashboardActivityTest {
             ApplicationProvider.getApplicationContext(),
             DashboardActivity::class.java
         )
-        launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
             composeTestRule.onNodeWithTag(DASHBOARD_EMAIL).assert(hasText(text = email))
         }
     }
     private fun dashboardCorrectlyRedirectsOnMenuItemClick(
-        userEmail: String,
         tag: String,
         intentMatcher: Matcher<Intent>
     ) {
@@ -169,7 +166,6 @@ class DashboardActivityTest {
             ApplicationProvider.getApplicationContext(),
             DashboardActivity::class.java
         )
-        launchDashboard.putExtra("email", userEmail)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
             composeTestRule.onNodeWithTag(tag).performClick()
             intended(intentMatcher)
@@ -178,20 +174,14 @@ class DashboardActivityTest {
 
     @Test
     fun dashboardCorrectlyRedirectsOnProfileClick() {
-        val email = "john.lennon@gmail.com"
         dashboardCorrectlyRedirectsOnMenuItemClick(
-            email,
             PROFILE,
-            allOf(
-                hasComponent(ProfileActivity::class.java.name),
-                hasExtra("email", email)
-            )
+            hasComponent(ProfileActivity::class.java.name)
         )
     }
     @Test
     fun dashboardCorrectlyRedirectsOnLogOutClick() {
         dashboardCorrectlyRedirectsOnMenuItemClick(
-            EXISTING_EMAIL,
             LOGOUT,
             hasComponent(LoginActivity::class.java.name)
         )
@@ -200,7 +190,6 @@ class DashboardActivityTest {
     @Test
     fun dashboardCorrectlyRedirectsOnCoachesListClick() {
         dashboardCorrectlyRedirectsOnMenuItemClick(
-            EXISTING_EMAIL,
             COACHES_LIST,
             hasComponent(CoachesListActivity::class.java.name)
         )
@@ -227,12 +216,10 @@ class DashboardActivityTest {
 
     @Test
     fun onlyMapIsDisplayedOnCreation() {
-        val email = EXISTING_EMAIL
         val launchDashboard = Intent(
             ApplicationProvider.getApplicationContext(),
             DashboardActivity::class.java
         )
-        launchDashboard.putExtra("email", email)
         ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
             composeTestRule.onNodeWithTag(MAP).assertIsDisplayed()
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()

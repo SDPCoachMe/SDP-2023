@@ -15,27 +15,11 @@ interface Database {
     var currentUserEmail: String
 
     /**
-     * Get a value from the database
-     * @param key The key of the value to get
-     * @return A future that will complete with the value
-     */
-    fun get(key: String): CompletableFuture<Any>
-
-    /**
-     * Set a value in the database
-     * @param key The key of the value to set
-     * @param value The value to set
-     * @return A future that will complete when the value has been set
-     */
-    fun set(key: String, value: Any): CompletableFuture<Void>
-
-    /**
      * Add a user to the database
      * @param user The user to add
      * @return A future that will complete when the user has been added
      */
-    // TODO change the name since this can also be used to update a user
-    fun addUser(user: UserInfo): CompletableFuture<Void>
+    fun updateUser(user: UserInfo): CompletableFuture<Void>
 
     /**
      * Get a user from the database
@@ -63,7 +47,19 @@ interface Database {
      * @param events The events to add
      * @return A future that will complete when the events have been added
      */
-    fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void>
+    fun addEventsToUser(email: String, events: List<Event>): CompletableFuture<Void>
+
+    /**
+     * Get the current user's email
+     * @return The current user's email
+     */
+    fun getCurrentEmail(): String
+
+    /**
+     * Set the current user's email
+     * @param email The email to set
+     */
+    fun setCurrentEmail(email: String)
 
     fun getChatContacts(email: String): CompletableFuture<List<UserInfo>>
     /**
