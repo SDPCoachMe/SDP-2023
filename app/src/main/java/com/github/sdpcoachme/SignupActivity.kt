@@ -51,6 +51,8 @@ class SignupActivity : ComponentActivity() {
     }
 
     private lateinit var database : Database
+    private lateinit var email: String
+
     private lateinit var placesClient : PlacesClient
     private lateinit var placesAutocompleteStartForResult : ActivityResultLauncher<Intent>
     private lateinit var autocompleteIntent : Intent
@@ -66,16 +68,13 @@ class SignupActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        database = (application as CoachMeApplication).database
+        email = database.getCurrentEmail()
 
-        val email = intent.getStringExtra("email")
-
-        if (email == null) {
+        if (email.isEmpty()) {
             val errorMsg = "The signup page did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
-            // Get database instance
-            database = (application as CoachMeApplication).database
-
             // Set up call to Places API and callback
             placesClient = Places.createClient(this)
             val fields = listOf(Place.Field.ID, Place.Field.ADDRESS, Place.Field.LAT_LNG)
@@ -187,11 +186,10 @@ class SignupActivity : ComponentActivity() {
                                 sports = listOf(),
                                 events = listOf()
                             )
-                            database.addUser(newUser)
+                            database.updateUser(newUser)
                     }.thenApply {
                         // Launch SelectSportsActivity
                         val intent = Intent(context, SelectSportsActivity::class.java)
-                        intent.putExtra("email", email)
                         startActivity(intent)
                     }.exceptionally {
                         when (it.cause) {

@@ -28,6 +28,9 @@ class CoachesListActivityTest {
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
+    private val database = (InstrumentationRegistry.getInstrumentation()
+        .targetContext.applicationContext as CoachMeApplication).database
+
     @Test
     fun allCoachesExists() {
         // Populate the database
@@ -147,13 +150,12 @@ class CoachesListActivityTest {
     )
 
     private fun populateDatabase(): CompletableFuture<Void> {
-        val database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
 
         // Add a few coaches to the database
-        val futures1 = coaches.map { database.addUser(it) }
+        val futures1 = coaches.map { database.updateUser(it) }
 
         // Add non-coach user to the database
-        val futures2 = nonCoaches.map { database.addUser(it) }
+        val futures2 = nonCoaches.map { database.updateUser(it) }
 
         return CompletableFuture.allOf(*futures1.toTypedArray(), *futures2.toTypedArray())
     }
