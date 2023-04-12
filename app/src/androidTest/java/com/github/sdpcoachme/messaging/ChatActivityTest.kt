@@ -160,21 +160,11 @@ class ChatActivityTest {
 
     @Test
     fun backButtonReturnsToListedContactsWhenPressed() {
-        val contactsIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
-        contactsIntent.putExtra("isViewingContacts", true)
+        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
+        chatIntent.putExtra("toUserEmail", toUser.email)
 
-        ActivityScenario.launch<CoachesListActivity>(contactsIntent).use {
+        ActivityScenario.launch<ChatActivity>(chatIntent).use {
             Intents.init()
-            composeTestRule.onNodeWithText("${toUser.firstName} ${toUser.lastName}")
-                .assertIsDisplayed()
-                .performClick()
-
-            Intents.intended(
-                allOf(
-                    hasComponent(ChatActivity::class.java.name),
-                    hasExtra("toUserEmail", toUser.email)
-                )
-            )
 
             composeTestRule.onNodeWithTag(BACK)
                 .assertIsDisplayed()
@@ -261,6 +251,36 @@ class ChatActivityTest {
 
             composeTestRule.onNodeWithTag(CHAT_MESSAGE.IS_READ, useUnmergedTree = true)
                 .assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun notReadMarkIsDisplayedWhenMessageNotYetReadByRecipient() {
+        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
+        chatIntent.putExtra("toUserEmail", toUser.email)
+
+        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+
+            database.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), false))
+
+            composeTestRule.onNodeWithTag(CHAT_MESSAGE.IS_READ, useUnmergedTree = true)
+                .assertIsDisplayed()
+                .assertContentDescriptionEquals("Not read by recipient icon")
+        }
+    }
+
+    @Test
+    fun readMarkIsDisplayedWhenMessageNotYetReadByRecipient() {
+        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
+        chatIntent.putExtra("toUserEmail", toUser.email)
+
+        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+
+            database.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), true))
+
+            composeTestRule.onNodeWithTag(CHAT_MESSAGE.IS_READ, useUnmergedTree = true)
+                .assertIsDisplayed()
+                .assertContentDescriptionEquals("read by recipient icon")
         }
     }
     

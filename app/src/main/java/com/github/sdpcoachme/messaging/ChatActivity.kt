@@ -340,7 +340,7 @@ fun ChatMessages(
                 val currDateTime = LocalDateTime.parse(message.timestamp)
 
                 // check if new date should be displayed in chat
-                if (currDateTime.isAfter(lastDate) && currDateTime.dayOfMonth != lastDate.dayOfMonth) {
+                if (currDateTime.toLocalDate() != lastDate.toLocalDate()) {
                     lastDate = currDateTime
                     Text(
                         text = lastDate.format(dateFormatter),
@@ -422,7 +422,7 @@ fun MessageRow(message: Message,
             if (message.sender == currentUserEmail) {
                 Icon(
                     imageVector = if (message.readByRecipient) Icons.Default.DoneAll else Icons.Default.Check,
-                    contentDescription = "Read by recipient icon",
+                    contentDescription = (if (message.readByRecipient) "" else "Not ") + "read by recipient icon",
                     tint = if (message.readByRecipient) readMarkColor else timeAndUnreadMarkColor,
                     modifier = Modifier
                         .testTag(CHAT_MESSAGE.IS_READ)
