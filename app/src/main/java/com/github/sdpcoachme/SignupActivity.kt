@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.UserLocation
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
@@ -52,7 +53,8 @@ class SignupActivity : ComponentActivity() {
     private lateinit var database : Database
     private lateinit var placesClient : PlacesClient
     private lateinit var placesAutocompleteStartForResult : ActivityResultLauncher<Intent>
-    private var autocompleteResult = CompletableFuture<Place>()
+    private lateinit var autocompleteIntent : Intent
+    private var autocompleteResult = CompletableFuture<UserLocation>()
 
     // Used to handle places autocomplete activity errors
     class PlacesAutocompleteFailed(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {
@@ -76,6 +78,12 @@ class SignupActivity : ComponentActivity() {
 
             // Set up call to Places API and callback
             placesClient = Places.createClient(this)
+            val fields = listOf(Place.Field.ID, Place.Field.ADDRESS, Place.Field.LAT_LNG)
+            val filters = listOf(PlaceTypes.ADDRESS)
+            autocompleteIntent = Autocomplete
+                .IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields)
+                .setTypesFilter(filters)
+                .build(this)
             placesAutocompleteStartForResult = registerForActivityResult(
                 ActivityResultContracts.StartActivityForResult()
             ) {
@@ -83,9 +91,17 @@ class SignupActivity : ComponentActivity() {
                 result: ActivityResult ->
                     when (result.resultCode) {
                         Activity.RESULT_OK -> {
-                            result.data?.let {
+                            result.data!!.let {
                                 val place = Autocomplete.getPlaceFromIntent(it)
-                                autocompleteResult.complete(place)
+                                autocompleteResult.complete(
+                                    UserLocation(
+                                        // They should never be null anyways
+                                        placeId = place.id!!,
+                                        address = place.address!!,
+                                        latitude = place.latLng!!.latitude,
+                                        longitude = place.latLng!!.longitude
+                                    )
+                                )
                             }
                         }
                         Activity.RESULT_CANCELED -> {
@@ -156,22 +172,16 @@ class SignupActivity : ComponentActivity() {
                 modifier = Modifier.testTag(TestTags.Buttons.SIGN_UP),
                 onClick = {
                     // Launch autocomplete activity, then wait for result
-                    val fields = listOf(Place.Field.ID) // TODO: decide what fields we cache in the database
-                    val filters = listOf(PlaceTypes.ADDRESS)
-                    val autocompleteIntent = Autocomplete
-                        .IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields)
-                        .setTypesFilter(filters)
-                        .build(context)
                     placesAutocompleteStartForResult.launch(autocompleteIntent)
                     autocompleteResult.thenCompose {
-                        place ->
+                        location ->
                             // Add the new user to the database
                             val newUser = UserInfo(
                                 firstName = firstName,
                                 lastName = lastName,
                                 email = email,
                                 phone = phone,
-                                location = place.id!!, // it can't be null anyways
+                                location = location,
                                 coach = isCoach,
                                 // sports added later in SelectSportsActivity
                                 sports = listOf(),
@@ -184,7 +194,7 @@ class SignupActivity : ComponentActivity() {
                         intent.putExtra("email", email)
                         startActivity(intent)
                     }.exceptionally {
-                        when (it) {
+                        when (it.cause) {
                             is PlacesAutocompleteCancelled -> {
                                 // The user cancelled the Places Autocomplete activity
                                 // For now, do nothing, which allows the user to click on NEXT and try again.

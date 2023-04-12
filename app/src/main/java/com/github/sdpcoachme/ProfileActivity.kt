@@ -30,6 +30,7 @@ import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LOCATION
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SELECTED_SPORTS
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.UserLocation
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
@@ -118,6 +119,7 @@ class ProfileActivity : ComponentActivity() {
  */
 @Composable
 fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewingCoach: Boolean) {
+    // TODO: fix this composable
     val context = LocalContext.current
     val database = (LocalContext.current.applicationContext as CoachMeApplication).database
 
@@ -137,7 +139,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
         if (newUser != null) {
             fname = newUser.firstName
             lname = newUser.lastName
-            location = newUser.location
+            location = newUser.location.address
             isCoach = newUser.coach
             f = CompletableFuture.completedFuture(null)
             userInfo = newUser
@@ -187,7 +189,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
                     isEditing = false
                     isCoach = isCoach xor switchCoachClient
                     switchCoachClient = false
-                    val newUser = UserInfo(fname, lname, email, "", location, isCoach, userInfo.sports)
+                    val newUser = UserInfo(fname, lname, email, "", UserLocation(), isCoach, userInfo.sports, emptyList())
                     database.addUser(newUser)
                 }
             ) {

@@ -33,6 +33,7 @@ import java.util.concurrent.CompletableFuture
 class CoachesListActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // TODO: Need location to sort coaches by distance
         val futureListOfCoaches = (application as CoachMeApplication).database
             .getAllUsers().thenApply {
                 it.filter { user -> user.coach }
@@ -108,7 +109,7 @@ fun UserInfoListItem(user: UserInfo) {
                 Spacer(modifier = Modifier.width(4.dp))
                 // Temporary, until we implement proper location handling
                 Text(
-                    text = user.location,
+                    text = user.location.address,
                     color = Color.Gray,
                     style = MaterialTheme.typography.body2,
                     maxLines = 1,
