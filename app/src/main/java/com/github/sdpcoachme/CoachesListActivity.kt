@@ -43,7 +43,7 @@ class CoachesListActivity : ComponentActivity() {
         val database = (application as CoachMeApplication).database
         val contacts =
             if (isViewingContacts) {
-                database.getChatContacts(email = database.currentUserEmail)
+                database.getChatContacts(email = database.getCurrentEmail())
             } else {
                 database.getAllUsers().thenApply {
                     it.filter { user -> user.coach }
@@ -110,7 +110,6 @@ fun UserInfoListItem(user: UserInfo, isViewingContacts: Boolean) {
                 if (isViewingContacts) {
                     val displayChatIntent = Intent(context, ChatActivity::class.java)
                     displayChatIntent.putExtra("toUserEmail", user.email)
-                    displayChatIntent.putExtra("isFromMsgContacts", true)
                     context.startActivity(displayChatIntent)
                 } else {
                     val displayCoachIntent = Intent(context, ProfileActivity::class.java)

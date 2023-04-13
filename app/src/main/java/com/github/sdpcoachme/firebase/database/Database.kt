@@ -11,9 +11,6 @@ import java.util.concurrent.CompletableFuture
  */
 interface Database {
 
-    //setter and getter for current users email (string)
-    var currentUserEmail: String
-
     /**
      * Add a user to the database
      * @param user The user to add

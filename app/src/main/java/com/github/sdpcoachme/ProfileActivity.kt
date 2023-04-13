@@ -180,7 +180,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
                     // For the moment, nothing happens
                     // but in the future this could open the in app messenger with the coach
                     //TODO: get own email!!!
-                    val userEmail = database.currentUserEmail
+                    val userEmail = database.getCurrentEmail()
                     val intent = Intent(context, ChatActivity::class.java)
                     intent.putExtra("currentUserEmail", userEmail)
                     intent.putExtra("toUserEmail", email)

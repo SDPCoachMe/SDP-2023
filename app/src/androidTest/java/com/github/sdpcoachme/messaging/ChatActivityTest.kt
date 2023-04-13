@@ -69,8 +69,8 @@ class ChatActivityTest {
     @Before
     fun setup() {
         database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
-        database.currentUserEmail = currentUser.email
-        database.addUser(toUser)
+        database.setCurrentEmail(currentUser.email)
+        database.updateUser(toUser)
     }
 
     @After
@@ -286,7 +286,7 @@ class ChatActivityTest {
     
     @Test
     fun errorHandlerIsLaunchedIfCurrentUserEmailIsEmpty() {
-        database.currentUserEmail = ""
+        database.setCurrentEmail("")
 
         val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
         chatIntent.putExtra("toUserEmail", toUser.email)

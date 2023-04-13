@@ -2,6 +2,8 @@ package com.github.sdpcoachme.firebase.database
 
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.Message
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -44,6 +46,36 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
             val updatedUserInfo = it.copy(events = it.events + events)
             updateUser(updatedUserInfo)
         }
+    }
+
+    override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
+        // TODO implement
+        return wrappedDatabase.getChatContacts(email)
+    }
+
+    override fun getChat(chatId: String): CompletableFuture<Chat> {
+        // TODO implement
+        return wrappedDatabase.getChat(chatId)
+    }
+
+    override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
+        // TODO implement
+        return wrappedDatabase.sendMessage(chatId, message)
+    }
+
+    override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
+        // TODO implement
+        return wrappedDatabase.markMessagesAsRead(chatId, email)
+    }
+
+    override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
+        // TODO implement (adapt onChange to change this here and then call the passed onChange!)
+        wrappedDatabase.addChatListener(chatId, onChange)
+    }
+
+    override fun removeChatListener(chatId: String) {
+        // TODO implement
+        wrappedDatabase.removeChatListener(chatId)
     }
 
     override fun getCurrentEmail(): String {

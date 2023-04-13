@@ -198,7 +198,6 @@ class DashboardActivityTest {
     @Test
     fun dashboardCorrectlyRedirectsOnMessagingClick() {
         dashboardCorrectlyRedirectsOnMenuItemClick(
-            EXISTING_EMAIL,
             MESSAGING,
             hasComponent(CoachesListActivity::class.java.name)
         )

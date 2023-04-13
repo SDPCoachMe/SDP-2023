@@ -21,10 +21,6 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private val chats: DatabaseReference = rootDatabase.child("coachme").child("messages")
     var valueEventListener: ValueEventListener? = null
 
-    override fun get(key: String): CompletableFuture<Any> {
-        return getChild(rootDatabase, key).thenApply { it.value }
-    }
-
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         val userID = user.email.replace('.', ',')
         return setChild(accounts, userID, user)
@@ -38,7 +34,15 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     override fun getAllUsers(): CompletableFuture<List<UserInfo>> {
         return getRef(accounts)
             .thenApply { snapshot ->
-                snapshot.children.map { it.getValue(UserInfo::class.java)!! /* can't be null */ }
+                snapshot.children.map {
+                    try { // done to ensure that erroneous users in the
+                        // db do not inhibit the other users to be retrieved
+                        it.getValue(UserInfo::class.java)!!
+                    } catch (e: Exception) {
+                        UserInfo()
+                    }
+                }.filter { it != UserInfo() }
+//                snapshot.children.map { it.getValue(UserInfo::class.java)!! /* can't be null */ }
             }
     }
 
@@ -63,7 +67,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     }
 
     override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
-        return getUser(currentUserEmail).thenApply {
+        return getUser(currEmail).thenApply {
             it.chatContacts
         }.thenCompose { list ->
             val mappedF = list.map { email ->
@@ -113,7 +117,6 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     }
 
     override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
-        println("Adding listener!!!")
         val id = chatId.replace('.', ',')
         val chatRef = chats.child(id)
         val valueEventListener = object : ValueEventListener {
@@ -135,7 +138,6 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         val id = chatId.replace('.', ',')
         val chatRef = chats.child(id)
         if (valueEventListener != null) {
-            println("Removing listener!!!")
             chatRef.removeEventListener(valueEventListener!!)
         }
     }

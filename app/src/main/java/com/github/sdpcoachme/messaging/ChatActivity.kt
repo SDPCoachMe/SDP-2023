@@ -93,7 +93,7 @@ class ChatActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val database = (application as CoachMeApplication).database
-        val currentUserEmail = database.currentUserEmail
+        val currentUserEmail = database.getCurrentEmail()
         val toUserEmail = intent.getStringExtra("toUserEmail")
 
         if (currentUserEmail == "" || toUserEmail == null) {
@@ -106,7 +106,7 @@ class ChatActivity : ComponentActivity() {
                 // Add the other user to the current user's chat contacts
                 if (!user.chatContacts.contains(toUserEmail)) {
                     val newUser = user.copy(chatContacts = user.chatContacts + toUserEmail)
-                    database.addUser(newUser)
+                    database.updateUser(newUser)
                 }
             }
 
@@ -486,12 +486,12 @@ fun ChatField(currentUserEmail: String,
                     }
                     message = ""
                     // place this chat at the top of the users chat list whenever they send a message
-                    database.getUser(database.currentUserEmail).thenCompose {
-                        database.addUser(it.copy(chatContacts = listOf(toUser.email) + it.chatContacts.filter { e -> e != toUser.email }))
+                    database.getUser(database.getCurrentEmail()).thenCompose {
+                        database.updateUser(it.copy(chatContacts = listOf(toUser.email) + it.chatContacts.filter { e -> e != toUser.email }))
                     }
                     //same for the toUser
                     database.getUser(toUser.email).thenCompose {
-                        database.addUser(it.copy(chatContacts = listOf(database.currentUserEmail) + it.chatContacts.filter { e -> e != database.currentUserEmail }))
+                        database.updateUser(it.copy(chatContacts = listOf(database.getCurrentEmail()) + it.chatContacts.filter { e -> e != database.getCurrentEmail() }))
                     }
 
 

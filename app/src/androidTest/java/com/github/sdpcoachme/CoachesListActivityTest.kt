@@ -191,7 +191,7 @@ class CoachesListActivityTest {
 
     private fun populateDatabase(): CompletableFuture<Void> {
 
-        database.currentUserEmail = "example@email.com"
+        database.setCurrentEmail("example@email.com")
         // Add a few coaches to the database
         val futures1 = coaches.map { database.updateUser(it) }
 
