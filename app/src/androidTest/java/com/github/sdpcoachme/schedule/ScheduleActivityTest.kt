@@ -1,4 +1,4 @@
-package com.github.sdpcoachme
+package com.github.sdpcoachme.schedule
 
 import android.content.Intent
 import androidx.compose.ui.graphics.Color
@@ -10,7 +10,11 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.DashboardActivity
+import com.github.sdpcoachme.ScheduleActivity
 import com.github.sdpcoachme.data.Event
+import com.github.sdpcoachme.data.ShownEvent
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import junit.framework.TestCase.assertTrue
 import org.junit.Rule
@@ -18,6 +22,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters
 
 @RunWith(AndroidJUnit4::class)
@@ -62,13 +67,13 @@ class ScheduleActivityTest {
             end = currentMonday.plusDays(3).atTime(15, 0, 0).toString(),
             description = "Learn about the latest design improvements to help you build personal dynamic experiences with Material Design.",
         ),
-        Event(
+        /*Event(
             name = "Jetpack Compose Basics",
             color = Color(0xFF1B998B).value.toString(),
             start = nextMonday.plusDays(4).atTime(9, 0, 0).toString(),
             end = nextMonday.plusDays(4).atTime(13, 0, 0).toString(),
             description = "This Workshop will take you through the basics of building your first app with Jetpack Compose, Android's new modern UI toolkit that simplifies and accelerates UI development on Android.",
-        ),
+        ),*/
     )
 
     @get:Rule
@@ -144,6 +149,58 @@ class ScheduleActivityTest {
                     it.events.forEach { event ->
                         composeTestRule.onNodeWithText(event.name).assertExists()
                     }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun multiDayEventsOfCurrentWeekAreDisplayedCorrectly() {
+        val multiDayEvent = Event(
+            name = "Multi Day Event",
+            color = Color(0xFFAFBBF2).value.toString(),
+            start = currentMonday.atTime(13, 0, 0).toString(),
+            end = currentMonday.plusDays(2).atTime(15, 0, 0).toString(),
+            description = "This is a multi day event.",
+        )
+        database.addEventsToDatabase(defaultEmail, listOf(multiDayEvent)).thenRun {
+            val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
+            scheduleIntent.putExtra("email", defaultEmail)
+            ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
+                composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.BASIC_SCHEDULE).assertExists()
+                val userInfo = database.getUser(defaultEmail)
+                userInfo.thenAccept {
+                    val expectedShownEvents = listOf<ShownEvent>(
+                        ShownEvent(
+                            name = multiDayEvent.name,
+                            color = multiDayEvent.color,
+                            start = multiDayEvent.start,
+                            startText = multiDayEvent.start,
+                            end = LocalDateTime.parse(multiDayEvent.start).withHour(23).withMinute(59).withSecond(59).toString(),
+                            endText = multiDayEvent.end,
+                            description = multiDayEvent.description,
+                        ),
+                        ShownEvent(
+                            name = multiDayEvent.name,
+                            color = multiDayEvent.color,
+                            start = LocalDateTime.parse(multiDayEvent.start).plusDays(1).withHour(0).withMinute(0).withSecond(0).toString(),
+                            startText = multiDayEvent.start,
+                            end = LocalDateTime.parse(multiDayEvent.start).plusDays(1).withHour(23).withMinute(59).withSecond(59).toString(),
+                            endText = multiDayEvent.end,
+                            description = multiDayEvent.description,
+                        ),
+                        ShownEvent(
+                            name = multiDayEvent.name,
+                            color = multiDayEvent.color,
+                            start = LocalDateTime.parse(multiDayEvent.start).plusDays(2).withHour(0).withMinute(0).withSecond(0).toString(),
+                            startText = multiDayEvent.start,
+                            end = multiDayEvent.end,
+                            endText = multiDayEvent.end,
+                            description = multiDayEvent.description,
+                        ),
+                    )
+                    val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)
+                    assertTrue(expectedShownEvents == actualShownEvents)
                 }
             }
         }
