@@ -367,6 +367,9 @@ fun ChatMessages(
     }
 }
 
+/**
+ * Displays a single message in the chat
+ */
 @Composable
 fun MessageRow(message: Message,
                currentUserEmail: String,
