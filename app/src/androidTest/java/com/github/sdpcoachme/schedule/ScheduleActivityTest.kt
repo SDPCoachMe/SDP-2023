@@ -17,6 +17,7 @@ import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.ShownEvent
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import junit.framework.TestCase.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,7 +28,8 @@ import java.time.temporal.TemporalAdjusters
 
 @RunWith(AndroidJUnit4::class)
 class ScheduleActivityTest {
-    private val database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
+    private val database = (InstrumentationRegistry.getInstrumentation()
+        .targetContext.applicationContext as CoachMeApplication).database
     private val defaultEmail = "example@email.com"
     private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     private val nextMonday = currentMonday.plusDays(7)
@@ -79,12 +81,17 @@ class ScheduleActivityTest {
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
+    @Before
+    fun setup() {
+        database.setCurrentEmail(defaultEmail)
+    }
+
     @Test
     fun addEventsToDatabaseUpdatesUserInfoCorrectly() {
         defaultEmail
         val oldUserInfo = database.getUser(defaultEmail)
 
-        database.addEventsToDatabase(defaultEmail, eventList)
+        database.addEventsToUser(defaultEmail, eventList)
 
         val newUserInfo = database.getUser(defaultEmail)
         newUserInfo.thenAccept {
@@ -99,10 +106,7 @@ class ScheduleActivityTest {
             ScheduleActivity.TestTags.SCHEDULE_HEADER,
             ScheduleActivity.TestTags.BASIC_SCHEDULE,
         )
-
-        val email = "example@email.com"
         val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
-        scheduleIntent.putExtra("email", email)
         ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
             initiallyDisplayed.forEach { tag ->
                 composeTestRule.onNodeWithTag(tag).assertExists()
@@ -111,7 +115,8 @@ class ScheduleActivityTest {
     }
 
     @Test
-    fun errorPageIsShownWhenEditProfileIsLaunchedWithoutEmailAsExtra() {
+    fun errorPageIsShownWhenEditProfileIsLaunchedWithEmptyCurrentEmail() {
+        database.setCurrentEmail("")
         ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)).use {
             // not possible to use Intents.init()... to check if the correct intent
             // is launched as the intents are launched from within the onCreate function
@@ -139,9 +144,8 @@ class ScheduleActivityTest {
 
     @Test
     fun eventsOfCurrentWeekAreDisplayedCorrectly() {
-        database.addEventsToDatabase(defaultEmail, eventList).thenRun {
+        database.addEventsToUser(defaultEmail, eventList).thenRun {
             val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
-            scheduleIntent.putExtra("email", defaultEmail)
             ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
                 composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.BASIC_SCHEDULE).assertExists()
                 val userInfo = database.getUser(defaultEmail)

@@ -40,6 +40,7 @@ import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.data.MapState
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
+import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.map.MapViewModel
 import com.github.sdpcoachme.schedule.ScheduleActivity
 import com.github.sdpcoachme.ui.MapView
@@ -74,6 +75,9 @@ class DashboardActivity : ComponentActivity() {
         }
     }
 
+    private lateinit var database: Database
+    private lateinit var email: String
+
     /**
      * Create an activity for result : display window to request asked permission.
      * If granted, launches the callback (here getDeviceLocation(...) which retrieves the user's
@@ -106,13 +110,11 @@ class DashboardActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // TODO handle the null better here
-        val email = intent.getStringExtra("email")
-
+        database = (application as CoachMeApplication).database
+        email = database.getCurrentEmail()
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         getLocation()
-
-        if (email == null) {
+        if (email.isEmpty()) {
             val errorMsg = "The dashboard did not receive an email address.\nPlease return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
@@ -179,7 +181,6 @@ fun Dashboard(email: String,
                     when (it.tag) {
                         PROFILE -> {
                             val intent = Intent(context, ProfileActivity::class.java)
-                            intent.putExtra("email", email)
                             context.startActivity(intent)
                         }
                         LOGOUT -> {
@@ -190,7 +191,6 @@ fun Dashboard(email: String,
                         }
                         SCHEDULE -> {
                             val intent = Intent(context, ScheduleActivity::class.java)
-                            intent.putExtra("email", email)
                             context.startActivity(intent)
                         }
                         COACHES_LIST -> {

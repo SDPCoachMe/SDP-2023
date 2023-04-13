@@ -20,20 +20,11 @@ class MockDatabase: Database {
         emptyList(),
         emptyList()
     )
+    private var currEmail = ""
 
-    // TODO: type any is not ideal, needs refactoring
-    private val root = hashMapOf<String, Any>()
     private val accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
 
-    override fun get(key: String): CompletableFuture<Any> {
-        return getMap(root, key)
-    }
-
-    override fun set(key: String, value: Any): CompletableFuture<Void> {
-        return setMap(root, key, value)
-    }
-
-    override fun addUser(user: UserInfo): CompletableFuture<Void> {
+    override fun updateUser(user: UserInfo): CompletableFuture<Void> {
             if (user.email == "throw@Exception.com") {
             val error = CompletableFuture<Void>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
@@ -62,7 +53,7 @@ class MockDatabase: Database {
         return getMap(accounts, email).thenApply { it != null }
     }
 
-    override fun addEventsToDatabase(email: String, events: List<Event>): CompletableFuture<Void> {
+    override fun addEventsToUser(email: String, events: List<Event>): CompletableFuture<Void> {
         return getUser(email).thenCompose { user ->
             val newUserInfo = user.copy(events = user.events + events)
             setMap(accounts, email, newUserInfo)
@@ -84,5 +75,13 @@ class MockDatabase: Database {
         } else
             future.complete(value)
         return future
+    }
+
+    override fun getCurrentEmail(): String {
+        return currEmail
+    }
+
+    override fun setCurrentEmail(email: String) {
+        currEmail = email
     }
 }

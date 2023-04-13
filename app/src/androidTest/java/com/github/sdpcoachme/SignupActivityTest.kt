@@ -8,7 +8,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers
-import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
@@ -21,7 +20,6 @@ import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.PHONE
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import junit.framework.TestCase
-import org.hamcrest.Matchers.allOf
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,6 +30,8 @@ open class SignupActivityTest {
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
+
+    private val database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
 
     private val initiallyDisplayed = listOf(
         FIRST_NAME,
@@ -45,11 +45,9 @@ open class SignupActivityTest {
     fun assertThatTheNodesExist() {
         val launchSignup = Intent(ApplicationProvider.getApplicationContext(), SignupActivity::class.java)
         val email = "example@email.com"
-
-        launchSignup.putExtra("email", email)
+        database.setCurrentEmail(email)
         ActivityScenario.launch<SignupActivity>(launchSignup).use {
             Intents.init()
-
             initiallyDisplayed.forEach { tag ->
                 composeTestRule.onNodeWithTag(tag).assertExists("No $tag field")
             }
@@ -59,8 +57,9 @@ open class SignupActivityTest {
     }
 
     @Test
-    fun errorPageIsShownWhenSignupPageIsLaunchedWithoutEmailAsExtra() {
-        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), DashboardActivity::class.java)).use {
+    fun errorPageIsShownWhenEditProfileIsLaunchedWithEmptyCurrentEmail() {
+        database.setCurrentEmail("")
+        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)).use {
             // not possible to use Intents.init()... to check if the correct intent
             // is launched as the intents are launched from within the onCreate function
             composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
@@ -72,7 +71,7 @@ open class SignupActivityTest {
     fun setAndGetUser() {
         val launchSignup = Intent(ApplicationProvider.getApplicationContext(), SignupActivity::class.java)
         val email = "jc@gmail.com"
-        launchSignup.putExtra("email", email)
+        database.setCurrentEmail(email)
         ActivityScenario.launch<SignupActivity>(launchSignup).use {
             Intents.init()
 
@@ -90,9 +89,8 @@ open class SignupActivityTest {
             val retrievedUser = database.getUser(user.email).get(10, TimeUnit.SECONDS)
             TestCase.assertEquals(user, retrievedUser)
 
-            // Assert that we are redirected to the Dashboard with correct intent
-            Intents.intended(allOf(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name), hasExtra("email", user.email)))
-
+            // Assert that we are redirected to the SelectSportsActivity with correct intent
+            Intents.intended(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name))
             Intents.release()
         }
     }
@@ -101,7 +99,7 @@ open class SignupActivityTest {
     fun setAndGetUserAsCoachWorks() {
         val launchSignup = Intent(ApplicationProvider.getApplicationContext(), SignupActivity::class.java)
         val email = "jc@gmail.com"
-        launchSignup.putExtra("email", email)
+        database.setCurrentEmail(email)
         ActivityScenario.launch<SignupActivity>(launchSignup).use {
             Intents.init()
 
@@ -121,7 +119,7 @@ open class SignupActivityTest {
             TestCase.assertEquals(user, retrievedUser)
 
             // Assert that we are redirected to the Dashboard with correct intent
-            Intents.intended(allOf(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name), hasExtra("email", user.email)))
+            Intents.intended(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name))
 
             Intents.release()
         }
@@ -131,8 +129,7 @@ open class SignupActivityTest {
     fun afterDbExceptionUserStaysInSignUpActivity() {
         val launchSignup = Intent(ApplicationProvider.getApplicationContext(), SignupActivity::class.java)
         val email = "throw@Exception.com"
-
-        launchSignup.putExtra("email", email)
+        database.setCurrentEmail(email)
         ActivityScenario.launch<SignupActivity>(launchSignup).use {
             Intents.init()
 
