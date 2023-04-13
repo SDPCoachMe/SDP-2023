@@ -1,4 +1,4 @@
-package com.github.sdpcoachme
+package com.github.sdpcoachme.schedule
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -28,12 +28,12 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.ShownEvent
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
-import com.github.sdpcoachme.schedule.EventOps
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.time.DayOfWeek
 import java.time.LocalDate
