@@ -1,13 +1,9 @@
 package com.github.sdpcoachme
 
-import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.Switch
@@ -20,17 +16,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.UserLocation
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.api.model.PlaceTypes
-import com.google.android.libraries.places.api.net.PlacesClient
-import com.google.android.libraries.places.widget.Autocomplete
-import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
-import java.util.concurrent.CompletableFuture
 
 class SignupActivity : ComponentActivity() {
 
@@ -52,19 +40,7 @@ class SignupActivity : ComponentActivity() {
 
     private lateinit var database : Database
     private lateinit var email: String
-
-    private lateinit var placesClient : PlacesClient
-    private lateinit var placesAutocompleteStartForResult : ActivityResultLauncher<Intent>
-    private lateinit var autocompleteIntent : Intent
-    private var autocompleteResult = CompletableFuture<UserLocation>()
-
-    // Used to handle places autocomplete activity errors
-    class PlacesAutocompleteFailed(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {
-        constructor(cause: Throwable) : this(null, cause)
-    }
-    class PlacesAutocompleteCancelled(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {
-        constructor(cause: Throwable) : this(null, cause)
-    }
+    private lateinit var locationAutocompleteHandler: LocationAutocompleteHandler
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,45 +51,8 @@ class SignupActivity : ComponentActivity() {
             val errorMsg = "The signup page did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
-            // Set up call to Places API and callback
-            placesClient = Places.createClient(this)
-            val fields = listOf(Place.Field.ID, Place.Field.ADDRESS, Place.Field.LAT_LNG)
-            val filters = listOf(PlaceTypes.ADDRESS)
-            autocompleteIntent = Autocomplete
-                .IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields)
-                .setTypesFilter(filters)
-                .build(this)
-            placesAutocompleteStartForResult = registerForActivityResult(
-                ActivityResultContracts.StartActivityForResult()
-            ) {
-                // Handle the result from the Places Autocomplete activity that was started
-                result: ActivityResult ->
-                    when (result.resultCode) {
-                        Activity.RESULT_OK -> {
-                            result.data!!.let {
-                                val place = Autocomplete.getPlaceFromIntent(it)
-                                autocompleteResult.complete(
-                                    UserLocation(
-                                        // They should never be null anyways
-                                        placeId = place.id!!,
-                                        address = place.address!!,
-                                        latitude = place.latLng!!.latitude,
-                                        longitude = place.latLng!!.longitude
-                                    )
-                                )
-                            }
-                        }
-                        Activity.RESULT_CANCELED -> {
-                            // The user canceled the operation
-                            autocompleteResult.completeExceptionally(PlacesAutocompleteCancelled())
-                        }
-                        else -> {
-                            // There was an unknown error
-                            // Log.d("AUTOCOMPLETE_STATUS", "Status ${Autocomplete.getStatusFromIntent(result.data!!)}") // access error details
-                            autocompleteResult.completeExceptionally(PlacesAutocompleteFailed())
-                        }
-                    }
-            }
+            // Set up handler for calls to location autocomplete
+            locationAutocompleteHandler = LocationAutocompleteHandler(this, this)
 
             setContent {
                 CoachMeTheme {
@@ -171,8 +110,7 @@ class SignupActivity : ComponentActivity() {
                 modifier = Modifier.testTag(TestTags.Buttons.SIGN_UP),
                 onClick = {
                     // Launch autocomplete activity, then wait for result
-                    placesAutocompleteStartForResult.launch(autocompleteIntent)
-                    autocompleteResult.thenCompose {
+                    locationAutocompleteHandler.launch().thenCompose {
                         location ->
                             // Add the new user to the database
                             val newUser = UserInfo(
@@ -193,7 +131,7 @@ class SignupActivity : ComponentActivity() {
                         startActivity(intent)
                     }.exceptionally {
                         when (it.cause) {
-                            is PlacesAutocompleteCancelled -> {
+                            is LocationAutocompleteHandler.AutocompleteCancelledException -> {
                                 // The user cancelled the Places Autocomplete activity
                                 // For now, do nothing, which allows the user to click on NEXT and try again.
                             }
