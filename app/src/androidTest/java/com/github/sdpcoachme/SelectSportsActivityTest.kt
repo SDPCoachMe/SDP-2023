@@ -15,6 +15,7 @@ import androidx.test.uiautomator.*
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import com.github.sdpcoachme.schedule.ScheduleActivity
 import junit.framework.TestCase
 import org.hamcrest.Matchers.*
 import org.junit.Before

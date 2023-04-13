@@ -167,7 +167,7 @@ class ScheduleActivityTest {
             end = currentMonday.plusDays(2).atTime(15, 0, 0).toString(),
             description = "This is a multi day event.",
         )
-        database.addEventsToDatabase(defaultEmail, listOf(multiDayEvent)).thenRun {
+        database.addEventsToUser(defaultEmail, listOf(multiDayEvent)).thenRun {
             val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
             scheduleIntent.putExtra("email", defaultEmail)
             ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
