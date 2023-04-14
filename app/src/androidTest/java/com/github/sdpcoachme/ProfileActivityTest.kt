@@ -23,7 +23,7 @@ import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LOCATION
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_PICTURE
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SELECTED_SPORTS
-import com.github.sdpcoachme.UserLocationSamples.Companion.TOKYO
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.TOKYO
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import org.junit.Before

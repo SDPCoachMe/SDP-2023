@@ -4,8 +4,8 @@ package com.github.sdpcoachme
 // MockDatabase which is in the androidTest directory.
 // Otherwise we would have complicated dependencies.
 
-import com.github.sdpcoachme.UserLocationSamples.Companion.LAUSANNE
-import com.github.sdpcoachme.UserLocationSamples.Companion.NEW_YORK
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.firebase.database.CachingDatabase
 import com.github.sdpcoachme.firebase.database.MockDatabase

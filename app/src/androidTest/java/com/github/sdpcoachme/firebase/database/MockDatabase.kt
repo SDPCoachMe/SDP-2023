@@ -1,6 +1,6 @@
 package com.github.sdpcoachme.firebase.database
 
-import com.github.sdpcoachme.UserLocationSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import java.util.concurrent.CompletableFuture

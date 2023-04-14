@@ -10,11 +10,11 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.github.sdpcoachme.UserLocationSamples.Companion.LAUSANNE
-import com.github.sdpcoachme.UserLocationSamples.Companion.LONDON
-import com.github.sdpcoachme.UserLocationSamples.Companion.PARIS
-import com.github.sdpcoachme.UserLocationSamples.Companion.SYDNEY
-import com.github.sdpcoachme.UserLocationSamples.Companion.TOKYO
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.LONDON
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.PARIS
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.SYDNEY
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.TOKYO
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import org.hamcrest.CoreMatchers.allOf

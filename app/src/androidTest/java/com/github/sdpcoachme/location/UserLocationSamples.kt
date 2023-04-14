@@ -1,4 +1,4 @@
-package com.github.sdpcoachme
+package com.github.sdpcoachme.location
 
 import com.github.sdpcoachme.data.UserLocation
 

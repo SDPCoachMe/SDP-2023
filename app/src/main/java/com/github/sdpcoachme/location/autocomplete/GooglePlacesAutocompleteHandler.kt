@@ -1,4 +1,4 @@
-package com.github.sdpcoachme
+package com.github.sdpcoachme.location.autocomplete
 
 import android.app.Activity
 import android.content.Context
@@ -15,13 +15,13 @@ import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import java.util.concurrent.CompletableFuture
 
 /**
- * This class is used to launch the Places Autocomplete activity from anywhere in the app.
+ * This class is used to launch the Google Places Autocomplete activity from anywhere in the app.
  *
  * @param context The context of the activity that is launching the Places Autocomplete activity.
  * @param caller The ActivityResultCaller that will be used to launch the Places Autocomplete activity.
  *
  */
-class LocationAutocompleteHandler(context: Context, caller: ActivityResultCaller) {
+class GooglePlacesAutocompleteHandler(context: Context, caller: ActivityResultCaller) : LocationAutocompleteHandler {
 
     private lateinit var autocompleteResult: CompletableFuture<UserLocation>
     private val intent: Intent
@@ -57,12 +57,12 @@ class LocationAutocompleteHandler(context: Context, caller: ActivityResultCaller
                     }
                     Activity.RESULT_CANCELED -> {
                         // The user canceled the operation
-                        autocompleteResult.completeExceptionally(AutocompleteCancelledException())
+                        autocompleteResult.completeExceptionally(LocationAutocompleteHandler.AutocompleteCancelledException())
                     }
                     else -> {
                         // There was an unknown error
                         // Log.d("AUTOCOMPLETE_STATUS", "Status ${Autocomplete.getStatusFromIntent(result.data!!)}") // access error details
-                        autocompleteResult.completeExceptionally(AutocompleteFailedException())
+                        autocompleteResult.completeExceptionally(LocationAutocompleteHandler.AutocompleteFailedException())
                     }
                 }
         }
@@ -71,26 +71,12 @@ class LocationAutocompleteHandler(context: Context, caller: ActivityResultCaller
     /**
      * Launches the Places Autocomplete activity and returns a CompletableFuture that will be completed
      * with the UserLocation selected by the user.
-     * Note this method can be called multiple times without issues, if for example the user cancels
-     * the operation and wants to try again. The method returns a different CompletableFuture instance
-     * each time it is called, and relaunches the Places Autocomplete activity.
      *
      * @return A CompletableFuture that will be completed with the UserLocation selected by the user.
-     *        If the user cancels the operation, the CompletableFuture will fail with an
-     *        AutocompleteCancelledException. If there is an error, the CompletableFuture will fail
-     *        with an AutocompleteFailedException.
      */
-    fun launch(): CompletableFuture<UserLocation> {
+    override fun launch(): CompletableFuture<UserLocation> {
         autocompleteResult = CompletableFuture<UserLocation>()
         startForResult.launch(intent)
         return autocompleteResult
-    }
-
-    // Used to handle places autocomplete activity errors
-    class AutocompleteFailedException(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {
-        constructor(cause: Throwable) : this(null, cause)
-    }
-    class AutocompleteCancelledException(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {
-        constructor(cause: Throwable) : this(null, cause)
     }
 }

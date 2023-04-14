@@ -12,7 +12,7 @@ import androidx.test.espresso.matcher.ViewMatchers.assertThat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
-import com.github.sdpcoachme.UserLocationSamples.Companion.PARIS
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.PARIS
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity

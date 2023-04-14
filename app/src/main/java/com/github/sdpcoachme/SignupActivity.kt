@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.location.autocomplete.LocationAutocompleteHandler
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
 
@@ -54,7 +55,7 @@ class SignupActivity : ComponentActivity() {
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
             // Set up handler for calls to location autocomplete
-            locationAutocompleteHandler = LocationAutocompleteHandler(this, this)
+            locationAutocompleteHandler = (application as CoachMeApplication).locationAutocompleteHandler(this, this)
 
             setContent {
                 CoachMeTheme {
@@ -145,10 +146,10 @@ class SignupActivity : ComponentActivity() {
                                     context,
                                     "An error occurred while signing up. Please try again."
                                 )
+                                // To notify test framework that something bad happened
+                                databaseStateSending.completeExceptionally(it)
                             }
                         }
-                        // To notify test framework that something bad happened
-                        databaseStateSending.completeExceptionally(it)
                         null
                     }
                 }

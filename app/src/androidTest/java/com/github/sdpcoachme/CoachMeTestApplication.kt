@@ -1,10 +1,13 @@
 package com.github.sdpcoachme
 
+import android.content.Context
+import androidx.activity.result.ActivityResultCaller
 import com.github.sdpcoachme.firebase.auth.Authenticator
 import com.github.sdpcoachme.firebase.auth.MockAuthenticator
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.firebase.database.MockDatabase
-import com.google.android.libraries.places.api.Places
+import com.github.sdpcoachme.location.autocomplete.LocationAutocompleteHandler
+import com.github.sdpcoachme.location.autocomplete.MockLocationAutocompleteHandler
 
 class CoachMeTestApplication : CoachMeApplication() {
     // For DI in testing, add reference to mocks here
@@ -27,8 +30,12 @@ class CoachMeTestApplication : CoachMeApplication() {
          */
         database = MockDatabase()
 
-        // Initialize Places SDK (mocking would be way too complex here)
-        Places.initialize(applicationContext, BuildConfig.MAPS_API_KEY)
+        // Might be necessary to initialize Places SDK, but for now, we don't need it.
     }
     override val authenticator: Authenticator = MockAuthenticator()
+
+    override fun locationAutocompleteHandler(
+        context: Context,
+        caller: ActivityResultCaller
+    ): LocationAutocompleteHandler = MockLocationAutocompleteHandler()
 }

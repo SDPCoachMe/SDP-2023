@@ -16,16 +16,14 @@ import com.github.sdpcoachme.SignupActivity.TestTags.Buttons.Companion.SIGN_UP
 import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.FIRST_NAME
 import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.LAST_NAME
 import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.PHONE
-import com.github.sdpcoachme.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.UserLocation
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import com.github.sdpcoachme.location.autocomplete.MockLocationAutocompleteHandler
 import junit.framework.TestCase
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import java.util.concurrent.TimeUnit
 
@@ -34,16 +32,21 @@ import java.util.concurrent.TimeUnit
 open class SignupActivityTest {
 
     @get:Rule
-    var testName = TestName()
-
-    @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
     private lateinit var scenario: ActivityScenario<SignupActivity>
 
     private val database = (getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
-    private val defaultEmail = "example@email.com"
-    private val exceptionEmail = "throw@Exception.com"
+    private val defaultUser = UserInfo(
+        "Jean", "Dupont",
+        "example@email.com", "0692000000",
+        MockLocationAutocompleteHandler.DEFAULT_LOCATION, // Make sure to use this here, so that
+        // the test does not fail if the default location returned by the mock autocomplete handler
+        // changes
+        false, emptyList()
+    )
+    private val defaultCoach = defaultUser.copy(coach = true)
+    private val exceptionUser = defaultUser.copy(email = "throw@Exception.com")
 
     private val initiallyDisplayed = listOf(
         FIRST_NAME,
@@ -72,7 +75,7 @@ open class SignupActivityTest {
 
     @Test
     fun assertThatTheNodesExist() {
-        launchSignupActivity(defaultEmail)
+        launchSignupActivity(defaultUser.email)
         initiallyDisplayed.forEach { tag ->
             composeTestRule.onNodeWithTag(tag).assertExists("No $tag field")
         }
@@ -88,64 +91,19 @@ open class SignupActivityTest {
     }
 
     @Test
-    fun setAndGetUser() {
-        launchSignupActivity(defaultEmail)
-        val user = UserInfo(
-            "Jean", "Dupont",
-            defaultEmail, "0692000000",
-            LAUSANNE, false, emptyList()
-        )
-        inputUserInfo(user)
-
-        // Wait for activity to send to database
-        scenario.onActivity { activity ->
-            activity.databaseStateSending.get(10, TimeUnit.SECONDS)
-        }
-
-        // Important note: this get method was used instead of onTimeout due to onTimeout not
-        // being found when running tests on Cirrus CI even with java version changed in build.gradle
-        val retrievedUser = database.getUser(user.email).get(10, TimeUnit.SECONDS)
-        assertEqualsExceptLocation(user, retrievedUser)
-
-        // Assert that we are redirected to the SelectSportsActivity with correct intent
-        Intents.intended(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name))
+    fun setAndGetUserAsNonCoachWorks() {
+        setAndGetUser(defaultUser)
     }
 
     @Test
     fun setAndGetUserAsCoachWorks() {
-        launchSignupActivity(defaultEmail)
-        val user = UserInfo(
-            "Jean", "Dupont",
-            defaultEmail, "0692000000",
-            LAUSANNE, true,
-            emptyList()
-        )
-        inputUserInfo(user)
-
-        // Wait for activity to send to database
-        scenario.onActivity { activity ->
-            activity.databaseStateSending.get(10, TimeUnit.SECONDS)
-        }
-
-        // Important note: this get method was used instead of onTimeout due to onTiemout not
-        // being found when running tests on Cirrus CI even with java version changed in build.gradle
-        val retrievedUser = database.getUser(user.email).get(10, TimeUnit.SECONDS)
-        assertEqualsExceptLocation(user, retrievedUser)
-
-        // Assert that we are redirected to the Dashboard with correct intent
-        Intents.intended(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name))
+        setAndGetUser(defaultCoach)
     }
 
     @Test
     fun errorPageIsShownWhenDBThrowsException() {
-        launchSignupActivity(exceptionEmail)
-        val user = UserInfo(
-            "Jean", "Dupont",
-            exceptionEmail, "0692000000",
-            LAUSANNE, false,
-            emptyList()
-        )
-        inputUserInfo(user)
+        launchSignupActivity(exceptionUser.email)
+        inputUserInfo(exceptionUser)
 
         // Wait for activity to send to database
         scenario.onActivity { activity ->
@@ -163,7 +121,24 @@ open class SignupActivityTest {
         composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
     }
 
-    private val autocompleteLocationInput = "Times Square"
+    private fun setAndGetUser(user: UserInfo) {
+        launchSignupActivity(user.email)
+        inputUserInfo(user)
+
+        // Wait for activity to send to database
+        scenario.onActivity { activity ->
+            activity.databaseStateSending.get(10, TimeUnit.SECONDS)
+        }
+
+        // Important note: this get method was used instead of onTimeout due to onTimeout not
+        // being found when running tests on Cirrus CI even with java version changed in build.gradle
+        val retrievedUser = database.getUser(user.email).get(10, TimeUnit.SECONDS)
+        TestCase.assertEquals(user, retrievedUser)
+
+        // Assert that we are redirected to the SelectSportsActivity with correct intent
+        Intents.intended(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name))
+    }
+
     private fun inputUserInfo(user: UserInfo) {
         composeTestRule.onNodeWithTag(FIRST_NAME).performTextInput(user.firstName)
         Espresso.closeSoftKeyboard()
@@ -176,19 +151,7 @@ open class SignupActivityTest {
 
         composeTestRule.onNodeWithTag(SIGN_UP).performClick()
 
-        // Testing Google Places Autocomplete Activity requires UI automator
-        // Note: this is very dirty, but I could not find a better way to do it
-        val device = UiDevice.getInstance(getInstrumentation())
-        device.findObject(By.text("Search")).setText(autocompleteLocationInput)
-        Espresso.closeSoftKeyboard()
-        device.waitForIdle(3000)
-        device.pressEnter()
-        device.pressEnter()
-        device.pressEnter()
-    }
-
-    // Do not compare location, as using the autocomplete activity might give unexpected location results
-    private fun assertEqualsExceptLocation(user1: UserInfo, user2: UserInfo) {
-        TestCase.assertEquals(user1.copy(location = UserLocation()), user2.copy(location = UserLocation()))
+        // Testing Google Places Autocomplete Activity is too complex, instead, we've mocked it
+        // so that it directly returns a fixed location MockLocationAutocompleteHandler.DEFAULT_LOCATION
     }
 }
