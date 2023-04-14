@@ -1,12 +1,8 @@
 package com.github.sdpcoachme
 
 import android.content.Intent
-import android.os.SystemClock
-import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
@@ -14,13 +10,21 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.github.sdpcoachme.UserLocationSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.UserLocationSamples.Companion.LONDON
+import com.github.sdpcoachme.UserLocationSamples.Companion.PARIS
+import com.github.sdpcoachme.UserLocationSamples.Companion.SYDNEY
+import com.github.sdpcoachme.UserLocationSamples.Companion.TOKYO
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import org.hamcrest.CoreMatchers.allOf
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class CoachesListActivityTest {
@@ -31,71 +35,79 @@ class CoachesListActivityTest {
     private val database = (InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as CoachMeApplication).database
 
+    lateinit var scenario: ActivityScenario<CoachesListActivity>
+
+    // With this, tests will wait until activity has finished loading state
+    @Before
+    fun setup() {
+        // Populate the database, and wait for it to finish
+        populateDatabase().join()
+        val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
+        scenario = ActivityScenario.launch(scheduleIntent)
+
+        // This is the proper way of waiting for an activity to finish loading. However, it does not
+        // crash if the activity never finishes loading, so we do not use it.
+        /*
+        scenario.onActivity {
+            composeTestRule.registerIdlingResource(
+                object : IdlingResource {
+                    override val isIdleNow: Boolean
+                        get() = it.stateLoading.isDone
+                }
+            )
+        }
+        */
+        // Instead, make the test wait for the future to finish, and crash after a certain time
+        scenario.onActivity {
+            it.stateLoading.get(1000, TimeUnit.MILLISECONDS)
+        }
+    }
+
+    // Necessary since we don't do scenario.use { ... } in each test, which closes automatically
+    @After
+    fun cleanup() {
+        scenario.close()
+    }
+
     @Test
     fun allCoachesExists() {
-        // Populate the database
-        populateDatabase().thenRun {
-            // Launch the activity
-            val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
-            ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
-                // Check that all coaches are displayed
-
-                // TODO: this is temporary ! We need to find a better way to wait for activities to fetch from the database
-                SystemClock.sleep(500)
-                coaches.forEach { coach ->
-                    composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}").assertIsDisplayed()
-                    composeTestRule.onNodeWithText(coach.location).assertIsDisplayed()
-                }
-            }
+        coaches.forEach { coach ->
+            composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}").assertIsDisplayed()
+            composeTestRule.onNodeWithText(coach.location.address).assertIsDisplayed()
         }
     }
 
     @Test
     fun allNonCoachesDoNotExist() {
-        // Populate the database
-        populateDatabase().thenRun {
-            // Launch the activity
-            val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
-            ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
-                // Check that all non coach users are not displayed
-
-                SystemClock.sleep(500)
-                nonCoaches.forEach { coach ->
-                    composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}").assertIsNotDisplayed()
-                    composeTestRule.onNodeWithText(coach.location).assertIsNotDisplayed()
-                }
-            }
+        nonCoaches.forEach { coach ->
+            composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}").assertDoesNotExist()
+            composeTestRule.onNodeWithText(coach.location.address).assertDoesNotExist()
         }
     }
 
+    // TODO: add a test that checks that the coaches are sorted by distance, however it is hard to do
+    //  and not a priority since it requires mocking the location service and some complex matcher
+    //  logic
+
     @Test
     fun whenClickingOnACoachProfileActivityShowsCoachToClient() {
+            Intents.init()
 
-        // Populate the database
-        populateDatabase().thenRun {
-            // Launch the activity
-            val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
-            ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
-                Intents.init()
-                SystemClock.sleep(500)
+            // Click on the first coach
+            val coach = coaches[0]
+            composeTestRule.onNodeWithText(coach.location.address).assertIsDisplayed()
+            composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
+                .assertIsDisplayed()
+                .performClick()
 
-                // Click on the first coach
-                val coach = coaches[0]
-                composeTestRule.onNodeWithText(coach.location).assertIsDisplayed()
-                composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
-                    .assertIsDisplayed()
-                    .performClick()
+            // Check that the ProfileActivity is launched with the correct extras
+            Intents.intended(allOf(
+                hasComponent(ProfileActivity::class.java.name),
+                hasExtra("email", coach.email),
+                hasExtra("isViewingCoach", true)
+            ))
 
-                // Check that the ProfileActivity is launched with the correct extras
-                Intents.intended(allOf(
-                    hasComponent(ProfileActivity::class.java.name),
-                    hasExtra("email", coach.email),
-                    hasExtra("isViewingCoach", true)
-                ))
-
-                Intents.release()
-            }
-        }
+            Intents.release()
     }
 
     private val coaches = listOf(
@@ -103,7 +115,7 @@ class CoachesListActivityTest {
             firstName = "John",
             lastName = "Doe",
             email = "john.doe@email.com",
-            location = "Paris",
+            location = PARIS,
             phone = "0123456789",
             sports = listOf(Sports.SKI, Sports.SWIMMING),
             coach = true
@@ -112,7 +124,7 @@ class CoachesListActivityTest {
             firstName = "Marc",
             lastName = "Delémont",
             email = "marc@email.com",
-            location = "Lausanne",
+            location = LAUSANNE,
             phone = "0123456789",
             sports = listOf(Sports.WORKOUT),
             coach = true
@@ -121,7 +133,7 @@ class CoachesListActivityTest {
             firstName = "Kate",
             lastName = "Senior",
             email = "katy@email.com",
-            location = "Payerne",
+            location = LONDON,
             phone = "0123456789",
             sports = listOf(Sports.TENNIS, Sports.SWIMMING),
             coach = true
@@ -133,7 +145,7 @@ class CoachesListActivityTest {
             firstName = "James",
             lastName = "Dolorian",
             email = "jammy@email.com",
-            location = "Londres",
+            location = TOKYO,
             phone = "0123456789",
             sports = listOf(Sports.SKI, Sports.SWIMMING),
             coach = false
@@ -142,7 +154,7 @@ class CoachesListActivityTest {
             firstName = "Loris",
             lastName = "Gotti",
             email = "lolo@email.com",
-            location = "Corcelles",
+            location = SYDNEY,
             phone = "0123456789",
             sports = listOf(Sports.TENNIS),
             coach = false
@@ -159,5 +171,4 @@ class CoachesListActivityTest {
 
         return CompletableFuture.allOf(*futures1.toTypedArray(), *futures2.toTypedArray())
     }
-
 }

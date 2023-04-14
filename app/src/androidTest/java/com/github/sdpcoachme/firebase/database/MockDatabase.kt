@@ -1,5 +1,6 @@
 package com.github.sdpcoachme.firebase.database
 
+import com.github.sdpcoachme.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import java.util.concurrent.CompletableFuture
@@ -15,7 +16,7 @@ class MockDatabase: Database {
         "Doe",
         defaultEmail,
         "1234567890",
-        "Some location",
+        LAUSANNE,
         false,
         emptyList(),
         emptyList()

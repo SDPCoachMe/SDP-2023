@@ -32,18 +32,18 @@ interface Database {
     fun getAllUsers(): CompletableFuture<List<UserInfo>>
 
     /**
-     * Get all users from the database sorted by distance from the current location
-     * @param currentLatitude The latitude of the current location
-     * @param currentLongitude The longitude of the current location
+     * Get all users from the database sorted by distance from a given location
+     * @param latitude Latitude of the location
+     * @param longitude Longitude of the location
      * @return A future that will complete with a list of all users in the database sorted by distance
      */
-    fun getAllUsersByNearest(currentLatitude: Double, currentLongitude: Double): CompletableFuture<List<UserInfo>> {
+    fun getAllUsersByNearest(latitude: Double, longitude: Double): CompletableFuture<List<UserInfo>> {
         return getAllUsers().thenApply { users ->
             users.sortedBy { user ->
                 val userLatitude = user.location.latitude
                 val userLongitude = user.location.longitude
                 val distance = SphericalUtil.computeDistanceBetween(
-                    LatLng(currentLatitude, currentLongitude),
+                    LatLng(latitude, longitude),
                     LatLng(userLatitude, userLongitude)
                 )
                 distance

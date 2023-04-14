@@ -19,9 +19,11 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import java.util.concurrent.CompletableFuture
 
 class SignupActivity : ComponentActivity() {
 
+    val databaseStateSending = CompletableFuture<Void>()
     class TestTags {
         class TextFields {
             companion object {
@@ -125,7 +127,9 @@ class SignupActivity : ComponentActivity() {
                                 events = listOf()
                             )
                             database.updateUser(newUser)
-                    }.thenApply {
+                    }.thenAccept {
+                        // To notify test framework that we sent UserInfo to database
+                        databaseStateSending.complete(null)
                         // Launch SelectSportsActivity
                         val intent = Intent(context, SelectSportsActivity::class.java)
                         startActivity(intent)
@@ -143,6 +147,9 @@ class SignupActivity : ComponentActivity() {
                                 )
                             }
                         }
+                        // To notify test framework that something bad happened
+                        databaseStateSending.completeExceptionally(it)
+                        null
                     }
                 }
             )

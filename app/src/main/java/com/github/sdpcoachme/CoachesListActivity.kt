@@ -28,24 +28,30 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
 class CoachesListActivity : ComponentActivity() {
+    var stateLoading = CompletableFuture<Void>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // TODO: Need location to sort coaches by distance
+        // TODO: update this to be current device location
+        val currentLat = 46.519054480712015
+        val currentLong = 6.566757578464391
         val futureListOfCoaches = (application as CoachMeApplication).database
-            .getAllUsers().thenApply {
+            .getAllUsersByNearest(
+                latitude = currentLat,
+                longitude = currentLong
+            ).thenApply {
                 it.filter { user -> user.coach }
             }
+
         setContent {
             var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
 
-            // TODO: Need to handle the future correctly in cases like this (might need to use coroutines)
-            var f by remember { mutableStateOf(futureListOfCoaches) }
-            f.thenAccept {
-                listOfCoaches = it
-                f = CompletableFuture.completedFuture(null)
+            LaunchedEffect(true) {
+                listOfCoaches = futureListOfCoaches.await()
+                stateLoading.complete(null)
             }
 
             CoachMeTheme {
@@ -66,15 +72,13 @@ fun UserInfoListItem(user: UserInfo) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                // TODO: open user profile in details
                 val displayCoachIntent = Intent(context, ProfileActivity::class.java)
                 displayCoachIntent.putExtra("email", user.email)
                 displayCoachIntent.putExtra("isViewingCoach", true)
                 context.startActivity(displayCoachIntent)
             }
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .height(100.dp)
-            ,
+            .height(100.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // TODO: might be a good idea to merge the profile picture code used here and the one used in EditProfileActivity
