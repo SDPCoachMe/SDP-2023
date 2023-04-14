@@ -17,6 +17,7 @@ import com.github.sdpcoachme.location.UserLocationSamples.Companion.SYDNEY
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.TOKYO
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.schedule.ScheduleActivity
 import org.hamcrest.CoreMatchers.allOf
 import org.junit.After
 import org.junit.Before
