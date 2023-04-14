@@ -49,7 +49,6 @@ class MockDatabase: Database {
 
 
     // TODO: type any is not ideal, needs refactoring
-    private val root = hashMapOf<String, Any>()
     private val accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
@@ -89,12 +88,10 @@ class MockDatabase: Database {
     }
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {
-        // TODO: add exception case
             return CompletableFuture.completedFuture(chat)
     }
 
     override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
-        // TODO: add exception case
         chat = chat.copy(id = chatId, messages = chat.messages + message)
         this.onChange(chat)
         return CompletableFuture.completedFuture(null)
@@ -113,7 +110,6 @@ class MockDatabase: Database {
     }
 
     override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
-        // TODO: add exception case (and maybe more users)
         return CompletableFuture.completedFuture(listOf(toUser))
     }
 

@@ -215,8 +215,8 @@ fun ContactField(toUser: UserInfo, chatId: String, database: Database) {
             .clickable {
                 val coachProfileIntent = Intent(context, ProfileActivity::class.java)
                 coachProfileIntent.putExtra("email", toUser.email)
-                // TODO: once users can also message other users and not just coaches,
-                //       this should be adapted to also work for users
+                // once users can also message other users and not just coaches,
+                // this should be adapted to also work for users
                 coachProfileIntent.putExtra("isViewingCoach", true)
                 context.startActivity(coachProfileIntent)
             },
