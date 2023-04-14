@@ -19,6 +19,7 @@ import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.LOCATI
 import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.PHONE
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import com.github.sdpcoachme.schedule.ScheduleActivity
 import junit.framework.TestCase
 import org.junit.Rule
 import org.junit.Test

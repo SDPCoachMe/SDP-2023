@@ -16,6 +16,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.schedule.ScheduleActivity
 import org.hamcrest.CoreMatchers.allOf
 import org.junit.Rule
 import org.junit.Test
