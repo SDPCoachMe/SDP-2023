@@ -32,7 +32,6 @@ class ScheduleActivityTest {
         .targetContext.applicationContext as CoachMeApplication).database
     private val defaultEmail = "example@email.com"
     private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-    private val nextMonday = currentMonday.plusDays(7)
     private val eventList = listOf(
         Event(
             name = "Google I/O Keynote",
@@ -68,14 +67,7 @@ class ScheduleActivityTest {
             start = currentMonday.plusDays(3).atTime(13, 0, 0).toString(),
             end = currentMonday.plusDays(3).atTime(15, 0, 0).toString(),
             description = "Learn about the latest design improvements to help you build personal dynamic experiences with Material Design.",
-        ),
-        /*Event(
-            name = "Jetpack Compose Basics",
-            color = Color(0xFF1B998B).value.toString(),
-            start = nextMonday.plusDays(4).atTime(9, 0, 0).toString(),
-            end = nextMonday.plusDays(4).atTime(13, 0, 0).toString(),
-            description = "This Workshop will take you through the basics of building your first app with Jetpack Compose, Android's new modern UI toolkit that simplifies and accelerates UI development on Android.",
-        ),*/
+        )
     )
 
     @get:Rule

@@ -66,7 +66,6 @@ class EventOpsTest {
         val expectedMap = mutableMapOf<Event, List<ShownEvent>>()
 
         eventList.forEach { event ->
-            println("Event: ${event.name}")
             val shownEvents = mutableListOf<ShownEvent>()
             val start = LocalDateTime.parse(event.start)
             val end = LocalDateTime.parse(event.end)
@@ -87,8 +86,6 @@ class EventOpsTest {
                 expectedMap[event] = shownEvents
             }
         }
-        println("ActualMap $actualMap")
-        println("ExpectedMap $expectedMap")
-        TestCase.assertTrue(actualMap == expectedMap)
+        TestCase.assertEquals(expectedMap, actualMap)
     }
 }
