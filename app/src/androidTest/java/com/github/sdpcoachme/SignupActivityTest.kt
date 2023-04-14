@@ -54,15 +54,6 @@ open class SignupActivityTest {
 
     @Before
     fun setup() {
-        if (testName.methodName.equals("errorPageIsShownWhenSignupIsLaunchedWithEmptyCurrentEmail")) {
-            database.setCurrentEmail("")
-        } else if (testName.methodName.equals("errorPageIsShownWhenDBThrowsException")) {
-            database.setCurrentEmail(exceptionEmail)
-        } else {
-            database.setCurrentEmail(defaultEmail)
-        }
-        val launchSignup = Intent(ApplicationProvider.getApplicationContext(), SignupActivity::class.java)
-        scenario = ActivityScenario.launch(launchSignup)
         Intents.init()
     }
 
@@ -73,8 +64,15 @@ open class SignupActivityTest {
         scenario.close()
     }
 
+    private fun launchSignupActivity(email: String) {
+        database.setCurrentEmail(email)
+        val launchSignup = Intent(ApplicationProvider.getApplicationContext(), SignupActivity::class.java)
+        scenario = ActivityScenario.launch(launchSignup)
+    }
+
     @Test
     fun assertThatTheNodesExist() {
+        launchSignupActivity(defaultEmail)
         initiallyDisplayed.forEach { tag ->
             composeTestRule.onNodeWithTag(tag).assertExists("No $tag field")
         }
@@ -82,6 +80,7 @@ open class SignupActivityTest {
 
     @Test
     fun errorPageIsShownWhenSignupIsLaunchedWithEmptyCurrentEmail() {
+        launchSignupActivity("")
         // not possible to use Intents.init()... to check if the correct intent
         // is launched as the intents are launched from within the onCreate function
         composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
@@ -90,6 +89,7 @@ open class SignupActivityTest {
 
     @Test
     fun setAndGetUser() {
+        launchSignupActivity(defaultEmail)
         val user = UserInfo(
             "Jean", "Dupont",
             defaultEmail, "0692000000",
@@ -113,6 +113,7 @@ open class SignupActivityTest {
 
     @Test
     fun setAndGetUserAsCoachWorks() {
+        launchSignupActivity(defaultEmail)
         val user = UserInfo(
             "Jean", "Dupont",
             defaultEmail, "0692000000",
@@ -137,6 +138,7 @@ open class SignupActivityTest {
 
     @Test
     fun errorPageIsShownWhenDBThrowsException() {
+        launchSignupActivity(exceptionEmail)
         val user = UserInfo(
             "Jean", "Dupont",
             exceptionEmail, "0692000000",
