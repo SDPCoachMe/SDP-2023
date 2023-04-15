@@ -23,6 +23,7 @@ import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LOCATION
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_PICTURE
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SELECTED_SPORTS
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.TOKYO
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import com.github.sdpcoachme.schedule.ScheduleActivity
@@ -166,7 +167,7 @@ class ProfileActivityTest {
             "last",
             defaultEmail,
             "012345",
-            "Some Place",
+            TOKYO,
             false,
             listOf()
         )
@@ -178,7 +179,7 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(defaultEmail)
             composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals(user.firstName)
             composeTestRule.onNodeWithTag(LAST_NAME.TEXT).assertTextEquals(user.lastName)
-            composeTestRule.onNodeWithTag(LOCATION.TEXT).assertTextEquals(user.location)
+            composeTestRule.onNodeWithTag(LOCATION.TEXT).assertTextEquals(user.location.address)
             // TODO: add the other fields once they are implemented:
 
             composeTestRule.onNodeWithTag(EDIT)
@@ -192,7 +193,7 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(defaultEmail)
             composeTestRule.onNodeWithTag(FIRST_NAME.FIELD).assertTextEquals(user.firstName)
             composeTestRule.onNodeWithTag(LAST_NAME.FIELD).assertTextEquals(user.lastName)
-            composeTestRule.onNodeWithTag(LOCATION.FIELD).assertTextEquals(user.location)
+            composeTestRule.onNodeWithTag(LOCATION.FIELD).assertTextEquals(user.location.address)
             // TODO: add the other fields once they are implemented:
         }
     }

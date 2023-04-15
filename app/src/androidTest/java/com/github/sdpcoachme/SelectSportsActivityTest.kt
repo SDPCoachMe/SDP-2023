@@ -12,6 +12,7 @@ import androidx.test.espresso.matcher.ViewMatchers.assertThat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.PARIS
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
@@ -32,9 +33,9 @@ open class SelectSportsActivityTest {
         firstName = "John",
         lastName = "Doe",
         email = email,
-        location = "Paris",
+        location = PARIS,
         phone = "0123456789",
-        sports = listOf()
+        coach = false
     )
     private val database = (InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as CoachMeApplication).database

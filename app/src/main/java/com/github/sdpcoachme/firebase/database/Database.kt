@@ -2,6 +2,8 @@ package com.github.sdpcoachme.firebase.database
 
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.SphericalUtil
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -10,16 +12,17 @@ import java.util.concurrent.CompletableFuture
 interface Database {
 
     /**
-     * Add a user to the database
-     * @param user The user to add
-     * @return A future that will complete when the user has been added
+     * Update a user's info in the database
+     * @param user The user to update
+     * @return A future that will complete when the user info has been updated.
      */
     fun updateUser(user: UserInfo): CompletableFuture<Void>
 
     /**
      * Get a user from the database
      * @param email The email of the user to get
-     * @return A future that will complete when the user has been gotten
+     * @return A future that will complete when the user has been gotten. If the user does not exist,
+     * the future will complete exceptionally with a NoSuchKeyException.
      */
     fun getUser(email: String): CompletableFuture<UserInfo>
 
@@ -30,9 +33,30 @@ interface Database {
     fun getAllUsers(): CompletableFuture<List<UserInfo>>
 
     /**
+     * Get all users from the database sorted by distance from a given location
+     * @param latitude Latitude of the location
+     * @param longitude Longitude of the location
+     * @return A future that will complete with a list of all users in the database sorted by distance
+     */
+    fun getAllUsersByNearest(latitude: Double, longitude: Double): CompletableFuture<List<UserInfo>> {
+        return getAllUsers().thenApply { users ->
+            users.sortedBy { user ->
+                val userLatitude = user.location.latitude
+                val userLongitude = user.location.longitude
+                val distance = SphericalUtil.computeDistanceBetween(
+                    LatLng(latitude, longitude),
+                    LatLng(userLatitude, userLongitude)
+                )
+                distance
+            }
+        }
+    }
+
+    /**
      * Check if a user exists in the database
      * @param email The email of the user to check
-     * @return A future that will complete when the user has been checked
+     * @return A future that will complete when the user has been checked. If the user does not exist,
+     * the future will complete exceptionally with a NoSuchKeyException.
      */
     fun userExists(email: String): CompletableFuture<Boolean>
 
@@ -40,7 +64,8 @@ interface Database {
      * Add events to the database
      * @param email The email of the user to add the events to
      * @param events The events to add
-     * @return A future that will complete when the events have been added
+     * @return A future that will complete when the events have been added. If the user does not exist,
+     * the future will complete exceptionally with a NoSuchKeyException.
      */
     fun addEventsToUser(email: String, events: List<Event>): CompletableFuture<Void>
 
@@ -56,4 +81,8 @@ interface Database {
      */
     fun setCurrentEmail(email: String)
 
+    // Used to handle database errors
+    class NoSuchKeyException(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {
+        constructor(cause: Throwable) : this(null, cause)
+    }
 }
