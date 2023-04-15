@@ -150,7 +150,6 @@ class CoachesListActivityTest {
                 Intents.release()
             }
         }
-            Intents.release()
     }
 
     private val coaches = listOf(

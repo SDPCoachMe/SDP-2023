@@ -17,6 +17,8 @@ import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.firebase.database.MockDatabase
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.BACK
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SCROLL_TO_BOTTOM
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SEND
@@ -47,7 +49,7 @@ class ChatActivityTest {
         "Doe",
         "to@email.com",
         "0987654321",
-        "Bernstrasse 10, 3114 Wichtrach",
+        LAUSANNE,
         true,
         emptyList(),
         emptyList()
@@ -58,7 +60,7 @@ class ChatActivityTest {
         "Doe",
         "example@email.com",
         "0123456789",
-        "Thunstrasse 10, 3114 Wichtrach",
+        NEW_YORK,
         false,
         emptyList(),
         emptyList()
