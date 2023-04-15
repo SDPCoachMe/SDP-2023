@@ -5,6 +5,7 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import java.time.LocalDateTime
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -18,7 +19,7 @@ class MockDatabase: Database {
         "Doe",
         defaultEmail,
         "1234567890",
-        "Some location",
+        LAUSANNE,
         false,
         emptyList(),
         emptyList()
@@ -141,7 +142,7 @@ class MockDatabase: Database {
         if (value == null) {
             val exception = "Key $key does not exist"
             println(exception)
-            future.completeExceptionally(NoSuchKeyException(exception))
+            future.completeExceptionally(Database.NoSuchKeyException(exception))
         } else
             future.complete(value)
         return future

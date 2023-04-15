@@ -54,7 +54,7 @@
             android:label="@string/title_activity_signup"
             android:theme="@style/Theme.CoachMe" />
         <activity
-            android:name=".ScheduleActivity"
+            android:name=".schedule.ScheduleActivity"
             android:exported="false"
             android:label="@string/title_activity_schedule"
             android:theme="@style/Theme.CoachMe" />

@@ -4,6 +4,8 @@ package com.github.sdpcoachme
 // MockDatabase which is in the androidTest directory.
 // Otherwise we would have complicated dependencies.
 
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.firebase.database.CachingDatabase
 import com.github.sdpcoachme.firebase.database.MockDatabase
@@ -37,7 +39,7 @@ class CachingDatabaseTest {
             "Smith",
             email,
             "0000000000",
-            "WinterPark",
+            NEW_YORK,
             false,
             emptyList(),
             emptyList()
@@ -58,7 +60,7 @@ class CachingDatabaseTest {
             "Doe",
             exampleEmail,
             "1234567890",
-            "Some location",
+            LAUSANNE,
             false,
             emptyList(),
             emptyList()

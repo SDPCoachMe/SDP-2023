@@ -33,11 +33,23 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.github.sdpcoachme.ui.theme.Purple500
+import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
 class CoachesListActivity : ComponentActivity() {
+    // Allows to notice testing framework that the activity is ready
+    var stateLoading = CompletableFuture<Void>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // TODO: update this to be current device location
+        val currentLat = 46.519054480712015
+        val currentLong = 6.566757578464391
+        val futureListOfCoaches = (application as CoachMeApplication).database
+            .getAllUsersByNearest(
+                latitude = currentLat,
+                longitude = currentLong
+            ).thenApply {
+                it.filter { user -> user.coach }
 
         val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
         val database = (application as CoachMeApplication).database
@@ -49,9 +61,20 @@ class CoachesListActivity : ComponentActivity() {
                     it.filter { user -> user.coach }
                 }
             }
+
         setContent {
             var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
 
+            // Proper way to handle result of a future in a Composable.
+            // This makes sure the listOfCoaches state is updated only ONCE, when the future is complete
+            // This is because the code in LaunchedEffect(true) will only be executed once, when the
+            // Composable is first created (given that the parameter key1 never changes). The code won't
+            // be executed on every recomposition.
+            // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
+            LaunchedEffect(true) {
+                listOfCoaches = futureListOfCoaches.await()
+                // Activity is now ready for testing
+                stateLoading.complete(null)
             // TODO: Need to handle the future correctly in cases like this (might need to use coroutines)
             var f by remember { mutableStateOf(contacts) }
             f.thenAccept {
@@ -119,8 +142,7 @@ fun UserInfoListItem(user: UserInfo, isViewingContacts: Boolean) {
                 }
             }
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .height(100.dp)
-            ,
+            .height(100.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // TODO: might be a good idea to merge the profile picture code used here and the one used in EditProfileActivity
@@ -155,7 +177,7 @@ fun UserInfoListItem(user: UserInfo, isViewingContacts: Boolean) {
                 Spacer(modifier = Modifier.width(4.dp))
                 // Temporary, until we implement proper location handling
                 Text(
-                    text = user.location,
+                    text = user.location.address,
                     color = Color.Gray,
                     style = MaterialTheme.typography.body2,
                     maxLines = 1,

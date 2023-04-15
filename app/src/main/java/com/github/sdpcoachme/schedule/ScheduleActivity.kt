@@ -1,4 +1,4 @@
-package com.github.sdpcoachme
+package com.github.sdpcoachme.schedule
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -28,7 +28,9 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.Event
+import com.github.sdpcoachme.data.ShownEvent
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
@@ -44,6 +46,19 @@ import java.util.concurrent.CompletableFuture
 import kotlin.math.roundToInt
 
 class ScheduleActivity : ComponentActivity() {
+    class TestTags {
+        class BasicSchedule(tag: String) {
+            val layout = "${tag}Layout"
+        }
+        companion object {
+            const val SCHEDULE_COLUMN = "scheduleColumn"
+            const val SCHEDULE_HEADER = "scheduleHeader"
+            const val BASIC_SCHEDULE = "basicSchedule"
+
+            val BASIC_SCHEDULE_LAYOUT = BasicSchedule(BASIC_SCHEDULE).layout
+        }
+    }
+
     private lateinit var database: Database
     private lateinit var email: String
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,22 +84,9 @@ class ScheduleActivity : ComponentActivity() {
             }
         }
     }
-
-    class TestTags {
-        class BasicSchedule(tag: String) {
-            val layout = "${tag}Layout"
-        }
-        companion object {
-            const val SCHEDULE_COLUMN = "scheduleColumn"
-            const val SCHEDULE_HEADER = "scheduleHeader"
-            const val BASIC_SCHEDULE = "basicSchedule"
-
-            val BASIC_SCHEDULE_LAYOUT = BasicSchedule(BASIC_SCHEDULE).layout
-        }
-    }
 }
 
-private class EventDataModifier(val event: Event) : ParentDataModifier {
+private class EventDataModifier(val event: ShownEvent) : ParentDataModifier {
     override fun Density.modifyParentData(parentData: Any?) = event
 }
 
@@ -130,8 +132,11 @@ fun Schedule(
                 .horizontalScroll(horizontalScrollState)
                 .testTag(ScheduleActivity.TestTags.SCHEDULE_HEADER)
         )
+
+        val eventsToShow = EventOps.eventsToWrappedEvents(events)
+
         BasicSchedule(
-            events = events,
+            events = eventsToShow,
             minDate = minDate,
             dayWidth = dayWidth,
             hourHeight = hourHeight,
@@ -144,14 +149,14 @@ fun Schedule(
     }
 }
 
-private fun Modifier.eventData(event: Event) = this.then(EventDataModifier(event))
+private fun Modifier.eventData(event: ShownEvent) = this.then(EventDataModifier(event))
 private val EventTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 private val DayFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
 private const val ColumnsPerWeek = 7
 
 @Composable
 fun BasicEvent(
-    event: Event,
+    event: ShownEvent,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -162,7 +167,7 @@ fun BasicEvent(
             .padding(4.dp)
     ) {
         Text(
-            text = "${LocalDateTime.parse(event.start).toLocalTime().format(EventTimeFormatter)} - ${LocalDateTime.parse(event.end).toLocalTime().format(EventTimeFormatter)}",
+            text = "${LocalDateTime.parse(event.startText).toLocalTime().format(EventTimeFormatter)} - ${LocalDateTime.parse(event.endText).toLocalTime().format(EventTimeFormatter)}",
             style = MaterialTheme.typography.caption,
             fontSize = 9f.sp,
         )
@@ -223,16 +228,16 @@ fun ScheduleHeader(
 
 @Composable
 fun BasicSchedule(
-    events: List<Event>,
+    events: List<ShownEvent>,
     modifier: Modifier = Modifier,
-    minDate: LocalDate = LocalDateTime.parse(events.minByOrNull(Event::start)!!.start).toLocalDate(),
+    minDate: LocalDate = LocalDateTime.parse(events.minByOrNull(ShownEvent::start)!!.start).toLocalDate(),
     dayWidth: Dp,
     hourHeight: Dp,
 ) {
     val dividerColor = if (MaterialTheme.colors.isLight) Color.LightGray else Color.DarkGray
     Layout(
         content = {
-            events.sortedBy(Event::start).forEach { event ->
+            events.sortedBy(ShownEvent::start).forEach { event ->
                 // Pass the event as parent data to the eventContent composable
                 Box(modifier = Modifier.eventData(event)) {
                     BasicEvent(event = event)
@@ -262,7 +267,7 @@ fun BasicSchedule(
         val height = hourHeight.roundToPx() * 24
         val width = dayWidth.roundToPx() * ColumnsPerWeek
         val placeablesWithEvents = measureables.map { measurable ->
-            val event = measurable.parentData as Event
+            val event = measurable.parentData as ShownEvent
             val eventDurationMinutes = ChronoUnit.MINUTES.between(LocalDateTime.parse(event.start), LocalDateTime.parse(event.end))
             val eventHeight = ((eventDurationMinutes / 60f) * hourHeight.toPx()).roundToInt()
             val placeable = measurable.measure(constraints.copy(minWidth = dayWidth.roundToPx(), maxWidth = dayWidth.roundToPx(), minHeight = eventHeight, maxHeight = eventHeight))
@@ -280,9 +285,10 @@ fun BasicSchedule(
     }
 }
 
-private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-
+// --------------------------------------------------
 // mainly for testing, debugging and demo purposes
+private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+private val nextMonday = currentMonday.plusDays(7)
 private val sampleEvents = listOf(
     Event(
         name = "Google I/O Keynote",
@@ -322,8 +328,8 @@ private val sampleEvents = listOf(
     Event(
         name = "Jetpack Compose Basics",
         color = Color(0xFF1B998B).value.toString(),
-        start = currentMonday.plusDays(4).atTime(9, 0, 0).toString(),
-        end = currentMonday.plusDays(4).atTime(13, 0, 0).toString(),
+        start = nextMonday.plusDays(4).atTime(9, 0, 0).toString(),
+        end = nextMonday.plusDays(4).atTime(13, 0, 0).toString(),
         description = "This Workshop will take you through the basics of building your first app with Jetpack Compose, Android's new modern UI toolkit that simplifies and accelerates UI development on Android.",
     ),
 )

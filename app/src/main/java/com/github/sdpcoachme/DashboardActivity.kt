@@ -43,6 +43,7 @@ import com.github.sdpcoachme.data.MapState
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.map.MapViewModel
+import com.github.sdpcoachme.schedule.ScheduleActivity
 import com.github.sdpcoachme.ui.MapView
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.google.android.gms.location.FusedLocationProviderClient
