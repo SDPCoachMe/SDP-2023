@@ -69,7 +69,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             it.chatContacts
         }.thenCompose { list ->
             val mappedF = list.map { email ->
-                getUser(email) //TODO: how to change this to not use .get() ???
+                getUser(email)
             }
             // done to make sure that all the futures are completed before calling join
             val allOf = CompletableFuture.allOf(*mappedF.toTypedArray())

@@ -102,6 +102,8 @@ class ChatActivityTest {
         chatIntent.putExtra("toUserEmail", toUser.email)
 
         ActivityScenario.launch<ChatActivity>(chatIntent).use {
+            // As the chat is opened with the "scroll" all the way at the bottom,
+            // the scroll button should not be displayed when launching this activity
             composeTestRule.onNodeWithTag(SCROLL_TO_BOTTOM, useUnmergedTree = true).assertDoesNotExist()
         }
     }
@@ -216,7 +218,6 @@ class ChatActivityTest {
 
     @Test
     fun whenOnChangeCalledWithNewChatMessageChatIsUpdated() {
-        //when on change called with new chat message chat is updated
         val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
         chatIntent.putExtra("toUserEmail", toUser.email)
 

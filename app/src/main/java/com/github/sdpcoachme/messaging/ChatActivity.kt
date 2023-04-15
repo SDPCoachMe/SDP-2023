@@ -498,8 +498,6 @@ fun ChatField(currentUserEmail: String,
                     database.getUser(toUser.email).thenCompose {
                         database.updateUser(it.copy(chatContacts = listOf(database.getCurrentEmail()) + it.chatContacts.filter { e -> e != database.getCurrentEmail() }))
                     }
-
-
                 },
                 modifier = Modifier
                     .padding(start = 8.dp)

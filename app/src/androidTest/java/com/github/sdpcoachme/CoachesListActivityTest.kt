@@ -41,8 +41,6 @@ open class CoachesListActivityTest {
     // With this, tests will wait until activity has finished loading state
     @Before
     open fun setup() {
-        println("outer setup")
-
         // Populate the database, and wait for it to finish
         populateDatabase().join()
         val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
@@ -118,7 +116,6 @@ open class CoachesListActivityTest {
         @Before
         override fun setup() {
             // Launch the activity
-            println("Launching activity in inner setup")
             populateDatabase().join()
             val contactIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
             contactIntent.putExtra("isViewingContacts", true)
