@@ -33,6 +33,7 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserLocation
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
 
@@ -106,6 +107,7 @@ class ProfileActivity : ComponentActivity() {
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
             val futureUserInfo = database.getUser(email)
+
             setContent {
                 CoachMeTheme {
                     Surface(
@@ -179,6 +181,12 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
                 onClick = {
                     // For the moment, nothing happens
                     // but in the future this could open the in app messenger with the coach
+                    //TODO: get own email!!!
+                    val userEmail = database.getCurrentEmail()
+                    val intent = Intent(context, ChatActivity::class.java)
+                    intent.putExtra("currentUserEmail", userEmail)
+                    intent.putExtra("toUserEmail", email)
+                    context.startActivity(intent)
                 }
             ) {
                 Text(text = "Message coach")

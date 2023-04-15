@@ -17,7 +17,7 @@ import com.github.sdpcoachme.location.UserLocationSamples.Companion.SYDNEY
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.TOKYO
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.schedule.ScheduleActivity
+import com.github.sdpcoachme.messaging.ChatActivity
 import org.hamcrest.CoreMatchers.allOf
 import org.junit.After
 import org.junit.Before
@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
-class CoachesListActivityTest {
+open class CoachesListActivityTest {
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
@@ -40,7 +40,7 @@ class CoachesListActivityTest {
 
     // With this, tests will wait until activity has finished loading state
     @Before
-    fun setup() {
+    open fun setup() {
         // Populate the database, and wait for it to finish
         populateDatabase().join()
         val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
@@ -111,6 +111,50 @@ class CoachesListActivityTest {
             Intents.release()
     }
 
+    // Subclass added to be able to run a different setup method (to simulate viewing contacts)
+    class ContactsListTest: CoachesListActivityTest() {
+        @Before
+        override fun setup() {
+            // Launch the activity
+            populateDatabase().join()
+            val contactIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
+            contactIntent.putExtra("isViewingContacts", true)
+            scenario = ActivityScenario.launch(contactIntent)
+
+            scenario.onActivity {
+                it.stateLoading.get(1000, TimeUnit.MILLISECONDS)
+            }
+        }
+
+        @Test
+        fun whenViewingContactsAndClickingOnClientChatActivityIsLaunched() {
+            Intents.init()
+            val toEmail = "to@email.com"
+            val coach = UserInfo(
+                "Jane",
+                "Doe",
+                toEmail,
+                "0987654321",
+                LAUSANNE,
+                false,
+                emptyList(),
+                emptyList()
+            )
+            composeTestRule.onNodeWithText(coach.location.address).assertIsDisplayed()
+            composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
+                .assertIsDisplayed()
+                .performClick()
+
+            // Check that the ChatActivity is launched with the correct extras
+            Intents.intended(allOf(
+                hasComponent(ChatActivity::class.java.name),
+                hasExtra("toUserEmail", coach.email),
+            ))
+            Intents.release()
+        }
+
+    }
+
     private val coaches = listOf(
         UserInfo(
             firstName = "John",
@@ -162,8 +206,9 @@ class CoachesListActivityTest {
         )
     )
 
-    private fun populateDatabase(): CompletableFuture<Void> {
+    fun populateDatabase(): CompletableFuture<Void> {
 
+        database.setCurrentEmail("example@email.com")
         // Add a few coaches to the database
         val futures1 = coaches.map { database.updateUser(it) }
 

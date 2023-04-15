@@ -2,6 +2,8 @@ package com.github.sdpcoachme.firebase.database
 
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.Message
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.SphericalUtil
 import java.util.concurrent.CompletableFuture
@@ -85,4 +87,26 @@ interface Database {
     class NoSuchKeyException(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {
         constructor(cause: Throwable) : this(null, cause)
     }
+    fun getChatContacts(email: String): CompletableFuture<List<UserInfo>>
+    /**
+     * Get chat with the given id from the database
+     *
+     * @param chatId The id of the chat to get
+     * @return A future that will complete with the chat
+     */
+    fun getChat(chatId: String): CompletableFuture<Chat>
+
+    /**
+     * Place the new message into the database
+     *
+     * @param chatId The id of the chat to add the message to
+     * @param message The message to add
+     * @return A future that will complete when the message has been added
+     */
+    fun sendMessage(chatId: String, message: Message): CompletableFuture<Void>
+
+    fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void>
+
+    fun addChatListener(chatId: String, onChange: (Chat) -> Unit)
+    fun removeChatListener(chatId: String)
 }

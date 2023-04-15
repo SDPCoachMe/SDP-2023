@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,10 +25,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import com.github.sdpcoachme.ui.theme.Purple500
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
@@ -36,15 +41,23 @@ class CoachesListActivity : ComponentActivity() {
     var stateLoading = CompletableFuture<Void>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
         // TODO: update this to be current device location
         val currentLat = 46.519054480712015
         val currentLong = 6.566757578464391
-        val futureListOfCoaches = (application as CoachMeApplication).database
-            .getAllUsersByNearest(
-                latitude = currentLat,
-                longitude = currentLong
-            ).thenApply {
-                it.filter { user -> user.coach }
+        val database = (application as CoachMeApplication).database
+        val futureListOfCoaches =
+            if (isViewingContacts) {
+                database.getChatContacts(email = database.getCurrentEmail())
+            } else {
+                database
+                .getAllUsersByNearest(
+                    latitude = currentLat,
+                    longitude = currentLong
+                ).thenApply {
+                    it.filter { user -> user.coach }
+                }
             }
 
         setContent {
@@ -58,14 +71,22 @@ class CoachesListActivity : ComponentActivity() {
             // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
             LaunchedEffect(true) {
                 listOfCoaches = futureListOfCoaches.await()
+
                 // Activity is now ready for testing
                 stateLoading.complete(null)
             }
 
             CoachMeTheme {
-                LazyColumn {
-                    items(listOfCoaches) { user ->
-                        UserInfoListItem(user)
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+                    TitleRow(isViewingContacts = isViewingContacts)
+
+                    LazyColumn {
+                        items(listOfCoaches) { user ->
+                            UserInfoListItem(user, isViewingContacts)
+                        }
                     }
                 }
             }
@@ -74,16 +95,42 @@ class CoachesListActivity : ComponentActivity() {
 }
 
 @Composable
-fun UserInfoListItem(user: UserInfo) {
+fun TitleRow(isViewingContacts: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color = Purple500),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = if (isViewingContacts) "Contacts" else "Nearby Coaches",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 20.dp),
+            color = Color.White
+        )
+    }
+}
+
+@Composable
+fun UserInfoListItem(user: UserInfo, isViewingContacts: Boolean) {
     val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                val displayCoachIntent = Intent(context, ProfileActivity::class.java)
-                displayCoachIntent.putExtra("email", user.email)
-                displayCoachIntent.putExtra("isViewingCoach", true)
-                context.startActivity(displayCoachIntent)
+                if (isViewingContacts) {
+                    val displayChatIntent = Intent(context, ChatActivity::class.java)
+                    displayChatIntent.putExtra("toUserEmail", user.email)
+                    context.startActivity(displayChatIntent)
+                } else {
+                    val displayCoachIntent = Intent(context, ProfileActivity::class.java)
+                    displayCoachIntent.putExtra("email", user.email)
+                    displayCoachIntent.putExtra("isViewingCoach", true)
+                    context.startActivity(displayCoachIntent)
+                }
             }
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .height(100.dp),
