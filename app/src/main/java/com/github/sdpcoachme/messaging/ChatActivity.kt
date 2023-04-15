@@ -213,6 +213,8 @@ fun ContactField(toUser: UserInfo, chatId: String, database: Database) {
             .fillMaxWidth()
             .background(color = Purple500)
             .clickable {
+                database.removeChatListener(chatId)
+                // go to the profile of the other user
                 val coachProfileIntent = Intent(context, ProfileActivity::class.java)
                 coachProfileIntent.putExtra("email", toUser.email)
                 // once users can also message other users and not just coaches,
