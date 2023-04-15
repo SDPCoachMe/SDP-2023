@@ -420,7 +420,7 @@ fun MessageRow(message: Message,
             )
 
             // read by recipient icon
-            // once online/offline mode implemented, we could add the single + double check mark funcitonality
+            // once online/offline mode implemented, we could add the single + double check mark functionality
             // similar to whatsapp
             if (message.sender == currentUserEmail) {
                 Icon(

@@ -1,6 +1,7 @@
 package com.github.sdpcoachme
 
 import android.content.Intent
+import android.os.SystemClock
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
@@ -130,12 +131,12 @@ class CoachesListActivityTest {
                     "Doe",
                     toEmail,
                     "0987654321",
-                    "Some location",
+                    LAUSANNE,
                     false,
                     emptyList(),
                     emptyList()
                 )
-                composeTestRule.onNodeWithText(coach.location).assertIsDisplayed()
+                composeTestRule.onNodeWithText(coach.location.address).assertIsDisplayed()
                 composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
                     .assertIsDisplayed()
                     .performClick()

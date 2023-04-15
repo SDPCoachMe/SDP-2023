@@ -32,7 +32,7 @@ class MockDatabase: Database {
         "Doe",
         toEmail,
         "0987654321",
-        "Some location",
+        LAUSANNE,
         false,
         emptyList(),
         emptyList()

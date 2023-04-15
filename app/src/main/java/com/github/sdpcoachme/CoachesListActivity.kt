@@ -41,23 +41,21 @@ class CoachesListActivity : ComponentActivity() {
     var stateLoading = CompletableFuture<Void>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
         // TODO: update this to be current device location
         val currentLat = 46.519054480712015
         val currentLong = 6.566757578464391
-        val futureListOfCoaches = (application as CoachMeApplication).database
-            .getAllUsersByNearest(
-                latitude = currentLat,
-                longitude = currentLong
-            ).thenApply {
-                it.filter { user -> user.coach }
-
-        val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
         val database = (application as CoachMeApplication).database
-        val contacts =
+        val futureListOfCoaches =
             if (isViewingContacts) {
                 database.getChatContacts(email = database.getCurrentEmail())
             } else {
-                database.getAllUsers().thenApply {
+                database
+                .getAllUsersByNearest(
+                    latitude = currentLat,
+                    longitude = currentLong
+                ).thenApply {
                     it.filter { user -> user.coach }
                 }
             }
@@ -73,20 +71,15 @@ class CoachesListActivity : ComponentActivity() {
             // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
             LaunchedEffect(true) {
                 listOfCoaches = futureListOfCoaches.await()
+
                 // Activity is now ready for testing
                 stateLoading.complete(null)
-            // TODO: Need to handle the future correctly in cases like this (might need to use coroutines)
-            var f by remember { mutableStateOf(contacts) }
-            f.thenAccept {
-                listOfCoaches = it
-                f = CompletableFuture.completedFuture(null)
             }
 
             CoachMeTheme {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-//                        .padding(0.dp)
                 ) {
                     TitleRow(isViewingContacts = isViewingContacts)
 
@@ -106,9 +99,7 @@ fun TitleRow(isViewingContacts: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-//            .padding(horizontal = 16.dp, vertical = 20.dp)
             .background(color = Purple500),
-//            .height(20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
