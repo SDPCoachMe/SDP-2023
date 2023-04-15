@@ -137,7 +137,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private fun getRef(databaseRef: DatabaseReference): CompletableFuture<DataSnapshot> {
         val future = CompletableFuture<DataSnapshot>()
         databaseRef.get().addOnSuccessListener {
-            if (!it.exists()) future.completeExceptionally(NoSuchKeyException())
+            if (!it.exists()) future.completeExceptionally(Database.NoSuchKeyException())
             else future.complete(it)
         }.addOnFailureListener {
             future.completeExceptionally(it)

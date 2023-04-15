@@ -32,6 +32,7 @@ import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
 class CoachesListActivity : ComponentActivity() {
+    // Allows to notice testing framework that the activity is ready
     var stateLoading = CompletableFuture<Void>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,8 +50,15 @@ class CoachesListActivity : ComponentActivity() {
         setContent {
             var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
 
+            // Proper way to handle result of a future in a Composable.
+            // This makes sure the listOfCoaches state is updated only ONCE, when the future is complete
+            // This is because the code in LaunchedEffect(true) will only be executed once, when the
+            // Composable is first created (given that the parameter key1 never changes). The code won't
+            // be executed on every recomposition.
+            // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
             LaunchedEffect(true) {
                 listOfCoaches = futureListOfCoaches.await()
+                // Activity is now ready for testing
                 stateLoading.complete(null)
             }
 

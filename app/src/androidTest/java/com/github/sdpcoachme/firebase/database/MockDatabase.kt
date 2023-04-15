@@ -1,8 +1,8 @@
 package com.github.sdpcoachme.firebase.database
 
-import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -72,7 +72,7 @@ class MockDatabase: Database {
         if (value == null) {
             val exception = "Key $key does not exist"
             println(exception)
-            future.completeExceptionally(NoSuchKeyException(exception))
+            future.completeExceptionally(Database.NoSuchKeyException(exception))
         } else
             future.complete(value)
         return future
