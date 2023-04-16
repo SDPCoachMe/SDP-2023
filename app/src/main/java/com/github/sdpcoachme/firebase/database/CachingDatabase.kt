@@ -2,6 +2,8 @@ package com.github.sdpcoachme.firebase.database
 
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.Message
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -10,25 +12,12 @@ import java.util.concurrent.CompletableFuture
 class CachingDatabase(private val wrappedDatabase: Database) : Database {
     private val cachedUsers = mutableMapOf<String, UserInfo>()
 
-    // todo get and set methods should probably be removed from the interface
-    override fun get(key: String): CompletableFuture<Any> {
-        return wrappedDatabase.get(key)
-    }
-
-    // todo big problem if we modify user through this method and then try to get it from the cache
-    // temporary solution: clear the cache if we modify the user through this method
-    override fun set(key: String, value: Any): CompletableFuture<Void> {
-        cachedUsers.clear()
-        return wrappedDatabase.set(key, value)
-    }
-
-    override fun addUser(user: UserInfo): CompletableFuture<Void> {
-        cachedUsers.remove(user.email)
-        return wrappedDatabase.addUser(user).thenAccept { cachedUsers[user.email] = user }
+    override fun updateUser(user: UserInfo): CompletableFuture<Void> {
+        return wrappedDatabase.updateUser(user).thenAccept { cachedUsers[user.email] = user }
     }
 
     override fun getUser(email: String): CompletableFuture<UserInfo> {
-        if (cachedUsers.containsKey(email)) {
+        if (isCached(email)) {
             return CompletableFuture.completedFuture(cachedUsers[email])
         }
         return wrappedDatabase.getUser(email).thenApply {
@@ -45,7 +34,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     }
 
     override fun userExists(email: String): CompletableFuture<Boolean> {
-        if (cachedUsers.containsKey(email)) {
+        if (isCached(email)) {
             return CompletableFuture.completedFuture(true)
         }
         return wrappedDatabase.userExists(email)
@@ -55,8 +44,38 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     override fun addEventsToUser(email: String, events: List<Event>): CompletableFuture<Void> {
         return getUser(email).thenCompose {
             val updatedUserInfo = it.copy(events = it.events + events)
-            addUser(updatedUserInfo)
+            updateUser(updatedUserInfo)
         }
+    }
+
+    override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
+        // TODO implement in next sprint
+        return wrappedDatabase.getChatContacts(email)
+    }
+
+    override fun getChat(chatId: String): CompletableFuture<Chat> {
+        // TODO implement in next sprint
+        return wrappedDatabase.getChat(chatId)
+    }
+
+    override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
+        // TODO implement in next sprint
+        return wrappedDatabase.sendMessage(chatId, message)
+    }
+
+    override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
+        // TODO implement in next sprint
+        return wrappedDatabase.markMessagesAsRead(chatId, email)
+    }
+
+    override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
+        // TODO implement in next sprint (adapt onChange to change this here and then call the passed onChange!)
+        wrappedDatabase.addChatListener(chatId, onChange)
+    }
+
+    override fun removeChatListener(chatId: String) {
+        // TODO implement in next sprint
+        wrappedDatabase.removeChatListener(chatId)
     }
 
     override fun getCurrentEmail(): String {

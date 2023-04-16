@@ -23,8 +23,12 @@ import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LOCATION
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_PICTURE
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SELECTED_SPORTS
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.TOKYO
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import com.github.sdpcoachme.messaging.ChatActivity
+import com.github.sdpcoachme.schedule.ScheduleActivity
+import org.hamcrest.CoreMatchers
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -165,19 +169,19 @@ class ProfileActivityTest {
             "last",
             defaultEmail,
             "012345",
-            "Some Place",
+            TOKYO,
             false,
             listOf()
         )
         val db = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
-        db.addUser(user)
+        db.updateUser(user)
 
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
 
             composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(defaultEmail)
             composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals(user.firstName)
             composeTestRule.onNodeWithTag(LAST_NAME.TEXT).assertTextEquals(user.lastName)
-            composeTestRule.onNodeWithTag(LOCATION.TEXT).assertTextEquals(user.location)
+            composeTestRule.onNodeWithTag(LOCATION.TEXT).assertTextEquals(user.location.address)
             // TODO: add the other fields once they are implemented:
 
             composeTestRule.onNodeWithTag(EDIT)
@@ -191,7 +195,7 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(defaultEmail)
             composeTestRule.onNodeWithTag(FIRST_NAME.FIELD).assertTextEquals(user.firstName)
             composeTestRule.onNodeWithTag(LAST_NAME.FIELD).assertTextEquals(user.lastName)
-            composeTestRule.onNodeWithTag(LOCATION.FIELD).assertTextEquals(user.location)
+            composeTestRule.onNodeWithTag(LOCATION.FIELD).assertTextEquals(user.location.address)
             // TODO: add the other fields once they are implemented:
         }
     }
@@ -263,7 +267,7 @@ class ProfileActivityTest {
 
         val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
         val email = "example@email.com"
-        database.setCurrentEmail(email)
+        profileIntent.putExtra("email", email)
         profileIntent.putExtra("isViewingCoach", true)
         ActivityScenario.launch<ProfileActivity>(profileIntent).use {
             displayedForUserLookingAtCoach.forEach { tag ->
@@ -277,8 +281,8 @@ class ProfileActivityTest {
         val displayedForUserLookingAtCoach = initiallyDisplayed.plus(MESSAGE_COACH)
 
         val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
-        val email = "example@email.com"
-        database.setCurrentEmail(email)
+        val coachEmail = "example@email.com"
+        profileIntent.putExtra("email", coachEmail)
         profileIntent.putExtra("isViewingCoach", true)
         ActivityScenario.launch<ProfileActivity>(profileIntent).use {
             Intents.init()
@@ -290,7 +294,13 @@ class ProfileActivityTest {
                 .assertIsDisplayed()
                 .performClick()
 
-            // TODO: add check for the messaging activity once it is implemented
+            Intents.intended(
+                CoreMatchers.allOf(
+                    IntentMatchers.hasComponent(ChatActivity::class.java.name),
+                    IntentMatchers.hasExtra("toUserEmail", coachEmail)
+                )
+            )
+
             Intents.release()
         }
     }

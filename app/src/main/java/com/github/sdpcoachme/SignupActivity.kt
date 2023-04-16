@@ -23,17 +23,20 @@ import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.location.autocomplete.LocationAutocompleteHandler
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import java.util.concurrent.CompletableFuture
 
 class SignupActivity : ComponentActivity() {
 
+    // Used to notify testing framework that the activity has finished sending data to the database
+    val databaseStateSending = CompletableFuture<Void>()
     class TestTags {
         class TextFields {
             companion object {
                 const val FIRST_NAME = "firstName"
                 const val LAST_NAME = "lastName"
                 const val PHONE = "phone"
-                const val LOCATION = "location"
             }
         }
         class Buttons {
@@ -46,16 +49,20 @@ class SignupActivity : ComponentActivity() {
 
     private lateinit var database : Database
     private lateinit var email: String
+    private lateinit var locationAutocompleteHandler: LocationAutocompleteHandler
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         database = (application as CoachMeApplication).database
         email = database.getCurrentEmail()
 
-        if (email == "") {
+        if (email.isEmpty()) {
             val errorMsg = "The signup page did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
+            // Set up handler for calls to location autocomplete
+            locationAutocompleteHandler = (application as CoachMeApplication).locationAutocompleteHandler(this, this)
+
             setContent {
                 CoachMeTheme {
                     AccountForm(email)
@@ -71,7 +78,6 @@ class SignupActivity : ComponentActivity() {
         var firstName by remember { mutableStateOf("") }
         var lastName by remember { mutableStateOf("") }
         var phone by remember { mutableStateOf("") }
-        var location by remember { mutableStateOf("") } //todo how to accept only valid location ?? => Google Maps
         var isCoach by remember { mutableStateOf(false) }
         val focusManager = LocalFocusManager.current
         Column(
@@ -109,16 +115,6 @@ class SignupActivity : ComponentActivity() {
                     onNext = { focusManager.moveFocus(FocusDirection.Down) }
                 )
             )
-            TextField(
-                modifier = Modifier.testTag(TestTags.TextFields.LOCATION),
-                value = location,
-                onValueChange = { location = it },
-                label = { Text("Location") },
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.clearFocus() }
-                )
-            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
@@ -135,28 +131,49 @@ class SignupActivity : ComponentActivity() {
             Button(
                 modifier = Modifier.testTag(TestTags.Buttons.SIGN_UP),
                 onClick = {
-                    // Add the new user to the database
-                    val newUser = UserInfo(
-                        firstName = firstName,
-                        lastName = lastName,
-                        email = email,
-                        phone = phone,
-                        location = location,
-                        coach = isCoach,
-                        // sports added later in SelectSportsActivity
-                        sports = listOf(),
-                        events = emptyList(),
-                    )
-                    database.addUser(newUser).thenApply {
+                    // Launch autocomplete activity, then wait for result
+                    locationAutocompleteHandler.launch().thenCompose {
+                        location ->
+                            // Add the new user to the database
+                            val newUser = UserInfo(
+                                firstName = firstName,
+                                lastName = lastName,
+                                email = email,
+                                phone = phone,
+                                location = location,
+                                coach = isCoach,
+                                // sports added later in SelectSportsActivity
+                                sports = listOf(),
+                                events = listOf()
+                            )
+                            database.updateUser(newUser)
+                    }.thenAccept {
+                        // To notify test framework that we sent UserInfo to database
+                        databaseStateSending.complete(null)
+                        // Launch SelectSportsActivity
                         val intent = Intent(context, SelectSportsActivity::class.java)
                         startActivity(intent)
                     }.exceptionally {
-                        // call exception activity
+                        when (it.cause) {
+                            is LocationAutocompleteHandler.AutocompleteCancelledException -> {
+                                // The user cancelled the Places Autocomplete activity
+                                // For now, do nothing, which allows the user to click on NEXT and try again.
+                            }
+                            else -> {
+                                // Some other error occurred
+                                ErrorHandlerLauncher().launchExtrasErrorHandler(
+                                    context,
+                                    "An error occurred while signing up. Please try again."
+                                )
+                                // To notify test framework that something bad happened
+                                databaseStateSending.completeExceptionally(it)
+                            }
+                        }
+                        throw it
                     }
                 }
             )
-            { Text("REGISTER") }
+            { Text("SELECT LOCATION") }
         }
     }
 }
-

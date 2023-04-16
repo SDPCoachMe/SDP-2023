@@ -4,6 +4,8 @@ package com.github.sdpcoachme
 // MockDatabase which is in the androidTest directory.
 // Otherwise we would have complicated dependencies.
 
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.firebase.database.CachingDatabase
 import com.github.sdpcoachme.firebase.database.MockDatabase
@@ -37,12 +39,12 @@ class CachingDatabaseTest {
             "Smith",
             email,
             "0000000000",
-            "WinterPark",
+            NEW_YORK,
             false,
             emptyList(),
             emptyList()
         )
-        val retrievedUser = cachingDatabase.addUser(user)
+        val retrievedUser = cachingDatabase.updateUser(user)
             .thenCompose { cachingDatabase.getUser(email) }
             .get(5, TimeUnit.SECONDS)
         assertTrue(cachingDatabase.isCached(email))
@@ -58,14 +60,14 @@ class CachingDatabaseTest {
             "Doe",
             exampleEmail,
             "1234567890",
-            "Some location",
+            LAUSANNE,
             false,
             emptyList(),
             emptyList()
         )
         val updatedUser = cachingDatabase.getUser(exampleEmail)
             .thenCompose {
-                cachingDatabase.addUser(newUser) }
+                cachingDatabase.updateUser(newUser) }
             .thenCompose { cachingDatabase.getUser(exampleEmail) }
             .get(5, TimeUnit.SECONDS)
         assertTrue(cachingDatabase.isCached(exampleEmail))

@@ -35,8 +35,10 @@ import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LOCATION
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SELECTED_SPORTS
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.UserLocation
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
 
@@ -96,15 +98,21 @@ class ProfileActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         database = (application as CoachMeApplication).database
-        email = database.getCurrentEmail()
         val isViewingCoach = intent.getBooleanExtra("isViewingCoach", false)
+        email =
+            if (isViewingCoach) intent.getStringExtra("email").toString()
+            else database.getCurrentEmail()
 
-        if (email == "") {
+
+        // note : in the case where a coach is viewed but the email is not found
+        // the value of the email will be "null" (see toString method of String)
+        if (email.isEmpty() || email == "null") {
             val errorMsg = "Profile editing did not receive an email address." +
                     "\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
             val futureUserInfo = database.getUser(email)
+
             setContent {
                 CoachMeTheme {
                     Surface(
@@ -124,6 +132,7 @@ class ProfileActivity : ComponentActivity() {
  */
 @Composable
 fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewingCoach: Boolean) {
+    // TODO: fix this composable
     val context = LocalContext.current
     val database = (LocalContext.current.applicationContext as CoachMeApplication).database
 
@@ -143,7 +152,7 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
         if (newUser != null) {
             fname = newUser.firstName
             lname = newUser.lastName
-            location = newUser.location
+            location = newUser.location.address
             isCoach = newUser.coach
             f = CompletableFuture.completedFuture(null)
             userInfo = newUser
@@ -175,8 +184,11 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
                     .align(Alignment.CenterHorizontally)
                     .testTag(ProfileActivity.TestTags.Buttons.MESSAGE_COACH),
                 onClick = {
-                    // For the moment, nothing happens
-                    // but in the future this could open the in app messenger with the coach
+                    val userEmail = database.getCurrentEmail()
+                    val intent = Intent(context, ChatActivity::class.java)
+                    intent.putExtra("currentUserEmail", userEmail)
+                    intent.putExtra("toUserEmail", email)
+                    context.startActivity(intent)
                 }
             ) {
                 Text(text = "Message coach")
@@ -193,8 +205,8 @@ fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewin
                     isEditing = false
                     isCoach = isCoach xor switchCoachClient
                     switchCoachClient = false
-                    val newUser = UserInfo(fname, lname, email, "", location, isCoach, userInfo.sports)
-                    database.addUser(newUser)
+                    val newUser = UserInfo(fname, lname, email, "", UserLocation(), isCoach, userInfo.sports, emptyList())
+                    database.updateUser(newUser)
                 }
             ) {
                 Text(text = "Save changes")

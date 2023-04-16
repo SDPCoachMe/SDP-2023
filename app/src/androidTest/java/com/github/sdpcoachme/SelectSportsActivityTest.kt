@@ -12,9 +12,11 @@ import androidx.test.espresso.matcher.ViewMatchers.assertThat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.PARIS
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import com.github.sdpcoachme.schedule.ScheduleActivity
 import junit.framework.TestCase
 import org.hamcrest.Matchers.*
 import org.junit.Before
@@ -31,9 +33,9 @@ open class SelectSportsActivityTest {
         firstName = "John",
         lastName = "Doe",
         email = email,
-        location = "Paris",
+        location = PARIS,
         phone = "0123456789",
-        sports = listOf()
+        coach = false
     )
     private val database = (InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as CoachMeApplication).database
@@ -47,7 +49,7 @@ open class SelectSportsActivityTest {
 
     @Before
     fun setup() { // set user in db to default
-        database.addUser(userInfo)
+        database.updateUser(userInfo)
         database.setCurrentEmail(email)
     }
 
@@ -113,7 +115,7 @@ open class SelectSportsActivityTest {
             val userInfo =
                 userInfo.copy(sports = listOf(Sports.values()[1])) // select favorite sport
             val updatedUser =
-                database.addUser(userInfo)
+                database.updateUser(userInfo)
                     .thenApply {
                         val launchSignup = Intent(
                             ApplicationProvider.getApplicationContext(),
@@ -155,7 +157,7 @@ open class SelectSportsActivityTest {
         ActivityScenario.launch<SignupActivity>(launchSignup).use {
             Intents.init()
             val updatedUser =
-                database.addUser(userInfo)
+                database.updateUser(userInfo)
                     .thenApply {
                         ActivityScenario.launch<SignupActivity>(launcher).use {
                             SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST.forEach {

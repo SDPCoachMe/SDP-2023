@@ -26,7 +26,6 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.github.sdpcoachme.firebase.auth.Authenticator
 import com.github.sdpcoachme.firebase.database.Database
-import com.github.sdpcoachme.firebase.database.NoSuchKeyException
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 
@@ -54,11 +53,12 @@ class LoginActivity : ComponentActivity() {
         authenticator.onSignInResult(
             res,
             { email ->
-                if (email != null) {
-                    database.setCurrentEmail(email)
-                    launchPostLoginActivity(email)
+                // Should not be null on success
+                email!!.let {
+                    signInInfo = email
+                    database.setCurrentEmail(it)
+                    launchPostLoginActivity(it)
                 }
-                launchPostLoginActivity("")
             },
             { errorMsg -> signInInfo = errorMsg.toString() }
         )
@@ -92,16 +92,12 @@ class LoginActivity : ComponentActivity() {
         }
     }
 
-    private fun launchPostLoginActivity(email : String) {
-        signInInfo = email
-        val query = database.getUser(email)
-        query.handle { result, exception ->
-            if (exception == null) {
+    private fun launchPostLoginActivity(email: String) {
+        database.userExists(email).thenAccept { exists ->
+            if (exists) {
                 launchActivity(DashboardActivity::class.java)
-            } else if (exception.cause is NoSuchKeyException) {
-                launchActivity(SignupActivity::class.java)
             } else {
-                signInInfo = "Unknown error"
+                launchActivity(SignupActivity::class.java)
             }
         }
 

@@ -2,6 +2,10 @@ package com.github.sdpcoachme.firebase.database
 
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.Message
+import java.time.LocalDateTime
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -15,26 +19,40 @@ class MockDatabase: Database {
         "Doe",
         defaultEmail,
         "1234567890",
-        "Some location",
+        LAUSANNE,
         false,
         emptyList(),
         emptyList()
     )
     private var currEmail = ""
 
+    private val toEmail = "to@email.com"
+    val toUser = UserInfo(
+        "Jane",
+        "Doe",
+        toEmail,
+        "0987654321",
+        LAUSANNE,
+        false,
+        emptyList(),
+        emptyList()
+    )
+
+    private var chat = Chat(participants = listOf(defaultEmail, toEmail))
+    private var chatId = ""
+    private var onChange: (Chat) -> Unit = {}
+
+    fun restoreDefaultChatSetup() {
+        chat = Chat(participants = listOf(defaultEmail, toEmail))
+        chatId = ""
+        onChange = {}
+    }
+
+
     // TODO: type any is not ideal, needs refactoring
-    private val root = hashMapOf<String, Any>()
     private val accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
 
-    override fun get(key: String): CompletableFuture<Any> {
-        return getMap(root, key)
-    }
-
-    override fun set(key: String, value: Any): CompletableFuture<Void> {
-        return setMap(root, key, value)
-    }
-
-    override fun addUser(user: UserInfo): CompletableFuture<Void> {
+    override fun updateUser(user: UserInfo): CompletableFuture<Void> {
             if (user.email == "throw@Exception.com") {
             val error = CompletableFuture<Void>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
@@ -70,6 +88,49 @@ class MockDatabase: Database {
         }
     }
 
+    override fun getChat(chatId: String): CompletableFuture<Chat> {
+            return CompletableFuture.completedFuture(chat)
+    }
+
+    override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
+        chat = chat.copy(id = chatId, messages = chat.messages + message)
+        this.onChange(chat)
+        return CompletableFuture.completedFuture(null)
+    }
+
+    override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
+        if (chatId == "run-previous-on-change") {
+            val msg = Message(sender = chat.participants[0], content = "test onChange method", timestamp = LocalDateTime.now().toString())
+            chat = chat.copy(id = this.chatId , messages = chat.messages + msg)
+        } else {
+            this.chatId = chatId
+            chat = chat.copy(id = chatId)
+            this.onChange = onChange
+        }
+        this.onChange(chat)
+    }
+
+    override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
+        return CompletableFuture.completedFuture(listOf(toUser))
+    }
+
+
+    override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
+        chat = chat.copy(messages = chat.messages.map { message ->
+            if (message.sender == email) {
+                message.copy(readByRecipient = true)
+            } else {
+                message
+            }
+        })
+
+        return CompletableFuture.completedFuture(null)
+    }
+
+    override fun removeChatListener(chatId: String) {
+        // no need to do anything
+    }
+
     private fun setMap(map: MutableMap<String, Any>, key: String, value: Any): CompletableFuture<Void> {
         map[key] = value
         return CompletableFuture.completedFuture(null)
@@ -81,7 +142,7 @@ class MockDatabase: Database {
         if (value == null) {
             val exception = "Key $key does not exist"
             println(exception)
-            future.completeExceptionally(NoSuchKeyException(exception))
+            future.completeExceptionally(Database.NoSuchKeyException(exception))
         } else
             future.complete(value)
         return future

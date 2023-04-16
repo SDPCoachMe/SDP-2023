@@ -121,7 +121,7 @@ class SelectSportsActivity : ComponentActivity() {
                         .thenApply { user -> user.copy(
                             sports = sportItems.filter { it.selected }.map { it.element })
                         }
-                        .thenApply { user -> database.addUser(user) }
+                        .thenApply { user -> database.updateUser(user) }
                         .thenApply {
                             val targetClass =
                                 if (isEditingProfile) ProfileActivity::class.java
