@@ -1,17 +1,21 @@
 package com.github.sdpcoachme.schedule
 
+import android.content.res.Resources.getSystem
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -20,8 +24,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
@@ -40,8 +46,10 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import kotlin.math.roundToInt
 
@@ -54,6 +62,7 @@ class ScheduleActivity : ComponentActivity() {
             const val SCHEDULE_COLUMN = "scheduleColumn"
             const val SCHEDULE_HEADER = "scheduleHeader"
             const val BASIC_SCHEDULE = "basicSchedule"
+            const val WEEK_HEADER = "weekHeader"
 
             val BASIC_SCHEDULE_LAYOUT = BasicSchedule(BASIC_SCHEDULE).layout
         }
@@ -122,14 +131,13 @@ fun Schedule(
     val dayWidth = LocalConfiguration.current.screenWidthDp.dp / ColumnsPerWeek
     val hourHeight = 64.dp
     val verticalScrollState = rememberScrollState()
-    val horizontalScrollState = rememberScrollState()
+
     Column(modifier = modifier.testTag(ScheduleActivity.TestTags.SCHEDULE_COLUMN)) {
         ScheduleHeader(
             minDate = minDate,
             maxDate = maxDate,
             dayWidth = dayWidth,
             modifier = Modifier
-                .horizontalScroll(horizontalScrollState)
                 .testTag(ScheduleActivity.TestTags.SCHEDULE_HEADER)
         )
 
@@ -143,7 +151,6 @@ fun Schedule(
             modifier = Modifier
                 .weight(1f) // Fill remaining space in the column
                 .verticalScroll(verticalScrollState)
-                .horizontalScroll(horizontalScrollState)
                 .testTag(ScheduleActivity.TestTags.BASIC_SCHEDULE)
         )
     }
@@ -226,6 +233,61 @@ fun ScheduleHeader(
     }
 }
 
+val Int.px: Int get() = (this * getSystem().displayMetrics.density).toInt()
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun WeekHeader(
+    currentWeekMonday: LocalDate,
+    dayWidth: Dp,
+    onWeekChange: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val scrollState = rememberLazyListState()
+    val maxOffset = ((ColumnsPerWeek - 1) * dayWidth.value.roundToInt().px).toFloat()
+    val density = LocalDensity.current
+
+    LazyRow(
+        state = scrollState,
+        modifier = modifier
+            .padding(horizontal = (screenWidth / 2 - maxOffset / 2).dp)
+            .fillMaxWidth()
+            .swipeable(
+                state = SwipeableState(currentWeekMonday),
+                anchors = mapOf(
+                    -maxOffset to currentWeekMonday.minusWeeks(1),
+                    0f to currentWeekMonday,
+                    maxOffset to currentWeekMonday.plusWeeks(1)
+                ),
+                thresholds = { _, _ -> FractionalThreshold(0.5f) },
+                orientation = Orientation.Horizontal,
+                reverseDirection = true,
+                interactionSource = remember { MutableInteractionSource() },
+            )
+            .testTag(ScheduleActivity.TestTags.WEEK_HEADER)
+    ) {
+        val daysOfWeek = DayOfWeek.values()
+            .sorted()
+            .map {day ->
+                currentWeekMonday.with(TemporalAdjusters.nextOrSame(day))
+            }
+
+        daysOfWeek.forEach { day ->
+            val isCurrentWeek = day == currentWeekMonday
+            val text = day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+            Text(
+                text = text,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .width(dayWidth)
+                    .height(40.dp)
+                    .background(if (isCurrentWeek) Color.Gray else Color.Transparent)
+                    .clickable { onWeekChange(day) }
+            )
+        }
+    }
+}
+
 @Composable
 fun BasicSchedule(
     events: List<ShownEvent>,
@@ -244,7 +306,8 @@ fun BasicSchedule(
                 }
             }
         },
-        modifier = modifier.testTag(ScheduleActivity.TestTags.BASIC_SCHEDULE_LAYOUT)
+        modifier = modifier
+            .testTag(ScheduleActivity.TestTags.BASIC_SCHEDULE_LAYOUT)
             .drawBehind {   //add dividers (lines) between days and hours
                 repeat(23) {
                     drawLine(
