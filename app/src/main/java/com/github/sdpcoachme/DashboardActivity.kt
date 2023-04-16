@@ -1,6 +1,7 @@
 package com.github.sdpcoachme
 
 import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -122,40 +123,30 @@ class DashboardActivity : ComponentActivity() {
         } else {
             setContent {
                 CoachMeTheme {
-                    DashboardView(email, mapViewModel.mapState.value)
+                    Dashboard(email, mapViewModel.mapState.value)
                 }
             }
         }
     }
 }
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun DashboardView(email: String, mapState: MapState) {
+fun Dashboard(email: String, mapState: MapState) {
+
+    val context = LocalContext.current
     // equivalent to remember { ScaffoldState(...) }
     val scaffoldState = rememberScaffoldState()
     // creates a scope tied to the view's lifecycle. scope
     // enables us to launch a coroutine tied to a specific lifecycle
     val coroutineScope = rememberCoroutineScope()
 
-    Dashboard(
-        email = email,
-        scaffoldState = scaffoldState,
-        onScaffoldStateChange = { coroutineScope.launch { scaffoldState.drawerState.open()} },
-        mapState = mapState
-    )
-}
-
-@Composable
-fun Dashboard(email: String,
-              scaffoldState: ScaffoldState,
-              onScaffoldStateChange: () -> Unit,
-              mapState: MapState
-) {
-    val context = LocalContext.current
-
     Scaffold(
         scaffoldState = scaffoldState,
-        topBar = { AppBar(onNavigationIconClick = onScaffoldStateChange) },
+        topBar = {
+            AppBar(
+                onNavigationIconClick = { coroutineScope.launch {scaffoldState.drawerState.open()} }
+            )},
         drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
         drawerContent = {
             DrawerHeader(email)
@@ -186,22 +177,18 @@ fun Dashboard(email: String,
                 onItemClick = {
                     when (it.tag) {
                         PROFILE -> {
-                            val intent = Intent(context, ProfileActivity::class.java)
-                            context.startActivity(intent)
+                            context.startActivity(Intent(context, ProfileActivity::class.java))
                         }
                         LOGOUT -> {
                             (context.applicationContext as CoachMeApplication).authenticator.signOut(context) {
-                                val intent = Intent(context, LoginActivity::class.java)
-                                context.startActivity(intent)
+                                context.startActivity(Intent(context, LoginActivity::class.java))
                             }
                         }
                         SCHEDULE -> {
-                            val intent = Intent(context, ScheduleActivity::class.java)
-                            context.startActivity(intent)
+                            context.startActivity(Intent(context, ScheduleActivity::class.java))
                         }
                         COACHES_LIST -> {
-                            val intent = Intent(context, CoachesListActivity::class.java)
-                            context.startActivity(intent)
+                            context.startActivity(Intent(context, CoachesListActivity::class.java))
                         }
                         MESSAGING -> {
                             val intent = Intent(context, CoachesListActivity::class.java)
@@ -229,9 +216,7 @@ fun Dashboard(email: String,
 }
 
 @Composable
-fun AppBar(
-    onNavigationIconClick: () -> Unit
-) {
+fun AppBar(onNavigationIconClick: () -> Unit) {
     TopAppBar(
         title = { Text(text = stringResource(id = R.string.app_name)) },
         backgroundColor = MaterialTheme.colors.primary,
