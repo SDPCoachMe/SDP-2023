@@ -59,6 +59,13 @@ class SelectSportsActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         database = (application as CoachMeApplication).database
         email = database.getCurrentEmail()
+
+        if(email.isEmpty()) {
+            val errorMsg = "The sport selection did not receive an email address." +
+                    "\n Please return to the login page and try again."
+            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
+        }
+
         val isEditingProfile = intent.getBooleanExtra("isEditingProfile", false)
         setContent {
             CoachMeTheme {

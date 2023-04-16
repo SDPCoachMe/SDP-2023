@@ -11,11 +11,12 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.DashboardActivity
-
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.ShownEvent
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
+import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.BASIC_SCHEDULE
+import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.SCHEDULE_HEADER
 import junit.framework.TestCase.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -28,9 +29,12 @@ import java.time.temporal.TemporalAdjusters
 
 @RunWith(AndroidJUnit4::class)
 class ScheduleActivityTest {
+
     private val database = (InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as CoachMeApplication).database
     private val defaultEmail = "example@email.com"
+    private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
+
     private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     private val eventList = listOf(
         Event(
@@ -94,12 +98,8 @@ class ScheduleActivityTest {
 
     @Test
     fun correctInitialScreenContent() {
-        val initiallyDisplayed = listOf(
-            ScheduleActivity.TestTags.SCHEDULE_HEADER,
-            ScheduleActivity.TestTags.BASIC_SCHEDULE,
-        )
-        val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
-        ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
+        val initiallyDisplayed = listOf(SCHEDULE_HEADER, BASIC_SCHEDULE)
+        ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
             initiallyDisplayed.forEach { tag ->
                 composeTestRule.onNodeWithTag(tag).assertExists()
             }
@@ -107,13 +107,13 @@ class ScheduleActivityTest {
     }
 
     @Test
-    fun errorPageIsShownWhenEditProfileIsLaunchedWithEmptyCurrentEmail() {
+    fun errorPageIsShownWhenScheduleIsLaunchedWithEmptyCurrentEmail() {
         database.setCurrentEmail("")
-        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)).use {
+        ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
             // not possible to use Intents.init()... to check if the correct intent
             // is launched as the intents are launched from within the onCreate function
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
         }
     }
 
@@ -121,8 +121,7 @@ class ScheduleActivityTest {
 /*    @Test
     fun getExceptionIsThrownCorrectly() {
         val email = "throwGet@Exception.com"
-        val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
-            .putExtra("email", email)
+        val scheduleIntent = defaultIntent.putExtra("email", email)
         ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
             Intents.init()
             Intents.intended(allOf(
@@ -137,9 +136,8 @@ class ScheduleActivityTest {
     @Test
     fun eventsOfCurrentWeekAreDisplayedCorrectly() {
         database.addEventsToUser(defaultEmail, eventList).thenRun {
-            val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
-            ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
-                composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.BASIC_SCHEDULE).assertExists()
+            ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+                composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
                 val userInfo = database.getUser(defaultEmail)
                 userInfo.thenAccept {
                     it.events.forEach { event ->
@@ -160,10 +158,9 @@ class ScheduleActivityTest {
             description = "This is a multi day event.",
         )
         database.addEventsToUser(defaultEmail, listOf(multiDayEvent)).thenRun {
-            val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
-            scheduleIntent.putExtra("email", defaultEmail)
+            val scheduleIntent = defaultIntent.putExtra("email", defaultEmail)
             ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
-                composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.BASIC_SCHEDULE).assertExists()
+                composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
                 val userInfo = database.getUser(defaultEmail)
                 userInfo.thenAccept {
                     val expectedShownEvents = listOf<ShownEvent>(

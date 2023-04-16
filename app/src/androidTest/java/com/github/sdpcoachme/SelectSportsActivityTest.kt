@@ -12,24 +12,31 @@ import androidx.test.espresso.matcher.ViewMatchers.assertThat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
-import com.github.sdpcoachme.location.UserLocationSamples.Companion.PARIS
+import com.github.sdpcoachme.SelectSportsActivity.*
+import com.github.sdpcoachme.SelectSportsActivity.TestTags.Buttons.*
+import com.github.sdpcoachme.SelectSportsActivity.TestTags.Buttons.Companion.REGISTER
+import com.github.sdpcoachme.SelectSportsActivity.TestTags.Companion.COLUMN
+import com.github.sdpcoachme.SelectSportsActivity.TestTags.Companion.LIST_TITLE
+import com.github.sdpcoachme.SelectSportsActivity.TestTags.MultiSelectListTag.Companion.ROW_TEXT_LIST
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
-import com.github.sdpcoachme.schedule.ScheduleActivity
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.PARIS
 import junit.framework.TestCase
 import org.hamcrest.Matchers.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.SECONDS
 
 @RunWith(AndroidJUnit4::class)
 open class SelectSportsActivityTest {
 
     val email: String = "test@email.com"
-    val userInfo = UserInfo(
+    private val userInfo = UserInfo(
         firstName = "John",
         lastName = "Doe",
         email = email,
@@ -41,7 +48,7 @@ open class SelectSportsActivityTest {
         .targetContext.applicationContext as CoachMeApplication).database
 
 
-    val launchSignup = Intent(ApplicationProvider.getApplicationContext(),
+    private val launchSelectSports = Intent(ApplicationProvider.getApplicationContext(),
         SelectSportsActivity::class.java)
 
     @get:Rule
@@ -55,8 +62,8 @@ open class SelectSportsActivityTest {
 
     @Test
     fun tickIconsInitiallyNotDisplayed() {
-        ActivityScenario.launch<SignupActivity>(launchSignup).use {
-            SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST.forEach {
+        ActivityScenario.launch<SelectSportsActivity>(launchSelectSports).use {
+            ROW_TEXT_LIST.forEach {
                 composeTestRule.onNodeWithTag(it.ICON).assertDoesNotExist()
             }
         }
@@ -64,11 +71,11 @@ open class SelectSportsActivityTest {
 
     @Test
     fun tickIconsDisplayedAfterClick() {
-        ActivityScenario.launch<SignupActivity>(launchSignup).use {
-            SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST.forEach {
+        ActivityScenario.launch<SelectSportsActivity>(launchSelectSports).use {
+            ROW_TEXT_LIST.forEach {
                 composeTestRule.onNodeWithTag(it.ROW).performClick()
             }
-            SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST.forEach {
+            ROW_TEXT_LIST.forEach {
                 composeTestRule.onNodeWithTag(it.ICON, useUnmergedTree = true).assertIsDisplayed()
             }
         }
@@ -76,14 +83,14 @@ open class SelectSportsActivityTest {
 
     @Test
     fun tickIconsDisappearAfterSecondClick() {
-        ActivityScenario.launch<SignupActivity>(launchSignup).use {
-            SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST.forEach {
+        ActivityScenario.launch<SelectSportsActivity>(launchSelectSports).use {
+            ROW_TEXT_LIST.forEach {
                 composeTestRule.onNodeWithTag(it.ROW).performClick()
             }
-            SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST.forEach {
+            ROW_TEXT_LIST.forEach {
                 composeTestRule.onNodeWithTag(it.ROW).performClick()
             }
-            SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST.forEach {
+            ROW_TEXT_LIST.forEach {
                 composeTestRule.onNodeWithTag(it.ICON, useUnmergedTree = true).assertDoesNotExist()
             }
         }
@@ -91,13 +98,13 @@ open class SelectSportsActivityTest {
 
     @Test
     fun correctInitialScreenContent() {
-        ActivityScenario.launch<SignupActivity>(launchSignup).use {
-            SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST.forEach {
+        ActivityScenario.launch<SelectSportsActivity>(launchSelectSports).use {
+            ROW_TEXT_LIST.forEach {
                 composeTestRule.onNodeWithTag(it.ROW).assertIsDisplayed()
             }
-            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.COLUMN).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.LIST_TITLE).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.REGISTER)
+            composeTestRule.onNodeWithTag(COLUMN).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(LIST_TITLE).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(REGISTER)
                 .assertIsDisplayed()
         }
     }
@@ -110,29 +117,26 @@ open class SelectSportsActivityTest {
 
 //    @Test
     fun userInfoSelectedSportCorrectlyReplaced() {
-        ActivityScenario.launch<SignupActivity>(launchSignup).use {
+        ActivityScenario.launch<SelectSportsActivity>(launchSelectSports).use {
             // Note works only if there are at least 2 sports
             val userInfo =
                 userInfo.copy(sports = listOf(Sports.values()[1])) // select favorite sport
             val updatedUser =
                 database.updateUser(userInfo)
                     .thenApply {
-                        val launchSignup = Intent(
-                            ApplicationProvider.getApplicationContext(),
-                            SelectSportsActivity::class.java
-                        )
-                        launchSignup.putExtra("email", email)
-                        ActivityScenario.launch<SignupActivity>(launchSignup).use {
-                            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST[0].ROW)
+                        val intentSelectSports = launchSelectSports
+                        intentSelectSports.putExtra("email", email)
+                        ActivityScenario.launch<SignupActivity>(intentSelectSports).use {
+                            composeTestRule.onNodeWithTag(ROW_TEXT_LIST[0].ROW)
                                 .performClick() // select new sport
-                            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST[1].ROW)
+                            composeTestRule.onNodeWithTag(ROW_TEXT_LIST[1].ROW)
                                 .performClick() // deselect previous sport
-                            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.REGISTER)
+                            composeTestRule.onNodeWithTag(REGISTER)
                                 .performClick()
                         }
                     }.thenCompose {
                         database.getUser(email)
-                    }.get(10, TimeUnit.SECONDS)
+                    }.get(10, SECONDS)
 
             // Check that the user has the first sport
             assertThat(updatedUser.sports, hasItem(Sports.values()[0]))
@@ -145,30 +149,30 @@ open class SelectSportsActivityTest {
 
 //    @Test
     fun userInfoUpdatedWithAllSelectedSportsAndRedirectedToDashboardActivity() {
-        checkRedirectionAfterRegister(launchSignup, DashboardActivity::class.java.name)
+        checkRedirectionAfterRegister(launchSelectSports, DashboardActivity::class.java.name)
     }
 
     @Test
     fun redirectsToProfileActivityWhenIsEditingProfileIsTrue() {
-        checkRedirectionAfterRegister(launchSignup.putExtra("isEditingProfile", true), ProfileActivity::class.java.name)
+        checkRedirectionAfterRegister(launchSelectSports.putExtra("isEditingProfile", true), ProfileActivity::class.java.name)
     }
 
     private fun checkRedirectionAfterRegister(launcher: Intent, intendedClass: String) {
-        ActivityScenario.launch<SignupActivity>(launchSignup).use {
+        ActivityScenario.launch<SelectSportsActivity>(launchSelectSports).use {
             Intents.init()
             val updatedUser =
                 database.updateUser(userInfo)
                     .thenApply {
-                        ActivityScenario.launch<SignupActivity>(launcher).use {
-                            SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST.forEach {
+                        ActivityScenario.launch<SelectSportsActivity>(launcher).use {
+                            ROW_TEXT_LIST.forEach {
                                 composeTestRule.onNodeWithTag(it.ROW).performClick()
                             }
-                            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.REGISTER)
+                            composeTestRule.onNodeWithTag(REGISTER)
                                 .performClick()
                         }
                     }.thenCompose {
                         database.getUser(email)
-                    }.get(10, TimeUnit.SECONDS)
+                    }.get(10, SECONDS)
 
             TestCase.assertEquals(updatedUser.sports, Sports.values().toList())
 
@@ -178,13 +182,13 @@ open class SelectSportsActivityTest {
     }
 
     @Test
-    fun errorPageIsShownWhenEditProfileIsLaunchedWithEmptyCurrentEmail() {
+    fun errorPageIsShownWhenSelectSportsIsLaunchedWithEmptyCurrentEmail() {
         database.setCurrentEmail("")
-        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)).use {
+        ActivityScenario.launch<SelectSportsActivity>(launchSelectSports).use {
             // not possible to use Intents.init()... to check if the correct intent
             // is launched as the intents are launched from within the onCreate function
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
         }
     }
     
@@ -199,15 +203,13 @@ open class SelectSportsActivityTest {
     }
 
     private fun errorPageLaunchChecker(errorEmail: String) {
-        val invalidUserIntent =
-            Intent(ApplicationProvider.getApplicationContext(), SelectSportsActivity::class.java)
         database.setCurrentEmail(errorEmail)
-        ActivityScenario.launch<SignupActivity>(invalidUserIntent).use {
+        ActivityScenario.launch<SelectSportsActivity>(launchSelectSports).use {
             Intents.init()
-            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.MultiSelectListTag.ROW_TEXT_LIST[0].ROW)
+            composeTestRule.onNodeWithTag(ROW_TEXT_LIST[0].ROW)
                 .performClick() // select new sport
 
-            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.REGISTER)
+            composeTestRule.onNodeWithTag(REGISTER)
                 .assertIsDisplayed()
                 .performClick()
             Intents.intended(
@@ -219,9 +221,9 @@ open class SelectSportsActivityTest {
                     )
                 )
             )
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON)
+            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON)
                 .assertIsDisplayed()
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD)
+            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD)
                 .assertIsDisplayed()
             Intents.release()
         }

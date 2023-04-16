@@ -24,7 +24,8 @@ import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DASHBOARD_EMAI
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MENU_LIST
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import org.hamcrest.Matcher
 import org.junit.After
 import org.junit.Before
@@ -73,8 +74,8 @@ class DashboardActivityTest {
         ActivityScenario.launch<DashboardActivity>(dashboardIntent).use {
             // not possible to use Intents.init()... to check if the correct intent
             // is launched as the intents are launched from within the onCreate function
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
         }
     }
 
