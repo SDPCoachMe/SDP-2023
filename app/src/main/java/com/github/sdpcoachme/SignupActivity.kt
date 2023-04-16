@@ -24,6 +24,7 @@ import java.util.concurrent.CompletableFuture
 
 class SignupActivity : ComponentActivity() {
 
+    // Used to notify testing framework that the activity has finished sending data to the database
     val databaseStateSending = CompletableFuture<Void>()
     class TestTags {
         class TextFields {
@@ -150,7 +151,7 @@ class SignupActivity : ComponentActivity() {
                                 databaseStateSending.completeExceptionally(it)
                             }
                         }
-                        null
+                        throw it
                     }
                 }
             )

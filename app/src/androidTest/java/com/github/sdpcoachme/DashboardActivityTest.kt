@@ -18,6 +18,7 @@ import androidx.test.rule.GrantPermissionRule
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.COACHES_LIST
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.LOGOUT
+import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.MESSAGING
 import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.PROFILE
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DRAWER_HEADER
@@ -191,6 +192,14 @@ class DashboardActivityTest {
     fun dashboardCorrectlyRedirectsOnCoachesListClick() {
         dashboardCorrectlyRedirectsOnMenuItemClick(
             COACHES_LIST,
+            hasComponent(CoachesListActivity::class.java.name)
+        )
+    }
+
+    @Test
+    fun dashboardCorrectlyRedirectsOnMessagingClick() {
+        dashboardCorrectlyRedirectsOnMenuItemClick(
+            MESSAGING,
             hasComponent(CoachesListActivity::class.java.name)
         )
     }

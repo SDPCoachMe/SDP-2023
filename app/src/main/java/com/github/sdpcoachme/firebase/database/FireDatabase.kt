@@ -2,8 +2,12 @@ package com.github.sdpcoachme.firebase.database
 
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.Message
 import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -14,6 +18,8 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private val rootDatabase: DatabaseReference = databaseReference
     private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
     private var currEmail = ""
+    private val chats: DatabaseReference = rootDatabase.child("coachme").child("messages")
+    var valueEventListener: ValueEventListener? = null
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         val userID = user.email.replace('.', ',')
@@ -27,7 +33,14 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
 
     override fun getAllUsers(): CompletableFuture<List<UserInfo>> {
         return getAllChildren(accounts).thenApply { users ->
-            users.values.map { it.getValue(UserInfo::class.java)!! /* can't be null */ }
+            users.values.map {
+                try { // done to ensure that erroneous users in the
+                    // db do not inhibit the other users to be retrieved
+                    it.getValue(UserInfo::class.java)!!
+                } catch (e: Exception) {
+                    UserInfo()
+                }
+            }.filter { it != UserInfo() }
         }
     }
 
@@ -50,6 +63,83 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     override fun setCurrentEmail(email: String) {
         currEmail = email
     }
+
+    override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
+        return getUser(currEmail).thenApply {
+            it.chatContacts
+        }.thenCompose { list ->
+            val mappedF = list.map { email ->
+                getUser(email)
+            }
+            // done to make sure that all the futures are completed before calling join
+            val allOf = CompletableFuture.allOf(*mappedF.toTypedArray())
+
+            allOf.thenApply {
+                mappedF.map { it.join() }
+            }
+        }
+    }
+
+    override fun getChat(chatId: String): CompletableFuture<Chat> {
+        val id = chatId.replace('.', ',')
+        return getChild(chats, id).thenApply { it.getValue(Chat::class.java)!! }
+            .exceptionally { Chat() }
+    }
+
+    override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
+        val id = chatId.replace('.', ',')
+        return getChat(id).thenCompose { chat ->
+            val updatedChat = chat.copy(messages = chat.messages + message)
+            setChild(chats, id, updatedChat)
+        }
+    }
+
+    override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
+        val id = chatId.replace('.', ',')
+        return getChat(id).thenCompose { chat ->
+            val readBys = chat.messages.filter { it.sender != email }.map { it.readByRecipient }
+
+            if (readBys.isNotEmpty() && readBys.contains(false)) { // check if update is needed
+                val updatedMessages = chat.messages.map { message ->
+                    if (message.sender != email) {
+                        message.copy(readByRecipient = true)
+                    } else {
+                        message
+                    }
+                }
+                setChild(chats, id, chat.copy(messages = updatedMessages))
+            } else {
+                CompletableFuture.completedFuture(null)
+            }
+        }
+    }
+
+    override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
+        val id = chatId.replace('.', ',')
+        val chatRef = chats.child(id)
+        val valueEventListener = object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                val chat = dataSnapshot.getValue(Chat::class.java)
+                chat?.let { onChange(it) }
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Handle errors here
+            }
+        }
+
+        this.valueEventListener = valueEventListener
+        chatRef.addValueEventListener(valueEventListener)
+    }
+
+    override fun removeChatListener(chatId: String) {
+        val id = chatId.replace('.', ',')
+        val chatRef = chats.child(id)
+        if (valueEventListener != null) {
+            chatRef.removeEventListener(valueEventListener!!)
+        }
+    }
+
 
     /**
      * Gets all children of a given database reference
@@ -137,7 +227,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private fun getRef(databaseRef: DatabaseReference): CompletableFuture<DataSnapshot> {
         val future = CompletableFuture<DataSnapshot>()
         databaseRef.get().addOnSuccessListener {
-            if (!it.exists()) future.completeExceptionally(NoSuchKeyException())
+            if (!it.exists()) future.completeExceptionally(Database.NoSuchKeyException())
             else future.complete(it)
         }.addOnFailureListener {
             future.completeExceptionally(it)

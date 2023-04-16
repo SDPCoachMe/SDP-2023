@@ -17,9 +17,8 @@ interface LocationAutocompleteHandler {
      * instance each time it is called, and relaunches the process/activity necessary.
      *
      * @return A CompletableFuture that will be completed with the UserLocation selected by the user.
-     *        If the user cancels the operation, the CompletableFuture will fail with an
-     *        AutocompleteCancelledException. If there is an error, the CompletableFuture will fail
-     *        with an AutocompleteFailedException.
+     * If the user cancels the operation, the CompletableFuture will fail with an AutocompleteCancelledException.
+     * If there is an error, the CompletableFuture will fail with an AutocompleteFailedException.
      */
     fun launch(): CompletableFuture<UserLocation>
 
