@@ -112,7 +112,7 @@ class SignupActivity : ComponentActivity() {
                 label = { Text("Phone") },
                 keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                    onNext = { focusManager.clearFocus() }
                 )
             )
             Row(
