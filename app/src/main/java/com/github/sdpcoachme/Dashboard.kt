@@ -29,6 +29,7 @@ import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.PLAN
 import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.PROFILE
 import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.SCHEDULE
 import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.SETTINGS
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.MENU_LIST
@@ -45,6 +46,7 @@ class Dashboard {
             const val DRAWER_HEADER = "drawerHeader"
             const val DASHBOARD_EMAIL = "dashboardEmail"
             const val MENU_LIST = "menuList"
+            const val BAR_TITLE = "barTitle"
         }
         class Buttons {
             companion object {
@@ -166,7 +168,7 @@ fun Dashboard(appContent: @Composable (Modifier) -> Unit, email: String, title: 
 @Composable
 fun AppBar(title: String, onNavigationIconClick: () -> Unit) {
     TopAppBar(
-        title = { Text(text = title) },
+        title = { Text(text = title, modifier = Modifier.testTag(BAR_TITLE)) },
         backgroundColor = MaterialTheme.colors.primary,
         contentColor = MaterialTheme.colors.onPrimary,
         navigationIcon = {
