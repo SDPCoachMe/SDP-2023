@@ -49,32 +49,32 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     }
 
     override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
-        // TODO implement
+        // TODO implement in next sprint
         return wrappedDatabase.getChatContacts(email)
     }
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {
-        // TODO implement
+        // TODO implement in next sprint
         return wrappedDatabase.getChat(chatId)
     }
 
     override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
-        // TODO implement
+        // TODO implement in next sprint
         return wrappedDatabase.sendMessage(chatId, message)
     }
 
     override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
-        // TODO implement
+        // TODO implement in next sprint
         return wrappedDatabase.markMessagesAsRead(chatId, email)
     }
 
     override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
-        // TODO implement (adapt onChange to change this here and then call the passed onChange!)
+        // TODO implement in next sprint (adapt onChange to change this here and then call the passed onChange!)
         wrappedDatabase.addChatListener(chatId, onChange)
     }
 
     override fun removeChatListener(chatId: String) {
-        // TODO implement
+        // TODO implement in next sprint
         wrappedDatabase.removeChatListener(chatId)
     }
 
