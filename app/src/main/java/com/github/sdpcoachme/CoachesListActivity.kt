@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -25,15 +24,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import com.github.sdpcoachme.ui.theme.Purple500
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
@@ -85,13 +82,13 @@ class CoachesListActivity : ComponentActivity() {
                 }
 
                 CoachMeTheme {
-                    val dashboardContent: @Composable (Modifier) -> Unit = { modifier ->
+                    val title = if (isViewingContacts) stringResource(R.string.contacts)
+                                else stringResource(R.string.title_activity_coaches_list)
+                    val appContent: @Composable (Modifier) -> Unit = { modifier ->
                         Column(
                             modifier = modifier
                                 .fillMaxSize()
                         ) {
-                            TitleRow(isViewingContacts = isViewingContacts)
-
                             LazyColumn {
                                 items(listOfCoaches) { user ->
                                     UserInfoListItem(user, isViewingContacts)
@@ -99,32 +96,12 @@ class CoachesListActivity : ComponentActivity() {
                             }
                         }
                     }
-                    Dashboard(dashboardContent, email)
+                    Dashboard(appContent, email, title)
                 }
             }
         }
 
 
-    }
-}
-
-@Composable
-fun TitleRow(isViewingContacts: Boolean) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(color = Purple500),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = if (isViewingContacts) "Contacts" else "Nearby Coaches",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 20.dp),
-            color = Color.White
-        )
     }
 }
 

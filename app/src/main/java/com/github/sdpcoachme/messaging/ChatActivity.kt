@@ -39,7 +39,6 @@ import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_BOX
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_MESSAGE
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
-import com.github.sdpcoachme.ui.theme.Purple500
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
@@ -215,7 +214,7 @@ fun ContactField(toUser: UserInfo, chatId: String, database: Database) {
         modifier = Modifier
             .testTag(CONTACT_FIELD.ROW)
             .fillMaxWidth()
-            .background(color = Purple500)
+            .background(color = Color(0xff7c7c7c))
             .clickable {
                 database.removeChatListener(chatId)
                 // go to the profile of the other user

@@ -64,10 +64,20 @@ class Dashboard {
 
 /**
  * Dashboard UI implemented as a left-sided drawer to navigate to other application activities.
- * @param dashboardContent = set here the root composable of the current launched activity
+ * @param appContent = set here the root composable of the current launched activity
  */
 @Composable
-fun Dashboard(dashboardContent: @Composable (Modifier) -> Unit, email: String) {
+fun Dashboard(appContent: @Composable (Modifier) -> Unit, email: String) {
+    Dashboard(appContent, email, null)
+}
+
+/**
+ * Dashboard UI implemented as a left-sided drawer to navigate to other application activities.
+ * @param appContent = set here the root composable of the current launched activity
+ * @param title = title to display on the top application bar
+ */
+@Composable
+fun Dashboard(appContent: @Composable (Modifier) -> Unit, email: String, title: String?) {
 
     val context = LocalContext.current
     // equivalent to remember { ScaffoldState(...) }
@@ -80,6 +90,7 @@ fun Dashboard(dashboardContent: @Composable (Modifier) -> Unit, email: String) {
         scaffoldState = scaffoldState,
         topBar = {
             AppBar(
+                title = title ?: stringResource(id = R.string.app_name),
                 onNavigationIconClick = { coroutineScope.launch {scaffoldState.drawerState.open()} }
             )},
         drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
@@ -147,15 +158,15 @@ fun Dashboard(dashboardContent: @Composable (Modifier) -> Unit, email: String) {
         },
         content = { innerPadding ->
             // invokes dashboardContent composable with correct padding
-            dashboardContent(Modifier.padding(innerPadding))
+            appContent(Modifier.padding(innerPadding))
         }
     )
 }
 
 @Composable
-fun AppBar(onNavigationIconClick: () -> Unit) {
+fun AppBar(title: String, onNavigationIconClick: () -> Unit) {
     TopAppBar(
-        title = { Text(text = stringResource(id = R.string.app_name)) },
+        title = { Text(text = title) },
         backgroundColor = MaterialTheme.colors.primary,
         contentColor = MaterialTheme.colors.onPrimary,
         navigationIcon = {

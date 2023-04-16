@@ -7,9 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.Button
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.runtime.*
@@ -70,7 +68,10 @@ class SelectSportsActivity : ComponentActivity() {
         val isEditingProfile = intent.getBooleanExtra("isEditingProfile", false)
         setContent {
             CoachMeTheme {
-                FavoriteSportsSelection(isEditingProfile, database.getUser(email))
+                val appContent: @Composable (Modifier) -> Unit = {
+                    FavoriteSportsSelection(isEditingProfile, database.getUser(email))
+                }
+                Dashboard(appContent, email)
             }
         }
     }

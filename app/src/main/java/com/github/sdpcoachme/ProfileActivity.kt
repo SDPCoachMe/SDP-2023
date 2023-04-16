@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -110,7 +111,7 @@ class ProfileActivity : ComponentActivity() {
 
             setContent {
                 CoachMeTheme {
-                    val dashboardContent: @Composable (Modifier) -> Unit = { modifier ->
+                    val appContent: @Composable (Modifier) -> Unit = { modifier ->
                         Surface(
                             modifier = modifier.fillMaxSize(),
                             color = MaterialTheme.colors.background
@@ -118,8 +119,7 @@ class ProfileActivity : ComponentActivity() {
                             Profile(email, futureUserInfo, isViewingCoach)
                         }
                     }
-                    Dashboard(dashboardContent, email)
-
+                    Dashboard(appContent, email, stringResource(R.string.my_profile))
                 }
             }
         }
@@ -283,7 +283,7 @@ fun TitleRow(isCoach: Boolean, isViewingCoach: Boolean) {
             } else {
                 Text(
                     modifier = Modifier.testTag(PROFILE_LABEL),
-                    text = "My Profile",
+                    text = "Account",
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold
                 )
