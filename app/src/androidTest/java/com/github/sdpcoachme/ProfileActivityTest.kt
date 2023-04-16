@@ -26,7 +26,9 @@ import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SELECTED_SPORTS
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.TOKYO
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.schedule.ScheduleActivity
+import org.hamcrest.CoreMatchers
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -279,8 +281,8 @@ class ProfileActivityTest {
         val displayedForUserLookingAtCoach = initiallyDisplayed.plus(MESSAGE_COACH)
 
         val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
-        val email = "example@email.com"
-        profileIntent.putExtra("email", email)
+        val coachEmail = "example@email.com"
+        profileIntent.putExtra("email", coachEmail)
         profileIntent.putExtra("isViewingCoach", true)
         ActivityScenario.launch<ProfileActivity>(profileIntent).use {
             Intents.init()
@@ -292,7 +294,13 @@ class ProfileActivityTest {
                 .assertIsDisplayed()
                 .performClick()
 
-            // TODO: add check for the messaging activity once it is implemented
+            Intents.intended(
+                CoreMatchers.allOf(
+                    IntentMatchers.hasComponent(ChatActivity::class.java.name),
+                    IntentMatchers.hasExtra("toUserEmail", coachEmail)
+                )
+            )
+
             Intents.release()
         }
     }
