@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
@@ -17,23 +18,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.CLIENT_COACH
+import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.MESSAGE_COACH
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.COACH_CLIENT_INFO
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.COACH_SWITCH
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LAST_NAME
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LOCATION
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PHONE
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_LABEL
-import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SELECTED_SPORTS
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SPORTS
+import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.UserLocation
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.location.autocomplete.LocationAutocompleteHandler
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -42,52 +46,31 @@ import java.util.concurrent.CompletableFuture
 class ProfileActivity : ComponentActivity() {
 
     class TestTags {
-        class EditableProfileRowTag(tag: String) {
-            val FIELD = "${tag}TextField"
-            val TEXT = "${tag}Text"
-            val LABEL = "${tag}Label"
-            val ROW = "${tag}Row"
-        }
-        class UneditableProfileRowTag(tag: String) {
-            val TEXT = "${tag}Text"
-            val LABEL = "${tag}Label"
-            val ROW = "${tag}Row"
-        }
-        class SwitchClientCoachRowTag(tag: String) {
-            val SWITCH = "${tag}Switch"
-            val TEXT = "${tag}Text"
-            val ROW = "${tag}Row"
-        }
-        class SelectedSportsRowTag(tag: String) {
-            val LABEL = "${tag}Text"
-            val ROW = "${tag}Row"
-        }
         class Buttons {
             companion object {
-                const val SAVE = "saveButton"
-                const val EDIT = "editButton"
                 const val MESSAGE_COACH = "messageCoachButton"
-                const val SELECT_SPORTS = "selectSportsButton"
             }
         }
         companion object {
-            const val TITLE_ROW = "titleRow"
             const val PROFILE_LABEL = "profileLabel"
             const val PROFILE_PICTURE = "profilePicture"
-            const val PROFILE_COLUMN = "profileColumn"
             const val COACH_CLIENT_INFO = "coachClientInfo"
-            val EMAIL = UneditableProfileRowTag("email")
-            val FIRST_NAME = EditableProfileRowTag("firstName")
-            val LAST_NAME = EditableProfileRowTag("lastName")
-            val LOCATION = EditableProfileRowTag("location")
-            val CLIENT_COACH = SwitchClientCoachRowTag("clientCoach")
-            val SELECTED_SPORTS = SelectedSportsRowTag("selectedSports")
+
+            const val EMAIL = "email"
+            const val FIRST_NAME = "firstName"
+            const val LAST_NAME = "lastName"
+            const val PHONE = "phone"
+            const val LOCATION = "location"
+            const val SPORTS = "sports"
+            const val COACH_SWITCH = "coachSwitch"
 
         }
     }
 
     private lateinit var database: Database
     private lateinit var email: String
+    private lateinit var locationAutocompleteHandler: LocationAutocompleteHandler
+    private lateinit var editTextHandler: (Intent) -> CompletableFuture<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -106,6 +89,13 @@ class ProfileActivity : ComponentActivity() {
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
             val futureUserInfo = database.getUser(email)
+
+            // Set up handler for calls to location autocomplete
+            locationAutocompleteHandler = (application as CoachMeApplication).locationAutocompleteHandler(this, this)
+
+            // Set up handler for calls to edit text activity
+            editTextHandler = EditTextActivity.getHandler(this)
+
             setContent {
                 CoachMeTheme {
                     Surface(
@@ -118,136 +108,189 @@ class ProfileActivity : ComponentActivity() {
             }
         }
     }
-}
 
-/**
- * Composable used to display the user's profile.
- */
-@Composable
-fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewingCoach: Boolean) {
-    // TODO: fix this composable
-    val context = LocalContext.current
-    val database = (LocalContext.current.applicationContext as CoachMeApplication).database
+    /**
+     * Composable used to display the user's profile.
+     */
+    @Composable
+    fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewingCoach: Boolean) {
 
-    // bind those to database
-    var isEditing by remember { mutableStateOf(false) }
-    var fname by remember { mutableStateOf("") }
-    var lname by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
-    var isCoach by remember { mutableStateOf(false) }
-    var switchCoachClient by remember { mutableStateOf(false) }
+        val context = LocalContext.current
+        val database = (LocalContext.current.applicationContext as CoachMeApplication).database
 
-    var userInfo by remember { mutableStateOf(UserInfo()) }
+        var userInfo by remember { mutableStateOf(UserInfo()) }
 
-    var f by remember { mutableStateOf(futureUserInfo)}
-
-    f.thenAccept { newUser ->
-        if (newUser != null) {
-            fname = newUser.firstName
-            lname = newUser.lastName
-            location = newUser.location.address
-            isCoach = newUser.coach
-            f = CompletableFuture.completedFuture(null)
-            userInfo = newUser
+        // Make sure the userInfo variable is updated when the futureUserInfo completes
+        LaunchedEffect(futureUserInfo) {
+            userInfo = futureUserInfo.await()
         }
-    }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag(ProfileActivity.TestTags.PROFILE_COLUMN),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start
-    ) {
-        TitleRow(isCoach, isViewingCoach)
-        EmailRow(email)
-
-        ProfileRow(rowName = "First name", tag = FIRST_NAME, isEditing = isEditing, leftTextPadding = 37.dp,
-            value = fname, onValueChange = { newValue -> fname = newValue })
-        ProfileRow(rowName = "Last name", tag = LAST_NAME, isEditing = isEditing, leftTextPadding = 37.dp,
-            value = lname, onValueChange = { newValue -> lname = newValue })
-        ProfileRow(rowName = "Location", tag = LOCATION, isEditing = isEditing, leftTextPadding = 50.dp,
-            value = location, onValueChange = { newValue -> location = newValue })
-
-        SportsRow(rowName = "Sports", tag = SELECTED_SPORTS, userInfo = userInfo)
-
-        if (isViewingCoach) {
-            Button(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .testTag(ProfileActivity.TestTags.Buttons.MESSAGE_COACH),
-                onClick = {
-                    // For the moment, nothing happens
-                    // but in the future this could open the in app messenger with the coach
+        /**
+         * Saves the user's profile information to the database, and then updates the local userInfo
+         * state which refreshes the UI. Already handles exceptions due to cancelling of edit text
+         * activity or location autocomplete activity, and redirects to error handler when necessary.
+         */
+        fun saveUserInfo(futureNewUserInfo: CompletableFuture<UserInfo>): CompletableFuture<Void> {
+            return futureNewUserInfo
+                .thenCompose { newUserInfo ->
+                    database.updateUser(newUserInfo).thenAccept { userInfo = newUserInfo }
                 }
-            ) {
-                Text(text = "Message coach")
-            }
-        } else if (isEditing) {
-            SwitchClientCoachRow(isCoach, switchCoachClient) { switchCoachClient = it }
+                .exceptionally {
+                    when (it.cause) {
+                        is LocationAutocompleteHandler.AutocompleteCancelledException -> {
+                            // The user cancelled the Places Autocomplete activity
+                            // For now, do nothing, which allows the user to try again
+                        }
+                        is EditTextActivity.Companion.EditTextCancelledException -> {
+                            // The user cancelled the EditText activity
+                            // For now, do nothing, which allows the user to try again
+                        }
+                        else -> {
+                            // Some other error occurred
+                            ErrorHandlerLauncher().launchExtrasErrorHandler(
+                                context,
+                                "An error occurred while editing the profile. Please try again."
+                            )
+                        }
+                    }
+                    throw it
+                }
+        }
 
-            // save button
-            Button(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .testTag(ProfileActivity.TestTags.Buttons.SAVE),
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.Start
+        ) {
+            TitleRow(userInfo.coach, isViewingCoach)
+            Spacer(modifier = Modifier.height(10.dp))
+            TextRow(
+                label = "EMAIL",
+                tag = EMAIL,
+                value = email,
                 onClick = {
-                    isEditing = false
-                    isCoach = isCoach xor switchCoachClient
-                    switchCoachClient = false
-                    val newUser = UserInfo(fname, lname, email, "", UserLocation(), isCoach, userInfo.sports, emptyList())
-                    database.updateUser(newUser)
+                    // Uneditable, for now, do nothing (might allow to copy to clipboard on click)
                 }
-            ) {
-                Text(text = "Save changes")
-            }
-        } else {
-            Button(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .testTag(ProfileActivity.TestTags.Buttons.SELECT_SPORTS),
+            )
+            Divider(startIndent = 20.dp)
+            TextRow(
+                label = "FIRST NAME",
+                tag = FIRST_NAME,
+                value = userInfo.firstName,
                 onClick = {
-                    val selSportsIntent = Intent(context, SelectSportsActivity::class.java)
-                    selSportsIntent.putExtra("isEditingProfile", true)
-                    context.startActivity(selSportsIntent)
+                    if (!isViewingCoach) {
+                        val future = editTextHandler(EditTextActivity.getIntent(
+                            context = context,
+                            initialValue = userInfo.firstName,
+                            label = "First name"
+                        )).thenApply { firstName ->
+                            userInfo.copy(firstName = firstName)
+                        }
+                        // Update database
+                        saveUserInfo(future)
+                    } else {
+                        // Uneditable, for now, do nothing (might allow to copy to clipboard on click)
+                    }
                 }
-            ) {
-                Text(text = "Change sports")
-            }
+            )
+            Divider(startIndent = 20.dp)
+            TextRow(
+                label = "LAST NAME",
+                tag = LAST_NAME,
+                value = userInfo.lastName,
+                onClick = {
+                    if (!isViewingCoach) {
+                        val future = editTextHandler(EditTextActivity.getIntent(
+                            context = context,
+                            initialValue = userInfo.lastName,
+                            label = "Last name"
+                        )).thenApply { lastName ->
+                            userInfo.copy(lastName = lastName)
+                        }
+                        // Update database
+                        saveUserInfo(future)
+                    } else {
+                        // Uneditable, for now, do nothing (might allow to copy to clipboard on click)
+                    }
+                }
+            )
+            Divider(startIndent = 20.dp)
+            TextRow(
+                label = "PHONE",
+                tag = PHONE,
+                value = userInfo.phone,
+                onClick = {
+                    if (!isViewingCoach) {
+                        val future = editTextHandler(EditTextActivity.getIntent(
+                            context = context,
+                            initialValue = userInfo.phone,
+                            label = "Phone"
+                        )).thenApply { phone ->
+                            userInfo.copy(phone = phone)
+                        }
+                        // Update database
+                        saveUserInfo(future)
+                    } else {
+                        // Uneditable, for now, do nothing (might allow to copy to clipboard on click)
+                    }
+                }
+            )
+            Divider(startIndent = 20.dp)
+            TextRow(
+                label = "LOCATION",
+                tag = LOCATION,
+                value = userInfo.location.address,
+                onClick = {
+                    if (!isViewingCoach) {
+                        val future = locationAutocompleteHandler.launch().thenApply { location ->
+                            userInfo.copy(location = location)
+                        }
+                        // Update database
+                        saveUserInfo(future)
+                    } else {
+                        // Uneditable, for now, do nothing (might allow to copy to clipboard on click)
+                    }
+                }
+            )
+            Divider(startIndent = 20.dp)
+            SportsRow(
+                label = "SPORTS",
+                tag = SPORTS,
+                value = userInfo.sports,
+                onClick = {
+                    if (!isViewingCoach) {
+                        val selSportsIntent = Intent(context, SelectSportsActivity::class.java)
+                        selSportsIntent.putExtra("isEditingProfile", true)
+                        context.startActivity(selSportsIntent)
+                    } else {
+                        // Uneditable, for now, do nothing (might allow to copy to clipboard on click)
+                    }
+                }
+            )
 
-            // edit button
-            Button(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .testTag(ProfileActivity.TestTags.Buttons.EDIT),
-                onClick = {
-                    isEditing = true
+            if (isViewingCoach) {
+                Spacer(modifier = Modifier.height(5.dp))
+                Button(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .testTag(MESSAGE_COACH),
+                    onClick = {
+                        // For the moment, nothing happens
+                        // but in the future this could open the in app messenger with the coach
+                    }
+                ) {
+                    Text(text = "MESSAGE COACH")
                 }
-            ) {
-                Text(text = "Edit")
+            } else {
+                Divider(startIndent = 20.dp)
+                SwitchClientCoachRow(
+                    value = userInfo.coach,
+                    onValueChange = {
+                        saveUserInfo(CompletableFuture.completedFuture(userInfo.copy(coach = it)))
+                    }
+                )
             }
         }
-    }
-}
-
-@Composable
-fun SwitchClientCoachRow(isCoach: Boolean, switchCoachClient: Boolean, onValueChange: (Boolean) -> Unit) {
-    Row(
-        Modifier
-            .absolutePadding(20.dp, 0.dp, 0.dp, 10.dp)
-            .testTag(CLIENT_COACH.ROW),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
-
-    ) {
-        Text("I would like to become a " + if (isCoach) "client" else "coach",
-            modifier = Modifier.testTag(CLIENT_COACH.TEXT))
-        Spacer(Modifier.width(16.dp))
-        Switch(
-            checked = switchCoachClient,
-            onCheckedChange = { onValueChange(it) },
-            modifier = Modifier.testTag(CLIENT_COACH.SWITCH)
-        )
     }
 }
 
@@ -257,31 +300,20 @@ fun SwitchClientCoachRow(isCoach: Boolean, switchCoachClient: Boolean, onValueCh
 @Composable
 fun TitleRow(isCoach: Boolean, isViewingCoach: Boolean) {
     Row (
-        modifier = Modifier
-            .absolutePadding(20.dp, 20.dp, 0.dp, 10.dp)
-            .testTag(ProfileActivity.TestTags.TITLE_ROW),
+        modifier = Modifier.padding(20.dp, 20.dp, 0.dp, 10.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.Start
     ) {
         Column {
-            if (isViewingCoach) {
-                Text(
-                    modifier = Modifier.testTag(PROFILE_LABEL),
-                    text = "Coach's Profile",
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            } else {
-                Text(
-                    modifier = Modifier.testTag(PROFILE_LABEL),
-                    text = "My Profile",
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            Text(
+                modifier = Modifier.testTag(PROFILE_LABEL),
+                text = "${if (isViewingCoach) "Coach's" else "My"} Profile",
+                style = MaterialTheme.typography.h4
+            )
+            if (!isViewingCoach) {
                 Text(
                     text = if (isCoach) "Coach" else "Client",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Normal,
+                    style = MaterialTheme.typography.h6,
                     modifier = Modifier.testTag(COACH_CLIENT_INFO)
                 )
             }
@@ -289,17 +321,17 @@ fun TitleRow(isCoach: Boolean, isViewingCoach: Boolean) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .absolutePadding(0.dp, 0.dp, 25.dp, 0.dp),
+                .padding(0.dp, 0.dp, 25.dp, 0.dp),
             contentAlignment = Alignment.CenterEnd
         ) {
             Image(
                 painter = painterResource(id = R.drawable.ic_launcher_background),
-                contentDescription = "Profile Pic",
+                contentDescription = "Profile picture",
                 modifier = Modifier
                     .size(60.dp)
                     .clip(CircleShape)
                     .border(2.dp, Color.Gray, CircleShape)
-                    .absolutePadding(0.dp, 0.dp, 0.dp, 0.dp)
+                    .padding(0.dp, 0.dp, 0.dp, 0.dp)
                     .testTag(ProfileActivity.TestTags.PROFILE_PICTURE)
             )
         }
@@ -307,89 +339,123 @@ fun TitleRow(isCoach: Boolean, isViewingCoach: Boolean) {
 }
 
 /**
- * Composable used to display the user's email address.
+ * Composable used to display a row with a label and a value.
  */
 @Composable
-fun EmailRow(email: String) {
-    Row (
+fun AttributeRow(
+    label: String,
+    onClick: () -> Unit = {},
+    content: @Composable () -> Unit
+) {
+    Column(
         modifier = Modifier
-            .absolutePadding(20.dp, 80.dp, 0.dp, 10.dp)
-            .testTag(EMAIL.ROW),
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.Start
-    ){
-        Text(modifier = Modifier.testTag(EMAIL.LABEL), text = "Email: ")
-        // replace this Text with read-only TextField?
-        Text(
-            text = email,
+            .clickable {
+                onClick()
+            }
+            .fillMaxWidth()
+            .padding(20.dp, 10.dp, 20.dp, 10.dp),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Bottom
+    ) {
+        Column(
             modifier = Modifier
-                .absolutePadding(80.dp, 0.dp, 0.dp, 0.dp)
-                .testTag(EMAIL.TEXT),
+                .requiredHeight(22.dp),
+            verticalArrangement = Arrangement.Bottom
+        ) {
+            content()
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = label,
+            color = Color.Gray,
+            style = MaterialTheme.typography.overline,
+            fontSize = 8.sp
         )
     }
 }
 
 /**
- * Composable used to display a row of the user profile.
- *
- * @param rowName the name of the row
- * @param isEditing whether the user is currently editing their profile
- * @param leftTextPadding the amount of padding to the left of the text field
- * @param value the value of the row
- * @param onValueChange the function to call when the value of the row changes
+ * Composable used to display a row with a label and a text value.
  */
 @Composable
-fun ProfileRow(rowName: String, tag: ProfileActivity.TestTags.EditableProfileRowTag, isEditing: Boolean, leftTextPadding: Dp, value: String, onValueChange: (String) -> Unit) {
-    Row(
-        modifier = Modifier
-            .absolutePadding(20.dp, 10.dp, 20.dp, 10.dp)
-            .testTag(tag.ROW),
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.Start
+fun TextRow(
+    label: String,
+    tag: String,
+    onClick: () -> Unit = {},
+    value: String
+) {
+    AttributeRow(
+        label = label,
+        onClick = onClick
     ) {
-        Text(text = "$rowName: ", modifier = Modifier
-            .defaultMinSize(50.dp, 20.dp)
-            .testTag(tag.LABEL))
-        if (isEditing) {
-            TextField(
-                modifier = Modifier
-                    .absolutePadding(leftTextPadding, 0.dp, 0.dp, 0.dp)
-                    .defaultMinSize(150.dp, 40.dp)
-                    .testTag(tag.FIELD),
-                value = value,
-                onValueChange = { newValue -> onValueChange(newValue) },
-                singleLine = true,
-                maxLines = 1)
-        } else {
-            Text(
-                modifier = Modifier
-                    .absolutePadding(leftTextPadding + 6.dp, 0.dp, 0.dp, 0.dp)
-                    .testTag(tag.TEXT),
-                text = value)
+        Text(
+            modifier = Modifier.testTag(tag),
+            text = value,
+            style = MaterialTheme.typography.body1,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+/**
+ * Composable used to display a row with a label and a list of sports icons.
+ */
+@Composable
+fun SportsRow(
+    label: String,
+    tag: String,
+    onClick: () -> Unit = {},
+    value: List<Sports>
+) {
+    AttributeRow(
+        label = label,
+        onClick = onClick
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start,
+            modifier = Modifier
+                .testTag(tag)
+                .padding(0.dp, 0.dp, 0.dp, 2.5.dp)
+        ) {
+            value.map {
+                Icon(
+                    imageVector = it.sportIcon,
+                    contentDescription = it.sportName,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+            }
         }
     }
 }
 
+/**
+ * Composable used to display the row with the switch to change the coach status and its description.
+ */
 @Composable
-fun SportsRow(rowName: String, tag: ProfileActivity.TestTags.SelectedSportsRowTag, userInfo: UserInfo) {
+fun SwitchClientCoachRow(value: Boolean, onValueChange: (Boolean) -> Unit) {
     Row(
-        modifier = Modifier
-            .absolutePadding(20.dp, 10.dp, 20.dp, 10.dp)
-            .testTag(tag.ROW),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
+        Modifier
+            .fillMaxWidth()
+            .height(60.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+
     ) {
-        Text(text = "$rowName: ", modifier = Modifier
-            .defaultMinSize(125.dp, 20.dp)
-            .testTag(tag.LABEL))
-        userInfo.sports.map {
-            Icon(
-                imageVector = it.sportIcon,
-                tint = Color.Gray,
-                contentDescription = it.sportName,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-        }
+        Text(
+            text = "I would like others to see me as a coach",
+            style = MaterialTheme.typography.body1,
+            modifier = Modifier
+                .padding(20.dp, 0.dp, 0.dp, 0.dp)
+        )
+        Switch(
+            checked = value,
+            onCheckedChange = onValueChange,
+            modifier = Modifier
+                .testTag(COACH_SWITCH)
+                .padding(0.dp, 0.dp, 20.dp, 0.dp)
+        )
     }
 }
