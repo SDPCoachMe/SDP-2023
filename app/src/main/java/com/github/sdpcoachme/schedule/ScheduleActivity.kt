@@ -5,13 +5,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -24,10 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
@@ -46,7 +40,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.util.*
@@ -99,6 +92,7 @@ private class EventDataModifier(val event: ShownEvent) : ParentDataModifier {
     override fun Density.modifyParentData(parentData: Any?) = event
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun Schedule(
     futureUserInfo: CompletableFuture<UserInfo>,
@@ -127,24 +121,40 @@ fun Schedule(
 
     // the starting day is always the previous Monday
     val minDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-    val maxDate = minDate.plusDays(ColumnsPerWeek.toLong())
     val dayWidth = LocalConfiguration.current.screenWidthDp.dp / ColumnsPerWeek
     val hourHeight = 64.dp
     val verticalScrollState = rememberScrollState()
 
-    Column(modifier = modifier.testTag(ScheduleActivity.TestTags.SCHEDULE_COLUMN)) {
-        ScheduleHeader(
-            minDate = minDate,
-            maxDate = maxDate,
+    var currentWeekMonday by remember { mutableStateOf(minDate) }
+    val maxOffset = ((ColumnsPerWeek - 1) * dayWidth.value.roundToInt().px).toFloat()
+
+    Column(modifier = modifier
+        .testTag(ScheduleActivity.TestTags.SCHEDULE_COLUMN)
+        .swipeable(
+            state = SwipeableState(currentWeekMonday),
+            anchors = mapOf(
+                -maxOffset to currentWeekMonday.minusWeeks(1),
+                0f to currentWeekMonday,
+                maxOffset to currentWeekMonday.plusWeeks(1)
+            ),
+            thresholds = { _, _ -> FractionalThreshold(0.5f) },
+            orientation = Orientation.Horizontal,
+            reverseDirection = true,
+            interactionSource = remember { MutableInteractionSource() },
+        )
+    ) {
+        WeekHeader(
+            currentWeekMonday = currentWeekMonday,
             dayWidth = dayWidth,
-            modifier = Modifier
-                .testTag(ScheduleActivity.TestTags.SCHEDULE_HEADER)
         )
 
         val eventsToShow = EventOps.eventsToWrappedEvents(events)
 
         BasicSchedule(
-            events = eventsToShow,
+            events = eventsToShow.filter {event ->
+                val eventDate = LocalDateTime.parse(event.start).toLocalDate()
+                eventDate >= currentWeekMonday && eventDate < currentWeekMonday.plusWeeks(1)
+            },
             minDate = minDate,
             dayWidth = dayWidth,
             hourHeight = hourHeight,
@@ -156,44 +166,44 @@ fun Schedule(
     }
 }
 
-private fun Modifier.eventData(event: ShownEvent) = this.then(EventDataModifier(event))
-private val EventTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-private val DayFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
-private const val ColumnsPerWeek = 7
+/*@Composable
+fun ScheduleHeader(
+    minDate: LocalDate,
+    maxDate: LocalDate,
+    dayWidth: Dp,
+    modifier: Modifier = Modifier,
+    dayHeader: @Composable (day: LocalDate) -> Unit = { BasicDayHeader(day = it) }
+) {
+    Row(modifier = modifier) {
+        val numDays = ChronoUnit.DAYS.between(minDate, maxDate).toInt() + 1
+        repeat(numDays) { i ->
+            val day = minDate.plusDays(i.toLong())
+            Box(modifier = Modifier.width(dayWidth)) {
+                dayHeader(day)
+            }
+        }
+    }
+}*/
+
+val Int.px: Int get() = (this * getSystem().displayMetrics.density).toInt()
 
 @Composable
-fun BasicEvent(
-    event: ShownEvent,
+fun WeekHeader(
+    currentWeekMonday: LocalDate,
+    dayWidth: Dp,
     modifier: Modifier = Modifier,
+    dayHeader: @Composable (day: LocalDate) -> Unit = { BasicDayHeader(day = it) }
 ) {
-    Column(
+    Row(
         modifier = modifier
-            .fillMaxSize()
-            .padding(end = 2.dp, bottom = 2.dp)
-            .background(Color(event.color.toULong()), shape = RoundedCornerShape(4.dp))
-            .padding(4.dp)
+            .testTag(ScheduleActivity.TestTags.WEEK_HEADER)
     ) {
-        Text(
-            text = "${LocalDateTime.parse(event.startText).toLocalTime().format(EventTimeFormatter)} - ${LocalDateTime.parse(event.endText).toLocalTime().format(EventTimeFormatter)}",
-            style = MaterialTheme.typography.caption,
-            fontSize = 9f.sp,
-        )
-
-        Text(
-            text = event.name,
-            style = MaterialTheme.typography.body1,
-            fontWeight = FontWeight.Bold,
-            fontSize = 12f.sp,
-        )
-
-        //TODO: Only show description when event expanded
-        Text(
-            text = event.description,
-            style = MaterialTheme.typography.body2,
-            maxLines = 5,
-            overflow = TextOverflow.Ellipsis,
-            fontSize = 10f.sp,
-        )
+        repeat(ColumnsPerWeek) {i ->
+            val day = currentWeekMonday.plusDays(i.toLong())
+            Box(modifier = Modifier.width(dayWidth)) {
+                dayHeader(day)
+            }
+        }
     }
 }
 
@@ -212,80 +222,6 @@ fun BasicDayHeader(
         fontSize = 12f.sp,
         fontWeight = textWeight,
     )
-}
-
-@Composable
-fun ScheduleHeader(
-    minDate: LocalDate,
-    maxDate: LocalDate,
-    dayWidth: Dp,
-    modifier: Modifier = Modifier,
-    dayHeader: @Composable (day: LocalDate) -> Unit = { BasicDayHeader(day = it) }
-) {
-    Row(modifier = modifier) {
-        val numDays = ChronoUnit.DAYS.between(minDate, maxDate).toInt() + 1
-        repeat(numDays) { i ->
-            val day = minDate.plusDays(i.toLong())
-            Box(modifier = Modifier.width(dayWidth)) {
-                dayHeader(day)
-            }
-        }
-    }
-}
-
-val Int.px: Int get() = (this * getSystem().displayMetrics.density).toInt()
-@OptIn(ExperimentalMaterialApi::class)
-@Composable
-fun WeekHeader(
-    currentWeekMonday: LocalDate,
-    dayWidth: Dp,
-    onWeekChange: (LocalDate) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val screenWidth = LocalConfiguration.current.screenWidthDp
-    val scrollState = rememberLazyListState()
-    val maxOffset = ((ColumnsPerWeek - 1) * dayWidth.value.roundToInt().px).toFloat()
-    val density = LocalDensity.current
-
-    LazyRow(
-        state = scrollState,
-        modifier = modifier
-            .padding(horizontal = (screenWidth / 2 - maxOffset / 2).dp)
-            .fillMaxWidth()
-            .swipeable(
-                state = SwipeableState(currentWeekMonday),
-                anchors = mapOf(
-                    -maxOffset to currentWeekMonday.minusWeeks(1),
-                    0f to currentWeekMonday,
-                    maxOffset to currentWeekMonday.plusWeeks(1)
-                ),
-                thresholds = { _, _ -> FractionalThreshold(0.5f) },
-                orientation = Orientation.Horizontal,
-                reverseDirection = true,
-                interactionSource = remember { MutableInteractionSource() },
-            )
-            .testTag(ScheduleActivity.TestTags.WEEK_HEADER)
-    ) {
-        val daysOfWeek = DayOfWeek.values()
-            .sorted()
-            .map {day ->
-                currentWeekMonday.with(TemporalAdjusters.nextOrSame(day))
-            }
-
-        daysOfWeek.forEach { day ->
-            val isCurrentWeek = day == currentWeekMonday
-            val text = day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
-            Text(
-                text = text,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .width(dayWidth)
-                    .height(40.dp)
-                    .background(if (isCurrentWeek) Color.Gray else Color.Transparent)
-                    .clickable { onWeekChange(day) }
-            )
-        }
-    }
 }
 
 @Composable
@@ -347,6 +283,47 @@ fun BasicSchedule(
         }
     }
 }
+
+private fun Modifier.eventData(event: ShownEvent) = this.then(EventDataModifier(event))
+private val EventTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+private val DayFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
+private const val ColumnsPerWeek = 7
+
+@Composable
+fun BasicEvent(
+    event: ShownEvent,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(end = 2.dp, bottom = 2.dp)
+            .background(Color(event.color.toULong()), shape = RoundedCornerShape(4.dp))
+            .padding(4.dp)
+    ) {
+        Text(
+            text = "${LocalDateTime.parse(event.startText).toLocalTime().format(EventTimeFormatter)} - ${LocalDateTime.parse(event.endText).toLocalTime().format(EventTimeFormatter)}",
+            style = MaterialTheme.typography.caption,
+            fontSize = 9f.sp,
+        )
+
+        Text(
+            text = event.name,
+            style = MaterialTheme.typography.body1,
+            fontWeight = FontWeight.Bold,
+            fontSize = 12f.sp,
+        )
+
+        Text(
+            text = event.description,
+            style = MaterialTheme.typography.body2,
+            maxLines = 5,
+            overflow = TextOverflow.Ellipsis,
+            fontSize = 10f.sp,
+        )
+    }
+}
+
 
 // --------------------------------------------------
 // mainly for testing, debugging and demo purposes
