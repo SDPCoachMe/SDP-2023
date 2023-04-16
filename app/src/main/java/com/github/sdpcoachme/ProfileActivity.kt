@@ -36,6 +36,7 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.location.autocomplete.LocationAutocompleteHandler
+import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
@@ -277,6 +278,12 @@ class ProfileActivity : ComponentActivity() {
                     onClick = {
                         // For the moment, nothing happens
                         // but in the future this could open the in app messenger with the coach
+                        //TODO: get own email!!!
+                        val userEmail = database.getCurrentEmail()
+                        val intent = Intent(context, ChatActivity::class.java)
+                        intent.putExtra("currentUserEmail", userEmail)
+                        intent.putExtra("toUserEmail", email)
+                        context.startActivity(intent)
                     }
                 ) {
                     Text(text = "MESSAGE COACH")
