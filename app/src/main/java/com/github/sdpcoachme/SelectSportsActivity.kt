@@ -24,6 +24,7 @@ import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.map.MapActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
 
@@ -132,7 +133,7 @@ class SelectSportsActivity : ComponentActivity() {
                         .thenApply {
                             val targetClass =
                                 if (isEditingProfile) ProfileActivity::class.java
-                                else DashboardActivity::class.java
+                                else MapActivity::class.java
                             val intent = Intent(context, targetClass)
                             startActivity(intent)
                         }.exceptionally {

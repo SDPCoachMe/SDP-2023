@@ -1,20 +1,12 @@
 package com.github.sdpcoachme
 
-import android.Manifest.permission.ACCESS_FINE_LOCATION
-import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.Icons.Default
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -28,41 +20,29 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.COACHES_LIST
-import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HAMBURGER_MENU
-import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HELP
-import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.LOGOUT
-import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.MESSAGING
-import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.PROFILE
-import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.SCHEDULE
-import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.SETTINGS
-import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DASHBOARD_EMAIL
-import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DRAWER_HEADER
-import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MENU_LIST
-import com.github.sdpcoachme.data.MapState
-import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
-import com.github.sdpcoachme.firebase.database.Database
-import com.github.sdpcoachme.map.MapViewModel
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.COACHES_LIST
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HELP
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.LOGOUT
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.MESSAGING
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.PROFILE
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.SCHEDULE
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.SETTINGS
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.schedule.ScheduleActivity
-import com.github.sdpcoachme.ui.MapView
-import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
 
 /**
-    Dashboard main activity implemented as a left-sided drawer
-    to navigate to other application activities. Should be set
-    above the main map view.
+ * Helper Dashboard class for TestTags of the dashboard UI
  */
-class DashboardActivity : ComponentActivity() {
+class Dashboard {
     class TestTags {
         companion object {
             const val DRAWER_HEADER = "drawerHeader"
             const val DASHBOARD_EMAIL = "dashboardEmail"
             const val MENU_LIST = "menuList"
-            const val MAP = "map"
         }
         class Buttons {
             companion object {
@@ -77,62 +57,14 @@ class DashboardActivity : ComponentActivity() {
             }
         }
     }
-
-    private lateinit var database: Database
-    private lateinit var email: String
-
-    /**
-     * Create an activity for result : display window to request asked permission.
-     * If granted, launches the callback (here getDeviceLocation(...) which retrieves the user's
-     * location). The contract is a predefined "function" which takes a permission as input and
-     * outputs if the user has granted it or not.
-     */
-    private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-                isGranted: Boolean -> if (isGranted) {
-                    mapViewModel.getDeviceLocation(fusedLocationProviderClient)
-                } else {
-                    // TODO Permission denied or only COARSE given
-                }
-        }
-
-    /**
-     * This function updates the location state of the MapViewModel if the permission is granted.
-     * If the permission is denied, it requests it.
-     */
-    private fun getLocation() =
-        when (ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION)) {
-            PackageManager.PERMISSION_GRANTED -> {
-                mapViewModel.getDeviceLocation(fusedLocationProviderClient)
-            }
-            else -> requestPermissionLauncher.launch(ACCESS_FINE_LOCATION)
-        }
-
-    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
-    private val mapViewModel: MapViewModel by viewModels()
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        database = (application as CoachMeApplication).database
-        email = database.getCurrentEmail()
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
-        getLocation()
-        if (email.isEmpty()) {
-            val errorMsg = "The dashboard did not receive an email address.\nPlease return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
-        } else {
-            setContent {
-                CoachMeTheme {
-                    Dashboard(email, mapViewModel.mapState.value)
-                }
-            }
-        }
-    }
 }
 
-@SuppressLint("CoroutineCreationDuringComposition")
+/**
+ * Dashboard UI implemented as a left-sided drawer to navigate to other application activities.
+ * @param dashboardContent = set here the root composable of the current launched activity
+ */
 @Composable
-fun Dashboard(email: String, mapState: MapState) {
+fun Dashboard(dashboardContent: @Composable (Modifier) -> Unit, email: String) {
 
     val context = LocalContext.current
     // equivalent to remember { ScaffoldState(...) }
@@ -154,25 +86,25 @@ fun Dashboard(email: String, mapState: MapState) {
                 items = listOf(
                     MenuItem(tag = SCHEDULE, title = "Schedule",
                         contentDescription = "See schedule",
-                        icon = Icons.Default.CheckCircle),
+                        icon = Default.CheckCircle),
                     MenuItem(tag = PROFILE, title = "Profile",
                         contentDescription = "Go to profile",
-                        icon = Icons.Default.AccountCircle),
+                        icon = Default.AccountCircle),
                     MenuItem(tag = COACHES_LIST, title = "Nearby coaches",
                         contentDescription = "See a list of coaches available close to you",
-                        icon = Icons.Default.People),
+                        icon = Default.People),
                     MenuItem(tag = MESSAGING, title = "Messaging",
                         contentDescription = "Go to Messaging section",
-                        icon = Icons.Default.Message),
+                        icon = Default.Message),
                     MenuItem(tag = SETTINGS, title = "Settings",
                         contentDescription = "Go to settings",
-                        icon = Icons.Default.Settings),
+                        icon = Default.Settings),
                     MenuItem(tag = HELP, title = "Help",
                         contentDescription = "Get help",
-                        icon = Icons.Default.Info),
+                        icon = Default.Info),
                     MenuItem(tag = LOGOUT, title = "Log out",
                             contentDescription = "User logs out",
-                            icon = Icons.Default.Close)
+                            icon = Default.Close)
                 ),
                 onItemClick = {
                     when (it.tag) {
@@ -204,13 +136,9 @@ fun Dashboard(email: String, mapState: MapState) {
                 }
             )
         },
-        //TODO replace the scaffold content here with the main map view
         content = { innerPadding ->
-            // pass the correct padding to the content root, here the column
-            MapView(
-                modifier = Modifier.padding(innerPadding),
-                mapState = mapState
-            )
+            // invokes dashboardContent composable with correct padding
+            dashboardContent(Modifier.padding(innerPadding))
         }
     )
 }
@@ -226,7 +154,7 @@ fun AppBar(onNavigationIconClick: () -> Unit) {
                 modifier = Modifier.testTag(HAMBURGER_MENU),
                 onClick = onNavigationIconClick) {
                 Icon(
-                    imageVector = Icons.Default.Menu,
+                    imageVector = Default.Menu,
                     contentDescription = "Toggle drawer"
                 )
             }
@@ -286,3 +214,5 @@ data class MenuItem(
     val contentDescription: String,
     val icon: ImageVector
 )
+
+

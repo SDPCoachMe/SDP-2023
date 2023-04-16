@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Coach Me</string>
-    <string name="title_activity_dashboard">Dashboard</string>
     <string name="title_activity_edit_profile">Edit profile</string>
     <string name="title_activity_signup">Sign up</string>
     <string name="title_activity_login">Log in</string>
@@ -8,6 +7,8 @@
     <string name="title_activity_schedule">Schedule</string>
     <string name="title_activity_chats_overview">Chats overview</string>
     <string name="title_activity_chat">Chat</string>
+    <string name="title_activity_map">Map</string>
+
 
     <!--Firebase sign in page-->
     <string name="go_to_sign_in_page">Go to sign in page</string>

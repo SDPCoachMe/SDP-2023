@@ -7,9 +7,8 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
-import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MAP
+import com.github.sdpcoachme.map.MapActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.data.MapState
-import com.github.sdpcoachme.ui.MapView
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.google.android.gms.maps.model.LatLng
 import org.junit.Rule
@@ -36,7 +35,7 @@ class MapTest {
     private fun mapExistsAndShowsUpOnLocation(location: LatLng?) {
         composeTestRule.setContent {
             CoachMeTheme() {
-                MapView(
+                Map(
                     modifier = Modifier.fillMaxWidth(),
                     mapState = MapState(lastKnownLocation = location)
                 )

@@ -24,6 +24,7 @@ import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.PARIS
+import com.github.sdpcoachme.map.MapActivity
 import junit.framework.TestCase
 import org.hamcrest.Matchers.*
 import org.junit.Before
@@ -148,8 +149,8 @@ open class SelectSportsActivityTest {
     }
 
 //    @Test
-    fun userInfoUpdatedWithAllSelectedSportsAndRedirectedToDashboardActivity() {
-        checkRedirectionAfterRegister(launchSelectSports, DashboardActivity::class.java.name)
+    fun userInfoUpdatedWithAllSelectedSportsAndRedirectedToMapActivity() {
+        checkRedirectionAfterRegister(launchSelectSports, MapActivity::class.java.name)
     }
 
     @Test
