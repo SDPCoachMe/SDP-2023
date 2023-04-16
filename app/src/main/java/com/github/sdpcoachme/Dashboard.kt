@@ -25,12 +25,14 @@ import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HELP
 import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.LOGOUT
 import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.MESSAGING
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.PLAN
 import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.PROFILE
 import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.SCHEDULE
 import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.SETTINGS
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.MENU_LIST
+import com.github.sdpcoachme.map.MapActivity
 import com.github.sdpcoachme.schedule.ScheduleActivity
 import kotlinx.coroutines.launch
 
@@ -47,6 +49,7 @@ class Dashboard {
         class Buttons {
             companion object {
                 const val HAMBURGER_MENU = "hamburgerMenu"
+                const val PLAN = "plan"
                 const val SCHEDULE = "schedule"
                 const val PROFILE = "profile"
                 const val COACHES_LIST = "coacheslist"
@@ -84,6 +87,9 @@ fun Dashboard(dashboardContent: @Composable (Modifier) -> Unit, email: String) {
             DrawerHeader(email)
             DrawerBody(
                 items = listOf(
+                    MenuItem(tag = PLAN, title = "Map",
+                        contentDescription = "Return to main map",
+                        icon = Default.LocationOn),
                     MenuItem(tag = SCHEDULE, title = "Schedule",
                         contentDescription = "See schedule",
                         icon = Default.CheckCircle),
@@ -108,6 +114,9 @@ fun Dashboard(dashboardContent: @Composable (Modifier) -> Unit, email: String) {
                 ),
                 onItemClick = {
                     when (it.tag) {
+                        PLAN -> {
+                            context.startActivity(Intent(context, MapActivity::class.java))
+                        }
                         PROFILE -> {
                             context.startActivity(Intent(context, ProfileActivity::class.java))
                         }

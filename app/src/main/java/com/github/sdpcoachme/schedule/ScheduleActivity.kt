@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.Dashboard
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.ShownEvent
 import com.github.sdpcoachme.data.UserInfo
@@ -76,9 +77,12 @@ class ScheduleActivity : ComponentActivity() {
 
                 setContent {
                     CoachMeTheme {
-                        Surface(color = MaterialTheme.colors.background) {
-                            Schedule(futureUserInfo)
+                        val dashboardContent: @Composable (Modifier) -> Unit = {
+                            Surface(color = MaterialTheme.colors.background) {
+                                Schedule(futureUserInfo)
+                            }
                         }
+                        Dashboard(dashboardContent, email)
                     }
                 }
             }

@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachesListActivity
+import com.github.sdpcoachme.Dashboard
 import com.github.sdpcoachme.ProfileActivity
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
@@ -114,14 +115,17 @@ class ChatActivity : ComponentActivity() {
             database.markMessagesAsRead(chatId, currentUserEmail)
 
             setContent {
-                ChatView(
-                    currentUserEmail,
-                    chatId,
-                    database,
-                    database.getChat(chatId),
-                    database.getUser(currentUserEmail),
-                    database.getUser(toUserEmail)
-                )
+                val dashboardContent: @Composable (Modifier) -> Unit = {
+                    ChatView(
+                        currentUserEmail,
+                        chatId,
+                        database,
+                        database.getChat(chatId),
+                        database.getUser(currentUserEmail),
+                        database.getUser(toUserEmail)
+                    )
+                }
+                Dashboard(dashboardContent, currentUserEmail)
             }
         }
     }

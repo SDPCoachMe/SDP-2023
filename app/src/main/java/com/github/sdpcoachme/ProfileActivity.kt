@@ -110,12 +110,16 @@ class ProfileActivity : ComponentActivity() {
 
             setContent {
                 CoachMeTheme {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colors.background
-                    ) {
-                        Profile(email, futureUserInfo, isViewingCoach)
+                    val dashboardContent: @Composable (Modifier) -> Unit = { modifier ->
+                        Surface(
+                            modifier = modifier.fillMaxSize(),
+                            color = MaterialTheme.colors.background
+                        ) {
+                            Profile(email, futureUserInfo, isViewingCoach)
+                        }
                     }
+                    Dashboard(dashboardContent, email)
+
                 }
             }
         }

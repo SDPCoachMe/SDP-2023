@@ -86,7 +86,6 @@ class ProfileActivityTest {
             FIRST_NAME.FIELD,
             LAST_NAME.FIELD,
             CLIENT_COACH.SWITCH,
-
             SAVE
         )
 

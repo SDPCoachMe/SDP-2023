@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.github.sdpcoachme.ui.theme.Purple500
@@ -47,6 +48,7 @@ class CoachesListActivity : ComponentActivity() {
         val currentLat = 46.519054480712015
         val currentLong = 6.566757578464391
         val database = (application as CoachMeApplication).database
+
         val futureListOfCoaches =
             if (isViewingContacts) {
                 database.getChatContacts(email = database.getCurrentEmail())
@@ -60,37 +62,49 @@ class CoachesListActivity : ComponentActivity() {
                 }
             }
 
-        setContent {
-            var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
+        val email = database.getCurrentEmail()
 
-            // Proper way to handle result of a future in a Composable.
-            // This makes sure the listOfCoaches state is updated only ONCE, when the future is complete
-            // This is because the code in LaunchedEffect(true) will only be executed once, when the
-            // Composable is first created (given that the parameter key1 never changes). The code won't
-            // be executed on every recomposition.
-            // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
-            LaunchedEffect(true) {
-                listOfCoaches = futureListOfCoaches.await()
+        if (email.isEmpty()) {
+            val errorMsg = "The coach list did not receive an email address.\nPlease return to the login page and try again."
+            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
+        } else {
+            setContent {
+                var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
 
-                // Activity is now ready for testing
-                stateLoading.complete(null)
-            }
+                // Proper way to handle result of a future in a Composable.
+                // This makes sure the listOfCoaches state is updated only ONCE, when the future is complete
+                // This is because the code in LaunchedEffect(true) will only be executed once, when the
+                // Composable is first created (given that the parameter key1 never changes). The code won't
+                // be executed on every recomposition.
+                // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
+                LaunchedEffect(true) {
+                    listOfCoaches = futureListOfCoaches.await()
 
-            CoachMeTheme {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) {
-                    TitleRow(isViewingContacts = isViewingContacts)
+                    // Activity is now ready for testing
+                    stateLoading.complete(null)
+                }
 
-                    LazyColumn {
-                        items(listOfCoaches) { user ->
-                            UserInfoListItem(user, isViewingContacts)
+                CoachMeTheme {
+                    val dashboardContent: @Composable (Modifier) -> Unit = { modifier ->
+                        Column(
+                            modifier = modifier
+                                .fillMaxSize()
+                        ) {
+                            TitleRow(isViewingContacts = isViewingContacts)
+
+                            LazyColumn {
+                                items(listOfCoaches) { user ->
+                                    UserInfoListItem(user, isViewingContacts)
+                                }
+                            }
                         }
                     }
+                    Dashboard(dashboardContent, email)
                 }
             }
         }
+
+
     }
 }
 
