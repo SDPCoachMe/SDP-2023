@@ -5,13 +5,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowLeft
+import androidx.compose.material.icons.filled.ArrowRight
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -73,7 +74,7 @@ class ScheduleActivity : ComponentActivity() {
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
             //TODO: For demo, let this function run once to add sample events to the database
-            database.addEventsToUser(email, sampleEvents).thenRun {
+            //database.addEventsToUser(email, sampleEvents).thenRun {
                 val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email)
 
                 setContent {
@@ -83,7 +84,7 @@ class ScheduleActivity : ComponentActivity() {
                         }
                     }
                 }
-            }
+            //}
         }
     }
 }
@@ -126,23 +127,21 @@ fun Schedule(
     val verticalScrollState = rememberScrollState()
 
     var currentWeekMonday by remember { mutableStateOf(minDate) }
-    val maxOffset = ((ColumnsPerWeek - 1) * dayWidth.value.roundToInt().px).toFloat()
+    //val maxOffset = ((ColumnsPerWeek - 1) * dayWidth.value.roundToInt().px).toFloat()
+
+    fun updateCurrentWeekMonday(weeksToAdd: Int) {
+        currentWeekMonday = currentWeekMonday.plusWeeks(weeksToAdd.toLong())
+    }
+
 
     Column(modifier = modifier
         .testTag(ScheduleActivity.TestTags.SCHEDULE_COLUMN)
-        .swipeable(
-            state = SwipeableState(currentWeekMonday),
-            anchors = mapOf(
-                -maxOffset to currentWeekMonday.minusWeeks(1),
-                0f to currentWeekMonday,
-                maxOffset to currentWeekMonday.plusWeeks(1)
-            ),
-            thresholds = { _, _ -> FractionalThreshold(0.5f) },
-            orientation = Orientation.Horizontal,
-            reverseDirection = true,
-            interactionSource = remember { MutableInteractionSource() },
-        )
     ) {
+        ScheduleTitleRow(
+            currentWeekMonday = currentWeekMonday,
+            onLeftArrowClick = { updateCurrentWeekMonday(-1) },
+            onRightArrowClick = { updateCurrentWeekMonday(1) },
+        )
         WeekHeader(
             currentWeekMonday = currentWeekMonday,
             dayWidth = dayWidth,
@@ -163,6 +162,44 @@ fun Schedule(
                 .verticalScroll(verticalScrollState)
                 .testTag(ScheduleActivity.TestTags.BASIC_SCHEDULE)
         )
+    }
+}
+
+@Composable
+fun ScheduleTitleRow(
+    currentWeekMonday: LocalDate,
+    onLeftArrowClick: () -> Unit,
+    onRightArrowClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(14.dp)
+    ) {
+        Text(
+            text = "Schedule",
+            style = MaterialTheme.typography.h5,
+            modifier = Modifier.weight(1f)
+        )
+        IconButton(onClick = { onLeftArrowClick() }) {
+            Icon(
+                imageVector = Icons.Default.ArrowLeft,
+                contentDescription = "Left arrow"
+            )
+        }
+        val formatter = DateTimeFormatter.ofPattern("d MMM")
+        Text(
+            text = "${currentWeekMonday.format(formatter)} - ${currentWeekMonday.plusDays(6).format(formatter)}",
+            style = MaterialTheme.typography.subtitle1,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+        )
+        IconButton(onClick = { onRightArrowClick() }) {
+            Icon(
+                imageVector = Icons.Default.ArrowRight,
+                contentDescription = "Right arrow"
+            )
+        }
     }
 }
 
