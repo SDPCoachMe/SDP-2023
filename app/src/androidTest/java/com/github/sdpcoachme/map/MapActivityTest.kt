@@ -21,7 +21,6 @@ import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.map.MapActivity.TestTags.Companion.MAP
-import com.github.sdpcoachme.map.MapActivity.TestTags.Companion.MAP_WITHOUT_LOCATION
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.google.android.gms.maps.model.LatLng
 import org.junit.Before
@@ -135,7 +134,10 @@ class MapActivityTest {
     @Test
     fun mapActivityHasADisplayedMapView() {
         ActivityScenario.launch<MapActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(MAP_WITHOUT_LOCATION).assertExists().assertIsDisplayed()
+            val context = (InstrumentationRegistry.getInstrumentation()
+                .targetContext.applicationContext as CoachMeApplication)
+            val mapTag = MAP + context.userLocation.value.toString()
+            composeTestRule.onNodeWithTag(mapTag).assertExists().assertIsDisplayed()
         }
     }
 

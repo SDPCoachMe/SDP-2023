@@ -25,7 +25,6 @@ import com.github.sdpcoachme.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.map.MapActivity
-import com.github.sdpcoachme.map.MapActivity.TestTags.Companion.MAP_WITHOUT_LOCATION
 import com.github.sdpcoachme.schedule.ScheduleActivity
 import org.hamcrest.Matcher
 import org.junit.After
@@ -193,7 +192,10 @@ class DashboardTest {
     @Test
     fun currentAppActivityIsDashboardContent() {
         ActivityScenario.launch<MapActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(MAP_WITHOUT_LOCATION).assertExists().assertIsDisplayed()
+            val context = (InstrumentationRegistry.getInstrumentation()
+                .targetContext.applicationContext as CoachMeApplication)
+            val mapTag = MapActivity.TestTags.MAP + context.userLocation.value.toString()
+            composeTestRule.onNodeWithTag(mapTag).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
         }
     }

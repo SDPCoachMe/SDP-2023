@@ -35,7 +35,6 @@ class MapActivity : ComponentActivity() {
     class TestTags {
         companion object {
             const val MAP = "map"
-            const val MAP_WITHOUT_LOCATION = MAP + "null"
         }
     }
 
@@ -151,6 +150,8 @@ fun Map(modifier: Modifier, lastUserLocation: MutableState<LatLng?>) {
         position = CameraPosition.fromLatLngZoom(CAMPUS, 15f)
     }
 
+    println("MAP WAS LAUNCHED WITH"+ lastUserLocation.value.toString())
+
     GoogleMap(
         // test tag contains lastUserLocation info to allow simple recomposition tracking
         modifier = modifier
@@ -163,7 +164,7 @@ fun Map(modifier: Modifier, lastUserLocation: MutableState<LatLng?>) {
         )
     ) {
         // moves camera to last known location
-        if (lastUserLocation.value  != null) {
+        if (lastUserLocation.value != null) {
             // relaunches the effect when the key changes. So here only once
             LaunchedEffect(true) {
                 cameraPositionState.animate(
