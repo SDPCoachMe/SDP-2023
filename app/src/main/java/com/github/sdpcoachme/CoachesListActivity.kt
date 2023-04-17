@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
+import com.github.sdpcoachme.map.MapActivity.Companion.CAMPUS
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.future.await
@@ -41,10 +42,8 @@ class CoachesListActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
-        // TODO: update this to be current device location
-        val currentLat = 46.519054480712015
-        val currentLong = 6.566757578464391
         val database = (application as CoachMeApplication).database
+        val userLatLng = (application as CoachMeApplication).userLocation.value?: CAMPUS
 
         val futureListOfCoaches =
             if (isViewingContacts) {
@@ -52,8 +51,8 @@ class CoachesListActivity : ComponentActivity() {
             } else {
                 database
                 .getAllUsersByNearest(
-                    latitude = currentLat,
-                    longitude = currentLong
+                    latitude = userLatLng.latitude,
+                    longitude = userLatLng.longitude
                 ).thenApply {
                     it.filter { user -> user.coach }
                 }
@@ -100,8 +99,6 @@ class CoachesListActivity : ComponentActivity() {
                 }
             }
         }
-
-
     }
 }
 

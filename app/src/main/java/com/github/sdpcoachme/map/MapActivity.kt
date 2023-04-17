@@ -16,6 +16,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.Dashboard
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.map.MapActivity.Companion.CAMPUS
 import com.github.sdpcoachme.map.MapActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -38,20 +39,27 @@ class MapActivity : ComponentActivity() {
         }
     }
 
+    companion object {
+        val CAMPUS = LatLng(46.520536,6.568318)
+    }
+
     private lateinit var database: Database
     private lateinit var email: String
 
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
-    private var lastUserLocation: MutableState<LatLng?> = mutableStateOf(null)
+    // the user location is communicated via CoachMeApplication to avoid storing it in the database
+    private lateinit var lastUserLocation: MutableState<LatLng?>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         database = (application as CoachMeApplication).database
         email = database.getCurrentEmail()
+        lastUserLocation = (application as CoachMeApplication).userLocation
 
         // gets user location at map creation
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+        getLocation()
 
         if (email.isEmpty()) {
             val errorMsg = "The map did not receive an email address.\nPlease return to the login page and try again."
@@ -66,7 +74,6 @@ class MapActivity : ComponentActivity() {
                 }
             }
         }
-        getLocation()
     }
 
     /**
@@ -96,6 +103,9 @@ class MapActivity : ComponentActivity() {
             else -> requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
 
+    /**
+     * Performs the location retrieval. Permission are checked before this function call
+     */
     @SuppressLint("MissingPermission") //permission is checked before the call
     private fun getDeviceLocation(fusedLocationProviderClient: FusedLocationProviderClient) {
         try {
@@ -107,6 +117,7 @@ class MapActivity : ComponentActivity() {
                             task.result.latitude,
                             task.result.longitude
                         )
+                        updateUserLocation()
                     } else {
                         println("Location is disabled on the device")
                         // TODO handle this case
@@ -116,6 +127,14 @@ class MapActivity : ComponentActivity() {
         } catch (e: SecurityException) {
             error("getDeviceLocation was called without correct permissions : ${e.message}")
         }
+    }
+
+    /**
+     * Updates the user location of the app. Needs to be called everytime we get a new device
+     * location : already called in getDeviceLocation for this purpose
+     */
+    private fun updateUserLocation() {
+        (application as CoachMeApplication).userLocation = lastUserLocation
     }
 }
 
@@ -128,9 +147,8 @@ class MapActivity : ComponentActivity() {
 @Composable
 fun Map(modifier: Modifier, lastUserLocation: MutableState<LatLng?>) {
 
-    val campus = LatLng(46.520536,6.568318)
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(campus, 15f)
+        position = CameraPosition.fromLatLngZoom(CAMPUS, 15f)
     }
 
     GoogleMap(
