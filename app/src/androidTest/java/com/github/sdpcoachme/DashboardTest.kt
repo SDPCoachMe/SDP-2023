@@ -25,6 +25,7 @@ import com.github.sdpcoachme.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.map.MapActivity
+import com.github.sdpcoachme.map.MapActivity.TestTags.Companion.MAP_WITHOUT_LOCATION
 import com.github.sdpcoachme.schedule.ScheduleActivity
 import org.hamcrest.Matcher
 import org.junit.After
@@ -186,6 +187,14 @@ class DashboardTest {
         check(BuildConfig.MAPS_API_KEY.isNotBlank()
                 && BuildConfig.MAPS_API_KEY != "YOUR_API_KEY") {
             "Maps API key not specified"
+        }
+    }
+
+    @Test
+    fun currentAppActivityIsDashboardContent() {
+        ActivityScenario.launch<MapActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(MAP_WITHOUT_LOCATION).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
         }
     }
 
