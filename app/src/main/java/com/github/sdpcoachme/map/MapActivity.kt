@@ -150,8 +150,6 @@ fun Map(modifier: Modifier, lastUserLocation: MutableState<LatLng?>) {
         position = CameraPosition.fromLatLngZoom(CAMPUS, 15f)
     }
 
-    println("MAP WAS LAUNCHED WITH"+ lastUserLocation.value.toString())
-
     GoogleMap(
         // test tag contains lastUserLocation info to allow simple recomposition tracking
         modifier = modifier
