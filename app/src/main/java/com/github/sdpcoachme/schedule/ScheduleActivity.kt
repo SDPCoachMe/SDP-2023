@@ -154,7 +154,7 @@ fun Schedule(
                 val eventDate = LocalDateTime.parse(event.start).toLocalDate()
                 eventDate >= currentWeekMonday && eventDate < currentWeekMonday.plusWeeks(1)
             },
-            minDate = minDate,
+            minDate = currentWeekMonday,
             dayWidth = dayWidth,
             hourHeight = hourHeight,
             modifier = Modifier
@@ -203,25 +203,7 @@ fun ScheduleTitleRow(
     }
 }
 
-/*@Composable
-fun ScheduleHeader(
-    minDate: LocalDate,
-    maxDate: LocalDate,
-    dayWidth: Dp,
-    modifier: Modifier = Modifier,
-    dayHeader: @Composable (day: LocalDate) -> Unit = { BasicDayHeader(day = it) }
-) {
-    Row(modifier = modifier) {
-        val numDays = ChronoUnit.DAYS.between(minDate, maxDate).toInt() + 1
-        repeat(numDays) { i ->
-            val day = minDate.plusDays(i.toLong())
-            Box(modifier = Modifier.width(dayWidth)) {
-                dayHeader(day)
-            }
-        }
-    }
-}*/
-
+// TODO: Remove this if not needed (was needed for swiping approach)
 val Int.px: Int get() = (this * getSystem().displayMetrics.density).toInt()
 
 @Composable
