@@ -2,15 +2,16 @@ package com.github.sdpcoachme.schedule
 
 import android.content.Intent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.ShownEvent
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
@@ -196,6 +197,22 @@ class ScheduleActivityTest {
                     assertTrue(expectedShownEvents == actualShownEvents)
                 }
             }
+        }
+    }
+
+    @Test
+    fun dashboardHasRightTitleOnSchedule() {
+        ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText("Schedule"))
+        }
+    }
+    @Test
+    fun dashboardIsAccessibleAndDisplayableFromSchedule() {
+        ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertExists().assertIsDisplayed()
         }
     }
 }

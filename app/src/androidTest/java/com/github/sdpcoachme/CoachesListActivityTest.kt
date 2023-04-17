@@ -10,6 +10,9 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
@@ -112,6 +115,22 @@ open class CoachesListActivityTest {
             Intents.release()
     }
 
+    @Test
+    fun dashboardHasRightTitleOnNearbyCoachesList() {
+        ActivityScenario.launch<CoachesListActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText("Nearby coaches"))
+        }
+    }
+    @Test
+    fun dashboardIsAccessibleAndDisplayableFromNearbyCoachesList() {
+        ActivityScenario.launch<CoachesListActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertExists().assertIsDisplayed()
+        }
+    }
+
     // Subclass added to be able to run a different setup method (to simulate viewing contacts)
     class ContactsListTest: CoachesListActivityTest() {
         @Before
@@ -153,6 +172,20 @@ open class CoachesListActivityTest {
             ))
             Intents.release()
         }
+
+        @Test
+        fun dashboardHasRightTitleOnContactsList() {
+            composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText("Contacts"))
+        }
+
+        @Test
+        fun dashboardIsAccessibleAndDisplayableFromContactsList() {
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertExists().assertIsDisplayed()
+        }
+
 
     }
 

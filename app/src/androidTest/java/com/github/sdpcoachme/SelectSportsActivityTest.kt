@@ -12,6 +12,9 @@ import androidx.test.espresso.matcher.ViewMatchers.assertThat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.SelectSportsActivity.*
 import com.github.sdpcoachme.SelectSportsActivity.TestTags.Buttons.*
 import com.github.sdpcoachme.SelectSportsActivity.TestTags.Buttons.Companion.REGISTER
@@ -227,6 +230,22 @@ open class SelectSportsActivityTest {
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD)
                 .assertIsDisplayed()
             Intents.release()
+        }
+    }
+
+    @Test
+    fun dashboardHasRightTitleOnSelectSports() {
+        ActivityScenario.launch<SelectSportsActivity>(launchSelectSports).use {
+            composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText("Coach Me"))
+        }
+    }
+    @Test
+    fun dashboardIsAccessibleAndDisplayableFromSelectSports() {
+        ActivityScenario.launch<SelectSportsActivity>(launchSelectSports).use {
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertExists().assertIsDisplayed()
         }
     }
 }

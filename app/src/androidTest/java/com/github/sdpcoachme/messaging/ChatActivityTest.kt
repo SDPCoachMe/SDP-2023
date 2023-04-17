@@ -12,6 +12,9 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.*
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
@@ -300,6 +303,24 @@ class ChatActivityTest {
 
             composeTestRule.onNodeWithText("The Chat Interface did not receive both needed users.\nPlease return to the login page and try again.")
                 .assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun dashboardHasRightTitleOnChat() {
+        val chatIntent = defaultIntent.putExtra("toUserEmail", toUser.email)
+        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+            composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText("Coach Me"))
+        }
+    }
+    @Test
+    fun dashboardIsAccessibleAndDisplayableFromChat() {
+        val chatIntent = defaultIntent.putExtra("toUserEmail", toUser.email)
+        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertExists().assertIsDisplayed()
         }
     }
 }
