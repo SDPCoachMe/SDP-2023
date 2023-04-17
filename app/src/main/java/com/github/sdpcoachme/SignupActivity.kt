@@ -90,6 +90,7 @@ class SignupActivity : ComponentActivity() {
                 value = firstName,
                 onValueChange = { firstName = it },
                 label = { Text("First Name") },
+                maxLines = 1,
                 keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(
                     onNext = { focusManager.moveFocus(FocusDirection.Down) }
@@ -100,6 +101,7 @@ class SignupActivity : ComponentActivity() {
                 value = lastName,
                 onValueChange = { lastName = it },
                 label = { Text("Last Name") },
+                maxLines = 1,
                 keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(
                     onNext = { focusManager.moveFocus(FocusDirection.Down) }
@@ -110,6 +112,7 @@ class SignupActivity : ComponentActivity() {
                 value = phone,
                 onValueChange = { phone = it },
                 label = { Text("Phone") },
+                maxLines = 1,
                 keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(
                     onNext = { focusManager.clearFocus() }
