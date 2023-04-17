@@ -15,6 +15,8 @@ import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.LONDON
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.PARIS
@@ -128,6 +130,17 @@ open class CoachesListActivityTest {
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertExists().assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun errorPageIsShownWhenCoachesListIsLaunchedWithEmptyCurrentEmail() {
+        database.setCurrentEmail("")
+        ActivityScenario.launch<CoachesListActivity>(defaultIntent).use {
+            // not possible to use Intents.init()... to check if the correct intent
+            // is launched as the intents are launched from within the onCreate function
+            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
         }
     }
 
