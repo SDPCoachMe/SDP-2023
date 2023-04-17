@@ -2,10 +2,8 @@ package com.github.sdpcoachme.schedule
 
 import android.content.Intent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -24,6 +22,7 @@ import org.junit.runner.RunWith
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 
 @RunWith(AndroidJUnit4::class)
@@ -80,7 +79,6 @@ class ScheduleActivityTest {
 
     @Test
     fun addEventsToDatabaseUpdatesUserInfoCorrectly() {
-        defaultEmail
         val oldUserInfo = database.getUser(defaultEmail)
 
         database.addEventsToUser(defaultEmail, eventList)
@@ -95,7 +93,7 @@ class ScheduleActivityTest {
     @Test
     fun correctInitialScreenContent() {
         val initiallyDisplayed = listOf(
-            ScheduleActivity.TestTags.SCHEDULE_HEADER,
+            ScheduleActivity.TestTags.WEEK_HEADER,
             ScheduleActivity.TestTags.BASIC_SCHEDULE,
         )
         val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
@@ -199,6 +197,69 @@ class ScheduleActivityTest {
                     assertTrue(expectedShownEvents == actualShownEvents)
                 }
             }
+        }
+    }
+
+    @Test
+    fun eventsOfNextWeekAreDisplayedCorrectly() {
+        val nextMonday = currentMonday.plusDays(7)
+        val nextWeekEvent = Event(
+            name = "Next Week Event",
+            color = Color(0xFFAFBBF2).value.toString(),
+            start = nextMonday.atTime(13, 0, 0).toString(),
+            end = nextMonday.atTime(15, 0, 0).toString(),
+            description = "This is an event of the next week.",
+        )
+        database.addEventsToUser(defaultEmail, listOf(nextWeekEvent)).thenRun {
+            val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
+            scheduleIntent.putExtra("email", defaultEmail)
+            ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
+                composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.BASIC_SCHEDULE).assertExists()
+                val userInfo = database.getUser(defaultEmail)
+                userInfo.thenAccept {
+                    val expectedShownEvents = listOf(
+                        ShownEvent(
+                            name = nextWeekEvent.name,
+                            color = nextWeekEvent.color,
+                            start = nextWeekEvent.start,
+                            startText = nextWeekEvent.start,
+                            end = nextWeekEvent.end,
+                            endText = nextWeekEvent.end,
+                            description = nextWeekEvent.description,
+                        ),
+                    )
+                    val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)
+                    assertTrue(expectedShownEvents == actualShownEvents)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun clickOnRightArrowButtonChangesWeekCorrectly() {
+        val formatter = DateTimeFormatter.ofPattern("d MMM")
+        val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
+        ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
+            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.BASIC_SCHEDULE).assertExists()
+            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.Buttons.RIGHT_ARROW_BUTTON).assertExists()
+            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.Buttons.RIGHT_ARROW_BUTTON).performClick()
+            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(7).format(formatter)} - ${currentMonday.plusDays(13).format(formatter)}")
+        composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.Buttons.RIGHT_ARROW_BUTTON).performClick()
+            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(14).format(formatter)} - ${currentMonday.plusDays(20).format(formatter)}")
+        }
+    }
+
+    @Test
+    fun clickOnLeftArrowButtonChangesWeekCorrectly() {
+        val formatter = DateTimeFormatter.ofPattern("d MMM")
+        val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
+        ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
+            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.BASIC_SCHEDULE).assertExists()
+            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.Buttons.LEFT_ARROW_BUTTON).assertExists()
+            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.Buttons.LEFT_ARROW_BUTTON).performClick()
+            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(7).format(formatter)} - ${currentMonday.minusDays(1).format(formatter)}")
+            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.Buttons.LEFT_ARROW_BUTTON).performClick()
+            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(14).format(formatter)} - ${currentMonday.minusDays(8).format(formatter)}")
         }
     }
 }

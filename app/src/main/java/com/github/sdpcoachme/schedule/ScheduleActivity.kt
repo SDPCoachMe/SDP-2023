@@ -52,13 +52,25 @@ class ScheduleActivity : ComponentActivity() {
         class BasicSchedule(tag: String) {
             val layout = "${tag}Layout"
         }
+
+        class Buttons {
+            companion object {
+                const val LEFT_ARROW_BUTTON = "leftArrowButton"
+                const val RIGHT_ARROW_BUTTON = "rightArrowButton"
+            }
+        }
+        class TextFields {
+            companion object {
+                const val CURRENT_WEEK_TEXT_FIELD = "currentWeekTextField"
+            }
+        }
         companion object {
             const val SCHEDULE_COLUMN = "scheduleColumn"
-            const val SCHEDULE_HEADER = "scheduleHeader"
             const val BASIC_SCHEDULE = "basicSchedule"
             const val WEEK_HEADER = "weekHeader"
 
             val BASIC_SCHEDULE_LAYOUT = BasicSchedule(BASIC_SCHEDULE).layout
+
         }
     }
 
@@ -99,7 +111,6 @@ fun Schedule(
     futureUserInfo: CompletableFuture<UserInfo>,
     modifier: Modifier = Modifier,
 ) {
-    // bind those to database
     var events by remember { mutableStateOf(emptyList<Event>()) }
     var eventsFuture by remember { mutableStateOf(futureUserInfo.thenApply { it.events }) }
 
@@ -120,7 +131,7 @@ fun Schedule(
         }
     }
 
-    // the starting day is always the previous Monday
+    // the starting day is always the monday of the current week
     val minDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     val dayWidth = LocalConfiguration.current.screenWidthDp.dp / ColumnsPerWeek
     val hourHeight = 64.dp
@@ -182,7 +193,10 @@ fun ScheduleTitleRow(
             style = MaterialTheme.typography.h5,
             modifier = Modifier.weight(1f)
         )
-        IconButton(onClick = { onLeftArrowClick() }) {
+        IconButton(
+            onClick = { onLeftArrowClick() },
+            modifier = Modifier.testTag(ScheduleActivity.TestTags.Buttons.LEFT_ARROW_BUTTON)
+        ) {
             Icon(
                 imageVector = Icons.Default.ArrowLeft,
                 contentDescription = "Left arrow"
@@ -192,9 +206,14 @@ fun ScheduleTitleRow(
         Text(
             text = "${currentWeekMonday.format(formatter)} - ${currentWeekMonday.plusDays(6).format(formatter)}",
             style = MaterialTheme.typography.subtitle1,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+            modifier = Modifier
+                .padding(horizontal = 8.dp, vertical = 8.dp)
+                .testTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD)
         )
-        IconButton(onClick = { onRightArrowClick() }) {
+        IconButton(
+            onClick = { onRightArrowClick() },
+            modifier = Modifier.testTag(ScheduleActivity.TestTags.Buttons.RIGHT_ARROW_BUTTON)
+        ) {
             Icon(
                 imageVector = Icons.Default.ArrowRight,
                 contentDescription = "Right arrow"
