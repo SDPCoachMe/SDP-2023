@@ -34,6 +34,7 @@ class MapActivity : ComponentActivity() {
     class TestTags {
         companion object {
             const val MAP = "map"
+            const val MAP_WITHOUT_LOCATION = MAP + "null"
         }
     }
 
@@ -118,7 +119,6 @@ class MapActivity : ComponentActivity() {
     }
 }
 
-
 /**
  * Displays the map with the last known user location on creation.
  * The map API displays the current location but does not explicitly give the location data.
@@ -134,9 +134,10 @@ fun Map(modifier: Modifier, lastUserLocation: MutableState<LatLng?>) {
     }
 
     GoogleMap(
+        // test tag contains lastUserLocation info to allow simple recomposition tracking
         modifier = modifier
             .fillMaxSize()
-            .testTag(MAP),
+            .testTag(MAP + lastUserLocation.value.toString()),
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
             isMyLocationEnabled = lastUserLocation.value != null,
@@ -152,8 +153,5 @@ fun Map(modifier: Modifier, lastUserLocation: MutableState<LatLng?>) {
                 )
             }
         }
-
-        // places a marker at the last known position, if location is null, places at campus
-        Marker(state = MarkerState(lastUserLocation.value ?:campus))
     }
 }
