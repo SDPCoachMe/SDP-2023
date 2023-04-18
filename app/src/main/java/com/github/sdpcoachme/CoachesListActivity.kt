@@ -44,26 +44,25 @@ class CoachesListActivity : ComponentActivity() {
         val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
         val database = (application as CoachMeApplication).database
         val userLatLng = (application as CoachMeApplication).userLocation.value?: CAMPUS
-
-        val futureListOfCoaches =
-            if (isViewingContacts) {
-                database.getChatContacts(email = database.getCurrentEmail())
-            } else {
-                database
-                .getAllUsersByNearest(
-                    latitude = userLatLng.latitude,
-                    longitude = userLatLng.longitude
-                ).thenApply {
-                    it.filter { user -> user.coach }
-                }
-            }
-
         val email = database.getCurrentEmail()
 
         if (email.isEmpty()) {
             val errorMsg = "The coach list did not receive an email address.\nPlease return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
+            val futureListOfCoaches =
+                if (isViewingContacts) {
+                    database.getChatContacts(email = email)
+                } else {
+                    database
+                        .getAllUsersByNearest(
+                            latitude = userLatLng.latitude,
+                            longitude = userLatLng.longitude
+                        ).thenApply {
+                            it.filter { user -> user.coach }
+                        }
+                }
+
             setContent {
                 var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
 
