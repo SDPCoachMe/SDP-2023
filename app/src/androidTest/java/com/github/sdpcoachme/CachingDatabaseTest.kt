@@ -4,19 +4,19 @@ package com.github.sdpcoachme
 // MockDatabase which is in the androidTest directory.
 // Otherwise we would have complicated dependencies.
 
-import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
-import com.github.sdpcoachme.location.UserLocationSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.firebase.database.CachingDatabase
 import com.github.sdpcoachme.firebase.database.MockDatabase
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.NEW_YORK
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
 import org.junit.Test
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.SECONDS
 
 class CachingDatabaseTest {
 
-    val exampleEmail = "example@email.com"
+    private val exampleEmail = "example@email.com"
 
     // Note that here MockDatabase needs to be re-instantiated for each test as we
     // modify its state in the tests.
@@ -25,7 +25,7 @@ class CachingDatabaseTest {
     fun getUserPutsUserInCache() {
         val wrappedDatabase = MockDatabase()
         val cachingDatabase = CachingDatabase(wrappedDatabase)
-        cachingDatabase.getUser(exampleEmail).get(5, TimeUnit.SECONDS)
+        cachingDatabase.getUser(exampleEmail).get(5, SECONDS)
         assertTrue(cachingDatabase.isCached(exampleEmail))
     }
 
@@ -46,7 +46,7 @@ class CachingDatabaseTest {
         )
         val retrievedUser = cachingDatabase.updateUser(user)
             .thenCompose { cachingDatabase.getUser(email) }
-            .get(5, TimeUnit.SECONDS)
+            .get(5, SECONDS)
         assertTrue(cachingDatabase.isCached(email))
         assertEquals(user, retrievedUser)
     }
@@ -69,7 +69,7 @@ class CachingDatabaseTest {
             .thenCompose {
                 cachingDatabase.updateUser(newUser) }
             .thenCompose { cachingDatabase.getUser(exampleEmail) }
-            .get(5, TimeUnit.SECONDS)
+            .get(5, SECONDS)
         assertTrue(cachingDatabase.isCached(exampleEmail))
         assertEquals(newUser, updatedUser)
     }

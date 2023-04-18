@@ -21,6 +21,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -29,6 +30,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.Dashboard
+import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.ShownEvent
 import com.github.sdpcoachme.data.UserInfo
@@ -76,9 +79,12 @@ class ScheduleActivity : ComponentActivity() {
 
                 setContent {
                     CoachMeTheme {
-                        Surface(color = MaterialTheme.colors.background) {
-                            Schedule(futureUserInfo)
+                        val dashboardContent: @Composable (Modifier) -> Unit = {
+                            Surface(color = MaterialTheme.colors.background) {
+                                Schedule(futureUserInfo)
+                            }
                         }
+                        Dashboard(dashboardContent, email, stringResource(R.string.title_activity_schedule))
                     }
                 }
             }
@@ -244,7 +250,8 @@ fun BasicSchedule(
                 }
             }
         },
-        modifier = modifier.testTag(ScheduleActivity.TestTags.BASIC_SCHEDULE_LAYOUT)
+        modifier = modifier
+            .testTag(ScheduleActivity.TestTags.BASIC_SCHEDULE_LAYOUT)
             .drawBehind {   //add dividers (lines) between days and hours
                 repeat(23) {
                     drawLine(

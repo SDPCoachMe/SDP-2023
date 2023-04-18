@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.github.sdpcoachme.firebase.auth.Authenticator
 import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.map.MapActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 
@@ -95,7 +96,7 @@ class LoginActivity : ComponentActivity() {
     private fun launchPostLoginActivity(email: String) {
         database.userExists(email).thenAccept { exists ->
             if (exists) {
-                launchActivity(DashboardActivity::class.java)
+                launchActivity(MapActivity::class.java)
             } else {
                 launchActivity(SignupActivity::class.java)
             }
