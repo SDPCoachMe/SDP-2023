@@ -190,6 +190,7 @@ fun ScheduleTitleRow(
             style = MaterialTheme.typography.h5,
             color = Color.White,
             fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
             modifier = Modifier
                 .weight(1f)
                 .background(Purple500)
@@ -415,5 +416,12 @@ private val sampleEvents = listOf(
         start = nextMonday.plusDays(4).atTime(9, 0, 0).toString(),
         end = nextMonday.plusDays(4).atTime(13, 0, 0).toString(),
         description = "This Workshop will take you through the basics of building your first app with Jetpack Compose, Android's new modern UI toolkit that simplifies and accelerates UI development on Android.",
+    ),
+    Event(
+        name = "Holidays",
+        color = Color(0xFF1B998B).value.toString(),
+        start = currentMonday.plusDays(4).atTime(14, 0, 0).toString(),
+        end = nextMonday.plusDays(1).atTime(18, 0, 0).toString(),
+        description = "A few days off to relax and enjoy the holidays.",
     ),
 )
