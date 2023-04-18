@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachesListActivity
-import com.github.sdpcoachme.Dashboard
 import com.github.sdpcoachme.ProfileActivity
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
@@ -39,6 +38,7 @@ import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_BOX
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_MESSAGE
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
+import com.github.sdpcoachme.ui.theme.Purple200
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
@@ -114,17 +114,14 @@ class ChatActivity : ComponentActivity() {
             database.markMessagesAsRead(chatId, currentUserEmail)
 
             setContent {
-                val dashboardContent: @Composable (Modifier) -> Unit = {
-                    ChatView(
-                        currentUserEmail,
-                        chatId,
-                        database,
-                        database.getChat(chatId),
-                        database.getUser(currentUserEmail),
-                        database.getUser(toUserEmail)
-                    )
-                }
-                Dashboard(dashboardContent, currentUserEmail)
+                ChatView(
+                    currentUserEmail,
+                    chatId,
+                    database,
+                    database.getChat(chatId),
+                    database.getUser(currentUserEmail),
+                    database.getUser(toUserEmail)
+                )
             }
         }
     }
@@ -214,7 +211,8 @@ fun ContactField(toUser: UserInfo, chatId: String, database: Database) {
         modifier = Modifier
             .testTag(CONTACT_FIELD.ROW)
             .fillMaxWidth()
-            .background(color = Color(0xff7c7c7c))
+            .height(56.dp) // matches the built-in app bar height
+            .background(color = Purple200)
             .clickable {
                 database.removeChatListener(chatId)
                 // go to the profile of the other user
@@ -246,7 +244,7 @@ fun ContactField(toUser: UserInfo, chatId: String, database: Database) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
                 contentDescription = "Back",
-                tint = Color.White
+                tint = Color.Black
             )
         }
 
@@ -256,9 +254,10 @@ fun ContactField(toUser: UserInfo, chatId: String, database: Database) {
             modifier = Modifier
                 .testTag(CONTACT_FIELD.LABEL)
                 .fillMaxWidth()
-                .padding(start = 20.dp, end = 10.dp, top = 20.dp, bottom = 20.dp),
-            color = Color.White,
-            fontWeight = FontWeight.Bold
+                .align(Alignment.CenterVertically)
+                .padding(start = 10.dp),
+            color = Color.Black,
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
