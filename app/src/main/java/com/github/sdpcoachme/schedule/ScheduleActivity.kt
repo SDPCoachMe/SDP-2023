@@ -1,6 +1,6 @@
 package com.github.sdpcoachme.schedule
 
-import android.content.res.Resources.getSystem
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -36,6 +37,7 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import com.github.sdpcoachme.ui.theme.Purple500
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -113,6 +115,7 @@ fun Schedule(
 ) {
     var events by remember { mutableStateOf(emptyList<Event>()) }
     var eventsFuture by remember { mutableStateOf(futureUserInfo.thenApply { it.events }) }
+    val context = LocalContext.current
 
     LaunchedEffect(eventsFuture) {
         eventsFuture.thenAccept { e ->
@@ -123,10 +126,9 @@ fun Schedule(
                 eventsFuture = f
             }
         }.exceptionally {
-            //TODO in next sprint: handle error
-            /*val errorMsg = "Schedule couldn't get the user information from the database." +
+            val errorMsg = "Schedule couldn't get the user information from the database." +
                 "\n Please return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(context, errorMsg)*/
+            ErrorHandlerLauncher().launchExtrasErrorHandler(context, errorMsg)
             null
         }
     }
@@ -138,7 +140,6 @@ fun Schedule(
     val verticalScrollState = rememberScrollState()
 
     var currentWeekMonday by remember { mutableStateOf(minDate) }
-    //val maxOffset = ((ColumnsPerWeek - 1) * dayWidth.value.roundToInt().px).toFloat()
 
     fun updateCurrentWeekMonday(weeksToAdd: Int) {
         currentWeekMonday = currentWeekMonday.plusWeeks(weeksToAdd.toLong())
@@ -186,44 +187,54 @@ fun ScheduleTitleRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .background(Purple500)
             .padding(14.dp)
     ) {
         Text(
             text = "Schedule",
             style = MaterialTheme.typography.h5,
-            modifier = Modifier.weight(1f)
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .weight(1f)
+                .background(Purple500)
         )
         IconButton(
             onClick = { onLeftArrowClick() },
-            modifier = Modifier.testTag(ScheduleActivity.TestTags.Buttons.LEFT_ARROW_BUTTON)
+            modifier = Modifier
+                .testTag(ScheduleActivity.TestTags.Buttons.LEFT_ARROW_BUTTON)
+                .background(Purple500)
         ) {
             Icon(
                 imageVector = Icons.Default.ArrowLeft,
-                contentDescription = "Left arrow"
+                contentDescription = "Left arrow",
+                tint = Color.White
             )
         }
         val formatter = DateTimeFormatter.ofPattern("d MMM")
         Text(
             text = "${currentWeekMonday.format(formatter)} - ${currentWeekMonday.plusDays(6).format(formatter)}",
             style = MaterialTheme.typography.subtitle1,
+            color = Color.White,
             modifier = Modifier
                 .padding(horizontal = 8.dp, vertical = 8.dp)
                 .testTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD)
+                .background(Purple500)
         )
         IconButton(
             onClick = { onRightArrowClick() },
-            modifier = Modifier.testTag(ScheduleActivity.TestTags.Buttons.RIGHT_ARROW_BUTTON)
+            modifier = Modifier
+                .testTag(ScheduleActivity.TestTags.Buttons.RIGHT_ARROW_BUTTON)
+                .background(Purple500)
         ) {
             Icon(
                 imageVector = Icons.Default.ArrowRight,
-                contentDescription = "Right arrow"
+                contentDescription = "Right arrow",
+                tint = Color.White
             )
         }
     }
 }
-
-// TODO: Remove this if not needed (was needed for swiping approach)
-val Int.px: Int get() = (this * getSystem().displayMetrics.density).toInt()
 
 @Composable
 fun WeekHeader(
@@ -366,13 +377,14 @@ fun BasicEvent(
 // --------------------------------------------------
 // mainly for testing, debugging and demo purposes
 private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+private val lastMonday = currentMonday.minusDays(7)
 private val nextMonday = currentMonday.plusDays(7)
 private val sampleEvents = listOf(
     Event(
         name = "Google I/O Keynote",
         color = Color(0xFFAFBBF2).value.toString(),
-        start = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(13, 0, 0).toString(),
-        end = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(15, 0, 0).toString(),
+        start = lastMonday.plusDays(1).atTime(13, 0, 0).toString(),
+        end = lastMonday.plusDays(1).atTime(15, 0, 0).toString(),
         description = "Tune in to find out about how we're furthering our mission to organize the world’s information and make it universally accessible and useful.",
     ),
     Event(

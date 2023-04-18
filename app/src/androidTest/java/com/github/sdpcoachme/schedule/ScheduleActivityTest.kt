@@ -10,7 +10,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.DashboardActivity
-
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.ShownEvent
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
@@ -32,13 +31,6 @@ class ScheduleActivityTest {
     private val defaultEmail = "example@email.com"
     private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     private val eventList = listOf(
-        Event(
-            name = "Google I/O Keynote",
-            color = Color(0xFFAFBBF2).value.toString(),
-            start = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(13, 0, 0).toString(),
-            end = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(15, 0, 0).toString(),
-            description = "Tune in to find out about how we're furthering our mission to organize the world’s information and make it universally accessible and useful.",
-        ),
         Event(
             name = "Developer Keynote",
             color = Color(0xFFAFBBF2).value.toString(),
@@ -66,7 +58,7 @@ class ScheduleActivityTest {
             start = currentMonday.plusDays(3).atTime(13, 0, 0).toString(),
             end = currentMonday.plusDays(3).atTime(15, 0, 0).toString(),
             description = "Learn about the latest design improvements to help you build personal dynamic experiences with Material Design.",
-        )
+        ),
     )
 
     @get:Rule
@@ -105,32 +97,24 @@ class ScheduleActivityTest {
     }
 
     @Test
-    fun errorPageIsShownWhenEditProfileIsLaunchedWithEmptyCurrentEmail() {
+    fun errorPageIsShownWhenScheduleIsLaunchedWithEmptyCurrentEmail() {
         database.setCurrentEmail("")
         ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)).use {
-            // not possible to use Intents.init()... to check if the correct intent
-            // is launched as the intents are launched from within the onCreate function
             composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
             composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
         }
     }
 
-    // TODO in next sprint: handle the exception thrown when the user is not found in the database
-/*    @Test
+    @Test
     fun getExceptionIsThrownCorrectly() {
         val email = "throwGet@Exception.com"
+        database.setCurrentEmail(email)
         val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
-            .putExtra("email", email)
         ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
-            Intents.init()
-            Intents.intended(allOf(
-                IntentMatchers.hasComponent(IntentExtrasErrorHandlerActivity::class.java.name),
-                IntentMatchers.hasExtra("errorMsg", "Schedule couldn't get the user information from the database." +
-                    "\n Please return to the login page and try again."))
-            )
-            Intents.release()
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
         }
-    }*/
+    }
 
     @Test
     fun eventsOfCurrentWeekAreDisplayedCorrectly() {
@@ -149,7 +133,7 @@ class ScheduleActivityTest {
     }
 
     @Test
-    fun multiDayEventsOfCurrentWeekAreDisplayedCorrectly() {
+    fun multiDayEventOfCurrentWeekIsDisplayedCorrectly() {
         val multiDayEvent = Event(
             name = "Multi Day Event",
             color = Color(0xFFAFBBF2).value.toString(),
@@ -164,7 +148,7 @@ class ScheduleActivityTest {
                 composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.BASIC_SCHEDULE).assertExists()
                 val userInfo = database.getUser(defaultEmail)
                 userInfo.thenAccept {
-                    val expectedShownEvents = listOf<ShownEvent>(
+                    val expectedShownEvents = listOf(
                         ShownEvent(
                             name = multiDayEvent.name,
                             color = multiDayEvent.color,
@@ -226,6 +210,41 @@ class ScheduleActivityTest {
                             end = nextWeekEvent.end,
                             endText = nextWeekEvent.end,
                             description = nextWeekEvent.description,
+                        ),
+                    )
+                    val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)
+                    assertTrue(expectedShownEvents == actualShownEvents)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun eventsOfPreviousWeekAreDisplayedCorrectly() {
+        val previousMonday = currentMonday.minusDays(7)
+        val previousWeekEvent = Event(
+            name = "Previous Week Event",
+            color = Color(0xFFAFBBF2).value.toString(),
+            start = previousMonday.atTime(13, 0, 0).toString(),
+            end = previousMonday.atTime(15, 0, 0).toString(),
+            description = "This is an event of the previous week.",
+        )
+        database.addEventsToUser(defaultEmail, listOf(previousWeekEvent)).thenRun {
+            val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
+            scheduleIntent.putExtra("email", defaultEmail)
+            ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
+                composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.BASIC_SCHEDULE).assertExists()
+                val userInfo = database.getUser(defaultEmail)
+                userInfo.thenAccept {
+                    val expectedShownEvents = listOf(
+                        ShownEvent(
+                            name = previousWeekEvent.name,
+                            color = previousWeekEvent.color,
+                            start = previousWeekEvent.start,
+                            startText = previousWeekEvent.start,
+                            end = previousWeekEvent.end,
+                            endText = previousWeekEvent.end,
+                            description = previousWeekEvent.description,
                         ),
                     )
                     val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)

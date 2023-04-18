@@ -182,7 +182,6 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals(user.firstName)
             composeTestRule.onNodeWithTag(LAST_NAME.TEXT).assertTextEquals(user.lastName)
             composeTestRule.onNodeWithTag(LOCATION.TEXT).assertTextEquals(user.location.address)
-            // TODO: add the other fields once they are implemented:
 
             composeTestRule.onNodeWithTag(EDIT)
                 .assertIsDisplayed()
@@ -196,7 +195,6 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(FIRST_NAME.FIELD).assertTextEquals(user.firstName)
             composeTestRule.onNodeWithTag(LAST_NAME.FIELD).assertTextEquals(user.lastName)
             composeTestRule.onNodeWithTag(LOCATION.FIELD).assertTextEquals(user.location.address)
-            // TODO: add the other fields once they are implemented:
         }
     }
 
@@ -211,7 +209,6 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals("")
             composeTestRule.onNodeWithTag(LAST_NAME.TEXT).assertTextEquals("")
             composeTestRule.onNodeWithTag(LOCATION.TEXT).assertTextEquals("")
-            // TODO: add the other fields once they are implemented:
 
             composeTestRule.onNodeWithTag(EDIT)
                 .assertIsDisplayed()
@@ -225,7 +222,6 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(FIRST_NAME.FIELD).assertTextEquals("")
             composeTestRule.onNodeWithTag(LAST_NAME.FIELD).assertTextEquals("")
             composeTestRule.onNodeWithTag(LOCATION.FIELD).assertTextEquals("")
-            // TODO: add the other fields once they are implemented:
         }
     }
 
