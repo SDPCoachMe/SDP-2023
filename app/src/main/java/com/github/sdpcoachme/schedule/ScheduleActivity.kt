@@ -383,6 +383,13 @@ private val sampleEvents = listOf(
         description = "Tune in to find out about how we're furthering our mission to organize the world’s information and make it universally accessible and useful.",
     ),
     Event(
+        name = "Business Trip",
+        color = Color(0xFFC9A776).value.toString(),
+        start = lastMonday.plusDays(4).atTime(9, 0, 0).toString(),
+        end = currentMonday.plusDays(1).atTime(18, 0, 0).toString(),
+        description = "I'm going to be out of the office for a business trip.",
+    ),
+    Event(
         name = "Developer Keynote",
         color = Color(0xFFAFBBF2).value.toString(),
         start = currentMonday.plusDays(2).atTime(7, 0, 0).toString(),
@@ -391,7 +398,7 @@ private val sampleEvents = listOf(
     ),
     Event(
         name = "What's new in Android",
-        color = Color(0xFF1B998B).value.toString(),
+        color = Color(0xFF549C94).value.toString(),
         start = currentMonday.plusDays(2).atTime(10, 0, 0).toString(),
         end = currentMonday.plusDays(2).atTime(12, 0, 0).toString(),
         description = "In this Keynote, Chet Haase, Dan Sandler, and Romain Guy discuss the latest Android features and enhancements for developers.",
@@ -405,21 +412,21 @@ private val sampleEvents = listOf(
     ),
     Event(
         name = "What's new in Material Design",
-        color = Color(0xFF6DD3CE).value.toString(),
+        color = Color(0xFFC08A78).value.toString(),
         start = currentMonday.plusDays(3).atTime(13, 0, 0).toString(),
         end = currentMonday.plusDays(3).atTime(15, 0, 0).toString(),
         description = "Learn about the latest design improvements to help you build personal dynamic experiences with Material Design.",
     ),
     Event(
         name = "Jetpack Compose Basics",
-        color = Color(0xFF1B998B).value.toString(),
+        color = Color(0xFFB98FC0).value.toString(),
         start = nextMonday.plusDays(4).atTime(9, 0, 0).toString(),
         end = nextMonday.plusDays(4).atTime(13, 0, 0).toString(),
         description = "This Workshop will take you through the basics of building your first app with Jetpack Compose, Android's new modern UI toolkit that simplifies and accelerates UI development on Android.",
     ),
     Event(
         name = "Holidays",
-        color = Color(0xFF1B998B).value.toString(),
+        color = Color(0xFF71A5CE).value.toString(),
         start = currentMonday.plusDays(4).atTime(14, 0, 0).toString(),
         end = nextMonday.plusDays(1).atTime(18, 0, 0).toString(),
         description = "A few days off to relax and enjoy the holidays.",
