@@ -35,6 +35,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class MapActivityTest {
 
+    // TODO add tests for markers
+
     private val random = LatLng(42.0,42.0)
 
     @get: Rule
