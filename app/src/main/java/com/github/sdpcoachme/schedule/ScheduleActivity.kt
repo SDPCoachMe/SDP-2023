@@ -130,39 +130,39 @@ fun Schedule(
         }
     }
 
-    // the starting day is always the monday of the current week
-    val minDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     val dayWidth = LocalConfiguration.current.screenWidthDp.dp / ColumnsPerWeek
     val verticalScrollState = rememberScrollState()
+    // the starting day is always the monday of the current week
+    val startMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
-    var currentWeekMonday by remember { mutableStateOf(minDate) }
+    var shownWeekMonday by remember { mutableStateOf(startMonday) }
 
     fun updateCurrentWeekMonday(weeksToAdd: Int) {
-        currentWeekMonday = currentWeekMonday.plusWeeks(weeksToAdd.toLong())
+        shownWeekMonday = shownWeekMonday.plusWeeks(weeksToAdd.toLong())
     }
-
 
     Column(modifier = modifier
         .testTag(ScheduleActivity.TestTags.SCHEDULE_COLUMN)
     ) {
         ScheduleTitleRow(
-            currentWeekMonday = currentWeekMonday,
+            shownWeekMonday = shownWeekMonday,
             onLeftArrowClick = { updateCurrentWeekMonday(-1) },
             onRightArrowClick = { updateCurrentWeekMonday(1) },
         )
+
         WeekHeader(
-            currentWeekMonday = currentWeekMonday,
+            shownWeekMonday = shownWeekMonday,
             dayWidth = dayWidth,
         )
 
+        // filter events to only show events in the current week
         val eventsToShow = EventOps.eventsToWrappedEvents(events)
-
         BasicSchedule(
             events = eventsToShow.filter {event ->
                 val eventDate = LocalDateTime.parse(event.start).toLocalDate()
-                eventDate >= currentWeekMonday && eventDate < currentWeekMonday.plusWeeks(1)
+                eventDate >= shownWeekMonday && eventDate < shownWeekMonday.plusWeeks(1)
             },
-            minDate = currentWeekMonday,
+            shownMonday = shownWeekMonday,
             dayWidth = dayWidth,
             modifier = Modifier
                 .weight(1f) // Fill remaining space in the column
@@ -174,7 +174,7 @@ fun Schedule(
 
 @Composable
 fun ScheduleTitleRow(
-    currentWeekMonday: LocalDate,
+    shownWeekMonday: LocalDate,
     onLeftArrowClick: () -> Unit,
     onRightArrowClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -208,7 +208,7 @@ fun ScheduleTitleRow(
         }
         val formatter = DateTimeFormatter.ofPattern("d MMM")
         Text(
-            text = "${currentWeekMonday.format(formatter)} - ${currentWeekMonday.plusDays(6).format(formatter)}",
+            text = "${shownWeekMonday.format(formatter)} - ${shownWeekMonday.plusDays(6).format(formatter)}",
             style = MaterialTheme.typography.subtitle1,
             color = Color.White,
             modifier = Modifier
@@ -233,7 +233,7 @@ fun ScheduleTitleRow(
 
 @Composable
 fun WeekHeader(
-    currentWeekMonday: LocalDate,
+    shownWeekMonday: LocalDate,
     dayWidth: Dp,
     modifier: Modifier = Modifier,
     dayHeader: @Composable (day: LocalDate) -> Unit = { BasicDayHeader(day = it) }
@@ -243,7 +243,7 @@ fun WeekHeader(
             .testTag(ScheduleActivity.TestTags.WEEK_HEADER)
     ) {
         repeat(ColumnsPerWeek) {i ->
-            val day = currentWeekMonday.plusDays(i.toLong())
+            val day = shownWeekMonday.plusDays(i.toLong())
             Box(modifier = Modifier.width(dayWidth)) {
                 dayHeader(day)
             }
@@ -272,7 +272,7 @@ fun BasicDayHeader(
 fun BasicSchedule(
     events: List<ShownEvent>,
     modifier: Modifier = Modifier,
-    minDate: LocalDate = LocalDateTime.parse(events.minByOrNull(ShownEvent::start)!!.start).toLocalDate(),
+    shownMonday: LocalDate,
     dayWidth: Dp,
     hourHeight: Dp = 64.dp,
 ) {
@@ -320,7 +320,7 @@ fun BasicSchedule(
             placeablesWithEvents.forEach { (placeable, event) ->
                 val eventOffsetMinutes = ChronoUnit.MINUTES.between(LocalTime.MIN, LocalDateTime.parse(event.start).toLocalTime())
                 val eventY = ((eventOffsetMinutes / 60f) * hourHeight.toPx()).roundToInt()
-                val eventOffsetDays = ChronoUnit.DAYS.between(minDate, LocalDateTime.parse(event.start).toLocalDate()).toInt()
+                val eventOffsetDays = ChronoUnit.DAYS.between(shownMonday, LocalDateTime.parse(event.start).toLocalDate()).toInt()
                 val eventX = eventOffsetDays * dayWidth.roundToPx()
                 placeable.place(eventX, eventY)
             }
