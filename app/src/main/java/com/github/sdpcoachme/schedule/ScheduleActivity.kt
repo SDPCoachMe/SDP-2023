@@ -45,7 +45,6 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
-import java.util.*
 import java.util.concurrent.CompletableFuture
 import kotlin.math.roundToInt
 
@@ -107,7 +106,7 @@ private class EventDataModifier(val event: ShownEvent) : ParentDataModifier {
     override fun Density.modifyParentData(parentData: Any?) = event
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+private const val ColumnsPerWeek = 7
 @Composable
 fun Schedule(
     futureUserInfo: CompletableFuture<UserInfo>,
@@ -121,9 +120,7 @@ fun Schedule(
         eventsFuture.thenAccept { e ->
             if (e != null) {
                 events = e
-                val f = CompletableFuture<List<Event>?>()
-                f.complete(null)
-                eventsFuture = f
+                eventsFuture = CompletableFuture.completedFuture(null)
             }
         }.exceptionally {
             val errorMsg = "Schedule couldn't get the user information from the database." +
@@ -136,7 +133,6 @@ fun Schedule(
     // the starting day is always the monday of the current week
     val minDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     val dayWidth = LocalConfiguration.current.screenWidthDp.dp / ColumnsPerWeek
-    val hourHeight = 64.dp
     val verticalScrollState = rememberScrollState()
 
     var currentWeekMonday by remember { mutableStateOf(minDate) }
@@ -168,7 +164,6 @@ fun Schedule(
             },
             minDate = currentWeekMonday,
             dayWidth = dayWidth,
-            hourHeight = hourHeight,
             modifier = Modifier
                 .weight(1f) // Fill remaining space in the column
                 .verticalScroll(verticalScrollState)
@@ -279,7 +274,7 @@ fun BasicSchedule(
     modifier: Modifier = Modifier,
     minDate: LocalDate = LocalDateTime.parse(events.minByOrNull(ShownEvent::start)!!.start).toLocalDate(),
     dayWidth: Dp,
-    hourHeight: Dp,
+    hourHeight: Dp = 64.dp,
 ) {
     val dividerColor = if (MaterialTheme.colors.isLight) Color.LightGray else Color.DarkGray
     Layout(
@@ -336,7 +331,6 @@ fun BasicSchedule(
 private fun Modifier.eventData(event: ShownEvent) = this.then(EventDataModifier(event))
 private val EventTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 private val DayFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
-private const val ColumnsPerWeek = 7
 
 @Composable
 fun BasicEvent(
