@@ -8,17 +8,22 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -349,6 +354,7 @@ fun EmailRow(email: String) {
  */
 @Composable
 fun ProfileRow(rowName: String, tag: ProfileActivity.TestTags.EditableProfileRowTag, isEditing: Boolean, leftTextPadding: Dp, value: String, onValueChange: (String) -> Unit) {
+    val focusManager = LocalFocusManager.current
     Row(
         modifier = Modifier
             .absolutePadding(20.dp, 10.dp, 20.dp, 10.dp)
@@ -368,7 +374,16 @@ fun ProfileRow(rowName: String, tag: ProfileActivity.TestTags.EditableProfileRow
                 value = value,
                 onValueChange = { newValue -> onValueChange(newValue) },
                 singleLine = true,
-                maxLines = 1)
+                maxLines = 1,
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(
+                    onNext = {
+                        if (rowName == "Location")
+                            focusManager.clearFocus()
+                        else
+                            focusManager.moveFocus(FocusDirection.Down)
+                    }
+                ))
         } else {
             Text(
                 modifier = Modifier

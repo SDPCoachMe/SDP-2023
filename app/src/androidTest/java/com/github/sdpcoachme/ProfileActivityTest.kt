@@ -142,12 +142,22 @@ class ProfileActivityTest {
                 .assertIsDisplayed()
                 .performClick()
 
+            composeTestRule.onNodeWithTag(FIRST_NAME.FIELD)
+                .assertIsDisplayed()
+                .performClick()
+
             //edit text fields
             newValues.forEach { (field, newValue) ->
+                composeTestRule.onNodeWithTag(field.FIELD)
+                    .assertIsFocused()
                 composeTestRule.onNodeWithTag(field.FIELD)
                     .performTextClearance()
                 composeTestRule.onNodeWithTag(field.FIELD)
                     .performTextInput(newValue)
+                composeTestRule.onNodeWithTag(field.FIELD)
+                    .performImeAction()
+                composeTestRule.onNodeWithTag(field.FIELD)
+                    .assertIsNotFocused()
                 Espresso.closeSoftKeyboard()
             }
 
