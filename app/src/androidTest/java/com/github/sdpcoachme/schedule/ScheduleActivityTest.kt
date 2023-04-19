@@ -16,8 +16,11 @@ import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.ShownEvent
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
+import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Buttons.Companion.LEFT_ARROW_BUTTON
+import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Buttons.Companion.RIGHT_ARROW_BUTTON
 import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.BASIC_SCHEDULE
-import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.SCHEDULE_HEADER
+import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.WEEK_HEADER
+import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.TextFields.Companion.CURRENT_WEEK_TEXT_FIELD
 import junit.framework.TestCase.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -93,11 +96,11 @@ class ScheduleActivityTest {
     @Test
     fun correctInitialScreenContent() {
         val initiallyDisplayed = listOf(
-            ScheduleActivity.TestTags.WEEK_HEADER,
-            ScheduleActivity.TestTags.BASIC_SCHEDULE,
+            WEEK_HEADER,
+            BASIC_SCHEDULE,
         )
-        val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
-        ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
+
+        ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
             initiallyDisplayed.forEach { tag ->
                 composeTestRule.onNodeWithTag(tag).assertExists()
             }
@@ -107,9 +110,9 @@ class ScheduleActivityTest {
     @Test
     fun errorPageIsShownWhenScheduleIsLaunchedWithEmptyCurrentEmail() {
         database.setCurrentEmail("")
-        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)).use {
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
+        ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
         }
     }
 
@@ -119,8 +122,8 @@ class ScheduleActivityTest {
         database.setCurrentEmail(email)
         val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
         ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
         }
     }
 
@@ -204,7 +207,7 @@ class ScheduleActivityTest {
             val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
             scheduleIntent.putExtra("email", defaultEmail)
             ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
-                composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.BASIC_SCHEDULE).assertExists()
+                composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
                 val userInfo = database.getUser(defaultEmail)
                 userInfo.thenAccept {
                     val expectedShownEvents = listOf(
@@ -239,7 +242,7 @@ class ScheduleActivityTest {
             val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
             scheduleIntent.putExtra("email", defaultEmail)
             ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
-                composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.BASIC_SCHEDULE).assertExists()
+                composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
                 val userInfo = database.getUser(defaultEmail)
                 userInfo.thenAccept {
                     val expectedShownEvents = listOf(
@@ -265,12 +268,12 @@ class ScheduleActivityTest {
         val formatter = DateTimeFormatter.ofPattern("d MMM")
         val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
         ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
-            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.BASIC_SCHEDULE).assertExists()
-            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.Buttons.RIGHT_ARROW_BUTTON).assertExists()
-            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.Buttons.RIGHT_ARROW_BUTTON).performClick()
-            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(7).format(formatter)} - ${currentMonday.plusDays(13).format(formatter)}")
-        composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.Buttons.RIGHT_ARROW_BUTTON).performClick()
-            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(14).format(formatter)} - ${currentMonday.plusDays(20).format(formatter)}")
+            composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
+            composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).assertExists()
+            composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).performClick()
+            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(7).format(formatter)} - ${currentMonday.plusDays(13).format(formatter)}")
+        composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).performClick()
+            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(14).format(formatter)} - ${currentMonday.plusDays(20).format(formatter)}")
         }
     }
 
@@ -279,12 +282,12 @@ class ScheduleActivityTest {
         val formatter = DateTimeFormatter.ofPattern("d MMM")
         val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
         ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
-            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.BASIC_SCHEDULE).assertExists()
-            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.Buttons.LEFT_ARROW_BUTTON).assertExists()
-            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.Buttons.LEFT_ARROW_BUTTON).performClick()
-            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(7).format(formatter)} - ${currentMonday.minusDays(1).format(formatter)}")
-            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.Buttons.LEFT_ARROW_BUTTON).performClick()
-            composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(14).format(formatter)} - ${currentMonday.minusDays(8).format(formatter)}")
+            composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
+            composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).assertExists()
+            composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).performClick()
+            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(7).format(formatter)} - ${currentMonday.minusDays(1).format(formatter)}")
+            composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).performClick()
+            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(14).format(formatter)} - ${currentMonday.minusDays(8).format(formatter)}")
         }
     }
 

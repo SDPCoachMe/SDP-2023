@@ -1,19 +1,38 @@
 package com.github.sdpcoachme.schedule
 
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowLeft
 import androidx.compose.material.icons.filled.ArrowRight
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -23,7 +42,6 @@ import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -32,13 +50,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.Dashboard
-import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.ShownEvent
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.map.MapActivity
+import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.github.sdpcoachme.ui.theme.Purple500
 import java.time.DayOfWeek
@@ -90,20 +108,17 @@ class ScheduleActivity : ComponentActivity() {
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
             //TODO: For demo, let this function run once to add sample events to the database
-            //database.addEventsToUser(email, sampleEvents).thenRun {
+            database.addEventsToUser(email, sampleEvents).thenRun {
                 val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email)
 
                 setContent {
                     CoachMeTheme {
-                        val dashboardContent: @Composable (Modifier) -> Unit = {
-                            Surface(color = MaterialTheme.colors.background) {
-                                Schedule(futureUserInfo)
-                            }
+                        Surface(color = MaterialTheme.colors.background) {
+                            Schedule(futureUserInfo)
                         }
-                        Dashboard(dashboardContent, email, stringResource(R.string.title_activity_schedule))
                     }
                 }
-            //}
+            }
         }
     }
 }
@@ -185,12 +200,32 @@ fun ScheduleTitleRow(
     onRightArrowClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .height(56.dp)
             .background(Purple500)
-            .padding(14.dp)
     ) {
+        // Button icon for the back button
+        IconButton(
+            onClick = {
+                // go back to the map view
+                val intent = Intent(context, MapActivity::class.java)
+                context.startActivity(intent)
+            },
+            modifier = Modifier
+                .testTag(ChatActivity.TestTags.Buttons.BACK)
+                .padding(start = 5.dp)
+                .align(Alignment.CenterVertically)
+        ) {
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Back",
+                modifier = Modifier.align(Alignment.CenterVertically),
+                tint = Color.White
+            )
+        }
         Text(
             text = "Schedule",
             style = MaterialTheme.typography.h5,
@@ -198,18 +233,20 @@ fun ScheduleTitleRow(
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
             modifier = Modifier
-                .weight(1f)
-                .background(Purple500)
+                .align(Alignment.CenterVertically)
+                .padding(start = 10.dp)
         )
         IconButton(
             onClick = { onLeftArrowClick() },
             modifier = Modifier
                 .testTag(ScheduleActivity.TestTags.Buttons.LEFT_ARROW_BUTTON)
-                .background(Purple500)
+                .padding(start = 20.dp)
+                .align(Alignment.CenterVertically)
         ) {
             Icon(
                 imageVector = Icons.Default.ArrowLeft,
                 contentDescription = "Left arrow",
+                modifier = Modifier.align(Alignment.CenterVertically),
                 tint = Color.White
             )
         }
@@ -219,19 +256,21 @@ fun ScheduleTitleRow(
             style = MaterialTheme.typography.subtitle1,
             color = Color.White,
             modifier = Modifier
-                .padding(horizontal = 8.dp, vertical = 8.dp)
                 .testTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD)
-                .background(Purple500)
+                .align(Alignment.CenterVertically)
+                .padding(horizontal = 5.dp, vertical = 8.dp)
         )
         IconButton(
             onClick = { onRightArrowClick() },
             modifier = Modifier
                 .testTag(ScheduleActivity.TestTags.Buttons.RIGHT_ARROW_BUTTON)
-                .background(Purple500)
+                .padding(end = 20.dp)
+                .align(Alignment.CenterVertically)
         ) {
             Icon(
                 imageVector = Icons.Default.ArrowRight,
                 contentDescription = "Right arrow",
+                modifier = Modifier.align(Alignment.CenterVertically),
                 tint = Color.White
             )
         }
