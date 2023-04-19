@@ -38,7 +38,7 @@ import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_BOX
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_MESSAGE
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
-import com.github.sdpcoachme.ui.theme.Purple500
+import com.github.sdpcoachme.ui.theme.Purple200
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
@@ -211,7 +211,8 @@ fun ContactField(toUser: UserInfo, chatId: String, database: Database) {
         modifier = Modifier
             .testTag(CONTACT_FIELD.ROW)
             .fillMaxWidth()
-            .background(color = Purple500)
+            .height(56.dp) // matches the built-in app bar height
+            .background(color = Purple200)
             .clickable {
                 database.removeChatListener(chatId)
                 // go to the profile of the other user
@@ -243,7 +244,7 @@ fun ContactField(toUser: UserInfo, chatId: String, database: Database) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
                 contentDescription = "Back",
-                tint = Color.White
+                tint = Color.Black
             )
         }
 
@@ -253,9 +254,10 @@ fun ContactField(toUser: UserInfo, chatId: String, database: Database) {
             modifier = Modifier
                 .testTag(CONTACT_FIELD.LABEL)
                 .fillMaxWidth()
-                .padding(start = 20.dp, end = 10.dp, top = 20.dp, bottom = 20.dp),
-            color = Color.White,
-            fontWeight = FontWeight.Bold
+                .align(Alignment.CenterVertically)
+                .padding(start = 10.dp),
+            color = Color.Black,
+            fontWeight = FontWeight.SemiBold
         )
     }
 }

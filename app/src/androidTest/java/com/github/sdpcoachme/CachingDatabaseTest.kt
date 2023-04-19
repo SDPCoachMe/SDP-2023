@@ -11,9 +11,12 @@ import com.github.sdpcoachme.location.UserLocationSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.firebase.database.CachingDatabase
 import com.github.sdpcoachme.firebase.database.MockDatabase
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.NEW_YORK
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
 import org.junit.Test
+import java.util.concurrent.TimeUnit.SECONDS
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
@@ -21,6 +24,8 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 class CachingDatabaseTest {
+
+    private val exampleEmail = "example@email.com"
 
     // IMPORTANT:
     // Note that here MockDatabase needs to be re-instantiated for each test as we
@@ -30,7 +35,7 @@ class CachingDatabaseTest {
     fun getUserPutsUserInCache() {
         val wrappedDatabase = MockDatabase()
         val cachingDatabase = CachingDatabase(wrappedDatabase)
-        cachingDatabase.getUser(exampleEmail).get(5, TimeUnit.SECONDS)
+        cachingDatabase.getUser(exampleEmail).get(5, SECONDS)
         assertTrue(cachingDatabase.isCached(exampleEmail))
     }
 
@@ -40,7 +45,7 @@ class CachingDatabaseTest {
         val cachingDatabase = CachingDatabase(wrappedDatabase)
         val retrievedUser = cachingDatabase.updateUser(willSmithUser)
             .thenCompose { cachingDatabase.getUser(willSmithUser.email) }
-            .get(5, TimeUnit.SECONDS)
+            .get(5, SECONDS)
         assertTrue(cachingDatabase.isCached(willSmithUser.email))
         assertTrue(cachingDatabase.userExists(willSmithUser.email).get(1, TimeUnit.SECONDS))
         assertEquals(willSmithUser, retrievedUser)
@@ -54,7 +59,7 @@ class CachingDatabaseTest {
             .thenCompose {
                 cachingDatabase.updateUser(defaultUser) }
             .thenCompose { cachingDatabase.getUser(exampleEmail) }
-            .get(5, TimeUnit.SECONDS)
+            .get(5, SECONDS)
         assertTrue(cachingDatabase.isCached(exampleEmail))
         assertEquals(defaultUser, updatedUser)
     }
@@ -68,7 +73,7 @@ class CachingDatabaseTest {
         val allUsersInDatabase = CompletableFuture.allOf(*setUsers.toTypedArray())
             .thenApply { cachingDatabase.clearCache() }
             .thenCompose { cachingDatabase.getAllUsers() }
-            .get(5, TimeUnit.SECONDS)
+            .get(5, SECONDS)
         users.forEach { assertTrue(cachingDatabase.isCached(it.email)) }
         assertTrue(allUsersInDatabase.containsAll(users))
     }

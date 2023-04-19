@@ -12,6 +12,7 @@ import androidx.test.uiautomator.*
 import com.github.sdpcoachme.LoginActivity.TestTags.Buttons.Companion.DELETE_ACCOUNT
 import com.github.sdpcoachme.LoginActivity.TestTags.Buttons.Companion.SIGN_OUT
 import com.github.sdpcoachme.LoginActivity.TestTags.Companion.INFO_TEXT
+import com.github.sdpcoachme.map.MapActivity
 import com.google.firebase.auth.FirebaseAuth
 import org.hamcrest.CoreMatchers
 import org.junit.Before
@@ -92,11 +93,11 @@ open class LoginActivityTest {
 
     //TODO implement this test
     // @Test
-    fun signInLaunchesDashboardOnSuccess() {
+    fun signInLaunchesMapOnSuccess() {
         Intents.init()
         //val email = "patrick.sebastien@gmail.com"
         // perform here a successful login with the email
-        intended(hasComponent(DashboardActivity::class.java.name))
+        intended(hasComponent(MapActivity::class.java.name))
         Intents.release()
     }
 }
