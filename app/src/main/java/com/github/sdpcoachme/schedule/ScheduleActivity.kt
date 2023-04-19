@@ -56,7 +56,6 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.map.MapActivity
-import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.github.sdpcoachme.ui.theme.Purple500
 import java.time.DayOfWeek
@@ -79,6 +78,7 @@ class ScheduleActivity : ComponentActivity() {
             companion object {
                 const val LEFT_ARROW_BUTTON = "leftArrowButton"
                 const val RIGHT_ARROW_BUTTON = "rightArrowButton"
+                const val BACK = "backButton"
             }
         }
         class TextFields {
@@ -108,7 +108,7 @@ class ScheduleActivity : ComponentActivity() {
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
             //TODO: For demo, let this function run once to add sample events to the database
-            database.addEventsToUser(email, sampleEvents).thenRun {
+            //database.addEventsToUser(email, sampleEvents).thenRun {
                 val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email)
 
                 setContent {
@@ -118,7 +118,7 @@ class ScheduleActivity : ComponentActivity() {
                         }
                     }
                 }
-            }
+            //}
         }
     }
 }
@@ -215,7 +215,7 @@ fun ScheduleTitleRow(
                 context.startActivity(intent)
             },
             modifier = Modifier
-                .testTag(ChatActivity.TestTags.Buttons.BACK)
+                .testTag(ScheduleActivity.TestTags.Buttons.BACK)
                 .padding(start = 5.dp)
                 .align(Alignment.CenterVertically)
         ) {
