@@ -17,7 +17,8 @@ import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.FIRST_
 import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.LAST_NAME
 import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.PHONE
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.autocomplete.MockLocationAutocompleteHandler
 import junit.framework.TestCase
 import org.junit.After
@@ -25,7 +26,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.SECONDS
 
 
 @RunWith(AndroidJUnit4::class)
@@ -86,8 +87,8 @@ open class SignupActivityTest {
         launchSignupActivity("")
         // not possible to use Intents.init()... to check if the correct intent
         // is launched as the intents are launched from within the onCreate function
-        composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
     }
 
     @Test
@@ -112,13 +113,13 @@ open class SignupActivityTest {
                 exceptionThrown = true
                 // Recover from exception
                 null
-            }.get(10, TimeUnit.SECONDS)
+            }.get(10, SECONDS)
             // Make sure exception was thrown
             TestCase.assertTrue(exceptionThrown)
         }
 
-        composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
     }
 
     private fun setAndGetUser(user: UserInfo) {
@@ -127,12 +128,12 @@ open class SignupActivityTest {
 
         // Wait for activity to send to database
         scenario.onActivity { activity ->
-            activity.databaseStateSending.get(10, TimeUnit.SECONDS)
+            activity.databaseStateSending.get(10, SECONDS)
         }
 
         // Important note: this get method was used instead of onTimeout due to onTimeout not
         // being found when running tests on Cirrus CI even with java version changed in build.gradle
-        val retrievedUser = database.getUser(user.email).get(10, TimeUnit.SECONDS)
+        val retrievedUser = database.getUser(user.email).get(10, SECONDS)
         TestCase.assertEquals(user, retrievedUser)
 
         // Assert that we are redirected to the SelectSportsActivity with correct intent

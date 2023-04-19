@@ -14,7 +14,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.*
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Message
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.firebase.database.MockDatabase
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
@@ -54,6 +55,10 @@ class ChatActivityTest {
         emptyList(),
         emptyList()
     )
+    private val defaultIntent = Intent(
+        ApplicationProvider.getApplicationContext(), ChatActivity::class.java
+    ).putExtra("toUserEmail", toUser.email)
+
     private lateinit var database: Database
     private val currentUser = UserInfo(
         "John",
@@ -85,10 +90,7 @@ class ChatActivityTest {
 
     @Test
     fun startingElementsArePresent() {
-        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
-        chatIntent.putExtra("toUserEmail", toUser.email)
-
-        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(BACK).assertIsDisplayed()
             composeTestRule.onNodeWithTag(CONTACT_FIELD.LABEL, useUnmergedTree = true).assertTextEquals(toUser.firstName + " " + toUser.lastName)
             composeTestRule.onNodeWithTag(CHAT_FIELD.LABEL, useUnmergedTree = true).assertIsDisplayed()
@@ -98,10 +100,7 @@ class ChatActivityTest {
 
     @Test
     fun whenScrolledToTheBottomScrollButtonIsNotDisplayed() {
-        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
-        chatIntent.putExtra("toUserEmail", toUser.email)
-
-        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
             // As the chat is opened with the "scroll" all the way at the bottom,
             // the scroll button should not be displayed when launching this activity
             composeTestRule.onNodeWithTag(SCROLL_TO_BOTTOM, useUnmergedTree = true).assertDoesNotExist()
@@ -119,10 +118,7 @@ class ChatActivityTest {
             database.sendMessage(chatId, (msg2.copy(content = "currentUser msg $i")))
         }
 
-        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
-        chatIntent.putExtra("toUserEmail", toUser.email)
-
-        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(SCROLL_TO_BOTTOM, useUnmergedTree = true).assertDoesNotExist()
 
             composeTestRule.onNodeWithTag(CHAT_BOX.CONTAINER).performTouchInput { swipeDown() }
@@ -140,11 +136,7 @@ class ChatActivityTest {
 
     @Test
     fun clickingOnContactRowOpensProfileOfThatContact() {
-        val chatIntent =
-            Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
-        chatIntent.putExtra("toUserEmail", toUser.email)
-
-        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
             Intents.init()
 
             composeTestRule.onNodeWithTag(CONTACT_FIELD.LABEL, useUnmergedTree = true)
@@ -164,10 +156,7 @@ class ChatActivityTest {
 
     @Test
     fun backButtonReturnsToListedContactsWhenPressed() {
-        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
-        chatIntent.putExtra("toUserEmail", toUser.email)
-
-        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
             Intents.init()
 
             composeTestRule.onNodeWithTag(BACK)
@@ -189,11 +178,9 @@ class ChatActivityTest {
 
     @Test
     fun sendingMessagePlacesItInDbAndDisplaysItOnScreen() {
-        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
-        chatIntent.putExtra("toUserEmail", toUser.email)
         val messageContent = "Send Message test!"
 
-        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(CHAT_FIELD.LABEL)
                 .assertIsDisplayed()
                 .performTextInput(messageContent)
@@ -218,10 +205,7 @@ class ChatActivityTest {
 
     @Test
     fun whenOnChangeCalledWithNewChatMessageChatIsUpdated() {
-        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
-        chatIntent.putExtra("toUserEmail", toUser.email)
-
-        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
             database.addChatListener("run-previous-on-change") {}
 
             composeTestRule.onNodeWithText("test onChange method", substring = true, useUnmergedTree = true)
@@ -231,10 +215,7 @@ class ChatActivityTest {
 
     @Test
     fun messageSentByOtherUserDoesNotContainIsReadCheckMark() {
-        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
-        chatIntent.putExtra("toUserEmail", toUser.email)
-
-        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
 
             database.sendMessage(chatId, Message(toUser.email, "", LocalDateTime.now().toString()))
 
@@ -245,10 +226,7 @@ class ChatActivityTest {
 
     @Test
     fun messageSentByCurrentUserContainsIsReadCheckMark() {
-        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
-        chatIntent.putExtra("toUserEmail", toUser.email)
-
-        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
 
             database.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString()))
 
@@ -259,10 +237,7 @@ class ChatActivityTest {
 
     @Test
     fun notReadMarkIsDisplayedWhenMessageNotYetReadByRecipient() {
-        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
-        chatIntent.putExtra("toUserEmail", toUser.email)
-
-        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
 
             database.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), false))
 
@@ -274,10 +249,7 @@ class ChatActivityTest {
 
     @Test
     fun readMarkIsDisplayedWhenMessageNotYetReadByRecipient() {
-        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
-        chatIntent.putExtra("toUserEmail", toUser.email)
-
-        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
 
             database.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), true))
 
@@ -290,23 +262,20 @@ class ChatActivityTest {
     @Test
     fun errorHandlerIsLaunchedIfCurrentUserEmailIsEmpty() {
         database.setCurrentEmail("")
-
-        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
-        chatIntent.putExtra("toUserEmail", toUser.email)
-        checkErrorPageIsLaunched(chatIntent)
+        checkErrorPageIsLaunched(defaultIntent)
     }
 
     @Test
     fun errorHandlerIsLaunchedIfToUserEmailNotPassedInIntentExtra() {
-        val chatIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
-        checkErrorPageIsLaunched(chatIntent)
+        val errorIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
+        checkErrorPageIsLaunched(errorIntent)
     }
 
     private fun checkErrorPageIsLaunched(chatIntent: Intent) {
         ActivityScenario.launch<ChatActivity>(chatIntent).use {
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON)
+            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON)
                 .assertIsDisplayed()
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD)
+            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD)
                 .assertIsDisplayed()
 
             composeTestRule.onNodeWithText("The Chat Interface did not receive both needed users.\nPlease return to the login page and try again.")

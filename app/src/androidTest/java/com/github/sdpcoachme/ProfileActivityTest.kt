@@ -10,6 +10,9 @@ import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.EDIT
 import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.MESSAGE_COACH
 import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.SAVE
@@ -23,11 +26,11 @@ import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LOCATION
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_PICTURE
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SELECTED_SPORTS
-import com.github.sdpcoachme.location.UserLocationSamples.Companion.TOKYO
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
+import com.github.sdpcoachme.location.UserLocationSamples.Companion.TOKYO
 import com.github.sdpcoachme.messaging.ChatActivity
-import com.github.sdpcoachme.schedule.ScheduleActivity
 import org.hamcrest.CoreMatchers
 import org.junit.Before
 import org.junit.Rule
@@ -86,7 +89,6 @@ class ProfileActivityTest {
             FIRST_NAME.FIELD,
             LAST_NAME.FIELD,
             CLIENT_COACH.SWITCH,
-
             SAVE
         )
 
@@ -107,11 +109,11 @@ class ProfileActivityTest {
     @Test
     fun errorPageIsShownWhenEditProfileIsLaunchedWithEmptyCurrentEmail() {
         database.setCurrentEmail("")
-        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)).use {
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             // not possible to use Intents.init()... to check if the correct intent
             // is launched as the intents are launched from within the onCreate function
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
         }
     }
 
@@ -200,10 +202,9 @@ class ProfileActivityTest {
 
     @Test
     fun requestForNonExistentEmailDisplaysEmptyUserFields() {
-        val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
         val email = "non-existant@email.com"
         database.setCurrentEmail(email)
-        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
 
             composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(email)
             composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals("")
@@ -261,7 +262,7 @@ class ProfileActivityTest {
     fun coachProfileShownWhenIsViewingCoachProfileIsTrue() {
         val displayedForUserLookingAtCoach = initiallyDisplayed.plus(listOf(MESSAGE_COACH, SELECTED_SPORTS.ROW, SELECTED_SPORTS.LABEL))
 
-        val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
+        val profileIntent = defaultIntent
         val email = "example@email.com"
         profileIntent.putExtra("email", email)
         profileIntent.putExtra("isViewingCoach", true)
@@ -276,7 +277,7 @@ class ProfileActivityTest {
     fun messageCoachButtonClickHasCorrectFunctionality() {
         val displayedForUserLookingAtCoach = initiallyDisplayed.plus(MESSAGE_COACH)
 
-        val profileIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
+        val profileIntent = defaultIntent
         val coachEmail = "example@email.com"
         profileIntent.putExtra("email", coachEmail)
         profileIntent.putExtra("isViewingCoach", true)
@@ -339,6 +340,22 @@ class ProfileActivityTest {
 
             Intents.intended(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name))
             Intents.release()
+        }
+    }
+
+    @Test
+    fun dashboardHasRightTitleOnProfile() {
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText("My profile"))
+        }
+    }
+    @Test
+    fun dashboardIsAccessibleAndDisplayableFromProfile() {
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertExists().assertIsDisplayed()
         }
     }
 }

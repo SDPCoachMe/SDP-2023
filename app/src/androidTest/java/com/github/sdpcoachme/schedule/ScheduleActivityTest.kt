@@ -9,10 +9,15 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.DashboardActivity
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.ShownEvent
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
+import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.BASIC_SCHEDULE
+import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.SCHEDULE_HEADER
 import junit.framework.TestCase.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -29,7 +34,10 @@ class ScheduleActivityTest {
     private val database = (InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as CoachMeApplication).database
     private val defaultEmail = "example@email.com"
+    private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
+
     private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    //private val eventList = EventOpsTest.eventList
     private val eventList = listOf(
         Event(
             name = "Developer Keynote",
@@ -119,9 +127,8 @@ class ScheduleActivityTest {
     @Test
     fun eventsOfCurrentWeekAreDisplayedCorrectly() {
         database.addEventsToUser(defaultEmail, eventList).thenRun {
-            val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
-            ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
-                composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.BASIC_SCHEDULE).assertExists()
+            ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+                composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
                 val userInfo = database.getUser(defaultEmail)
                 userInfo.thenAccept {
                     it.events.forEach { event ->
@@ -142,10 +149,9 @@ class ScheduleActivityTest {
             description = "This is a multi day event.",
         )
         database.addEventsToUser(defaultEmail, listOf(multiDayEvent)).thenRun {
-            val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
-            scheduleIntent.putExtra("email", defaultEmail)
+            val scheduleIntent = defaultIntent.putExtra("email", defaultEmail)
             ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
-                composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.BASIC_SCHEDULE).assertExists()
+                composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
                 val userInfo = database.getUser(defaultEmail)
                 userInfo.thenAccept {
                     val expectedShownEvents = listOf(
@@ -279,6 +285,22 @@ class ScheduleActivityTest {
             composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(7).format(formatter)} - ${currentMonday.minusDays(1).format(formatter)}")
             composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.Buttons.LEFT_ARROW_BUTTON).performClick()
             composeTestRule.onNodeWithTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(14).format(formatter)} - ${currentMonday.minusDays(8).format(formatter)}")
+        }
+    }
+
+    @Test
+    fun dashboardHasRightTitleOnSchedule() {
+        ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText("Schedule"))
+        }
+    }
+    @Test
+    fun dashboardIsAccessibleAndDisplayableFromSchedule() {
+        ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertExists().assertIsDisplayed()
         }
     }
 }
