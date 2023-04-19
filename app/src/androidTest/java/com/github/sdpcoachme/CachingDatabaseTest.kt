@@ -11,8 +11,6 @@ import com.github.sdpcoachme.location.UserLocationSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.firebase.database.CachingDatabase
 import com.github.sdpcoachme.firebase.database.MockDatabase
-import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
-import com.github.sdpcoachme.location.UserLocationSamples.Companion.NEW_YORK
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
 import org.junit.Test
@@ -21,11 +19,8 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
 
 class CachingDatabaseTest {
-
-    private val exampleEmail = "example@email.com"
 
     // IMPORTANT:
     // Note that here MockDatabase needs to be re-instantiated for each test as we
@@ -47,7 +42,7 @@ class CachingDatabaseTest {
             .thenCompose { cachingDatabase.getUser(willSmithUser.email) }
             .get(5, SECONDS)
         assertTrue(cachingDatabase.isCached(willSmithUser.email))
-        assertTrue(cachingDatabase.userExists(willSmithUser.email).get(1, TimeUnit.SECONDS))
+        assertTrue(cachingDatabase.userExists(willSmithUser.email).get(1, SECONDS))
         assertEquals(willSmithUser, retrievedUser)
     }
 
@@ -95,11 +90,11 @@ class CachingDatabaseTest {
             .thenApply { cachingDatabase.clearCache() }
 
         addUser.thenCompose { cachingDatabase.addEventsToUser(willSmithUser.email, eventList) }
-            .get(5, TimeUnit.SECONDS)
+            .get(5, SECONDS)
         assertTrue(cachingDatabase.isCached(willSmithUser.email))
 
         val retrievedUser = cachingDatabase.getUser(willSmithUser.email)
-            .get(5, TimeUnit.SECONDS)
+            .get(5, SECONDS)
         assertEquals(willSmithUser.copy(events = eventList), retrievedUser)
     }
 
