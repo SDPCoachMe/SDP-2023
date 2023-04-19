@@ -60,7 +60,7 @@ class CachingDatabaseTest {
     }
 
     @Test
-    fun addAllUsersPutsAllUsersInCache() {
+    fun getAllUsersPutsAllUsersInCache() {
         val wrappedDatabase = MockDatabase()
         val cachingDatabase = CachingDatabase(wrappedDatabase)
         val users = listOf(defaultUser, willSmithUser, rogerFedererUser)
