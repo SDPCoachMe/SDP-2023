@@ -267,12 +267,13 @@ class ScheduleActivityTest {
     @Test
     fun clickOnRightArrowButtonChangesWeekCorrectly() {
         val formatter = DateTimeFormatter.ofPattern("d MMM")
-        ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+        val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
+        ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
             composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
             composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).assertExists()
             composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).performClick()
             composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(7).format(formatter)} - ${currentMonday.plusDays(13).format(formatter)}")
-        composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).performClick()
+            composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).performClick()
             composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(14).format(formatter)} - ${currentMonday.plusDays(20).format(formatter)}")
         }
     }
@@ -280,7 +281,8 @@ class ScheduleActivityTest {
     @Test
     fun clickOnLeftArrowButtonChangesWeekCorrectly() {
         val formatter = DateTimeFormatter.ofPattern("d MMM")
-        ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+        val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
+        ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
             composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
             composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).assertExists()
             composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).performClick()
