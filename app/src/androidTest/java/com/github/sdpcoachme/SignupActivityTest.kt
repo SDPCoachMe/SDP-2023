@@ -5,7 +5,6 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.espresso.Espresso
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -146,12 +145,14 @@ open class SignupActivityTest {
     }
 
     private fun inputUserInfo(user: UserInfo) {
-        composeTestRule.onNodeWithTag(FIRST_NAME).performTextInput(user.firstName)
-        Espresso.closeSoftKeyboard()
-        composeTestRule.onNodeWithTag(LAST_NAME).performTextInput(user.lastName)
-        Espresso.closeSoftKeyboard()
-        composeTestRule.onNodeWithTag(PHONE).performTextInput(user.phone)
-        Espresso.closeSoftKeyboard()
+        // Put focus on first name field
+        composeTestRule.onNodeWithTag(FIRST_NAME)
+            .performClick()
+
+        fillAndCheckFocus(user.firstName, FIRST_NAME)
+        fillAndCheckFocus(user.lastName, LAST_NAME)
+        fillAndCheckFocus(user.phone, PHONE)
+
         if (user.coach)
             composeTestRule.onNodeWithTag(BE_COACH).performClick()
 
@@ -159,5 +160,16 @@ open class SignupActivityTest {
 
         // Testing Google Places Autocomplete Activity is too complex, instead, we've mocked it
         // so that it directly returns a fixed location MockLocationAutocompleteHandler.DEFAULT_LOCATION
+    }
+
+    private fun fillAndCheckFocus(text: String, tag: String) {
+        composeTestRule.onNodeWithTag(tag)
+            .assertIsFocused()
+        composeTestRule.onNodeWithTag(tag)
+            .performTextInput(text)
+        composeTestRule.onNodeWithTag(tag)
+            .performImeAction()
+        composeTestRule.onNodeWithTag(tag)
+            .assertIsNotFocused()
     }
 }

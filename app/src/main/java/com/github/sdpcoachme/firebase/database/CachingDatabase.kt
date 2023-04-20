@@ -96,4 +96,11 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         return cachedUsers.containsKey(email)
     }
 
+    /**
+     * Clear the cache.
+     * Also useful for testing
+     */
+    fun clearCache() {
+        cachedUsers.clear()
+    }
 }

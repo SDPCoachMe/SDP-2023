@@ -142,12 +142,22 @@ class ProfileActivityTest {
                 .assertIsDisplayed()
                 .performClick()
 
+            composeTestRule.onNodeWithTag(FIRST_NAME.FIELD)
+                .assertIsDisplayed()
+                .performClick()
+
             //edit text fields
             newValues.forEach { (field, newValue) ->
+                composeTestRule.onNodeWithTag(field.FIELD)
+                    .assertIsFocused()
                 composeTestRule.onNodeWithTag(field.FIELD)
                     .performTextClearance()
                 composeTestRule.onNodeWithTag(field.FIELD)
                     .performTextInput(newValue)
+                composeTestRule.onNodeWithTag(field.FIELD)
+                    .performImeAction()
+                composeTestRule.onNodeWithTag(field.FIELD)
+                    .assertIsNotFocused()
                 Espresso.closeSoftKeyboard()
             }
 
@@ -184,7 +194,6 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals(user.firstName)
             composeTestRule.onNodeWithTag(LAST_NAME.TEXT).assertTextEquals(user.lastName)
             composeTestRule.onNodeWithTag(LOCATION.TEXT).assertTextEquals(user.location.address)
-            // TODO: add the other fields once they are implemented:
 
             composeTestRule.onNodeWithTag(EDIT)
                 .assertIsDisplayed()
@@ -198,7 +207,6 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(FIRST_NAME.FIELD).assertTextEquals(user.firstName)
             composeTestRule.onNodeWithTag(LAST_NAME.FIELD).assertTextEquals(user.lastName)
             composeTestRule.onNodeWithTag(LOCATION.FIELD).assertTextEquals(user.location.address)
-            // TODO: add the other fields once they are implemented:
         }
     }
 
@@ -212,7 +220,6 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals("")
             composeTestRule.onNodeWithTag(LAST_NAME.TEXT).assertTextEquals("")
             composeTestRule.onNodeWithTag(LOCATION.TEXT).assertTextEquals("")
-            // TODO: add the other fields once they are implemented:
 
             composeTestRule.onNodeWithTag(EDIT)
                 .assertIsDisplayed()
@@ -226,7 +233,6 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(FIRST_NAME.FIELD).assertTextEquals("")
             composeTestRule.onNodeWithTag(LAST_NAME.FIELD).assertTextEquals("")
             composeTestRule.onNodeWithTag(LOCATION.FIELD).assertTextEquals("")
-            // TODO: add the other fields once they are implemented:
         }
     }
 

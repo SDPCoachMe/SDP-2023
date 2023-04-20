@@ -56,7 +56,7 @@ class MockDatabase: Database {
     private val accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
-            if (user.email == "throw@Exception.com") {
+        if (user.email == "throw@Exception.com") {
             val error = CompletableFuture<Void>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
