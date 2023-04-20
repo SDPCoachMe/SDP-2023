@@ -9,6 +9,7 @@
     <string name="title_activity_chat">Chat</string>
     <string name="title_activity_map">Map</string>
     <string name="title_activity_coaches_list">Nearby coaches</string>
+    <string name="title_activity_dashboard">Dashboard</string>
 
     <!--Firebase sign in page-->
     <string name="go_to_sign_in_page">Go to sign in page</string>
