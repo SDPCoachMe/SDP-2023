@@ -37,6 +37,7 @@ class ScheduleActivityTest {
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
 
     private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    private val nextMonday = currentMonday.plusDays(7)
     private val eventList = listOf(
         Event(
             name = "Developer Keynote",
@@ -193,8 +194,73 @@ class ScheduleActivityTest {
     }
 
     @Test
+    fun multiWeekEventIsDisplayedCorrectly() {
+        val multiWeekEvent = Event(
+            name = "Multi Week Event",
+            color = Color(0xFFAFBBF2).value.toString(),
+            start = currentMonday.plusDays(5).atTime(13, 0, 0).toString(),
+            end = nextMonday.plusDays(1).atTime(15, 0, 0).toString(),
+            description = "This is a multi week event.",
+        )
+        database.addEventsToUser(defaultEmail, listOf(multiWeekEvent)).thenRun {
+            ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+                composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
+                val userInfo = database.getUser(defaultEmail)
+                userInfo.thenAccept {
+                    val expectedShownEvents = listOf(
+                        ShownEvent(
+                            name = multiWeekEvent.name,
+                            color = multiWeekEvent.color,
+                            start = multiWeekEvent.start,
+                            startText = multiWeekEvent.start,
+                            end = LocalDateTime.parse(multiWeekEvent.start).withHour(23)
+                                .withMinute(59).withSecond(59).toString(),
+                            endText = multiWeekEvent.end,
+                            description = multiWeekEvent.description,
+                        ),
+                        ShownEvent(
+                            name = multiWeekEvent.name,
+                            color = multiWeekEvent.color,
+                            start = LocalDateTime.parse(multiWeekEvent.start).plusDays(1)
+                                .withHour(0).withMinute(0).withSecond(0).toString(),
+                            startText = multiWeekEvent.start,
+                            end = LocalDateTime.parse(multiWeekEvent.start).plusDays(1).withHour(23)
+                                .withMinute(59).withSecond(59).toString(),
+                            endText = multiWeekEvent.end,
+                            description = multiWeekEvent.description,
+                        ),
+                        ShownEvent(
+                            name = multiWeekEvent.name,
+                            color = multiWeekEvent.color,
+                            start = LocalDateTime.parse(multiWeekEvent.start).plusDays(2)
+                                .withHour(0).withMinute(0).withSecond(0).toString(),
+                            startText = multiWeekEvent.start,
+                            end = LocalDateTime.parse(multiWeekEvent.start).plusDays(2).withHour(23)
+                                .withMinute(59).withSecond(59).toString(),
+                            endText = multiWeekEvent.end,
+                            description = multiWeekEvent.description,
+                        ),
+                        ShownEvent(
+                            name = multiWeekEvent.name,
+                            color = multiWeekEvent.color,
+                            start = LocalDateTime.parse(multiWeekEvent.start).plusDays(3)
+                                .withHour(0).withMinute(0).withSecond(0).toString(),
+                            startText = multiWeekEvent.start,
+                            end = multiWeekEvent.end,
+                            endText = multiWeekEvent.end,
+                            description = multiWeekEvent.description,
+                        )
+                    )
+                    val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)
+                    assertTrue(expectedShownEvents == actualShownEvents)
+                }
+            }
+        }
+    }
+
+
+    @Test
     fun eventsOfNextWeekAreDisplayedCorrectly() {
-        val nextMonday = currentMonday.plusDays(7)
         val nextWeekEvent = Event(
             name = "Next Week Event",
             color = Color(0xFFAFBBF2).value.toString(),
