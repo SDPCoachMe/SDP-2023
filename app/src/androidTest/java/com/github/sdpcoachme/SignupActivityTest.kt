@@ -26,6 +26,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit.SECONDS
 
 
@@ -107,16 +108,18 @@ open class SignupActivityTest {
         inputUserInfo(exceptionUser)
 
         // Wait for activity to send to database
-        scenario.onActivity { activity ->
-            var exceptionThrown = false
-            activity.databaseStateSending.handle { _, _ ->
-                exceptionThrown = true
-                // Recover from exception
-                null
-            }.get(10, SECONDS)
-            // Make sure exception was thrown
-            TestCase.assertTrue(exceptionThrown)
+        lateinit var databaseStateSending: CompletableFuture<Void>
+        scenario.onActivity {
+            databaseStateSending = it.databaseStateSending
         }
+        var exceptionThrown = false
+        databaseStateSending.handle { _, _ ->
+            exceptionThrown = true
+            // Recover from exception
+            null
+        }.get(10, SECONDS)
+        // Make sure exception was thrown
+        TestCase.assertTrue(exceptionThrown)
 
         composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
         composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
@@ -127,9 +130,11 @@ open class SignupActivityTest {
         inputUserInfo(user)
 
         // Wait for activity to send to database
-        scenario.onActivity { activity ->
-            activity.databaseStateSending.get(10, SECONDS)
+        lateinit var databaseStateSending: CompletableFuture<Void>
+        scenario.onActivity {
+            databaseStateSending = it.databaseStateSending
         }
+        databaseStateSending.get(10, SECONDS)
 
         // Important note: this get method was used instead of onTimeout due to onTimeout not
         // being found when running tests on Cirrus CI even with java version changed in build.gradle

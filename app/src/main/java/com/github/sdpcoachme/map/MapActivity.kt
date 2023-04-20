@@ -31,6 +31,7 @@ import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.map.MapActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.map.MapActivity.TestTags.Companion.MARKER
+import com.github.sdpcoachme.map.MapActivity.TestTags.Companion.MARKER_INFO_WINDOW
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -48,11 +49,13 @@ import java.util.concurrent.CompletableFuture
 class MapActivity : ComponentActivity() {
     // Allows to notice testing framework that the markers are displayed on the map
     var markerLoading = CompletableFuture<Void>()
+    var mapLoading = CompletableFuture<Void>()
 
     class TestTags {
         companion object {
             const val MAP = "map"
             fun MARKER(user: UserInfo) = "marker-${user.email}"
+            fun MARKER_INFO_WINDOW(user: UserInfo) = "infoWindow-${user.email}"
         }
     }
 
@@ -94,7 +97,8 @@ class MapActivity : ComponentActivity() {
                 CoachMeTheme {
                     val dashboardContent: @Composable (Modifier) -> Unit = { modifier ->
                         Map(modifier = modifier, lastUserLocation = lastUserLocation,
-                            futureCoachesToDisplay = futureUsers, markerLoading = markerLoading)
+                            futureCoachesToDisplay = futureUsers, markerLoading = markerLoading,
+                            mapLoading = mapLoading)
                     }
                     Dashboard(dashboardContent, email)
                 }
@@ -167,7 +171,8 @@ fun Map(
     lastUserLocation: MutableState<LatLng?>,
     // Those 2 arguments have default values to avoid refactoring older tests
     futureCoachesToDisplay: CompletableFuture<List<UserInfo>> = CompletableFuture.completedFuture(listOf()),
-    markerLoading: CompletableFuture<Void> = CompletableFuture<Void>()
+    markerLoading: CompletableFuture<Void> = CompletableFuture<Void>(),
+    mapLoading: CompletableFuture<Void> = CompletableFuture<Void>()
 ) {
 
     val context = LocalContext.current
@@ -192,7 +197,11 @@ fun Map(
         properties = MapProperties(
             isMyLocationEnabled = lastUserLocation.value != null,
             mapType = MapType.NORMAL
-        )
+        ),
+        onMapLoaded = {
+            // For testing purposes, we need to know when the map is ready
+            mapLoading.complete(null)
+        }
     ) {
         // moves camera to last known location
         if (lastUserLocation.value != null) {
@@ -228,6 +237,7 @@ fun Map(
                     modifier = Modifier
                         .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 12.dp)
                         .fillMaxWidth(0.8f)
+                        .testTag(MARKER_INFO_WINDOW(user))
                 ) {
                     Text(
                         text = "${user.firstName} ${user.lastName}",
