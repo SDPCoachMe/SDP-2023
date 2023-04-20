@@ -11,6 +11,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.intent.Intents
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
@@ -18,11 +19,15 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
+import com.github.sdpcoachme.data.Sports
+import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
+import com.github.sdpcoachme.location.UserLocationSamples
 import com.github.sdpcoachme.map.MapActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.google.android.gms.maps.model.LatLng
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -34,6 +39,8 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class MapActivityTest {
+
+    // TODO add tests for markers
 
     private val random = LatLng(42.0,42.0)
 
@@ -51,9 +58,72 @@ class MapActivityTest {
         Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
     private val EXISTING_EMAIL = "example@email.com"
 
+    private val coaches = listOf(
+        UserInfo(
+            firstName = "John",
+            lastName = "Doe",
+            email = "john.doe@email.com",
+            location = UserLocationSamples.PARIS,
+            phone = "0123456789",
+            sports = listOf(Sports.SKI, Sports.SWIMMING),
+            coach = true
+        ),
+        UserInfo(
+            firstName = "Marc",
+            lastName = "Delémont",
+            email = "marc@email.com",
+            location = UserLocationSamples.LAUSANNE,
+            phone = "0123456789",
+            sports = listOf(Sports.WORKOUT),
+            coach = true
+        ),
+        UserInfo(
+            firstName = "Kate",
+            lastName = "Senior",
+            email = "katy@email.com",
+            location = UserLocationSamples.LONDON,
+            phone = "0123456789",
+            sports = listOf(Sports.TENNIS, Sports.SWIMMING),
+            coach = true
+        )
+    )
+
+    private val nonCoaches = listOf(
+        UserInfo(
+            firstName = "James",
+            lastName = "Dolorian",
+            email = "jammy@email.com",
+            location = UserLocationSamples.TOKYO,
+            phone = "0123456789",
+            sports = listOf(Sports.SKI, Sports.SWIMMING),
+            coach = false
+        ),
+        UserInfo(
+            firstName = "Loris",
+            lastName = "Gotti",
+            email = "lolo@email.com",
+            location = UserLocationSamples.SYDNEY,
+            phone = "0123456789",
+            sports = listOf(Sports.TENNIS),
+            coach = false
+        )
+    )
+
     @Before
     fun setUp() {
         database.setCurrentEmail(EXISTING_EMAIL)
+        for (coach in coaches) {
+            database.updateUser(coach)
+        }
+        for (nonCoach in nonCoaches) {
+            database.updateUser(nonCoach)
+        }
+        Intents.init()
+    }
+
+    @After
+    fun tearDown() {
+        Intents.release()
     }
 
     @SuppressLint("UnrememberedMutableState")
@@ -140,5 +210,65 @@ class MapActivityTest {
             composeTestRule.onNodeWithTag(mapTag).assertExists().assertIsDisplayed()
         }
     }
+
+    // TODO: for now, no tests are done on the markers in the map, since I could not find a way to
+    //  detect them in the composeTestRule. The testing code is left here for future reference, if
+    //  we ever decide to test the markers at some point.
+//    @Test
+//    fun mapCreatesCorrectMarkers() {
+//        ActivityScenario.launch<MapActivity>(defaultIntent).use {
+//            // Wait for activity to finish loading UI
+//            lateinit var markerLoading: CompletableFuture<Void>
+//            lateinit var mapLoading: CompletableFuture<Void>
+//            it.onActivity { activity ->
+//                markerLoading = activity.markerLoading
+//                mapLoading = activity.mapLoading
+//            }
+//            CompletableFuture.allOf(
+//                markerLoading,
+//                mapLoading
+//            ).get(3000, TimeUnit.MILLISECONDS)
+//
+//            // Check markers
+//            for (coach in coaches) {
+//                val markerTag = MARKER(coach)
+//                composeTestRule.onNodeWithTag(markerTag).assertExists().assertIsDisplayed()
+//            }
+//            for (nonCoach in nonCoaches) {
+//                val markerTag = MARKER(nonCoach)
+//                composeTestRule.onNodeWithTag(markerTag).assertDoesNotExist()
+//            }
+//        }
+//    }
+//
+//    @Test
+//    fun clickingOnMarkerOpensCoachProfile() {
+//        ActivityScenario.launch<MapActivity>(defaultIntent).use {
+//            // Wait for activity to finish loading UI
+//            lateinit var markerLoading: CompletableFuture<Void>
+//            lateinit var mapLoading: CompletableFuture<Void>
+//            it.onActivity { activity ->
+//                markerLoading = activity.markerLoading
+//                mapLoading = activity.mapLoading
+//            }
+//            CompletableFuture.allOf(
+//                markerLoading,
+//                mapLoading
+//            ).get(3000, TimeUnit.MILLISECONDS)
+//            val coach = coaches[0]
+//            val markerTag = MARKER(coach)
+//            val windowTag = MARKER_INFO_WINDOW(coach)
+//            composeTestRule.onNodeWithTag(markerTag).performClick()
+//            composeTestRule.onNodeWithTag(windowTag).assertExists().performClick()
+//            // Check that the ProfileActivity is launched with the correct extras
+//            Intents.intended(
+//                allOf(
+//                    hasComponent(ProfileActivity::class.java.name),
+//                    hasExtra("email", coach.email),
+//                    hasExtra("isViewingCoach", true)
+//                )
+//            )
+//        }
+//    }
 
 }

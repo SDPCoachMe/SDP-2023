@@ -65,9 +65,11 @@ open class CoachesListActivityTest {
         }
         */
         // Instead, make the test wait for the future to finish, and crash after a certain time
+        lateinit var stateLoading: CompletableFuture<Void>
         scenario.onActivity {
-            it.stateLoading.get(1000, MILLISECONDS)
+            stateLoading = it.stateLoading
         }
+        stateLoading.get(1000, MILLISECONDS)
     }
 
     // Necessary since we don't do scenario.use { ... } in each test, which closes automatically
@@ -154,9 +156,11 @@ open class CoachesListActivityTest {
             contactIntent.putExtra("isViewingContacts", true)
             scenario = ActivityScenario.launch(contactIntent)
 
+            lateinit var stateLoading: CompletableFuture<Void>
             scenario.onActivity {
-                it.stateLoading.get(1000, MILLISECONDS)
+                stateLoading = it.stateLoading
             }
+            stateLoading.get(1000, MILLISECONDS)
         }
 
         @Test
