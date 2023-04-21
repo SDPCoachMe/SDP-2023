@@ -1,0 +1,11 @@
+# Compiled JavaScript files
+lib/**/*.js
+lib/**/*.js.map
+
+# TypeScript v1 declaration files
+typings/
+
+# Node.js dependency directory
+node_modules/
+/src/sdp-firebase-bootcamp-7fa21-firebase-adminsdk-g76eg-73c1efa41a.json
+/src/serviceAccountKey.json

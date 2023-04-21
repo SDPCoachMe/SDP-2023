@@ -39,9 +39,12 @@ import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIEL
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_MESSAGE
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
 import com.github.sdpcoachme.ui.theme.Purple500
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.messaging.RemoteMessage
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
+
 
 /**
  * Activity responsible for displaying the chat between two users
@@ -483,6 +486,14 @@ fun ChatField(currentUserEmail: String,
         if (message.trim().isNotEmpty()) {
             IconButton(
                 onClick = {
+
+                    FirebaseMessaging.getInstance().send(
+                        RemoteMessage.Builder("f_DrdaMtT_68z8yPSb9hD-:APA91bHfjDn-r3gYYdo0JXUdz5SqPdb5a09wu0hISqpNc52z_Skezvm2GbIrpbej_v0ndPdM_DV7cvzJPD8D048MfHMX-XJJoCqg-yFMj2wDl7fOwTGVeg9n1joTkJXh7DMMRq3cojne")
+                            .setMessageId("0")
+                            .addData("my_message", "Hello World")
+                            .build()
+                    )
+
                     database.sendMessage(
                         chatId,
                         Message(currentUserEmail, message.trim(), LocalDateTime.now().toString(), false)
