@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Coach Me</string>
-    <string name="title_activity_dashboard">Dashboard</string>
     <string name="title_activity_edit_profile">Edit profile</string>
     <string name="title_activity_signup">Sign up</string>
     <string name="title_activity_login">Log in</string>
@@ -8,6 +7,9 @@
     <string name="title_activity_schedule">Schedule</string>
     <string name="title_activity_chats_overview">Chats overview</string>
     <string name="title_activity_chat">Chat</string>
+    <string name="title_activity_map">Map</string>
+    <string name="title_activity_coaches_list">Nearby coaches</string>
+    <string name="title_activity_dashboard">Dashboard</string>
 
     <!--Firebase sign in page-->
     <string name="go_to_sign_in_page">Go to sign in page</string>
@@ -23,6 +25,10 @@
     <string name="sign_in_button_text">Sign in</string>
     <string name="sign_out_button_text">Sign out</string>
     <string name="delete_account_button_text">Delete Account</string>
-    <string name="title_activity_coaches_list">Nearby coaches</string>
-    
+
+    <string name="contacts">Contacts</string>
+    <string name="my_profile">My profile</string>
+
+
+
 </resources>

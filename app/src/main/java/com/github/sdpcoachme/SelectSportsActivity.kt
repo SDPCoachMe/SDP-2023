@@ -7,9 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.Button
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.runtime.*
@@ -24,6 +22,7 @@ import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.map.MapActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
 
@@ -59,10 +58,20 @@ class SelectSportsActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         database = (application as CoachMeApplication).database
         email = database.getCurrentEmail()
+
+        if(email.isEmpty()) {
+            val errorMsg = "The sport selection did not receive an email address." +
+                    "\n Please return to the login page and try again."
+            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
+        }
+
         val isEditingProfile = intent.getBooleanExtra("isEditingProfile", false)
         setContent {
             CoachMeTheme {
-                FavoriteSportsSelection(isEditingProfile, database.getUser(email))
+                val appContent: @Composable (Modifier) -> Unit = {
+                    FavoriteSportsSelection(isEditingProfile, database.getUser(email))
+                }
+                Dashboard(appContent, email)
             }
         }
     }
@@ -125,7 +134,7 @@ class SelectSportsActivity : ComponentActivity() {
                         .thenApply {
                             val targetClass =
                                 if (isEditingProfile) ProfileActivity::class.java
-                                else DashboardActivity::class.java
+                                else MapActivity::class.java
                             val intent = Intent(context, targetClass)
                             startActivity(intent)
                         }.exceptionally {

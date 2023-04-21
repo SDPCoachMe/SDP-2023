@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -25,14 +24,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
+import com.github.sdpcoachme.map.MapActivity.Companion.CAMPUS
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import com.github.sdpcoachme.ui.theme.Purple500
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
@@ -43,74 +42,62 @@ class CoachesListActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
-        // TODO: update this to be current device location
-        val currentLat = 46.519054480712015
-        val currentLong = 6.566757578464391
         val database = (application as CoachMeApplication).database
-        val futureListOfCoaches =
-            if (isViewingContacts) {
-                database.getChatContacts(email = database.getCurrentEmail())
-            } else {
-                database
-                .getAllUsersByNearest(
-                    latitude = currentLat,
-                    longitude = currentLong
-                ).thenApply {
-                    it.filter { user -> user.coach }
+        val userLatLng = (application as CoachMeApplication).userLocation.value?: CAMPUS
+        val email = database.getCurrentEmail()
+
+        if (email.isEmpty()) {
+            val errorMsg = "The coach list did not receive an email address.\nPlease return to the login page and try again."
+            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
+        } else {
+            val futureListOfCoaches =
+                if (isViewingContacts) {
+                    database.getChatContacts(email = email)
+                } else {
+                    database
+                        .getAllUsersByNearest(
+                            latitude = userLatLng.latitude,
+                            longitude = userLatLng.longitude
+                        ).thenApply {
+                            it.filter { user -> user.coach }
+                        }
                 }
-            }
 
-        setContent {
-            var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
+            setContent {
+                var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
 
-            // Proper way to handle result of a future in a Composable.
-            // This makes sure the listOfCoaches state is updated only ONCE, when the future is complete
-            // This is because the code in LaunchedEffect(true) will only be executed once, when the
-            // Composable is first created (given that the parameter key1 never changes). The code won't
-            // be executed on every recomposition.
-            // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
-            LaunchedEffect(true) {
-                listOfCoaches = futureListOfCoaches.await()
+                // Proper way to handle result of a future in a Composable.
+                // This makes sure the listOfCoaches state is updated only ONCE, when the future is complete
+                // This is because the code in LaunchedEffect(true) will only be executed once, when the
+                // Composable is first created (given that the parameter key1 never changes). The code won't
+                // be executed on every recomposition.
+                // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
+                LaunchedEffect(true) {
+                    listOfCoaches = futureListOfCoaches.await()
 
-                // Activity is now ready for testing
-                stateLoading.complete(null)
-            }
+                    // Activity is now ready for testing
+                    stateLoading.complete(null)
+                }
 
-            CoachMeTheme {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) {
-                    TitleRow(isViewingContacts = isViewingContacts)
-
-                    LazyColumn {
-                        items(listOfCoaches) { user ->
-                            UserInfoListItem(user, isViewingContacts)
+                CoachMeTheme {
+                    val title = if (isViewingContacts) stringResource(R.string.contacts)
+                                else stringResource(R.string.title_activity_coaches_list)
+                    val appContent: @Composable (Modifier) -> Unit = { modifier ->
+                        Column(
+                            modifier = modifier
+                                .fillMaxSize()
+                        ) {
+                            LazyColumn {
+                                items(listOfCoaches) { user ->
+                                    UserInfoListItem(user, isViewingContacts)
+                                }
+                            }
                         }
                     }
+                    Dashboard(appContent, email, title)
                 }
             }
         }
-    }
-}
-
-@Composable
-fun TitleRow(isViewingContacts: Boolean) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(color = Purple500),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = if (isViewingContacts) "Contacts" else "Nearby Coaches",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 20.dp),
-            color = Color.White
-        )
     }
 }
 

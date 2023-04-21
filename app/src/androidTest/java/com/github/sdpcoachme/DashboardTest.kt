@@ -15,16 +15,16 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.COACHES_LIST
-import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.HAMBURGER_MENU
-import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.LOGOUT
-import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.MESSAGING
-import com.github.sdpcoachme.DashboardActivity.TestTags.Buttons.Companion.PROFILE
-import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DASHBOARD_EMAIL
-import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.DRAWER_HEADER
-import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MAP
-import com.github.sdpcoachme.DashboardActivity.TestTags.Companion.MENU_LIST
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.COACHES_LIST
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.LOGOUT
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.MESSAGING
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.PROFILE
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.SCHEDULE
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.MENU_LIST
+import com.github.sdpcoachme.map.MapActivity
 import com.github.sdpcoachme.schedule.ScheduleActivity
 import org.hamcrest.Matcher
 import org.junit.After
@@ -33,13 +33,22 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/**
+ * Test class for the Dashboard. As the Dashboard is built over all other activities, we set the
+ * main testing activity here to be the MapActivity (see mockActivity val). But the tests of this class should only
+ * be specific to the dashboard functionality and stay generic to other activities.
+ */
 @RunWith(AndroidJUnit4::class)
-class DashboardActivityTest {
+class DashboardTest {
+
+    private val mockActivity = MapActivity::class.java
 
     private val EXISTING_EMAIL = "example@email.com"
 
     private val database = (InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as CoachMeApplication).database
+
+    private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), mockActivity)
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
@@ -67,23 +76,8 @@ class DashboardActivityTest {
     }
 
     @Test
-    fun errorPageIsShownWhenEditProfileIsLaunchedWithEmptyCurrentEmail() {
-        database.setCurrentEmail("")
-        ActivityScenario.launch<DashboardActivity>(Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)).use {
-            // not possible to use Intents.init()... to check if the correct intent
-            // is launched as the intents are launched from within the onCreate function
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
-        }
-    }
-
-    @Test
     fun drawerOpensOnMenuClick() {
-        val launchDashboard = Intent(
-            ApplicationProvider.getApplicationContext(),
-            DashboardActivity::class.java
-        )
-        ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+        ActivityScenario.launch<MapActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
@@ -92,11 +86,7 @@ class DashboardActivityTest {
 
     @Test
     fun drawerClosesOnLeftSwipe() {
-        val launchDashboard = Intent(
-            ApplicationProvider.getApplicationContext(),
-            DashboardActivity::class.java
-        )
-        ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+        ActivityScenario.launch<MapActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
             // closes on left swipe
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
@@ -107,11 +97,7 @@ class DashboardActivityTest {
 
     @Test
     fun drawerIgnoresInvalidSwipe() {
-        val launchDashboard = Intent(
-            ApplicationProvider.getApplicationContext(),
-            DashboardActivity::class.java
-        )
-        ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+        ActivityScenario.launch<MapActivity>(defaultIntent).use {
             // ignores right swipe if opened
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
             composeTestRule.onRoot().performTouchInput { swipeRight() }
@@ -121,11 +107,7 @@ class DashboardActivityTest {
 
     @Test
     fun drawerClosesOnOutsideTouch() {
-        val launchDashboard = Intent(
-            ApplicationProvider.getApplicationContext(),
-            DashboardActivity::class.java
-        )
-        ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+        ActivityScenario.launch<MapActivity>(defaultIntent).use {
             val width = composeTestRule.onRoot().getBoundsInRoot().width
             val height = composeTestRule.onRoot().getBoundsInRoot().height
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
@@ -139,35 +121,22 @@ class DashboardActivityTest {
 
     @Test
     fun drawerBodyContainsClickableMenu() {
-        val launchDashboard = Intent(
-            ApplicationProvider.getApplicationContext(),
-            DashboardActivity::class.java
-        )
-        ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+        ActivityScenario.launch<MapActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(MENU_LIST).onChildren().assertAll(hasClickAction())
         }
     }
 
     @Test
     fun dashboardDisplaysCorrectEmailFromReceivedIntent() {
-        val email = EXISTING_EMAIL
-        val launchDashboard = Intent(
-            ApplicationProvider.getApplicationContext(),
-            DashboardActivity::class.java
-        )
-        ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
-            composeTestRule.onNodeWithTag(DASHBOARD_EMAIL).assert(hasText(text = email))
+        ActivityScenario.launch<MapActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(DASHBOARD_EMAIL).assert(hasText(text = EXISTING_EMAIL))
         }
     }
     private fun dashboardCorrectlyRedirectsOnMenuItemClick(
         tag: String,
         intentMatcher: Matcher<Intent>
     ) {
-        val launchDashboard = Intent(
-            ApplicationProvider.getApplicationContext(),
-            DashboardActivity::class.java
-        )
-        ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
+        ActivityScenario.launch<MapActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(tag).performClick()
             intended(intentMatcher)
         }
@@ -204,7 +173,13 @@ class DashboardActivityTest {
         )
     }
 
-    // TODO add more tests for the other menu items
+    @Test
+    fun dashboardCorrectlyRedirectsOnScheduleClick() {
+        dashboardCorrectlyRedirectsOnMenuItemClick(
+            SCHEDULE,
+            hasComponent(ScheduleActivity::class.java.name)
+        )
+    }
 
     @Test
     fun mapHasValidApiKey() {
@@ -215,13 +190,12 @@ class DashboardActivityTest {
     }
 
     @Test
-    fun onlyMapIsDisplayedOnCreation() {
-        val launchDashboard = Intent(
-            ApplicationProvider.getApplicationContext(),
-            DashboardActivity::class.java
-        )
-        ActivityScenario.launch<DashboardActivity>(launchDashboard).use {
-            composeTestRule.onNodeWithTag(MAP).assertIsDisplayed()
+    fun currentAppActivityIsDashboardContent() {
+        ActivityScenario.launch<MapActivity>(defaultIntent).use {
+            val context = (InstrumentationRegistry.getInstrumentation()
+                .targetContext.applicationContext as CoachMeApplication)
+            val mapTag = MapActivity.TestTags.MAP + context.userLocation.value.toString()
+            composeTestRule.onNodeWithTag(mapTag).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
         }
     }

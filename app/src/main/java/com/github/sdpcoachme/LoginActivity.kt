@@ -34,6 +34,7 @@ import androidx.core.content.ContextCompat
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.github.sdpcoachme.firebase.auth.Authenticator
 import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.map.MapActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
@@ -160,7 +161,7 @@ class LoginActivity : ComponentActivity() {
     private fun launchPostLoginActivity(email: String) {
         database.userExists(email).thenAccept { exists ->
             if (exists) {
-                launchActivity(DashboardActivity::class.java)
+                launchActivity(MapActivity::class.java)
             } else {
                 launchActivity(SignupActivity::class.java)
             }
