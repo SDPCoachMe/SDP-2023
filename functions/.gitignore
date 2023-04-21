@@ -7,5 +7,5 @@ typings/
 
 # Node.js dependency directory
 node_modules/
-/src/sdp-firebase-bootcamp-7fa21-firebase-adminsdk-g76eg-73c1efa41a.json
-/src/serviceAccountKey.json
+/sdp-firebase-bootcamp-7fa21-firebase-adminsdk-g76eg-73c1efa41a.json
+/serviceAccountKey.json
