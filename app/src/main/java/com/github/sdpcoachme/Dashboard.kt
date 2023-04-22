@@ -106,7 +106,7 @@ fun Dashboard(appContent: @Composable (Modifier) -> Unit, email: String, title: 
                     MenuItem(tag = SCHEDULE, title = "Schedule",
                         contentDescription = "See schedule",
                         icon = Default.CheckCircle),
-                    MenuItem(tag = PROFILE, title = "Profile",
+                    MenuItem(tag = PROFILE, title = "My profile",
                         contentDescription = "Go to profile",
                         icon = Default.AccountCircle),
                     MenuItem(tag = COACHES_LIST, title = "Nearby coaches",

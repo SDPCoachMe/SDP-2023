@@ -287,6 +287,34 @@ class ProfileActivityTest {
         }
     }
 
+    @Test
+    fun emailClickLaunchesEmailAppForIsViewingCoach() {
+        checkIntentSent(EMAIL, Intent.ACTION_SENDTO)
+    }
+
+    @Test
+    fun locationClickLaunchesMapsAppForIsViewingCoach() {
+        checkIntentSent(LOCATION, Intent.ACTION_VIEW)
+    }
+
+    @Test
+    fun phoneClickLaunchesPhoneAppForIsViewingCoach() {
+        checkIntentSent(PHONE, Intent.ACTION_DIAL)
+    }
+
+    private fun checkIntentSent(tag: String, action: String) {
+        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        val profileIntent = defaultIntent
+        val email = COACH_1.email
+        profileIntent.putExtra("email", email)
+        profileIntent.putExtra("isViewingCoach", true)
+        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
+            waitForUpdate(it)
+            composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).performClick()
+            Intents.intended(IntentMatchers.hasAction(action))
+        }
+    }
+
     /**
      * This waits for the state to be updated in the UI (which is asynchronous).
      */
