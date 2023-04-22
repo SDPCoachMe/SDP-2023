@@ -27,10 +27,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.github.sdpcoachme.auth.ProfileActivity
+import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.Dashboard
+import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
-import com.github.sdpcoachme.map.MapActivity.Companion.CAMPUS
+import com.github.sdpcoachme.location.MapActivity.Companion.CAMPUS
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.future.await

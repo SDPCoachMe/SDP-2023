@@ -24,10 +24,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
-import com.github.sdpcoachme.auth.Authenticator
-import com.github.sdpcoachme.auth.SignupActivity
+import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.R
 import com.github.sdpcoachme.database.Database
-import com.github.sdpcoachme.map.MapActivity
+import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 

@@ -9,10 +9,10 @@ import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
-import com.github.sdpcoachme.LoginActivity.TestTags.Buttons.Companion.DELETE_ACCOUNT
-import com.github.sdpcoachme.LoginActivity.TestTags.Buttons.Companion.SIGN_OUT
-import com.github.sdpcoachme.LoginActivity.TestTags.Companion.INFO_TEXT
-import com.github.sdpcoachme.map.MapActivity
+import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.DELETE_ACCOUNT
+import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.SIGN_OUT
+import com.github.sdpcoachme.auth.LoginActivity.TestTags.Companion.INFO_TEXT
+import com.github.sdpcoachme.location.MapActivity
 import com.google.firebase.auth.FirebaseAuth
 import org.hamcrest.CoreMatchers
 import org.junit.Before

@@ -23,7 +23,7 @@ import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
-import com.github.sdpcoachme.map.MapActivity.TestTags.Companion.MAP
+import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.google.android.gms.maps.model.LatLng
 import org.junit.After

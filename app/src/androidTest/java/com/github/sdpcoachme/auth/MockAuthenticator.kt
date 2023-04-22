@@ -4,9 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.activity.result.ActivityResultLauncher
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
-import com.github.sdpcoachme.auth.Authenticator
-import com.github.sdpcoachme.auth.GoogleAuthenticator
-import com.github.sdpcoachme.map.MapActivity
+import com.github.sdpcoachme.location.MapActivity
 import com.google.firebase.auth.FirebaseAuth
 import java.util.function.Consumer
 

@@ -33,8 +33,10 @@ import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.MENU_LIST
-import com.github.sdpcoachme.auth.ProfileActivity
-import com.github.sdpcoachme.map.MapActivity
+import com.github.sdpcoachme.auth.LoginActivity
+import com.github.sdpcoachme.location.MapActivity
+import com.github.sdpcoachme.profile.CoachesListActivity
+import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.schedule.ScheduleActivity
 import kotlinx.coroutines.launch
 

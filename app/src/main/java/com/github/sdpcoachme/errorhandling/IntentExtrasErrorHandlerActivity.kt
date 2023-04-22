@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.github.sdpcoachme.LoginActivity
+import com.github.sdpcoachme.auth.LoginActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 /**

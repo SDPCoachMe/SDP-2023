@@ -4,8 +4,8 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
-import com.github.sdpcoachme.EditTextActivity.TestTags.Companion.TITLE
-import com.github.sdpcoachme.EditTextActivity.TestTags.Companion.TextFields.Companion.MAIN
+import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.TITLE
+import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.TextFields.Companion.MAIN
 import org.junit.Rule
 import org.junit.Test
 

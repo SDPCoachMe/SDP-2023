@@ -22,9 +22,9 @@ import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.database.Database
-import com.github.sdpcoachme.map.MapActivity
+import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
+import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
 

@@ -22,10 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.github.sdpcoachme.EditTextActivity.TestTags.Companion.Buttons.Companion.CANCEL
-import com.github.sdpcoachme.EditTextActivity.TestTags.Companion.Buttons.Companion.DONE
-import com.github.sdpcoachme.EditTextActivity.TestTags.Companion.TITLE
-import com.github.sdpcoachme.EditTextActivity.TestTags.Companion.TextFields.Companion.MAIN
+import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.Buttons.Companion.CANCEL
+import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.Buttons.Companion.DONE
+import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.TITLE
+import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.TextFields.Companion.MAIN
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
 

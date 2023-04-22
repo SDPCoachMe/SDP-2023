@@ -16,7 +16,7 @@ import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.ShownEvent
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
-import com.github.sdpcoachme.map.MapActivity
+import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.BASIC_SCHEDULE
 import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.WEEK_HEADER
 import junit.framework.TestCase.assertTrue
