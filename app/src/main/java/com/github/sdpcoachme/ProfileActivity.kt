@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -99,12 +100,15 @@ class ProfileActivity : ComponentActivity() {
 
             setContent {
                 CoachMeTheme {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colors.background
-                    ) {
-                        Profile(email, futureUserInfo, isViewingCoach)
+                    val appContent: @Composable (Modifier) -> Unit = { modifier ->
+                        Surface(
+                            modifier = modifier.fillMaxSize(),
+                            color = MaterialTheme.colors.background
+                        ) {
+                            Profile(email, futureUserInfo, isViewingCoach)
+                        }
                     }
+                    Dashboard(appContent, email, stringResource(R.string.my_profile))
                 }
             }
         }

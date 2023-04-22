@@ -9,7 +9,6 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
-import com.github.sdpcoachme.ProfileActivity
 import com.github.sdpcoachme.LoginActivity
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
@@ -21,13 +20,13 @@ class IntentExtrasErrorHandlerActivityTest {
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
+    private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), IntentExtrasErrorHandlerActivity::class.java)
+
     @Test
     fun whenLaunchedWithoutExtraItDisplaysGenericErrorMessage() {
         val genericErrorMsg = "An error occurred. Please return to the login page and retry."
 
-        val emptyErrorIntent = Intent(ApplicationProvider.getApplicationContext(), IntentExtrasErrorHandlerActivity::class.java)
-
-        ActivityScenario.launch<ProfileActivity>(emptyErrorIntent).use {
+        ActivityScenario.launch<IntentExtrasErrorHandlerActivity>(defaultIntent).use {
 
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertExists()
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertTextEquals(genericErrorMsg)
@@ -39,10 +38,9 @@ class IntentExtrasErrorHandlerActivityTest {
     @Test
     fun whenLaunchedWithExtraItDisplaysThePassedErrorMessage() {
         val errorMsg = "This is a test error message."
-        val emptyErrorIntent = Intent(ApplicationProvider.getApplicationContext(), IntentExtrasErrorHandlerActivity::class.java)
-        emptyErrorIntent.putExtra("errorMsg", errorMsg)
+        val emptyErrorIntent = defaultIntent.putExtra("errorMsg", errorMsg)
 
-        ActivityScenario.launch<ProfileActivity>(emptyErrorIntent).use {
+        ActivityScenario.launch<IntentExtrasErrorHandlerActivity>(emptyErrorIntent).use {
 
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertExists()
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertTextEquals(errorMsg)
@@ -53,9 +51,8 @@ class IntentExtrasErrorHandlerActivityTest {
 
     @Test
     fun goToLoginButtonClickAfterEmptyIntentRedirectsToLoginPage() {
-        val emptyErrorIntent = Intent(ApplicationProvider.getApplicationContext(), IntentExtrasErrorHandlerActivity::class.java)
 
-        ActivityScenario.launch<ProfileActivity>(emptyErrorIntent).use {
+        ActivityScenario.launch<IntentExtrasErrorHandlerActivity>(defaultIntent).use {
             Intents.init()
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertExists()
 
@@ -69,11 +66,11 @@ class IntentExtrasErrorHandlerActivityTest {
 
     @Test
     fun goToLoginButtonClickAfterIntentWithExtraRedirectsToLoginPage() {
-        val emptyErrorIntent = Intent(ApplicationProvider.getApplicationContext(), IntentExtrasErrorHandlerActivity::class.java)
+        val emptyErrorIntent = defaultIntent
         val errorMsg = "This is a test error message."
         emptyErrorIntent.putExtra("errorMsg", errorMsg)
 
-        ActivityScenario.launch<ProfileActivity>(emptyErrorIntent).use {
+        ActivityScenario.launch<IntentExtrasErrorHandlerActivity>(emptyErrorIntent).use {
             Intents.init()
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertExists()
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertTextEquals(errorMsg)

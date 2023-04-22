@@ -5,7 +5,6 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.espresso.Espresso
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -17,7 +16,8 @@ import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.FIRST_
 import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.LAST_NAME
 import com.github.sdpcoachme.SignupActivity.TestTags.TextFields.Companion.PHONE
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.autocomplete.MockLocationAutocompleteHandler
 import junit.framework.TestCase
 import org.junit.After
@@ -25,7 +25,8 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit.SECONDS
 
 
 @RunWith(AndroidJUnit4::class)
@@ -86,8 +87,8 @@ open class SignupActivityTest {
         launchSignupActivity("")
         // not possible to use Intents.init()... to check if the correct intent
         // is launched as the intents are launched from within the onCreate function
-        composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
     }
 
     @Test
@@ -106,19 +107,21 @@ open class SignupActivityTest {
         inputUserInfo(exceptionUser)
 
         // Wait for activity to send to database
-        scenario.onActivity { activity ->
-            var exceptionThrown = false
-            activity.databaseStateSending.handle { _, _ ->
-                exceptionThrown = true
-                // Recover from exception
-                null
-            }.get(10, TimeUnit.SECONDS)
-            // Make sure exception was thrown
-            TestCase.assertTrue(exceptionThrown)
+        lateinit var databaseStateSending: CompletableFuture<Void>
+        scenario.onActivity {
+            databaseStateSending = it.databaseStateSending
         }
+        var exceptionThrown = false
+        databaseStateSending.handle { _, _ ->
+            exceptionThrown = true
+            // Recover from exception
+            null
+        }.get(10, SECONDS)
+        // Make sure exception was thrown
+        TestCase.assertTrue(exceptionThrown)
 
-        composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
     }
 
     private fun setAndGetUser(user: UserInfo) {
@@ -126,13 +129,15 @@ open class SignupActivityTest {
         inputUserInfo(user)
 
         // Wait for activity to send to database
-        scenario.onActivity { activity ->
-            activity.databaseStateSending.get(10, TimeUnit.SECONDS)
+        lateinit var databaseStateSending: CompletableFuture<Void>
+        scenario.onActivity {
+            databaseStateSending = it.databaseStateSending
         }
+        databaseStateSending.get(10, SECONDS)
 
         // Important note: this get method was used instead of onTimeout due to onTimeout not
         // being found when running tests on Cirrus CI even with java version changed in build.gradle
-        val retrievedUser = database.getUser(user.email).get(10, TimeUnit.SECONDS)
+        val retrievedUser = database.getUser(user.email).get(10, SECONDS)
         TestCase.assertEquals(user, retrievedUser)
 
         // Assert that we are redirected to the SelectSportsActivity with correct intent
@@ -140,12 +145,14 @@ open class SignupActivityTest {
     }
 
     private fun inputUserInfo(user: UserInfo) {
-        composeTestRule.onNodeWithTag(FIRST_NAME).performTextInput(user.firstName)
-        Espresso.closeSoftKeyboard()
-        composeTestRule.onNodeWithTag(LAST_NAME).performTextInput(user.lastName)
-        Espresso.closeSoftKeyboard()
-        composeTestRule.onNodeWithTag(PHONE).performTextInput(user.phone)
-        Espresso.closeSoftKeyboard()
+        // Put focus on first name field
+        composeTestRule.onNodeWithTag(FIRST_NAME)
+            .performClick()
+
+        fillAndCheckFocus(user.firstName, FIRST_NAME)
+        fillAndCheckFocus(user.lastName, LAST_NAME)
+        fillAndCheckFocus(user.phone, PHONE)
+
         if (user.coach)
             composeTestRule.onNodeWithTag(BE_COACH).performClick()
 
@@ -153,5 +160,16 @@ open class SignupActivityTest {
 
         // Testing Google Places Autocomplete Activity is too complex, instead, we've mocked it
         // so that it directly returns a fixed location MockLocationAutocompleteHandler.DEFAULT_LOCATION
+    }
+
+    private fun fillAndCheckFocus(text: String, tag: String) {
+        composeTestRule.onNodeWithTag(tag)
+            .assertIsFocused()
+        composeTestRule.onNodeWithTag(tag)
+            .performTextInput(text)
+        composeTestRule.onNodeWithTag(tag)
+            .performImeAction()
+        composeTestRule.onNodeWithTag(tag)
+            .assertIsNotFocused()
     }
 }

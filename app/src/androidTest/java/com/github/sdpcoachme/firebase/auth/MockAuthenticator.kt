@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.activity.result.ActivityResultLauncher
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
-import com.github.sdpcoachme.DashboardActivity
+import com.github.sdpcoachme.map.MapActivity
 import com.google.firebase.auth.FirebaseAuth
 import java.util.function.Consumer
 
@@ -20,10 +20,10 @@ class MockAuthenticator : Authenticator {
     }
 
     override fun signOut(context: Context?, onComplete: Runnable?) {
-        // Done since the tests for dashboard activity have no timeout
+        // Done since the tests for map activity have no timeout
         // capabilities to wait for the asynchronous sign-out to finish
         // and, therefore, sometimes would fail
-        if (context is DashboardActivity) {
+        if (context is MapActivity) {
             onComplete?.run()
         } else {
             realAuthenticator.signOut(context, onComplete)

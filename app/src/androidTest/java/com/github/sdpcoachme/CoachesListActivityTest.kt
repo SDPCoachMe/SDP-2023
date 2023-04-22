@@ -10,13 +10,18 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
+import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
+import com.github.sdpcoachme.data.Sports
+import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.LONDON
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.PARIS
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.SYDNEY
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.TOKYO
-import com.github.sdpcoachme.data.Sports
-import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.messaging.ChatActivity
 import org.hamcrest.CoreMatchers.allOf
 import org.junit.After
@@ -25,7 +30,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.MILLISECONDS
 
 @RunWith(AndroidJUnit4::class)
 open class CoachesListActivityTest {
@@ -36,6 +41,8 @@ open class CoachesListActivityTest {
     private val database = (InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as CoachMeApplication).database
 
+    private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
+
     lateinit var scenario: ActivityScenario<CoachesListActivity>
 
     // With this, tests will wait until activity has finished loading state
@@ -43,8 +50,7 @@ open class CoachesListActivityTest {
     open fun setup() {
         // Populate the database, and wait for it to finish
         populateDatabase().join()
-        val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
-        scenario = ActivityScenario.launch(scheduleIntent)
+        scenario = ActivityScenario.launch(defaultIntent)
 
         // This is the proper way of waiting for an activity to finish loading. However, it does not
         // crash if the activity never finishes loading, so we do not use it.
@@ -59,9 +65,11 @@ open class CoachesListActivityTest {
         }
         */
         // Instead, make the test wait for the future to finish, and crash after a certain time
+        lateinit var stateLoading: CompletableFuture<Void>
         scenario.onActivity {
-            it.stateLoading.get(1000, TimeUnit.MILLISECONDS)
+            stateLoading = it.stateLoading
         }
+        stateLoading.get(1000, MILLISECONDS)
     }
 
     // Necessary since we don't do scenario.use { ... } in each test, which closes automatically
@@ -111,6 +119,33 @@ open class CoachesListActivityTest {
             Intents.release()
     }
 
+    @Test
+    fun dashboardHasRightTitleOnNearbyCoachesList() {
+        ActivityScenario.launch<CoachesListActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText("Nearby coaches"))
+        }
+    }
+    @Test
+    fun dashboardIsAccessibleAndDisplayableFromNearbyCoachesList() {
+        ActivityScenario.launch<CoachesListActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertExists().assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun errorPageIsShownWhenCoachesListIsLaunchedWithEmptyCurrentEmail() {
+        database.setCurrentEmail("")
+        ActivityScenario.launch<CoachesListActivity>(defaultIntent).use {
+            // not possible to use Intents.init()... to check if the correct intent
+            // is launched as the intents are launched from within the onCreate function
+            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
+        }
+    }
+
     // Subclass added to be able to run a different setup method (to simulate viewing contacts)
     class ContactsListTest: CoachesListActivityTest() {
         @Before
@@ -121,9 +156,11 @@ open class CoachesListActivityTest {
             contactIntent.putExtra("isViewingContacts", true)
             scenario = ActivityScenario.launch(contactIntent)
 
+            lateinit var stateLoading: CompletableFuture<Void>
             scenario.onActivity {
-                it.stateLoading.get(1000, TimeUnit.MILLISECONDS)
+                stateLoading = it.stateLoading
             }
+            stateLoading.get(1000, MILLISECONDS)
         }
 
         @Test
@@ -152,6 +189,20 @@ open class CoachesListActivityTest {
             ))
             Intents.release()
         }
+
+        @Test
+        fun dashboardHasRightTitleOnContactsList() {
+            composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText("Contacts"))
+        }
+
+        @Test
+        fun dashboardIsAccessibleAndDisplayableFromContactsList() {
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertExists().assertIsDisplayed()
+        }
+
 
     }
 

@@ -4,14 +4,17 @@ import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
-import java.time.LocalDateTime
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
+import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 /**
  * A mock database class
  */
 class MockDatabase: Database {
+
+    // TODO: database should be empty by default, and tests should add data to it.
+    //  This way, we can make sure each test is independent from the others
 
     private val defaultEmail = "example@email.com"
     private val defaultUserInfo = UserInfo(
@@ -53,7 +56,7 @@ class MockDatabase: Database {
     private val accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
-            if (user.email == "throw@Exception.com") {
+        if (user.email == "throw@Exception.com") {
             val error = CompletableFuture<Void>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
