@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture
  */
 class CachingDatabase(private val wrappedDatabase: Database) : Database {
     private val cachedUsers = mutableMapOf<String, UserInfo>()
-    public var toUserEmail = ""
+    private val cachedTokens = mutableMapOf<String, FCMToken>()
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         return wrappedDatabase.updateUser(user).thenAccept { cachedUsers[user.email] = user }
@@ -81,12 +81,14 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     }
 
     override fun getFCMToken(email: String): CompletableFuture<FCMToken> {
-        // TODO implement in next sprint
+        if (cachedTokens.containsKey(email)) {
+            return CompletableFuture.completedFuture(cachedTokens[email])
+        }
         return wrappedDatabase.getFCMToken(email)
     }
 
     override fun setFCMToken(email: String, token: FCMToken): CompletableFuture<Void> {
-        // TODO implement in next sprint
+        cachedTokens[email] = token
         return wrappedDatabase.setFCMToken(email, token)
     }
 
