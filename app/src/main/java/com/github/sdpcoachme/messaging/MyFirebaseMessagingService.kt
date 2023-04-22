@@ -21,18 +21,16 @@ import com.google.firebase.messaging.RemoteMessage
  * This service handles all incoming push notifications.
  */
 class MyFirebaseMessagingService : FirebaseMessagingService() {
+    var notificationId = 0
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         // Check if message contains a notification payload.
         if (remoteMessage.notification != null) {
-            // Get the notification title and body from the remote message.
-
-            // If we decide to use more push notifications other than messaging, we can adapt the following
-            // to use the title of the notification to determine what to do.
             val notificationTitle = remoteMessage.notification!!.title?: "New message received"
             val notificationBody = remoteMessage.notification!!.body?: ""
             val sender = remoteMessage.data["sender"] ?: ""
 
+            // to enable multiple notification types, we check the notificationType field
             val notificationType = remoteMessage.data["notificationType"] ?: ""
 
             // Create and send a customized notification.
@@ -88,6 +86,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         // TODO: at the moment, if the user is still in the login activity, the notification will cause an error (no email yet).
         //       Therefore, we are checking if the email is empty and if so, we send the user to the login activity.
         //       Once the storing of the email offline is done, this will work and the if check can be removed
+
+        // The more info we receive, the more we can customize the notification's behaviour (up until the chat itself)
         val intent = Intent(
             this,
             if (email.isEmpty()) LoginActivity::class.java
@@ -127,6 +127,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             NotificationManager.IMPORTANCE_DEFAULT
         )
         notificationManager.createNotificationChannel(channel)
-        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build())
+        notificationManager.notify(notificationId, notificationBuilder.build())
+        notificationId++
     }
 }
