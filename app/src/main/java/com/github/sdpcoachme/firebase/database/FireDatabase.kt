@@ -3,6 +3,7 @@ package com.github.sdpcoachme.firebase.database
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.FCMToken
 import com.github.sdpcoachme.data.messaging.Message
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -19,6 +20,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
     private var currEmail = ""
     private val chats: DatabaseReference = rootDatabase.child("coachme").child("messages")
+    private val fcmTokens: DatabaseReference = rootDatabase.child("coachme").child("fcmTokens")
     var valueEventListener: ValueEventListener? = null
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
@@ -140,6 +142,15 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         }
     }
 
+    override fun getFCMToken(email: String): CompletableFuture<FCMToken> {
+        val userID = email.replace('.', ',')
+        return getChild(fcmTokens, userID).thenApply { it.getValue(FCMToken::class.java)!! }
+    }
+
+    override fun setFCMToken(email: String, token: FCMToken): CompletableFuture<Void> {
+        val userID = email.replace('.', ',')
+        return setChild(fcmTokens, userID, token)
+    }
 
     /**
      * Gets all children of a given database reference

@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.content.ContextCompat
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
+import com.github.sdpcoachme.data.messaging.FCMToken
 import com.github.sdpcoachme.firebase.auth.Authenticator
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.map.MapActivity
@@ -68,6 +69,7 @@ class LoginActivity : ComponentActivity() {
                 email!!.let {
                     signInInfo = email
                     database.setCurrentEmail(it)
+
                     launchPostLoginActivity(it)
                 }
             },
@@ -82,31 +84,6 @@ class LoginActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         authenticator = (application as CoachMeApplication).authenticator
         database =  (application as CoachMeApplication).database
-
-
-
-
-
-
-        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Log.w(TAG, "Fetching FCM registration token failed", task.exception)
-                return@OnCompleteListener
-            }
-
-            // Get new FCM registration token
-            val token = task.result
-
-            // Log and toast
-            val msg = "FCM registration Token: $token"
-            Log.d(TAG, msg)
-            Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-        })
-
-
-
-
-
 
         setContent {
             CoachMeTheme {
@@ -128,6 +105,24 @@ class LoginActivity : ComponentActivity() {
         }
     }
 
+    private fun addFCMTokenToDatabase() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w(TAG, "Fetching FCM registration token failed", task.exception)
+                return@OnCompleteListener
+            }
+
+            // Get new FCM registration token
+            val token = task.result
+
+            println("FCM registration Token: $token")
+
+            // TODO: check if token can be added to DB
+            // Faster to always set than always get and sometimes also set...
+            database.setFCMToken(database.getCurrentEmail(), FCMToken(token!!, true))
+        })
+    }
+
     // Declare the launcher at the top of your Activity/Fragment:
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -146,23 +141,36 @@ class LoginActivity : ComponentActivity() {
                 PackageManager.PERMISSION_GRANTED
             ) {
                 // FCM SDK (and your app) can post notifications.
+                println("FCM SDK (and your app) can post notifications.")
             } else if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
                 // TODO: display an educational UI explaining to the user the features that will be enabled
                 //       by them granting the POST_NOTIFICATION permission. This UI should provide the user
                 //       "OK" and "No thanks" buttons. If the user selects "OK," directly request the permission.
                 //       If the user selects "No thanks," allow the user to continue without notifications.
+                println("in the else if of askNotificationPermission")
             } else {
                 // Directly ask for the permission
                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                println("in the else of askNotificationPermission")
             }
+        } else {
+            println("FCM SDK (and your app) can post notifications as api level < 33.")
+            // TODO: still create request for permission...
         }
     }
 
     private fun launchPostLoginActivity(email: String) {
         database.userExists(email).thenAccept { exists ->
             if (exists) {
+                // check if inside the db...
+                addFCMTokenToDatabase() //TODO: check if this is the right place to add the token to the DB (and add the check for the adding to db...
+
+
                 launchActivity(MapActivity::class.java)
             } else {
+                //TODO: as user for permission for the fcm token push notifications...
+
+
                 launchActivity(SignupActivity::class.java)
             }
         }

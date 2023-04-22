@@ -3,6 +3,7 @@ package com.github.sdpcoachme.firebase.database
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.FCMToken
 import com.github.sdpcoachme.data.messaging.Message
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.SphericalUtil
@@ -105,8 +106,43 @@ interface Database {
      */
     fun sendMessage(chatId: String, message: Message): CompletableFuture<Void>
 
+    /**
+     * Mark all messages in the chat as read by the current user
+     *
+     * @param chatId The id of the chat
+     * @return A future that will complete when the messages have been marked as read
+     */
     fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void>
 
+    /**
+     * Add a listener to the chat with the given id
+     *
+     * @param chatId The id of the chat to listen to
+     * @param onChange The function to call when the chat changes
+     */
     fun addChatListener(chatId: String, onChange: (Chat) -> Unit)
+
+    /**
+     * Remove the listener for the chat with the given id
+     *
+     * @param chatId The id of the chat to stop listening to
+     */
     fun removeChatListener(chatId: String)
+
+    /**
+     * Get the FCM token data class for the given user
+     *
+     * @param email The email of the user to get the token for
+     * @return A future that will complete with the token
+     */
+    fun getFCMToken(email: String): CompletableFuture<FCMToken>
+
+    /**
+     * Set the FCM token for the given user
+     *
+     * @param email The email of the user to set the token for
+     * @param token The token to set
+     * @return A future that will complete when the token has been set
+     */
+    fun setFCMToken(email: String, token: FCMToken): CompletableFuture<Void>
 }

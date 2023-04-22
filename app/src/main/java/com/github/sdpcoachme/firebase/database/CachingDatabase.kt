@@ -3,6 +3,7 @@ package com.github.sdpcoachme.firebase.database
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.FCMToken
 import com.github.sdpcoachme.data.messaging.Message
 import java.util.concurrent.CompletableFuture
 
@@ -76,6 +77,16 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     override fun removeChatListener(chatId: String) {
         // TODO implement in next sprint
         wrappedDatabase.removeChatListener(chatId)
+    }
+
+    override fun getFCMToken(email: String): CompletableFuture<FCMToken> {
+        // TODO implement in next sprint
+        return wrappedDatabase.getFCMToken(email)
+    }
+
+    override fun setFCMToken(email: String, token: FCMToken): CompletableFuture<Void> {
+        // TODO implement in next sprint
+        return wrappedDatabase.setFCMToken(email, token)
     }
 
     override fun getCurrentEmail(): String {

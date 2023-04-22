@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.media.RingtoneManager
 import androidx.core.app.NotificationCompat
+import com.github.sdpcoachme.CoachesListActivity
 import com.github.sdpcoachme.LoginActivity
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -17,11 +18,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         // Check if message contains a notification payload.
         if (remoteMessage.notification != null) {
             // Get the notification title and body from the remote message.
-            val notificationTitle = remoteMessage.notification!!.title
-            val notificationBody = remoteMessage.notification!!.body
+            val notificationTitle = remoteMessage.notification!!.title?: "New message received"
+            val notificationBody = remoteMessage.notification!!.body?: ""
 
             // Create and send a customized notification.
-            sendNotification("Custom Title", "Custom Body")
+            sendNotification(notificationTitle, notificationBody)
         }
     }
 
@@ -123,7 +124,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun sendNotification(notificationTitle: String, notificationBody: String) {
-        val intent = Intent(this, LoginActivity::class.java)
+        val intent = Intent(this, CoachesListActivity::class.java)
+        intent.putExtra("isViewingContacts", true)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         val pendingIntent = PendingIntent.getActivity(
             this, 0 /* Request code */, intent,
@@ -134,6 +136,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setContentTitle(notificationTitle) // Set the title of the notification
             .setContentText(notificationBody) // Set the body of the notification
+            .setSmallIcon(android.R.drawable.stat_notify_chat) // Set the small icon
             .setAutoCancel(true)
             .setSound(defaultSoundUri)
             .setContentIntent(pendingIntent)

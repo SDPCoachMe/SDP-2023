@@ -60,13 +60,16 @@ export const sendPushNotification = functions.database.ref('/coachme/messages/{c
         }
         functions.logger.info("readByRecipient is false", {structuredData: true});
 
-        const [firstNameSenderSnapshot, lastNameSenderSnapshot] = await Promise.all([
-              change.after.ref.root.child(`/coachme/accounts/${senderWithCommas}/firstName`).once('value'),
-              change.after.ref.root.child(`/coachme/accounts/${senderWithCommas}/lastName`).once('value')
+        const [recipientTokenSnapshot, pushNotificationsEnabledSnapshot, firstNameSenderSnapshot, lastNameSenderSnapshot] = await Promise.all([
+            change.after.ref.root.child(`/coachme/fcmTokens/${recipient}/token`).once('value'),
+            change.after.ref.root.child(`/coachme/fcmTokens/${recipient}/permissionGranted`).once('value'),
+            change.after.ref.root.child(`/coachme/accounts/${senderWithCommas}/firstName`).once('value'),
+            change.after.ref.root.child(`/coachme/accounts/${senderWithCommas}/lastName`).once('value')
         ]);
 
-        // TODO: same thing for the recipientToken token
-        const recipientToken = "fG1KYHgSQE2leNSmFokK0X:APA91bGz15ztvyaDtEOtnQfe8Q19QD-n9jhsejMa-TgyftiyZdknSborY0A26UUqmthwL2w36yW-lFY5pcVBcwo2jOHxi61NSrXqLru0gs8zRQg5oaMRzL-H6qiHfBUzdf03QG6Llmwy"
+        if (!pushNotificationsEnabledSnapshot.val()) {
+            return
+        }
 
         const firstNameSender = firstNameSenderSnapshot.val();
         const lastNameSender = lastNameSenderSnapshot.val();
@@ -83,5 +86,5 @@ export const sendPushNotification = functions.database.ref('/coachme/messages/{c
             }
         };
 
-        await admin.messaging().sendToDevice(recipientToken, payload);
+        await admin.messaging().sendToDevice(recipientTokenSnapshot.val(), payload);
     });

@@ -3,6 +3,7 @@ package com.github.sdpcoachme.firebase.database
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.FCMToken
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
 import java.time.LocalDateTime
@@ -132,6 +133,16 @@ class MockDatabase: Database {
 
     override fun removeChatListener(chatId: String) {
         // no need to do anything
+    }
+
+    override fun getFCMToken(email: String): CompletableFuture<FCMToken> {
+        // TODO: implement
+        return CompletableFuture.completedFuture(null)
+    }
+
+    override fun setFCMToken(email: String, token: FCMToken): CompletableFuture<Void> {
+        // TODO: implement
+        return CompletableFuture.completedFuture(null)
     }
 
     private fun setMap(map: MutableMap<String, Any>, key: String, value: Any): CompletableFuture<Void> {
