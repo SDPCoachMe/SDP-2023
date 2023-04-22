@@ -11,6 +11,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -18,9 +20,11 @@ import androidx.compose.material.icons.filled.Done
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.EditTextActivity.TestTags.Companion.Buttons.Companion.CANCEL
 import com.github.sdpcoachme.EditTextActivity.TestTags.Companion.Buttons.Companion.DONE
+import com.github.sdpcoachme.EditTextActivity.TestTags.Companion.TITLE
 import com.github.sdpcoachme.EditTextActivity.TestTags.Companion.TextFields.Companion.MAIN
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
@@ -41,6 +45,9 @@ class EditTextActivity : ComponentActivity() {
 
     class TestTags {
         companion object {
+
+            const val TITLE = "title"
+
             class TextFields {
                 companion object {
                     const val MAIN = "textField"
@@ -206,7 +213,7 @@ fun EditTextLayout(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(title)
+                    Text(title, modifier = Modifier.testTag(TITLE))
                 },
                 navigationIcon = {
                     IconButton(onClick = onCancel, modifier = Modifier.testTag(CANCEL)) {
@@ -238,7 +245,13 @@ fun EditTextLayout(
                     value = value,
                     onValueChange = { value = it },
                     label = label?.let { { Text(it) } },
-                    placeholder = placeholder?.let { { Text(it) } }
+                    placeholder = placeholder?.let { { Text(it) } },
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            onSubmit(value)
+                        }
+                    )
                 )
             }
     }

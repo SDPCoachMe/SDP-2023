@@ -19,11 +19,10 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
-import com.github.sdpcoachme.data.Sports
-import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
-import com.github.sdpcoachme.location.UserLocationSamples
 import com.github.sdpcoachme.map.MapActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.google.android.gms.maps.model.LatLng
@@ -58,64 +57,13 @@ class MapActivityTest {
         Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
     private val EXISTING_EMAIL = "example@email.com"
 
-    private val coaches = listOf(
-        UserInfo(
-            firstName = "John",
-            lastName = "Doe",
-            email = "john.doe@email.com",
-            location = UserLocationSamples.PARIS,
-            phone = "0123456789",
-            sports = listOf(Sports.SKI, Sports.SWIMMING),
-            coach = true
-        ),
-        UserInfo(
-            firstName = "Marc",
-            lastName = "Delémont",
-            email = "marc@email.com",
-            location = UserLocationSamples.LAUSANNE,
-            phone = "0123456789",
-            sports = listOf(Sports.WORKOUT),
-            coach = true
-        ),
-        UserInfo(
-            firstName = "Kate",
-            lastName = "Senior",
-            email = "katy@email.com",
-            location = UserLocationSamples.LONDON,
-            phone = "0123456789",
-            sports = listOf(Sports.TENNIS, Sports.SWIMMING),
-            coach = true
-        )
-    )
-
-    private val nonCoaches = listOf(
-        UserInfo(
-            firstName = "James",
-            lastName = "Dolorian",
-            email = "jammy@email.com",
-            location = UserLocationSamples.TOKYO,
-            phone = "0123456789",
-            sports = listOf(Sports.SKI, Sports.SWIMMING),
-            coach = false
-        ),
-        UserInfo(
-            firstName = "Loris",
-            lastName = "Gotti",
-            email = "lolo@email.com",
-            location = UserLocationSamples.SYDNEY,
-            phone = "0123456789",
-            sports = listOf(Sports.TENNIS),
-            coach = false
-        )
-    )
-
     @Before
     fun setUp() {
         database.setCurrentEmail(EXISTING_EMAIL)
-        for (coach in coaches) {
+        for (coach in COACHES) {
             database.updateUser(coach)
         }
-        for (nonCoach in nonCoaches) {
+        for (nonCoach in NON_COACHES) {
             database.updateUser(nonCoach)
         }
         Intents.init()
@@ -230,11 +178,11 @@ class MapActivityTest {
 //            ).get(3000, TimeUnit.MILLISECONDS)
 //
 //            // Check markers
-//            for (coach in coaches) {
+//            for (coach in COACHES) {
 //                val markerTag = MARKER(coach)
 //                composeTestRule.onNodeWithTag(markerTag).assertExists().assertIsDisplayed()
 //            }
-//            for (nonCoach in nonCoaches) {
+//            for (nonCoach in NON_COACHES) {
 //                val markerTag = MARKER(nonCoach)
 //                composeTestRule.onNodeWithTag(markerTag).assertDoesNotExist()
 //            }
@@ -255,7 +203,7 @@ class MapActivityTest {
 //                markerLoading,
 //                mapLoading
 //            ).get(3000, TimeUnit.MILLISECONDS)
-//            val coach = coaches[0]
+//            val coach = COACH_1
 //            val markerTag = MARKER(coach)
 //            val windowTag = MARKER_INFO_WINDOW(coach)
 //            composeTestRule.onNodeWithTag(markerTag).performClick()

@@ -13,15 +13,13 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
-import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
-import com.github.sdpcoachme.location.UserLocationSamples.Companion.LONDON
-import com.github.sdpcoachme.location.UserLocationSamples.Companion.PARIS
-import com.github.sdpcoachme.location.UserLocationSamples.Companion.SYDNEY
-import com.github.sdpcoachme.location.UserLocationSamples.Companion.TOKYO
 import com.github.sdpcoachme.messaging.ChatActivity
 import org.hamcrest.CoreMatchers.allOf
 import org.junit.After
@@ -80,7 +78,7 @@ open class CoachesListActivityTest {
 
     @Test
     fun allCoachesExists() {
-        coaches.forEach { coach ->
+        COACHES.forEach { coach ->
             composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}").assertIsDisplayed()
             composeTestRule.onNodeWithText(coach.location.address).assertIsDisplayed()
         }
@@ -88,7 +86,7 @@ open class CoachesListActivityTest {
 
     @Test
     fun allNonCoachesDoNotExist() {
-        nonCoaches.forEach { coach ->
+        NON_COACHES.forEach { coach ->
             composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}").assertDoesNotExist()
             composeTestRule.onNodeWithText(coach.location.address).assertDoesNotExist()
         }
@@ -103,7 +101,7 @@ open class CoachesListActivityTest {
             Intents.init()
 
             // Click on the first coach
-            val coach = coaches[0]
+            val coach = COACH_1
             composeTestRule.onNodeWithText(coach.location.address).assertIsDisplayed()
             composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
                 .assertIsDisplayed()
@@ -206,65 +204,14 @@ open class CoachesListActivityTest {
 
     }
 
-    private val coaches = listOf(
-        UserInfo(
-            firstName = "John",
-            lastName = "Doe",
-            email = "john.doe@email.com",
-            location = PARIS,
-            phone = "0123456789",
-            sports = listOf(Sports.SKI, Sports.SWIMMING),
-            coach = true
-        ),
-        UserInfo(
-            firstName = "Marc",
-            lastName = "Delémont",
-            email = "marc@email.com",
-            location = LAUSANNE,
-            phone = "0123456789",
-            sports = listOf(Sports.WORKOUT),
-            coach = true
-        ),
-        UserInfo(
-            firstName = "Kate",
-            lastName = "Senior",
-            email = "katy@email.com",
-            location = LONDON,
-            phone = "0123456789",
-            sports = listOf(Sports.TENNIS, Sports.SWIMMING),
-            coach = true
-        )
-    )
-
-    private val nonCoaches = listOf(
-        UserInfo(
-            firstName = "James",
-            lastName = "Dolorian",
-            email = "jammy@email.com",
-            location = TOKYO,
-            phone = "0123456789",
-            sports = listOf(Sports.SKI, Sports.SWIMMING),
-            coach = false
-        ),
-        UserInfo(
-            firstName = "Loris",
-            lastName = "Gotti",
-            email = "lolo@email.com",
-            location = SYDNEY,
-            phone = "0123456789",
-            sports = listOf(Sports.TENNIS),
-            coach = false
-        )
-    )
-
     fun populateDatabase(): CompletableFuture<Void> {
 
         database.setCurrentEmail("example@email.com")
         // Add a few coaches to the database
-        val futures1 = coaches.map { database.updateUser(it) }
+        val futures1 = COACHES.map { database.updateUser(it) }
 
         // Add non-coach user to the database
-        val futures2 = nonCoaches.map { database.updateUser(it) }
+        val futures2 = NON_COACHES.map { database.updateUser(it) }
 
         return CompletableFuture.allOf(*futures1.toTypedArray(), *futures2.toTypedArray())
     }

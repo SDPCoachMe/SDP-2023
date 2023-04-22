@@ -55,7 +55,6 @@ class ProfileActivity : ComponentActivity() {
         companion object {
             const val PROFILE_LABEL = "profileLabel"
             const val PROFILE_PICTURE = "profilePicture"
-            const val COACH_CLIENT_INFO = "coachClientInfo"
 
             const val EMAIL = "email"
             const val FIRST_NAME = "firstName"
@@ -64,9 +63,11 @@ class ProfileActivity : ComponentActivity() {
             const val LOCATION = "location"
             const val SPORTS = "sports"
             const val COACH_SWITCH = "coachSwitch"
-
         }
     }
+
+    // To notify tests when the state has been updated in the UI
+    lateinit var stateUpdated: CompletableFuture<Void>
 
     private lateinit var database: Database
     private lateinit var email: String
@@ -75,12 +76,12 @@ class ProfileActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        stateUpdated = CompletableFuture()
         database = (application as CoachMeApplication).database
         val isViewingCoach = intent.getBooleanExtra("isViewingCoach", false)
         email =
             if (isViewingCoach) intent.getStringExtra("email").toString()
             else database.getCurrentEmail()
-
 
         // note : in the case where a coach is viewed but the email is not found
         // the value of the email will be "null" (see toString method of String)
@@ -127,6 +128,7 @@ class ProfileActivity : ComponentActivity() {
         // Make sure the userInfo variable is updated when the futureUserInfo completes
         LaunchedEffect(futureUserInfo) {
             userInfo = futureUserInfo.await()
+            stateUpdated.complete(null)
         }
 
         /**
@@ -137,7 +139,11 @@ class ProfileActivity : ComponentActivity() {
         fun saveUserInfo(futureNewUserInfo: CompletableFuture<UserInfo>): CompletableFuture<Void> {
             return futureNewUserInfo
                 .thenCompose { newUserInfo ->
-                    database.updateUser(newUserInfo).thenAccept { userInfo = newUserInfo }
+                    database.updateUser(newUserInfo)
+                        .thenAccept {
+                            userInfo = newUserInfo
+                            stateUpdated.complete(null)
+                        }
                 }
                 .exceptionally {
                     when (it.cause) {
@@ -429,9 +435,8 @@ fun SportsRow(
                 Icon(
                     imageVector = it.sportIcon,
                     contentDescription = it.sportName,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.padding(0.dp, 0.dp, 6.dp, 0.dp).size(16.dp)
                 )
-                Spacer(modifier = Modifier.width(6.dp))
             }
         }
     }

@@ -112,8 +112,8 @@ open class SignupActivityTest {
             databaseStateSending = it.databaseStateSending
         }
         var exceptionThrown = false
-        databaseStateSending.handle { _, _ ->
-            exceptionThrown = true
+        databaseStateSending.handle { _, exception ->
+            exceptionThrown = exception != null
             // Recover from exception
             null
         }.get(10, SECONDS)

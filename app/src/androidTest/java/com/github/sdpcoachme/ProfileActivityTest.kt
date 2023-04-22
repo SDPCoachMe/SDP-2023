@@ -5,7 +5,6 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.espresso.Espresso
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -13,29 +12,35 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
-import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.EDIT
+import com.github.sdpcoachme.EditTextActivity.TestTags.Companion.TextFields.Companion.MAIN
 import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.MESSAGE_COACH
-import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.SAVE
-import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.SELECT_SPORTS
-import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.CLIENT_COACH
-import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.COACH_CLIENT_INFO
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.COACH_SWITCH
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LAST_NAME
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LOCATION
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PHONE
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_LABEL
-import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.PROFILE_PICTURE
-import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SELECTED_SPORTS
-import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.SPORTS
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_2
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACH_2
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
-import com.github.sdpcoachme.location.UserLocationSamples.Companion.TOKYO
+import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.location.autocomplete.MockLocationAutocompleteHandler.Companion.DEFAULT_LOCATION
 import com.github.sdpcoachme.messaging.ChatActivity
+import junit.framework.TestCase
 import org.hamcrest.CoreMatchers
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class ProfileActivityTest {
@@ -43,72 +48,28 @@ class ProfileActivityTest {
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
-    private val displayedAfterEditButtonClicked = listOf(
-        FIRST_NAME.FIELD,
-        LAST_NAME.FIELD,
-        CLIENT_COACH.SWITCH,
-
-        SAVE
-    )
-
-    private val defaultEmail = "example@email.com"
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
-    private val database = (InstrumentationRegistry.getInstrumentation()
-        .targetContext.applicationContext as CoachMeApplication).database
+    private fun getDatabase(): Database {
+        return (InstrumentationRegistry.getInstrumentation()
+            .targetContext.applicationContext as CoachMeApplication).database
+    }
 
     @Before
     fun setup() {
-        database.setCurrentEmail(defaultEmail)
+        for (user in COACHES + NON_COACHES) {
+            getDatabase().updateUser(user)
+        }
+        Intents.init()
     }
 
-    private val initiallyDisplayed = listOf(
-        PROFILE_LABEL,
-        PROFILE_PICTURE,
-
-        EMAIL.LABEL,
-        EMAIL.TEXT,
-
-        FIRST_NAME.LABEL,
-        FIRST_NAME.TEXT,
-
-        LAST_NAME.LABEL,
-        LAST_NAME.TEXT,
-
-        LOCATION.LABEL,
-        LOCATION.TEXT,
-
-        SELECTED_SPORTS.LABEL,
-        SELECTED_SPORTS.ROW,
-    )
-
-    @Test
-    fun correctInitialScreenContent() {
-        val initiallyDisplayedForUser = initiallyDisplayed.plus(EDIT)
-
-        val initiallyNotDisplayed = listOf(
-            FIRST_NAME.FIELD,
-            LAST_NAME.FIELD,
-            CLIENT_COACH.SWITCH,
-            SAVE
-        )
-
-        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
-            initiallyDisplayedForUser.forEach { tag ->
-                // assertIsDisplayed() behaves strangely with components that are empty (empty Text()
-                // components for example, or Text() components whose text is loaded asynchronously)
-                composeTestRule.onNodeWithTag(tag).assertExists()
-            }
-
-            initiallyNotDisplayed.forEach { tag ->
-                composeTestRule.onNodeWithTag(tag).assertDoesNotExist()
-            }
-
-        }
+    @After
+    fun cleanup() {
+        Intents.release()
     }
 
     @Test
     fun errorPageIsShownWhenEditProfileIsLaunchedWithEmptyCurrentEmail() {
-        database.setCurrentEmail("")
+        getDatabase().setCurrentEmail("")
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             // not possible to use Intents.init()... to check if the correct intent
             // is launched as the intents are launched from within the onCreate function
@@ -118,254 +79,226 @@ class ProfileActivityTest {
     }
 
     @Test
-    fun editButtonClickActivatesCorrectElements() {
-        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(EDIT)
-                .assertIsDisplayed()
-                .performClick()
+    fun correctInfoDisplayedForCoachInEditMode() {
+        getDatabase().setCurrentEmail(COACH_2.email)
 
-            displayedAfterEditButtonClicked.forEach { tag ->
-                composeTestRule.onNodeWithTag(tag).assertIsDisplayed()
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
+            waitForUpdate(it)
+            composeTestRule.onNodeWithTag(EMAIL, useUnmergedTree = true).assertTextEquals(COACH_2.email)
+            composeTestRule.onNodeWithTag(FIRST_NAME, useUnmergedTree = true).assertTextEquals(COACH_2.firstName)
+            composeTestRule.onNodeWithTag(LAST_NAME, useUnmergedTree = true).assertTextEquals(COACH_2.lastName)
+            composeTestRule.onNodeWithTag(LOCATION, useUnmergedTree = true).assertTextEquals(COACH_2.location.address)
+            composeTestRule.onNodeWithTag(PHONE, useUnmergedTree = true).assertTextEquals(COACH_2.phone)
+            composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).onChildren().assertCountEquals(COACH_2.sports.size)
+            for (sport in COACH_2.sports) {
+                composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).onChildren().assertAny(
+                    hasContentDescription(sport.sportName))
             }
+            composeTestRule.onNodeWithTag(COACH_SWITCH, useUnmergedTree = true).assertIsOn()
+            composeTestRule.onNodeWithTag(PROFILE_LABEL, useUnmergedTree = true).assertTextEquals("Coach")
+            composeTestRule.onNodeWithTag(MESSAGE_COACH, useUnmergedTree = true).assertDoesNotExist()
         }
     }
 
     @Test
-    fun editedFieldsSavedCorrectly() {
-        val newValues = mapOf(
-            FIRST_NAME to "Updated first name",
-            LAST_NAME to "Updated last name",
-        )
-        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
-            //change to edit mode
-            composeTestRule.onNodeWithTag(EDIT)
-                .assertIsDisplayed()
-                .performClick()
-
-            composeTestRule.onNodeWithTag(FIRST_NAME.FIELD)
-                .assertIsDisplayed()
-                .performClick()
-
-            //edit text fields
-            newValues.forEach { (field, newValue) ->
-                composeTestRule.onNodeWithTag(field.FIELD)
-                    .assertIsFocused()
-                composeTestRule.onNodeWithTag(field.FIELD)
-                    .performTextClearance()
-                composeTestRule.onNodeWithTag(field.FIELD)
-                    .performTextInput(newValue)
-                composeTestRule.onNodeWithTag(field.FIELD)
-                    .performImeAction()
-                composeTestRule.onNodeWithTag(field.FIELD)
-                    .assertIsNotFocused()
-                Espresso.closeSoftKeyboard()
-            }
-
-            //save updated profile
-            composeTestRule.onNodeWithTag(SAVE)
-                .assertIsDisplayed()
-                .performClick()
-
-            //check that the updated fields are saved
-            newValues.forEach { (field, newValue) ->
-                composeTestRule.onNodeWithTag(field.TEXT)
-                    .assertTextEquals(newValue)
-            }
-        }
-    }
-
-    @Test
-    fun requestForExistingEmailDisplaysCorrectInfoInUserFields() {
-        val user = UserInfo(
-            "first",
-            "last",
-            defaultEmail,
-            "012345",
-            TOKYO,
-            false,
-            listOf()
-        )
-        val db = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
-        db.updateUser(user)
+    fun correctInfoDisplayedForNonCoachInEditMode() {
+        getDatabase().setCurrentEmail(NON_COACH_2.email)
 
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
-
-            composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(defaultEmail)
-            composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals(user.firstName)
-            composeTestRule.onNodeWithTag(LAST_NAME.TEXT).assertTextEquals(user.lastName)
-            composeTestRule.onNodeWithTag(LOCATION.TEXT).assertTextEquals(user.location.address)
-
-            composeTestRule.onNodeWithTag(EDIT)
-                .assertIsDisplayed()
-                .performClick()
-
-            displayedAfterEditButtonClicked.forEach { tag ->
-                composeTestRule.onNodeWithTag(tag).assertIsDisplayed()
+            waitForUpdate(it)
+            composeTestRule.onNodeWithTag(EMAIL, useUnmergedTree = true).assertTextEquals(NON_COACH_2.email)
+            composeTestRule.onNodeWithTag(FIRST_NAME, useUnmergedTree = true).assertTextEquals(NON_COACH_2.firstName)
+            composeTestRule.onNodeWithTag(LAST_NAME, useUnmergedTree = true).assertTextEquals(NON_COACH_2.lastName)
+            composeTestRule.onNodeWithTag(LOCATION, useUnmergedTree = true).assertTextEquals(NON_COACH_2.location.address)
+            composeTestRule.onNodeWithTag(PHONE, useUnmergedTree = true).assertTextEquals(NON_COACH_2.phone)
+            composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).onChildren().assertCountEquals(NON_COACH_2.sports.size)
+            for (sport in NON_COACH_2.sports) {
+                composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).onChildren().assertAny(
+                    hasContentDescription(sport.sportName))
             }
-
-            composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(defaultEmail)
-            composeTestRule.onNodeWithTag(FIRST_NAME.FIELD).assertTextEquals(user.firstName)
-            composeTestRule.onNodeWithTag(LAST_NAME.FIELD).assertTextEquals(user.lastName)
-            composeTestRule.onNodeWithTag(LOCATION.FIELD).assertTextEquals(user.location.address)
-        }
-    }
-
-    @Test
-    fun requestForNonExistentEmailDisplaysEmptyUserFields() {
-        val email = "non-existant@email.com"
-        database.setCurrentEmail(email)
-        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
-
-            composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals(email)
-            composeTestRule.onNodeWithTag(FIRST_NAME.TEXT).assertTextEquals("")
-            composeTestRule.onNodeWithTag(LAST_NAME.TEXT).assertTextEquals("")
-            composeTestRule.onNodeWithTag(LOCATION.TEXT).assertTextEquals("")
-
-            composeTestRule.onNodeWithTag(EDIT)
-                .assertIsDisplayed()
-                .performClick()
-
-            displayedAfterEditButtonClicked.forEach { tag ->
-                composeTestRule.onNodeWithTag(tag).assertIsDisplayed()
-            }
-
-            composeTestRule.onNodeWithTag(EMAIL.TEXT).assertTextEquals("non-existant@email.com")
-            composeTestRule.onNodeWithTag(FIRST_NAME.FIELD).assertTextEquals("")
-            composeTestRule.onNodeWithTag(LAST_NAME.FIELD).assertTextEquals("")
-            composeTestRule.onNodeWithTag(LOCATION.FIELD).assertTextEquals("")
+            composeTestRule.onNodeWithTag(COACH_SWITCH, useUnmergedTree = true).assertIsOff()
+            composeTestRule.onNodeWithTag(PROFILE_LABEL, useUnmergedTree = true).assertTextEquals("Client")
+            composeTestRule.onNodeWithTag(MESSAGE_COACH, useUnmergedTree = true).assertDoesNotExist()
         }
     }
 
     @Test
     fun changingToCoachAndBackToClientWorks() {
+        getDatabase().setCurrentEmail(NON_COACH_2.email)
+
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
 
-            composeTestRule.onNodeWithTag(EDIT)
+            composeTestRule.onNodeWithTag(PROFILE_LABEL, useUnmergedTree = true).assertTextEquals("Client")
+
+            composeTestRule.onNodeWithTag(COACH_SWITCH, useUnmergedTree = true)
                 .assertIsDisplayed()
                 .performClick()
 
-            displayedAfterEditButtonClicked.forEach { tag ->
-                composeTestRule.onNodeWithTag(tag).assertIsDisplayed()
-            }
+            waitForUpdate(it)
 
-            composeTestRule.onNodeWithTag(COACH_CLIENT_INFO).assertTextEquals("Client")
-            composeTestRule.onNodeWithTag(CLIENT_COACH.TEXT).assertTextEquals("I would like to become a coach")
-
-            composeTestRule.onNodeWithTag(CLIENT_COACH.SWITCH)
-                .assertIsDisplayed()
-                .performClick()
-
-            composeTestRule.onNodeWithTag(SAVE)
-                .assertIsDisplayed()
-                .performClick()
-
-            composeTestRule.onNodeWithTag(EDIT)
-                .assertIsDisplayed()
-                .performClick()
-
-            composeTestRule.onNodeWithTag(COACH_CLIENT_INFO).assertTextEquals("Coach")
-            composeTestRule.onNodeWithTag(CLIENT_COACH.TEXT).assertTextEquals("I would like to become a client")
+            composeTestRule.onNodeWithTag(PROFILE_LABEL, useUnmergedTree = true).assertTextEquals("Coach")
         }
     }
 
     @Test
-    fun coachProfileShownWhenIsViewingCoachProfileIsTrue() {
-        val displayedForUserLookingAtCoach = initiallyDisplayed.plus(listOf(MESSAGE_COACH, SELECTED_SPORTS.ROW, SELECTED_SPORTS.LABEL))
+    fun correctInfoDisplayedForIsViewingCoach() {
+        getDatabase().setCurrentEmail(NON_COACH_2.email)
 
         val profileIntent = defaultIntent
-        val email = "example@email.com"
+        val email = COACH_1.email
         profileIntent.putExtra("email", email)
         profileIntent.putExtra("isViewingCoach", true)
+
         ActivityScenario.launch<ProfileActivity>(profileIntent).use {
-            displayedForUserLookingAtCoach.forEach { tag ->
-                composeTestRule.onNodeWithTag(tag).assertExists()
+            waitForUpdate(it)
+            composeTestRule.onNodeWithTag(EMAIL, useUnmergedTree = true).assertTextEquals(COACH_1.email)
+            composeTestRule.onNodeWithTag(FIRST_NAME, useUnmergedTree = true).assertDoesNotExist()
+            composeTestRule.onNodeWithTag(LAST_NAME, useUnmergedTree = true).assertDoesNotExist()
+            composeTestRule.onNodeWithTag(LOCATION, useUnmergedTree = true).assertTextEquals(COACH_1.location.address)
+            composeTestRule.onNodeWithTag(PHONE, useUnmergedTree = true).assertTextEquals(COACH_1.phone)
+            composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).onChildren().assertCountEquals(COACH_1.sports.size)
+            for (sport in COACH_1.sports) {
+                composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).onChildren().assertAny(
+                    hasContentDescription(sport.sportName))
             }
+            composeTestRule.onNodeWithTag(MESSAGE_COACH, useUnmergedTree = true).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(COACH_SWITCH, useUnmergedTree = true).assertDoesNotExist()
         }
     }
 
     @Test
     fun messageCoachButtonClickHasCorrectFunctionality() {
-        val displayedForUserLookingAtCoach = initiallyDisplayed.plus(MESSAGE_COACH)
+        getDatabase().setCurrentEmail(NON_COACH_2.email)
 
         val profileIntent = defaultIntent
-        val coachEmail = "example@email.com"
-        profileIntent.putExtra("email", coachEmail)
+        val email = COACH_1.email
+        profileIntent.putExtra("email", email)
         profileIntent.putExtra("isViewingCoach", true)
-        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
-            Intents.init()
-            displayedForUserLookingAtCoach.forEach { tag ->
-                composeTestRule.onNodeWithTag(tag).assertExists()
-            }
 
-            composeTestRule.onNodeWithTag(MESSAGE_COACH)
-                .assertIsDisplayed()
-                .performClick()
+        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
+            waitForUpdate(it)
+
+            composeTestRule.onNodeWithTag(MESSAGE_COACH, useUnmergedTree = true).performClick()
 
             Intents.intended(
                 CoreMatchers.allOf(
                     IntentMatchers.hasComponent(ChatActivity::class.java.name),
-                    IntentMatchers.hasExtra("toUserEmail", coachEmail)
+                    IntentMatchers.hasExtra("toUserEmail", COACH_1.email)
                 )
             )
-
-            Intents.release()
         }
     }
 
     @Test
     fun selectSportsButtonRedirectsToSelectSportsActivity() {
+        getDatabase().setCurrentEmail(NON_COACH_2.email)
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
-            Intents.init()
+            waitForUpdate(it)
 
-            composeTestRule.onNodeWithTag(SELECT_SPORTS)
-                .assertIsDisplayed()
-                .performClick()
+            composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).performClick()
 
             Intents.intended(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name))
-            Intents.release()
         }
     }
 
     @Test
-    fun selectSportsButtonNotPresentInEditMode() {
-        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
-            Intents.init()
-            composeTestRule.onNodeWithTag(SELECT_SPORTS)
-                .assertIsDisplayed()
-
-            composeTestRule.onNodeWithTag(EDIT)
-                .assertIsDisplayed()
-                .performClick()
-
-            composeTestRule.onNodeWithTag(SELECT_SPORTS)
-                .assertDoesNotExist()
-
-            composeTestRule.onNodeWithTag(SAVE)
-                .assertIsDisplayed()
-                .performClick()
-
-            composeTestRule.onNodeWithTag(SELECT_SPORTS)
-                .assertIsDisplayed()
-                .performClick()
-
-            Intents.intended(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name))
-            Intents.release()
-        }
-    }
-
-    @Test
-    fun dashboardHasRightTitleOnProfile() {
+    fun dashboardHasRightTitleInEditMode() {
+        val title = (InstrumentationRegistry.getInstrumentation()
+            .targetContext.applicationContext as CoachMeApplication).getString(R.string.my_profile)
+        getDatabase().setCurrentEmail(NON_COACH_2.email)
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
-            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText("My profile"))
+            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText(title))
         }
     }
+
+    @Test
+    fun dashboardHasRightTitleForIsViewingCoach() {
+        val title = (InstrumentationRegistry.getInstrumentation()
+            .targetContext.applicationContext as CoachMeApplication).getString(R.string.coach_profile)
+        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        val profileIntent = defaultIntent
+        val email = COACH_1.email
+        profileIntent.putExtra("email", email)
+        profileIntent.putExtra("isViewingCoach", true)
+        ActivityScenario.launch<ProfileActivity>(profileIntent).use {
+            composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText(title))
+        }
+    }
+
     @Test
     fun dashboardIsAccessibleAndDisplayableFromProfile() {
+        getDatabase().setCurrentEmail(NON_COACH_2.email)
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertExists().assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun editFirstName() {
+        editField(FIRST_NAME, NON_COACH_2.email, NON_COACH_2.firstName)
+    }
+
+    @Test
+    fun editLastName() {
+        editField(LAST_NAME, NON_COACH_2.email, NON_COACH_2.lastName)
+    }
+
+    @Test
+    fun editPhone() {
+        editField(PHONE, NON_COACH_2.email, NON_COACH_2.phone)
+    }
+
+    private fun editField(tag: String, email: String, oldFieldValue: String) {
+        getDatabase().setCurrentEmail(email)
+        val appended = "-updated"
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
+            waitForUpdate(it)
+            composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).performClick()
+            composeTestRule.onNodeWithTag(MAIN, useUnmergedTree = true).performTextInput(appended)
+            composeTestRule.onNodeWithTag(MAIN, useUnmergedTree = true).performImeAction()
+            waitForUpdate(it)
+            composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).assertTextEquals(oldFieldValue + appended)
+        }
+    }
+
+    @Test
+    fun editEmailNotPossible() {
+        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
+            waitForUpdate(it)
+            composeTestRule.onNodeWithTag(EMAIL, useUnmergedTree = true).performClick()
+            // Assert that no intents are sent (1 intent is sent when the activity is launched, but that's it)
+            TestCase.assertEquals(1, Intents.getIntents().size)
+        }
+    }
+
+    @Test
+    fun editLocation() {
+        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
+            waitForUpdate(it)
+            composeTestRule.onNodeWithTag(LOCATION, useUnmergedTree = true).performClick()
+            waitForUpdate(it)
+            composeTestRule.onNodeWithTag(LOCATION, useUnmergedTree = true).assertTextEquals(DEFAULT_LOCATION.address)
+        }
+    }
+
+    /**
+     * This waits for the state to be updated in the UI (which is asynchronous).
+     */
+    private fun waitForUpdate(scenario: ActivityScenario<ProfileActivity>) {
+        lateinit var stateUpdated: CompletableFuture<Void>
+        scenario.onActivity { activity ->
+            stateUpdated = activity.stateUpdated
+        }
+        stateUpdated.get(3, TimeUnit.SECONDS)
+        scenario.onActivity { activity ->
+            // Reset the future so that we can wait for the next update
+            activity.stateUpdated = CompletableFuture()
         }
     }
 }
