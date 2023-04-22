@@ -1,7 +1,7 @@
 package com.github.sdpcoachme.location.autocomplete
 
 import com.github.sdpcoachme.data.UserLocation
-import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
 import java.util.concurrent.CompletableFuture
 
 class MockLocationAutocompleteHandler : LocationAutocompleteHandler {

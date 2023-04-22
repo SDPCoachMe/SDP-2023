@@ -1,7 +1,5 @@
 package com.github.sdpcoachme.data
 
-import com.github.sdpcoachme.location.UserLocationSamples
-
 class UserInfoSamples {
     companion object {
         val COACH_1 = UserInfo(

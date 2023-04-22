@@ -24,6 +24,7 @@ import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.SCHEDULE
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.MENU_LIST
+import com.github.sdpcoachme.auth.ProfileActivity
 import com.github.sdpcoachme.map.MapActivity
 import com.github.sdpcoachme.schedule.ScheduleActivity
 import org.hamcrest.Matcher
