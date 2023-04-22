@@ -6,36 +6,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
-import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,9 +30,7 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
-import com.github.sdpcoachme.firebase.database.CachingDatabase
 import com.github.sdpcoachme.firebase.database.Database
-import com.github.sdpcoachme.firebase.database.FireDatabase
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.BACK
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SCROLL_TO_BOTTOM
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SEND
@@ -122,10 +98,6 @@ class ChatActivity : ComponentActivity() {
         val database = (application as CoachMeApplication).database
         val currentUserEmail = database.getCurrentEmail()
         val toUserEmail = intent.getStringExtra("toUserEmail")
-//        val toUserEmail = intent.getStringExtra("toUserEmail")
-        println("ChatActivity: currentUserEmail = $currentUserEmail")
-        println("ChatActivity: toUserEmail = $toUserEmail")
-        println("toUser from firedatabase = ${(database as CachingDatabase).toUserEmail}")
 
         if (currentUserEmail == "" || toUserEmail == null) {
             val errorMsg = "The Chat Interface did not receive both needed users.\nPlease return to the login page and try again."

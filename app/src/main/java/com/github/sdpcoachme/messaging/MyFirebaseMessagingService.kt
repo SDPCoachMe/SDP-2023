@@ -1,6 +1,5 @@
 package com.github.sdpcoachme.messaging
 
-import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -13,13 +12,14 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachesListActivity
 import com.github.sdpcoachme.LoginActivity
 import com.github.sdpcoachme.data.messaging.FCMToken
-import com.github.sdpcoachme.firebase.database.CachingDatabase
-import com.github.sdpcoachme.firebase.database.FireDatabase
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
+/**
+ * This service handles all incoming push notifications.
+ */
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -33,10 +33,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val notificationBody = remoteMessage.notification!!.body?: ""
             val sender = remoteMessage.data["sender"] ?: ""
 
-            println("Received notification: $notificationTitle,\n$notificationBody, \n$sender")
+            val notificationType = remoteMessage.data["notificationType"] ?: ""
 
             // Create and send a customized notification.
-            sendNotification(notificationTitle, notificationBody, sender)
+            if (notificationType == "messaging") {
+                sendMessagingNotification(notificationTitle, notificationBody, sender)
+            }
         }
     }
 
@@ -79,37 +81,25 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
      * @param notificationTitle Title of the notification
      * @param notificationBody Body of the notification
      */
-    private fun sendNotification(notificationTitle: String, notificationBody: String, sender: String) {
+    private fun sendMessagingNotification(notificationTitle: String, notificationBody: String, sender: String) {
 
         val email = (application as CoachMeApplication).database.getCurrentEmail()
 
-        val intent = Intent(this,
-            // TODO: at the moment, if the user is still in the login activity, the notification will cause an error (no email yet).
-            //       Therefore, we are checking if the email is empty and if so, we send the user to the login activity.
-            //       Once the storing of the email offline is done, this will work and the if check can be removed
-            if (email.isEmpty()) {
-                println("loginactivity notif")
-                LoginActivity::class.java
-            } else if (sender.isEmpty()) {
-                println("coacheslistactivity notif")
-                CoachesListActivity::class.java
-            } else {
-                println("chatactivity notif")
-                ChatActivity::class.java
-            })
+        // TODO: at the moment, if the user is still in the login activity, the notification will cause an error (no email yet).
+        //       Therefore, we are checking if the email is empty and if so, we send the user to the login activity.
+        //       Once the storing of the email offline is done, this will work and the if check can be removed
+        val intent = Intent(
+            this,
+            if (email.isEmpty()) LoginActivity::class.java
+            else if (sender.isEmpty()) CoachesListActivity::class.java
+            else ChatActivity::class.java
+        )
 
         if (sender.isNotEmpty()) {
             intent.putExtra("toUserEmail", sender)
-            println("Sender: $sender")
         } else {
             intent.putExtra("isViewingContacts", true)
         }
-        // PUT EXTRA FIELDS DO NOT WORK! --> PLACE IT INTO THE DATABASE AND RETRIEVE IT FROM THERE
-
-        val database = (application as CoachMeApplication).database
-        (database as CachingDatabase).toUserEmail = sender
-        println("Sender: $sender")
-
 
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         val pendingIntent = PendingIntent.getActivity(
@@ -117,7 +107,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             0 /* Request code */,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-//            PendingIntent.FLAG_IMMUTABLE
         )
 
         val channelId = "fcm_default_channel"

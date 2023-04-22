@@ -96,6 +96,7 @@ export const sendPushNotification = functions.database
         body: message.content,
       },
       data: {
+        notificationType: "messaging",
         sender: sender,
       },
     };
