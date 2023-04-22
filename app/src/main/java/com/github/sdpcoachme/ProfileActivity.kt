@@ -1,7 +1,10 @@
 package com.github.sdpcoachme
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -179,7 +182,21 @@ class ProfileActivity : ComponentActivity() {
                 tag = EMAIL,
                 value = email,
                 onClick = {
-                    // Uneditable, for now, do nothing (might allow to copy to clipboard on click)
+                    if (!isViewingCoach) {
+                        // Uneditable, for now, do nothing (might allow to copy to clipboard on click)
+                    } else {
+                        // If the user is viewing a coach's profile, they can message the coach
+                        val intent = Intent(Intent.ACTION_SENDTO)
+                        intent.data = Uri.parse("mailto:")
+                        intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
+                        try {
+                            startActivity(intent)
+                        } catch (e: ActivityNotFoundException) {
+                            // No email app found on device
+                            // For now, do nothing.
+                            Log.e("ProfileActivity", "No email app found")
+                        }
+                    }
                 }
             )
             // Only display the following fields if the user is not viewing a coach's profile (they
@@ -237,7 +254,16 @@ class ProfileActivity : ComponentActivity() {
                         // Update database
                         saveUserInfo(future)
                     } else {
-                        // Uneditable, for now, do nothing (might allow to copy to clipboard on click)
+                        // If the user is viewing a coach's profile, they can call the coach
+                        val intent = Intent(Intent.ACTION_DIAL)
+                        intent.data = Uri.parse("tel:${userInfo.phone}")
+                        try {
+                            startActivity(intent)
+                        } catch (e: ActivityNotFoundException) {
+                            // No google maps app found on device.
+                            // For now, do nothing.
+                            Log.e("ProfileActivity", "No phone app found")
+                        }
                     }
                 }
             )
@@ -254,7 +280,17 @@ class ProfileActivity : ComponentActivity() {
                         // Update database
                         saveUserInfo(future)
                     } else {
-                        // Uneditable, for now, do nothing (might allow to copy to clipboard on click)
+                        // If the user is viewing a coach's profile, they can open the coach's location
+                        val uri = Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(userInfo.location.address)}&query_place_id=${userInfo.location.placeId}")
+                        val intent = Intent(Intent.ACTION_VIEW, uri)
+                        intent.setPackage("com.google.android.apps.maps")
+                        try {
+                            startActivity(intent)
+                        } catch (e: ActivityNotFoundException) {
+                            // No google maps app found on device.
+                            // For now, do nothing.
+                            Log.e("ProfileActivity", "Google Maps app not found")
+                        }
                     }
                 }
             )
@@ -435,7 +471,9 @@ fun SportsRow(
                 Icon(
                     imageVector = it.sportIcon,
                     contentDescription = it.sportName,
-                    modifier = Modifier.padding(0.dp, 0.dp, 6.dp, 0.dp).size(16.dp)
+                    modifier = Modifier
+                        .padding(0.dp, 0.dp, 6.dp, 0.dp)
+                        .size(16.dp)
                 )
             }
         }
