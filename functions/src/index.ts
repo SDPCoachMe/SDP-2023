@@ -63,15 +63,11 @@ export const sendPushNotification = functions.database
     }
 
     const [recipientTokenSnapshot,
-      pushNotificationsEnabledSnapshot,
       firstNameSenderSnapshot,
       lastNameSenderSnapshot] =
         await Promise.all([
           change.after.ref.root
-            .child("/coachme/fcmTokens/" + recipient + "/token")
-            .once("value"),
-          change.after.ref.root
-            .child("/coachme/fcmTokens/" + recipient + "/permissionGranted")
+            .child("/coachme/fcmTokens/" + recipient)
             .once("value"),
           change.after.ref.root
             .child("/coachme/accounts/" + senderWithCommas + "/firstName")
@@ -82,8 +78,8 @@ export const sendPushNotification = functions.database
         ]);
 
     // if no token found for given recipient (i.e., .val() returns null) or
-    // push notifications are disabled, return without sending push notification
-    if (!pushNotificationsEnabledSnapshot.val()) {
+    // return without sending push notification
+    if (!recipientTokenSnapshot.val()) {
       return;
     }
 

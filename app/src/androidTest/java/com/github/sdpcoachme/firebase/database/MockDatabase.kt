@@ -3,7 +3,6 @@ package com.github.sdpcoachme.firebase.database
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
-import com.github.sdpcoachme.data.messaging.FCMToken
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
 import java.time.LocalDateTime
@@ -135,12 +134,12 @@ class MockDatabase: Database {
         // no need to do anything
     }
 
-    override fun getFCMToken(email: String): CompletableFuture<FCMToken> {
+    override fun getFCMToken(email: String): CompletableFuture<String> {
         // TODO: implement
         return CompletableFuture.completedFuture(null)
     }
 
-    override fun setFCMToken(email: String, token: FCMToken): CompletableFuture<Void> {
+    override fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
         // TODO: implement
         return CompletableFuture.completedFuture(null)
     }

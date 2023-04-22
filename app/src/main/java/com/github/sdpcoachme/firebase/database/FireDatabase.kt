@@ -3,7 +3,6 @@ package com.github.sdpcoachme.firebase.database
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
-import com.github.sdpcoachme.data.messaging.FCMToken
 import com.github.sdpcoachme.data.messaging.Message
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -144,12 +143,12 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         }
     }
 
-    override fun getFCMToken(email: String): CompletableFuture<FCMToken> {
+    override fun getFCMToken(email: String): CompletableFuture<String> {
         val userID = email.replace('.', ',')
-        return getChild(fcmTokens, userID).thenApply { it.getValue(FCMToken::class.java)!! }
+        return getChild(fcmTokens, userID).thenApply { it.getValue(String::class.java)!! }
     }
 
-    override fun setFCMToken(email: String, token: FCMToken): CompletableFuture<Void> {
+    override fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
         val userID = email.replace('.', ',')
         return setChild(fcmTokens, userID, token)
     }

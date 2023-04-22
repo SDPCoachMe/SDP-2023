@@ -1,12 +1,10 @@
 package com.github.sdpcoachme
 
 import android.Manifest
-import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -32,13 +30,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.content.ContextCompat
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
-import com.github.sdpcoachme.data.messaging.FCMToken
 import com.github.sdpcoachme.firebase.auth.Authenticator
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.map.MapActivity
+import com.github.sdpcoachme.messaging.MyFirebaseMessagingService.Companion.addFCMTokenToDatabase
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.firebase.messaging.FirebaseMessaging
 
 
 class LoginActivity : ComponentActivity() {
@@ -110,9 +106,9 @@ class LoginActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
-            Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Notifications enabled", Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Notifications disabled", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -148,6 +144,7 @@ class LoginActivity : ComponentActivity() {
             }
 
             askNotificationPermission()
+            addFCMTokenToDatabase(database)
         }
     }
 

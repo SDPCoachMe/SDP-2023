@@ -3,7 +3,6 @@ package com.github.sdpcoachme.firebase.database
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
-import com.github.sdpcoachme.data.messaging.FCMToken
 import com.github.sdpcoachme.data.messaging.Message
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.SphericalUtil
@@ -135,7 +134,7 @@ interface Database {
      * @param email The email of the user to get the token for
      * @return A future that will complete with the token
      */
-    fun getFCMToken(email: String): CompletableFuture<FCMToken>
+    fun getFCMToken(email: String): CompletableFuture<String>
 
     /**
      * Set the FCM token for the given user
@@ -144,5 +143,5 @@ interface Database {
      * @param token The token to set
      * @return A future that will complete when the token has been set
      */
-    fun setFCMToken(email: String, token: FCMToken): CompletableFuture<Void>
+    fun setFCMToken(email: String, token: String): CompletableFuture<Void>
 }

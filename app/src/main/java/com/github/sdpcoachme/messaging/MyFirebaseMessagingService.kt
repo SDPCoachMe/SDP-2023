@@ -1,5 +1,6 @@
 package com.github.sdpcoachme.messaging
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -11,7 +12,7 @@ import androidx.core.app.NotificationCompat
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachesListActivity
 import com.github.sdpcoachme.LoginActivity
-import com.github.sdpcoachme.data.messaging.FCMToken
+import com.github.sdpcoachme.firebase.database.Database
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -20,6 +21,7 @@ import com.google.firebase.messaging.RemoteMessage
 /**
  * This service handles all incoming push notifications.
  */
+@SuppressLint("MissingFirebaseInstanceTokenRefresh") // as we do not yet have the user's email at start up, we cannot add the token to the database then and overriding this method would cause an error.
 class MyFirebaseMessagingService : FirebaseMessagingService() {
     var notificationId = 0
 
@@ -38,39 +40,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 sendMessagingNotification(notificationTitle, notificationBody, sender)
             }
         }
-    }
-
-    /**
-     * There are two scenarios when onNewToken is called:
-     *
-     * 1) When a new token is generated on initial app startup
-     * 2) Whenever an existing token is changed:
-     *      a) App is restored to a new device
-     *      b) User uninstalls / reinstalls the app
-     *      c) User clears app data
-     */
-    override fun onNewToken(token: String) {
-        // We always add the token to the database, so that if the user enables notifications,
-        // the token is already in the database and notifications can be received right away.
-        addFCMTokenToDatabase()
-    }
-
-    /**
-     * Adds the FCM token to the database.
-     */
-    private fun addFCMTokenToDatabase() {
-        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Log.w(ContentValues.TAG, "Fetching FCM registration token failed", task.exception)
-                return@OnCompleteListener
-            }
-
-            // Get new FCM registration token
-            val token = task.result
-
-            val database = (application as CoachMeApplication).database
-            database.setFCMToken(database.getCurrentEmail(), FCMToken(token!!, true))
-        })
     }
 
     /**
@@ -129,5 +98,24 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         notificationManager.createNotificationChannel(channel)
         notificationManager.notify(notificationId, notificationBuilder.build())
         notificationId++
+    }
+
+    companion object {
+        /**
+         * Adds the FCM token to the database.
+         */
+        fun addFCMTokenToDatabase(database: Database) {
+            FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
+                if (!task.isSuccessful) {
+                    Log.w(ContentValues.TAG, "Fetching FCM registration token failed", task.exception)
+                    return@OnCompleteListener
+                }
+
+                // Get new FCM registration token
+                val token = task.result
+
+                database.setFCMToken(database.getCurrentEmail(), token)
+            })
+        }
     }
 }

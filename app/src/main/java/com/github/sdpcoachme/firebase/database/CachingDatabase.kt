@@ -3,7 +3,6 @@ package com.github.sdpcoachme.firebase.database
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
-import com.github.sdpcoachme.data.messaging.FCMToken
 import com.github.sdpcoachme.data.messaging.Message
 import java.util.concurrent.CompletableFuture
 
@@ -12,7 +11,7 @@ import java.util.concurrent.CompletableFuture
  */
 class CachingDatabase(private val wrappedDatabase: Database) : Database {
     private val cachedUsers = mutableMapOf<String, UserInfo>()
-    private val cachedTokens = mutableMapOf<String, FCMToken>()
+    private val cachedTokens = mutableMapOf<String, String>()
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         return wrappedDatabase.updateUser(user).thenAccept { cachedUsers[user.email] = user }
@@ -80,14 +79,14 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         wrappedDatabase.removeChatListener(chatId)
     }
 
-    override fun getFCMToken(email: String): CompletableFuture<FCMToken> {
+    override fun getFCMToken(email: String): CompletableFuture<String> {
         if (cachedTokens.containsKey(email)) {
             return CompletableFuture.completedFuture(cachedTokens[email])
         }
         return wrappedDatabase.getFCMToken(email)
     }
 
-    override fun setFCMToken(email: String, token: FCMToken): CompletableFuture<Void> {
+    override fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
         cachedTokens[email] = token
         return wrappedDatabase.setFCMToken(email, token)
     }
