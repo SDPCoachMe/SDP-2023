@@ -16,6 +16,8 @@ import java.util.concurrent.CompletableFuture
  */
 class FireDatabase(databaseReference: DatabaseReference) : Database {
 
+
+
     private val rootDatabase: DatabaseReference = databaseReference
     private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
     private var currEmail = ""

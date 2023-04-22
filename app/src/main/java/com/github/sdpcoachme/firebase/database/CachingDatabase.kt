@@ -12,6 +12,7 @@ import java.util.concurrent.CompletableFuture
  */
 class CachingDatabase(private val wrappedDatabase: Database) : Database {
     private val cachedUsers = mutableMapOf<String, UserInfo>()
+    public var toUserEmail = ""
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         return wrappedDatabase.updateUser(user).thenAccept { cachedUsers[user.email] = user }

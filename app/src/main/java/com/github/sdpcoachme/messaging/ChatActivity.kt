@@ -52,7 +52,9 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
+import com.github.sdpcoachme.firebase.database.CachingDatabase
 import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.firebase.database.FireDatabase
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.BACK
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SCROLL_TO_BOTTOM
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SEND
@@ -120,6 +122,10 @@ class ChatActivity : ComponentActivity() {
         val database = (application as CoachMeApplication).database
         val currentUserEmail = database.getCurrentEmail()
         val toUserEmail = intent.getStringExtra("toUserEmail")
+//        val toUserEmail = intent.getStringExtra("toUserEmail")
+        println("ChatActivity: currentUserEmail = $currentUserEmail")
+        println("ChatActivity: toUserEmail = $toUserEmail")
+        println("toUser from firedatabase = ${(database as CachingDatabase).toUserEmail}")
 
         if (currentUserEmail == "" || toUserEmail == null) {
             val errorMsg = "The Chat Interface did not receive both needed users.\nPlease return to the login page and try again."

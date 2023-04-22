@@ -105,76 +105,50 @@ class LoginActivity : ComponentActivity() {
         }
     }
 
-    private fun addFCMTokenToDatabase() {
-        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Log.w(TAG, "Fetching FCM registration token failed", task.exception)
-                return@OnCompleteListener
-            }
-
-            // Get new FCM registration token
-            val token = task.result
-
-            println("FCM registration Token: $token")
-
-            // TODO: check if token can be added to DB
-            // Faster to always set than always get and sometimes also set...
-            database.setFCMToken(database.getCurrentEmail(), FCMToken(token!!, true))
-        })
-    }
-
     // Declare the launcher at the top of your Activity/Fragment:
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
-            // FCM SDK (and your app) can post notifications.
+            Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show()
         } else {
-            // TODO: Inform user that that your app will not show notifications.
+            Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
         }
     }
 
+    /**
+     * Asks the user for permission to post notifications.
+     */
     private fun askNotificationPermission() {
-        // This is only necessary for API level >= 33 (TIRAMISU)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-                PackageManager.PERMISSION_GRANTED
-            ) {
-                // FCM SDK (and your app) can post notifications.
-                println("FCM SDK (and your app) can post notifications.")
-            } else if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
-                // TODO: display an educational UI explaining to the user the features that will be enabled
-                //       by them granting the POST_NOTIFICATION permission. This UI should provide the user
-                //       "OK" and "No thanks" buttons. If the user selects "OK," directly request the permission.
-                //       If the user selects "No thanks," allow the user to continue without notifications.
-                println("in the else if of askNotificationPermission")
-            } else {
-                // Directly ask for the permission
-                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                println("in the else of askNotificationPermission")
-            }
-        } else {
-            println("FCM SDK (and your app) can post notifications as api level < 33.")
-            // TODO: still create request for permission...
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            // As discussed on discord with Léo and Kamilla,
+            // for API level < 33, notifications cannot be enabled / disabled in the app
+            // and the user needs to disable them in the settings.
+            return
         }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            == PackageManager.PERMISSION_GRANTED) {
+            // Notifications have already been enabled, no need to ask again.
+            return
+        }
+
+        // Request permission to post notifications.
+        requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
     private fun launchPostLoginActivity(email: String) {
         database.userExists(email).thenAccept { exists ->
             if (exists) {
                 // check if inside the db...
-                addFCMTokenToDatabase() //TODO: check if this is the right place to add the token to the DB (and add the check for the adding to db...
-
-
                 launchActivity(MapActivity::class.java)
             } else {
                 //TODO: as user for permission for the fcm token push notifications...
-
-
                 launchActivity(SignupActivity::class.java)
             }
-        }
 
+            askNotificationPermission()
+        }
     }
 
     private fun launchActivity(activity: Class<*>) {
