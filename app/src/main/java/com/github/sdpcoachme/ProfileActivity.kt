@@ -23,7 +23,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.ProfileActivity.TestTags.Buttons.Companion.MESSAGE_COACH
-import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.COACH_CLIENT_INFO
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.COACH_SWITCH
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.FIRST_NAME
@@ -108,7 +107,7 @@ class ProfileActivity : ComponentActivity() {
                             Profile(email, futureUserInfo, isViewingCoach)
                         }
                     }
-                    Dashboard(appContent, email, stringResource(R.string.my_profile))
+                    Dashboard(appContent, email, if (isViewingCoach) stringResource(R.string.coach_profile) else stringResource(R.string.my_profile))
                 }
             }
         }
@@ -167,7 +166,7 @@ class ProfileActivity : ComponentActivity() {
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.Start
         ) {
-            TitleRow(userInfo.coach, isViewingCoach)
+            TitleRow(userInfo, isViewingCoach)
             Spacer(modifier = Modifier.height(10.dp))
             TextRow(
                 label = "EMAIL",
@@ -177,13 +176,15 @@ class ProfileActivity : ComponentActivity() {
                     // Uneditable, for now, do nothing (might allow to copy to clipboard on click)
                 }
             )
-            Divider(startIndent = 20.dp)
-            TextRow(
-                label = "FIRST NAME",
-                tag = FIRST_NAME,
-                value = userInfo.firstName,
-                onClick = {
-                    if (!isViewingCoach) {
+            // Only display the following fields if the user is not viewing a coach's profile (they
+            // are not displayed in the top bar of the coach's profile otherwise)
+            if (!isViewingCoach) {
+                Divider(startIndent = 20.dp)
+                TextRow(
+                    label = "FIRST NAME",
+                    tag = FIRST_NAME,
+                    value = userInfo.firstName,
+                    onClick = {
                         val future = editTextHandler(EditTextActivity.getIntent(
                             context = context,
                             initialValue = userInfo.firstName,
@@ -193,18 +194,14 @@ class ProfileActivity : ComponentActivity() {
                         }
                         // Update database
                         saveUserInfo(future)
-                    } else {
-                        // Uneditable, for now, do nothing (might allow to copy to clipboard on click)
                     }
-                }
-            )
-            Divider(startIndent = 20.dp)
-            TextRow(
-                label = "LAST NAME",
-                tag = LAST_NAME,
-                value = userInfo.lastName,
-                onClick = {
-                    if (!isViewingCoach) {
+                )
+                Divider(startIndent = 20.dp)
+                TextRow(
+                    label = "LAST NAME",
+                    tag = LAST_NAME,
+                    value = userInfo.lastName,
+                    onClick = {
                         val future = editTextHandler(EditTextActivity.getIntent(
                             context = context,
                             initialValue = userInfo.lastName,
@@ -214,11 +211,9 @@ class ProfileActivity : ComponentActivity() {
                         }
                         // Update database
                         saveUserInfo(future)
-                    } else {
-                        // Uneditable, for now, do nothing (might allow to copy to clipboard on click)
                     }
-                }
-            )
+                )
+            }
             Divider(startIndent = 20.dp)
             TextRow(
                 label = "PHONE",
@@ -309,26 +304,26 @@ class ProfileActivity : ComponentActivity() {
  * Composable used to display the profile title and the user's profile picture.
  */
 @Composable
-fun TitleRow(isCoach: Boolean, isViewingCoach: Boolean) {
+fun TitleRow(user: UserInfo, isViewingCoach: Boolean) {
+    val title = if (isViewingCoach) {
+        "${user.firstName} ${user.lastName}"
+    } else {
+        if (user.coach) {
+            "Coach"
+        } else {
+            "Client"
+        }
+    }
     Row (
         modifier = Modifier.padding(20.dp, 20.dp, 0.dp, 10.dp),
-        verticalAlignment = Alignment.Top,
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
-        Column {
-            Text(
-                modifier = Modifier.testTag(PROFILE_LABEL),
-                text = "${if (isViewingCoach) "Coach's" else "My"} Profile",
-                style = MaterialTheme.typography.h4
-            )
-            if (!isViewingCoach) {
-                Text(
-                    text = if (isCoach) "Coach" else "Client",
-                    style = MaterialTheme.typography.h6,
-                    modifier = Modifier.testTag(COACH_CLIENT_INFO)
-                )
-            }
-        }
+        Text(
+            modifier = Modifier.testTag(PROFILE_LABEL),
+            text = title,
+            style = MaterialTheme.typography.h4
+        )
         Box(
             modifier = Modifier
                 .fillMaxWidth()
