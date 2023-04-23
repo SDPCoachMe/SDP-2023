@@ -500,21 +500,19 @@ fun SwitchClientCoachRow(value: Boolean, onValueChange: (Boolean) -> Unit) {
         Modifier
             .fillMaxWidth()
             .height(60.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
             text = "I would like others to see me as a coach",
             style = MaterialTheme.typography.body1,
-            modifier = Modifier
+            modifier = Modifier.fillMaxWidth(fraction = 0.8f)
                 .padding(20.dp, 0.dp, 0.dp, 0.dp)
         )
         Switch(
             checked = value,
             onCheckedChange = onValueChange,
-            modifier = Modifier
-                .testTag(COACH_SWITCH)
+            modifier = Modifier.testTag(COACH_SWITCH)
                 .padding(0.dp, 0.dp, 20.dp, 0.dp)
         )
     }

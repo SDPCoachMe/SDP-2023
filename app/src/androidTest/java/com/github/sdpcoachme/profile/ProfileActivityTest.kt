@@ -132,7 +132,7 @@ class ProfileActivityTest {
             waitForUpdate(it)
             composeTestRule.onNodeWithTag(PROFILE_LABEL, useUnmergedTree = true).assertTextEquals("Client")
 
-            composeTestRule.onNodeWithTag(COACH_SWITCH, useUnmergedTree = true).performClick()
+            composeTestRule.onNodeWithTag(COACH_SWITCH, useUnmergedTree = true).assertIsDisplayed().performClick()
 
             waitForUpdate(it)
 
