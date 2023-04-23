@@ -24,12 +24,24 @@ import com.google.firebase.messaging.RemoteMessage
  */
 @SuppressLint("MissingFirebaseInstanceTokenRefresh") // as we do not yet have the user's email at start up, we cannot add the token to the database then and overriding this method would cause an error.
 class InAppNotificationService : FirebaseMessagingService() {
-    private var notificationId = 0
     private val notifier = InAppNotifier(this, (application as CoachMeApplication).database)
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
+
         // Check if message contains a notification payload.
-        notifier.onMessageReceived(remoteMessage)
+        if (remoteMessage.notification != null) {
+            val notificationTitle = remoteMessage.notification
+            val notificationBody = remoteMessage.notification
+            val sender = remoteMessage.data["sender"]
+            val notificationType = remoteMessage.data["notificationType"]
+
+            notifier.onMessageReceived(
+                title = notificationTitle!!.title,
+                body = notificationBody!!.body,
+                senderEmail = sender,
+                notificationType = notificationType
+            )
+        }
     }
 
     companion object {

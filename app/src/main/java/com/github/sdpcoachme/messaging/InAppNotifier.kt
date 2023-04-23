@@ -11,25 +11,29 @@ import com.github.sdpcoachme.CoachesListActivity
 import com.github.sdpcoachme.LoginActivity
 import com.github.sdpcoachme.firebase.database.Database
 import com.google.firebase.messaging.FirebaseMessagingService
-import com.google.firebase.messaging.RemoteMessage
 
 class InAppNotifier(val context: Context, val database: Database) {
     private var notificationId = 0
 
-    fun onMessageReceived(remoteMessage: RemoteMessage) {
-        if (remoteMessage.notification != null) {
-            val notificationTitle = remoteMessage.notification!!.title?: "New message received"
-            val notificationBody = remoteMessage.notification!!.body?: ""
-            val sender = remoteMessage.data["sender"] ?: ""
+    /**
+     * Handles the incoming message and sends a push notification.
+     *
+     * @param title Title of the notification
+     * @param body Body of the notification
+     * @param senderEmail Email of the sender
+     * @param notificationType Type of the notification
+     */
+    fun onMessageReceived(title: String?, body: String?, senderEmail: String?, notificationType: String?) {
+        val notificationTitle = title?: "New message received"
+        val notificationBody = body?: ""
+        val sender = senderEmail ?: ""
 
-            // to enable multiple notification types, we check the notificationType field
-            val notificationType = remoteMessage.data["notificationType"] ?: ""
+        // to enable multiple notification types, we check the notificationType field
+        val type = notificationType ?: ""
 
-            // Create and send a customized notification.
-            if (notificationType == "messaging") {
-                val currentEmail = database.getCurrentEmail()
-                sendMessagingNotification(notificationTitle, notificationBody, sender)
-            }
+        // Create and send a customized notification.
+        if (type == "messaging") {
+            sendMessagingNotification(notificationTitle, notificationBody, sender)
         }
     }
 
@@ -39,9 +43,7 @@ class InAppNotifier(val context: Context, val database: Database) {
      * @param notificationTitle Title of the notification
      * @param notificationBody Body of the notification
      */
-    fun sendMessagingNotification(notificationTitle: String, notificationBody: String, sender: String) {
-
-
+    private fun sendMessagingNotification(notificationTitle: String, notificationBody: String, sender: String) {
 
         // TODO: at the moment, if the user is still in the login activity, the notification will cause an error (no email yet).
         //       Therefore, we are checking if the email is empty and if so, we send the user to the login activity.
@@ -90,6 +92,4 @@ class InAppNotifier(val context: Context, val database: Database) {
         notificationManager.notify(notificationId, notificationBuilder.build())
         notificationId++
     }
-
-
 }
