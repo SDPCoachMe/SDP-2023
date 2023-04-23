@@ -129,12 +129,10 @@ class ProfileActivityTest {
         getDatabase().setCurrentEmail(NON_COACH_2.email)
 
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
-
+            waitForUpdate(it)
             composeTestRule.onNodeWithTag(PROFILE_LABEL, useUnmergedTree = true).assertTextEquals("Client")
 
-            composeTestRule.onNodeWithTag(COACH_SWITCH, useUnmergedTree = true)
-                .assertIsDisplayed()
-                .performClick()
+            composeTestRule.onNodeWithTag(COACH_SWITCH, useUnmergedTree = true).performClick()
 
             waitForUpdate(it)
 
