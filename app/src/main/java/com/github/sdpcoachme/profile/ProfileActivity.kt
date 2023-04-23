@@ -79,6 +79,7 @@ class ProfileActivity : ComponentActivity() {
     private lateinit var email: String
     private lateinit var locationAutocompleteHandler: LocationAutocompleteHandler
     private lateinit var editTextHandler: (Intent) -> CompletableFuture<String>
+    private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -103,6 +104,9 @@ class ProfileActivity : ComponentActivity() {
 
             // Set up handler for calls to edit text activity
             editTextHandler = EditTextActivity.getHandler(this)
+
+            // Set up handler for calls to select sports activity
+            selectSportsHandler = SelectSportsActivity.getHandler(this)
 
             setContent {
                 CoachMeTheme {
@@ -161,6 +165,10 @@ class ProfileActivity : ComponentActivity() {
                         }
                         is EditTextActivity.Companion.EditTextCancelledException -> {
                             // The user cancelled the EditText activity
+                            // For now, do nothing, which allows the user to try again
+                        }
+                        is SelectSportsActivity.Companion.SelectSportsCancelledException -> {
+                            // The user cancelled the SelectSports activity
                             // For now, do nothing, which allows the user to try again
                         }
                         else -> {
@@ -312,9 +320,16 @@ class ProfileActivity : ComponentActivity() {
                 value = userInfo.sports,
                 onClick = {
                     if (!isViewingCoach) {
-                        val selSportsIntent = Intent(context, SelectSportsActivity::class.java)
-                        selSportsIntent.putExtra("isEditingProfile", true)
-                        context.startActivity(selSportsIntent)
+                        val future = selectSportsHandler(
+                            SelectSportsActivity.getIntent(
+                                context = context,
+                                initialValue = userInfo.sports
+                            )
+                        ).thenApply { sports ->
+                            userInfo.copy(sports = sports)
+                        }
+                        // Update database
+                        saveUserInfo(future)
                     } else {
                         // Uneditable, for now, do nothing (might allow to copy to clipboard on click)
                     }

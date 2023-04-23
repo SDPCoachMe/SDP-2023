@@ -14,6 +14,7 @@ import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.R
+import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_2
@@ -34,6 +35,7 @@ import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.LOCATION
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PHONE
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.SPORTS
+import com.github.sdpcoachme.profile.SelectSportsActivity.TestTags.MultiSelectListTag.Companion.ROW_TEXT_LIST
 import junit.framework.TestCase
 import org.hamcrest.CoreMatchers
 import org.junit.After
@@ -190,18 +192,6 @@ class ProfileActivityTest {
     }
 
     @Test
-    fun selectSportsButtonRedirectsToSelectSportsActivity() {
-        getDatabase().setCurrentEmail(NON_COACH_2.email)
-        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
-            waitForUpdate(it)
-
-            composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).performClick()
-
-            Intents.intended(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name))
-        }
-    }
-
-    @Test
     fun dashboardHasRightTitleInEditMode() {
         val title = (InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as CoachMeApplication).getString(R.string.my_profile)
@@ -285,6 +275,28 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(LOCATION, useUnmergedTree = true).performClick()
             waitForUpdate(it)
             composeTestRule.onNodeWithTag(LOCATION, useUnmergedTree = true).assertTextEquals(DEFAULT_LOCATION.address)
+        }
+    }
+
+    @Test
+    fun editSports() {
+        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
+            waitForUpdate(it)
+
+            composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).performClick()
+
+            for (rowTag in ROW_TEXT_LIST) {
+                composeTestRule.onNodeWithTag(rowTag.ROW, useUnmergedTree = true).performClick()
+            }
+            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.DONE, useUnmergedTree = true).performClick()
+
+            // Given that we click on all sports, the list of sports is the complement
+            for (sport in Sports.values().toSet() - NON_COACH_2.sports.toSet()) {
+                composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).onChildren().assertAny(
+                    hasContentDescription(sport.sportName))
+            }
+
         }
     }
 
