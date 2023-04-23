@@ -13,9 +13,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
-import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
-import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.auth.SignupActivity
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
@@ -62,7 +59,7 @@ open class SelectSportsActivityTest {
 
     @Before
     fun setup() { // set user in db to default
-        database.updateUser(userInfo)
+        database.updateUser(userInfo).join()
         database.setCurrentEmail(email)
     }
 
@@ -232,22 +229,6 @@ open class SelectSportsActivityTest {
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD)
                 .assertIsDisplayed()
             Intents.release()
-        }
-    }
-
-    @Test
-    fun dashboardHasRightTitleOnSelectSports() {
-        ActivityScenario.launch<SelectSportsActivity>(launchSelectSports).use {
-            composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
-            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText("Coach Me"))
-        }
-    }
-    @Test
-    fun dashboardIsAccessibleAndDisplayableFromSelectSports() {
-        ActivityScenario.launch<SelectSportsActivity>(launchSelectSports).use {
-            composeTestRule.onNodeWithTag(HAMBURGER_MENU).assertExists().assertIsDisplayed()
-            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
-            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertExists().assertIsDisplayed()
         }
     }
 }

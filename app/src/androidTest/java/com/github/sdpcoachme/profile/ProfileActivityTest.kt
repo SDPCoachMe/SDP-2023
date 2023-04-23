@@ -59,7 +59,7 @@ class ProfileActivityTest {
     @Before
     fun setup() {
         for (user in COACHES + NON_COACHES) {
-            getDatabase().updateUser(user)
+            getDatabase().updateUser(user).join()
         }
         Intents.init()
     }
@@ -241,29 +241,30 @@ class ProfileActivityTest {
 
     @Test
     fun editFirstName() {
-        editField(FIRST_NAME, NON_COACH_2.email, NON_COACH_2.firstName)
+        editField(FIRST_NAME, NON_COACH_2.email)
     }
 
     @Test
     fun editLastName() {
-        editField(LAST_NAME, NON_COACH_2.email, NON_COACH_2.lastName)
+        editField(LAST_NAME, NON_COACH_2.email)
     }
 
     @Test
     fun editPhone() {
-        editField(PHONE, NON_COACH_2.email, NON_COACH_2.phone)
+        editField(PHONE, NON_COACH_2.email)
     }
 
-    private fun editField(tag: String, email: String, oldFieldValue: String) {
+    private fun editField(tag: String, email: String) {
         getDatabase().setCurrentEmail(email)
-        val appended = "-updated"
+        val newFieldValue = "new"
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             waitForUpdate(it)
             composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).performClick()
-            composeTestRule.onNodeWithTag(MAIN, useUnmergedTree = true).performTextInput(appended)
+            composeTestRule.onNodeWithTag(MAIN, useUnmergedTree = true).performTextClearance()
+            composeTestRule.onNodeWithTag(MAIN, useUnmergedTree = true).performTextInput(newFieldValue)
             composeTestRule.onNodeWithTag(MAIN, useUnmergedTree = true).performImeAction()
             waitForUpdate(it)
-            composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).assertTextEquals(oldFieldValue + appended)
+            composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).assertTextEquals(newFieldValue)
         }
     }
 

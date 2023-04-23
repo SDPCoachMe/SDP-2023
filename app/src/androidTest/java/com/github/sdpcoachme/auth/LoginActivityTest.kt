@@ -80,6 +80,11 @@ open class LoginActivityTest {
         val signOutButton = device.findObject(By.res(SIGN_OUT))
         signOutButton.click()
 
+        device.wait(
+            Until.hasObject(By.text(signedOutInfoText)),
+            1000
+        )
+
         ViewMatchers.assertThat(device.findObject(By.res(INFO_TEXT)).text, CoreMatchers.`is`(signedOutInfoText))
     }
 
@@ -87,6 +92,12 @@ open class LoginActivityTest {
     fun deleteGoogleAccountResultsInCorrectMessage() {
         val deleteButton = device.findObject(By.res(DELETE_ACCOUNT))
         deleteButton.click()
+
+
+        device.wait(
+            Until.hasObject(By.text(deleteInfoText)),
+            1000
+        )
 
         ViewMatchers.assertThat(device.findObject(By.res(INFO_TEXT)).text, CoreMatchers.`is`(deleteInfoText))
     }

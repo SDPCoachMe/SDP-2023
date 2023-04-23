@@ -79,7 +79,7 @@ class ChatActivityTest {
     fun setup() {
         database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
         database.setCurrentEmail(currentUser.email)
-        database.updateUser(toUser)
+        database.updateUser(toUser).join()
     }
 
     @After

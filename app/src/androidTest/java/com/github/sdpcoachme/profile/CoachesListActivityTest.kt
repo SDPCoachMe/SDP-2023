@@ -18,9 +18,10 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
+import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
-import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.messaging.ChatActivity
 import org.hamcrest.CoreMatchers.allOf
 import org.junit.After
@@ -38,7 +39,7 @@ open class CoachesListActivityTest {
     val composeTestRule = createEmptyComposeRule()
 
     private val database = (InstrumentationRegistry.getInstrumentation()
-        .targetContext.applicationContext as CoachMeApplication).database
+        .targetContext.applicationContext as CoachMeApplication).database as MockDatabase
 
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
 
@@ -47,6 +48,10 @@ open class CoachesListActivityTest {
     // With this, tests will wait until activity has finished loading state
     @Before
     open fun setup() {
+        // Given nondeterministic behavior depending on order of tests, we reset the database here
+        // TODO: this is temporary, we should find a better way to guarantee the database is refreshed
+        //  before each test
+        database.restoreDefaultAccountsSetup()
         // Populate the database, and wait for it to finish
         populateDatabase().join()
         scenario = ActivityScenario.launch(defaultIntent)

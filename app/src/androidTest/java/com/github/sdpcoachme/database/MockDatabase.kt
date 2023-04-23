@@ -2,9 +2,9 @@ package com.github.sdpcoachme.database
 
 import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
-import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
@@ -51,9 +51,13 @@ class MockDatabase: Database {
         onChange = {}
     }
 
+    fun restoreDefaultAccountsSetup() {
+        accounts = hashMapOf(defaultEmail to defaultUserInfo)
+    }
+
 
     // TODO: type any is not ideal, needs refactoring
-    private val accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
+    private var accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         if (user.email == "throw@Exception.com") {

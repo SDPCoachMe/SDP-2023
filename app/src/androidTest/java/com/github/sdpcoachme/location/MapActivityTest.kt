@@ -61,10 +61,10 @@ class MapActivityTest {
     fun setUp() {
         database.setCurrentEmail(EXISTING_EMAIL)
         for (coach in COACHES) {
-            database.updateUser(coach)
+            database.updateUser(coach).join()
         }
         for (nonCoach in NON_COACHES) {
-            database.updateUser(nonCoach)
+            database.updateUser(nonCoach).join()
         }
         Intents.init()
     }
