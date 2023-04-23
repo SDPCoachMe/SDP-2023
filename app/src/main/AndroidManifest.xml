@@ -86,7 +86,7 @@
             android:label="@string/title_activity_map"
             android:theme="@style/Theme.CoachMe" />
         <service
-            android:name=".messaging.MyFirebaseMessagingService"
+            android:name=".messaging.InAppNotificationService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

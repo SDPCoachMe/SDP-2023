@@ -33,7 +33,7 @@ import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.github.sdpcoachme.firebase.auth.Authenticator
 import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.map.MapActivity
-import com.github.sdpcoachme.messaging.MyFirebaseMessagingService.Companion.addFCMTokenToDatabase
+import com.github.sdpcoachme.messaging.InAppNotificationService.Companion.addFCMTokenToDatabase
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 
