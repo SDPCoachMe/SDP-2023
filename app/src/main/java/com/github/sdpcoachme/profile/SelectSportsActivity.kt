@@ -73,7 +73,7 @@ class SelectSportsActivity : ComponentActivity() {
         private const val INITIAL_VALUE_KEY = "initialValue"
         private const val TITLE_KEY = "title"
 
-        private const val DEFAULT_TITLE = "Select sports"
+        const val DEFAULT_TITLE = "Select sports"
 
         private const val RETURN_VALUE_KEY = "returnValue"
 

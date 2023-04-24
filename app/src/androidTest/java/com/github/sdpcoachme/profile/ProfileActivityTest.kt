@@ -306,12 +306,33 @@ class ProfileActivityTest {
             }
             composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.DONE, useUnmergedTree = true).performClick()
 
+            waitForUpdate(it)
             // Given that we click on all sports, the list of sports is the complement
             for (sport in Sports.values().toSet() - NON_COACH_2.sports.toSet()) {
                 composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).onChildren().assertAny(
                     hasContentDescription(sport.sportName))
             }
 
+        }
+    }
+
+    @Test
+    fun editSportsThenCancelDoesNothing() {
+        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
+            waitForUpdate(it)
+            composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).performClick()
+
+            for (rowTag in ROW_TEXT_LIST) {
+                composeTestRule.onNodeWithTag(rowTag.ROW, useUnmergedTree = true).performClick()
+            }
+            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.CANCEL, useUnmergedTree = true).performClick()
+
+            // List of sports should be as it was before
+            for (sport in NON_COACH_2.sports.toSet()) {
+                composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).onChildren().assertAny(
+                    hasContentDescription(sport.sportName))
+            }
         }
     }
 

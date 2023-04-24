@@ -6,6 +6,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.github.sdpcoachme.profile.EditTextActivity.Companion.DEFAULT_PLACEHOLDER
 import com.github.sdpcoachme.profile.EditTextActivity.Companion.DEFAULT_TITLE
+import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.Buttons.Companion.CANCEL
+import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.Buttons.Companion.DONE
 import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.TITLE
 import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.TextFields.Companion.MAIN
 import org.junit.Rule
@@ -30,6 +32,8 @@ class EditTextActivityTest {
             initialValue = initialValue
         )
         ActivityScenario.launch<EditTextActivity>(intent).use {
+            composeTestRule.onNodeWithTag(DONE).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(CANCEL).assertIsDisplayed()
             composeTestRule.onNodeWithTag(MAIN).assert(hasText(initialValue))
             composeTestRule.onNodeWithTag(TITLE).assertTextEquals(title)
             composeTestRule.onNodeWithTag(MAIN).performTextClearance()
@@ -49,6 +53,8 @@ class EditTextActivityTest {
             initialValue = null
         )
         ActivityScenario.launch<EditTextActivity>(intent).use {
+            composeTestRule.onNodeWithTag(DONE).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(CANCEL).assertIsDisplayed()
             composeTestRule.onNodeWithTag(MAIN).assertTextEquals(DEFAULT_PLACEHOLDER, "")
             composeTestRule.onNodeWithTag(TITLE).assertTextEquals(DEFAULT_TITLE)
             composeTestRule.onNodeWithTag(MAIN).performClick()

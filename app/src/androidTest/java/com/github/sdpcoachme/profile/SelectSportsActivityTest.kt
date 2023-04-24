@@ -1,6 +1,5 @@
 package com.github.sdpcoachme.profile
 
-import android.content.Intent
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
@@ -13,6 +12,7 @@ import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.PARIS
 import com.github.sdpcoachme.profile.SelectSportsActivity.*
+import com.github.sdpcoachme.profile.SelectSportsActivity.Companion.DEFAULT_TITLE
 import com.github.sdpcoachme.profile.SelectSportsActivity.TestTags.Buttons.*
 import com.github.sdpcoachme.profile.SelectSportsActivity.TestTags.Buttons.Companion.CANCEL
 import com.github.sdpcoachme.profile.SelectSportsActivity.TestTags.Buttons.Companion.DONE
@@ -40,8 +40,9 @@ open class SelectSportsActivityTest {
         .targetContext.applicationContext as CoachMeApplication).database
 
 
-    private val launchSelectSports = Intent(ApplicationProvider.getApplicationContext(),
-        SelectSportsActivity::class.java)
+    private val launchSelectSports = SelectSportsActivity.getIntent(
+        context = ApplicationProvider.getApplicationContext()
+    )
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule() //createAndroidComposeRule<SelectSportsActivity>()
@@ -53,8 +54,11 @@ open class SelectSportsActivityTest {
     }
 
     @Test
-    fun tickIconsInitiallyNotDisplayed() {
+    fun defaultParametersDisplayedCorrectly() {
         ActivityScenario.launch<SelectSportsActivity>(launchSelectSports).use {
+            composeTestRule.onNodeWithTag(TITLE).assertIsDisplayed().assertTextEquals(DEFAULT_TITLE)
+            composeTestRule.onNodeWithTag(DONE).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(CANCEL).assertIsDisplayed()
             ROW_TEXT_LIST.forEach {
                 composeTestRule.onNodeWithTag(it.ICON, useUnmergedTree = true).assertDoesNotExist()
             }
@@ -62,7 +66,7 @@ open class SelectSportsActivityTest {
     }
 
     @Test
-    fun correctInitialScreenContent() {
+    fun parametersDisplayedCorrectly() {
         val title = "Title"
         val initialValue = listOf(Sports.SKI, Sports.SWIMMING)
         val intent = SelectSportsActivity.getIntent(
