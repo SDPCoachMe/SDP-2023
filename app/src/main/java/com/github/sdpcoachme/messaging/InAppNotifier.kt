@@ -31,8 +31,8 @@ class InAppNotifier(val context: Context, val database: Database) {
      * @param notificationType Type of the notification
      */
     fun onMessageReceived(title: String?, body: String?, senderEmail: String?, notificationType: String?) {
-        val notificationTitle = title?: "New message received"
-        val notificationBody = body?: ""
+        val notificationTitle = title?: "New message"
+        val notificationBody = body?: "You have a new message"
         val sender = senderEmail ?: ""
 
         // to enable multiple notification types, we check the notificationType field

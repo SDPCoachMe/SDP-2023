@@ -2,3 +2,8 @@
 11:55:12.484 [main] INFO com.firebase.server.forge.App$ - Listening at 127.0.0.1:9000
 11:55:14.409 [NamespaceSystem-akka.actor.default-dispatcher-5] INFO com.firebase.core.namespace.NamespaceActor - sdp-firebase-bootcamp-7fa21-default-rtdb successfully activated FBKV (SurveyIdle(0)) wait: 148ms, init: 0ms
 11:55:14.512 [NamespaceSystem-blocking-namespace-operation-dispatcher-7] INFO com.firebase.core.namespace.StateManager - Namespace sdp-firebase-bootcamp-7fa21-default-rtdb status Active to Active
+11:57:38.589 [FirebaseWorkerPool-1-4] WARN com.firebase.core.persistence.backend.dummy.EmulatorMetadataPersistence - Multiple projectIds are not recommended in single project mode. Requested 
+namespace sdp-firebase-bootcamp-7fa21, but the emulator is configured for sdp-firebase-bootcamp-7fa21-default-rtdb. To 
+opt-out of single project mode add/set the single_project_mode: false property in 
+the firebase.json emulators config. 
+11:57:38.596 [NamespaceSystem-akka.actor.default-dispatcher-11] INFO com.firebase.core.namespace.NamespaceActor - sdp-firebase-bootcamp-7fa21 successfully activated FBKV (SurveyIdle(0)) wait: 3ms, init: 0ms
