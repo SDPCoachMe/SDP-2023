@@ -83,7 +83,7 @@ class InAppNotifierTest {
         ActivityScenario.launch<MapActivity>(intent).use {
 
             sendNotification("Title", "Body", toUser.email, "messaging")
-            clickOnNotification("Title", "Body", toUser.email, "messaging")
+            clickOnNotification("Title", "Body")
 
             // Check if ChatActivity is opened
             // Intents.intended does not seem to work when clicking on a notification
@@ -100,7 +100,7 @@ class InAppNotifierTest {
         ActivityScenario.launch<MapActivity>(intent).use {
             database.setCurrentEmail("")
             sendNotification("Title", "Body", toUser.email, "messaging")
-            clickOnNotification("Title", "Body", toUser.email, "messaging")
+            clickOnNotification("Title", "Body")
 
             // Check if LoginActivity is opened
             // Intents.intended does not seem to work when clicking on a notification
@@ -115,7 +115,7 @@ class InAppNotifierTest {
 
         ActivityScenario.launch<MapActivity>(intent).use {
             sendNotification("Title", "Body", "", "messaging")
-            clickOnNotification("Title", "Body", "", "messaging")
+            clickOnNotification("Title", "Body")
 
             // Check if CoachesListActivity is opened
             // Intents.intended does not seem to work when clicking on a notification
@@ -158,7 +158,7 @@ class InAppNotifierTest {
 
         ActivityScenario.launch<MapActivity>(intent).use {
             sendNotification(null, null, null, "messaging")
-            clickOnNotification("New message", "You have a new message", "", "messaging")
+            clickOnNotification("New message", "You have a new message")
 
 
             // Since the sender is not set, clicking on the notification should take the user to their contacts
@@ -187,7 +187,7 @@ class InAppNotifierTest {
      * @param expectedTitle The title of the notification
      * @param expectedBody The body of the notification
      */
-    private fun clickOnNotification(expectedTitle: String?, expectedBody: String?, senderEmail: String?, type: String?) {
+    private fun clickOnNotification(expectedTitle: String?, expectedBody: String?) {
         val device = UiDevice.getInstance(getInstrumentation())
 
         device.openNotification()
