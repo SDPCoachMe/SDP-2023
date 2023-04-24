@@ -25,6 +25,7 @@ import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.Test
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.autocomplete.MockLocationAutocompleteHandler.Companion.DEFAULT_LOCATION
 import com.github.sdpcoachme.messaging.ChatActivity
+import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.Buttons.Companion.CANCEL
 import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.TextFields.Companion.MAIN
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Buttons.Companion.MESSAGE_COACH
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.COACH_SWITCH
@@ -253,6 +254,20 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(MAIN, useUnmergedTree = true).performImeAction()
             waitForUpdate(it)
             composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).assertTextEquals(newFieldValue)
+        }
+    }
+
+    @Test
+    fun editFirstNameThenCancelDoesNothing() {
+        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        val newFieldValue = "new"
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
+            waitForUpdate(it)
+            composeTestRule.onNodeWithTag(FIRST_NAME, useUnmergedTree = true).performClick()
+            composeTestRule.onNodeWithTag(MAIN, useUnmergedTree = true).performTextClearance()
+            composeTestRule.onNodeWithTag(MAIN, useUnmergedTree = true).performTextInput(newFieldValue)
+            composeTestRule.onNodeWithTag(CANCEL, useUnmergedTree = true).performClick()
+            composeTestRule.onNodeWithTag(FIRST_NAME, useUnmergedTree = true).assertTextEquals(NON_COACH_2.firstName)
         }
     }
 
