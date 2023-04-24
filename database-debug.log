@@ -1,2 +1,10 @@
-16:36:14.674 [NamespaceSystem-akka.actor.default-dispatcher-4] INFO akka.event.slf4j.Slf4jLogger - Slf4jLogger started
-16:36:14.818 [main] INFO com.firebase.server.forge.App$ - Listening at 127.0.0.1:9000
+11:51:17.118 [NamespaceSystem-akka.actor.default-dispatcher-5] INFO akka.event.slf4j.Slf4jLogger - Slf4jLogger started
+11:51:17.342 [main] INFO com.firebase.server.forge.App$ - Listening at 127.0.0.1:9000
+11:51:19.399 [NamespaceSystem-akka.actor.default-dispatcher-5] INFO com.firebase.core.namespace.NamespaceActor - sdp-firebase-bootcamp-7fa21-default-rtdb successfully activated FBKV (SurveyIdle(0)) wait: 160ms, init: 0ms
+11:51:19.472 [NamespaceSystem-blocking-namespace-operation-dispatcher-7] INFO com.firebase.core.namespace.StateManager - Namespace sdp-firebase-bootcamp-7fa21-default-rtdb status Active to Active
+11:51:33.953 [FirebaseWorkerPool-1-4] WARN com.firebase.core.persistence.backend.dummy.EmulatorMetadataPersistence - Multiple projectIds are not recommended in single project mode. Requested 
+namespace sdp-firebase-bootcamp-7fa21, but the emulator is configured for sdp-firebase-bootcamp-7fa21-default-rtdb. To 
+opt-out of single project mode add/set the single_project_mode: false property in 
+the firebase.json emulators config. 
+11:51:33.958 [NamespaceSystem-akka.actor.default-dispatcher-8] INFO com.firebase.core.namespace.NamespaceActor - sdp-firebase-bootcamp-7fa21 successfully activated FBKV (SurveyIdle(0)) wait: 1ms, init: 0ms
+11:51:58.103 [NamespaceSystem-blocking-namespace-operation-dispatcher-30] INFO com.firebase.core.stats.EventAuditLog - {"eventId":"MhHkBaj4z1A8hNr30agBR1GufvA=","namespace":"sdp-firebase-bootcamp-7fa21-default-rtdb","projectNumber":"123456789","eventType":"providers/google.firebase.database/eventTypes/ref.write","flowName":"projects/sdp-firebase-bootcamp-7fa21/topics/us-central1-sendPushNotification-0","resource":"projects/_/instances/sdp-firebase-bootcamp-7fa21-default-rtdb/refs/coachme/messages/luca,aengu@gmail,comluca,engel@epfl,ch/messages/2","evaluationTimestamp":"2023-04-24T09:51:57.855Z","stage":"TRIGGERED"}
