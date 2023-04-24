@@ -1,16 +1,25 @@
 package com.github.sdpcoachme.messaging
 
+import android.content.Context
 import android.content.Intent
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.ProfileActivity
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.FIRST_NAME
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.LAST_NAME
+import com.github.sdpcoachme.ProfileActivity.TestTags.Companion.TITLE_ROW
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.firebase.database.MockDatabase
 import com.github.sdpcoachme.location.UserLocationSamples
 import com.github.sdpcoachme.map.MapActivity
+import com.google.firebase.messaging.RemoteMessage
 import junit.framework.TestCase.assertTrue
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
@@ -44,11 +53,14 @@ class InAppNotificationServiceTest {
 
         val intent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
 
-        ActivityScenario.launch<ChatActivity>(intent).use {
+        ActivityScenario.launch<MapActivity>(intent).use {
             val expectedEmail = "test@email.com"
             var receivedEmail = ""
             var receivedToken = ""
             val future = CompletableFuture<Void>()
+
+            // Created a "new" database to use a future to know when the token is added to the database
+            // (otherwise we would need to wait an unknown amount of time before testing)
             class TestDB : MockDatabase() {
                 override fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
                     receivedEmail = email
@@ -73,4 +85,27 @@ class InAppNotificationServiceTest {
             assertThat(result, `is`(true))
         }
     }
+
+    @Test
+    fun onMessageReceivedWithNullArgumentDoesNothing() {
+        val context: Context = ApplicationProvider.getApplicationContext()
+        val database = (context as CoachMeApplication).database
+        database.setCurrentEmail(currentUser.email)
+        database.updateUser(currentUser)
+
+        val intent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
+
+        ActivityScenario.launch<ProfileActivity>(intent).use {
+            val message = RemoteMessage.Builder("to").build()
+            InAppNotificationService().onMessageReceived(message)
+
+            // Check that we're still in the ProfileActivity (done by checking that the tags are present)
+            composeTestRule.onNodeWithText("My profile").assertIsDisplayed()
+            composeTestRule.onNodeWithTag(TITLE_ROW).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(FIRST_NAME.LABEL).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(LAST_NAME.LABEL).assertIsDisplayed()
+        }
+    }
+
+    // Since it is not possible to create instances of RemoteMessage, we can't test the onMessageReceived method.
 }

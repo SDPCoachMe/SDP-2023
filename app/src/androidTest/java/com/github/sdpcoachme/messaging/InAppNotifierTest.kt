@@ -173,7 +173,7 @@ class InAppNotifierTest {
 
     private fun sendNotification(expectedTitle: String?, expectedBody: String?, senderEmail: String?, type: String?) {
         val context = (getInstrumentation().targetContext.applicationContext as CoachMeApplication)
-        InAppNotifier(context, database).onMessageReceived(
+        InAppNotifier(context, database).sendNotification(
             expectedTitle,
             expectedBody,
             senderEmail,

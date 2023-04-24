@@ -54,6 +54,7 @@ open class MockDatabase: Database {
 
     // TODO: type any is not ideal, needs refactoring
     private val accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
+    private val fcmTokens = hashMapOf<String, String>()
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         if (user.email == "throw@Exception.com") {
@@ -135,12 +136,14 @@ open class MockDatabase: Database {
     }
 
     override fun getFCMToken(email: String): CompletableFuture<String> {
-        // TODO: implement
+        fcmTokens[email]?.let {
+            return CompletableFuture.completedFuture(it)
+        }
         return CompletableFuture.completedFuture(null)
     }
 
     override fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
-        // TODO: implement
+        fcmTokens[email] = token
         return CompletableFuture.completedFuture(null)
     }
 

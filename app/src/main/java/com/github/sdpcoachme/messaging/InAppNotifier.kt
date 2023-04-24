@@ -20,17 +20,16 @@ import com.google.firebase.messaging.FirebaseMessagingService
  * @param database Database of the application
  */
 class InAppNotifier(val context: Context, val database: Database) {
-    private var notificationId = 0
 
     /**
-     * Handles the incoming message and sends a push notification.
+     * Sends a push notification with the supplied arguments as parameters.
      *
      * @param title Title of the notification
      * @param body Body of the notification
      * @param senderEmail Email of the sender
      * @param notificationType Type of the notification
      */
-    fun onMessageReceived(title: String?, body: String?, senderEmail: String?, notificationType: String?) {
+    fun sendNotification(title: String?, body: String?, senderEmail: String?, notificationType: String?) {
         val notificationTitle = title?: "New message"
         val notificationBody = body?: "You have a new message"
         val sender = senderEmail ?: ""
@@ -96,7 +95,6 @@ class InAppNotifier(val context: Context, val database: Database) {
             NotificationManager.IMPORTANCE_DEFAULT
         )
         notificationManager.createNotificationChannel(channel)
-        notificationManager.notify(notificationId, notificationBuilder.build())
-        notificationId++
+        notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
     }
 }

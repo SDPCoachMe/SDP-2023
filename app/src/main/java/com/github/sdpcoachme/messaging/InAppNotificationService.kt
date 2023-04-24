@@ -27,12 +27,12 @@ class InAppNotificationService : FirebaseMessagingService() {
 
             // Since does not seem to be possible to create RemoteMessages containing a notification,
             // the in-app push notification part has been moved to the InAppNotifier class to enable testing.
-            val notifier = InAppNotifier(this, (application as CoachMeApplication).database)
-            notifier.onMessageReceived(
-                title = notificationTitle!!.title,
-                body = notificationBody!!.body,
-                senderEmail = sender,
-                notificationType = notificationType
+            InAppNotifier(this, (application as CoachMeApplication).database)
+                .sendNotification(
+                    title = notificationTitle!!.title,
+                    body = notificationBody!!.body,
+                    senderEmail = sender,
+                    notificationType = notificationType
             )
         }
     }
@@ -40,7 +40,7 @@ class InAppNotificationService : FirebaseMessagingService() {
     companion object {
 
         /**
-         * Adds the FCM token to the database.
+         * Adds the FCM token of the current user to the database.
          */
         fun addFCMTokenToDatabase(database: Database) {
             FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
