@@ -11,8 +11,9 @@ import com.github.sdpcoachme.location.UserLocationSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.firebase.database.CachingDatabase
 import com.github.sdpcoachme.firebase.database.MockDatabase
-import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertTrue
+import junit.framework.TestCase.*
+import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 import java.util.concurrent.TimeUnit.SECONDS
 import java.time.DayOfWeek
@@ -44,6 +45,24 @@ class CachingDatabaseTest {
         assertTrue(cachingDatabase.isCached(willSmithUser.email))
         assertTrue(cachingDatabase.userExists(willSmithUser.email).get(1, SECONDS))
         assertEquals(willSmithUser, retrievedUser)
+    }
+
+    @Test
+    fun userExistsForUncachedUserFetchesFromWrappedDB() {
+        class ExistsDB: MockDatabase()  {
+            var existsCalled = false
+            override fun userExists(email: String): CompletableFuture<Boolean> {
+                existsCalled = true
+                return CompletableFuture.completedFuture(true)
+            }
+        }
+
+        val wrappedDatabase = ExistsDB()
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+
+        assertFalse(cachingDatabase.isCached(willSmithUser.email))
+        assertTrue(cachingDatabase.userExists(willSmithUser.email).get(1, SECONDS))
+        assertTrue(wrappedDatabase.existsCalled)
     }
 
     @Test
@@ -99,6 +118,116 @@ class CachingDatabaseTest {
     }
 
 
+    private class TokenDB(var token: String, val email: String): MockDatabase() {
+        private var timesFetched = 0
+
+        fun timesCalled() = timesFetched
+
+        override fun getFCMToken(email: String): CompletableFuture<String> {
+            timesFetched++
+            return CompletableFuture.completedFuture(if (email == this.email) token else "")
+        }
+
+        override fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
+            if (email == this.email)
+                this.token = token
+            return CompletableFuture.completedFuture(null)
+        }
+    }
+    @Test
+    fun getFcmTokenCachesTheTokenForSubsequentRequest() {
+        val testEmail = "example@email.com"
+        val token = "------token-----"
+
+        val wrappedDatabase = TokenDB(token, testEmail)
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+
+        val noError = cachingDatabase.getFCMToken(testEmail)
+            .thenCompose {
+                assertThat(it, `is`(token))
+                assertThat(wrappedDatabase.timesCalled(), `is`(1))
+
+                cachingDatabase.getFCMToken(testEmail)
+            }.thenApply {
+                assertThat(it, `is`(token))
+                assertThat(wrappedDatabase.timesCalled(), `is`(1))
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(noError)
+    }
+
+    @Test
+    fun setFCMTokenCachesItForSubsequentGets() {
+        val testEmail = "example@email.com"
+        val token = "------token-----"
+
+        val wrappedDatabase = TokenDB(token, testEmail)
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+
+        val noError = cachingDatabase.setFCMToken(testEmail, token)
+            .thenCompose {
+                assertThat(wrappedDatabase.timesCalled(), `is`(0))
+
+                cachingDatabase.getFCMToken(testEmail)
+            }.thenApply {
+                assertThat(it, `is`(token))
+                assertThat(wrappedDatabase.timesCalled(), `is`(0))
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(noError)
+    }
+
+    @Test
+    fun getFcmTokenOnDifferentEmailsFetchesTwiceFromWrappedDB() {
+        val testEmail = "example@email.com"
+        val token = "------token-----"
+
+        val wrappedDatabase = TokenDB(token, testEmail)
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+
+        val noError = cachingDatabase.getFCMToken(testEmail)
+            .thenCompose {
+                assertThat(wrappedDatabase.timesCalled(), `is`(1))
+
+                cachingDatabase.getFCMToken("otherEmail")
+            }.thenApply {
+                assertThat(wrappedDatabase.timesCalled(), `is`(2))
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(noError)
+    }
+
+    @Test
+    fun setAndgetFcmTokenOnDifferentEmailsFetchesFromWrappedDB() {
+        val testEmail = "example@email.com"
+        val token = "------token-----"
+
+        val wrappedDatabase = TokenDB(token, testEmail)
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+
+        val noError = cachingDatabase.setFCMToken(testEmail, token)
+            .thenCompose {
+                assertThat(wrappedDatabase.timesCalled(), `is`(0))
+
+                cachingDatabase.getFCMToken("otherEmail")
+            }.thenApply {
+                assertThat(wrappedDatabase.timesCalled(), `is`(1))
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(noError)
+    }
 
 
     val exampleEmail = "example@email.com"

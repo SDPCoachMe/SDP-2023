@@ -83,7 +83,9 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         if (cachedTokens.containsKey(email)) {
             return CompletableFuture.completedFuture(cachedTokens[email])
         }
-        return wrappedDatabase.getFCMToken(email)
+        return wrappedDatabase.getFCMToken(email).thenApply {
+            it.also { cachedTokens[email] = it }
+        }
     }
 
     override fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
