@@ -192,7 +192,7 @@ class ProfileActivityTest {
     }
 
     @Test
-    fun dashboardHasRightTitleInEditMode() {
+    fun dashboardHasRightTitleForMyProfile() {
         val title = (InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as CoachMeApplication).getString(R.string.my_profile)
         getDatabase().setCurrentEmail(NON_COACH_2.email)

@@ -16,6 +16,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.R
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
@@ -135,9 +136,11 @@ class MapActivityTest {
 
     @Test
     fun dashboardHasRightTitleOnMap() {
+        val title = (InstrumentationRegistry.getInstrumentation()
+            .targetContext.applicationContext as CoachMeApplication).getString(R.string.app_name)
         ActivityScenario.launch<MapActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
-            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText("Coach Me"))
+            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText(title))
         }
     }
     @Test

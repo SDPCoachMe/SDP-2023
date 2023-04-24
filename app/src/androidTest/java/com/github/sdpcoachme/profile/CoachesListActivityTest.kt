@@ -11,6 +11,7 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.R
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
@@ -125,9 +126,11 @@ open class CoachesListActivityTest {
 
     @Test
     fun dashboardHasRightTitleOnNearbyCoachesList() {
+        val title = (InstrumentationRegistry.getInstrumentation()
+            .targetContext.applicationContext as CoachMeApplication).getString(R.string.title_activity_coaches_list)
         ActivityScenario.launch<CoachesListActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
-            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText("Nearby coaches"))
+            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText(title))
         }
     }
     @Test
@@ -196,8 +199,10 @@ open class CoachesListActivityTest {
 
         @Test
         fun dashboardHasRightTitleOnContactsList() {
+            val title = (InstrumentationRegistry.getInstrumentation()
+                .targetContext.applicationContext as CoachMeApplication).getString(R.string.contacts)
             composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
-            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText("Contacts"))
+            composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText(title))
         }
 
         @Test
