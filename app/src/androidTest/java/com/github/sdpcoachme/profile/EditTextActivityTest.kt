@@ -4,6 +4,8 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import com.github.sdpcoachme.profile.EditTextActivity.Companion.DEFAULT_PLACEHOLDER
+import com.github.sdpcoachme.profile.EditTextActivity.Companion.DEFAULT_TITLE
 import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.TITLE
 import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.TextFields.Companion.MAIN
 import org.junit.Rule
@@ -34,6 +36,23 @@ class EditTextActivityTest {
             composeTestRule.onNodeWithTag(MAIN).performClick()
             composeTestRule.onNodeWithText(placeholder).assertIsDisplayed()
             composeTestRule.onNodeWithText(label).assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun defaultParametersAreDisplayedProperly() {
+        val intent = EditTextActivity.getIntent(
+            context = ApplicationProvider.getApplicationContext(),
+            title = null,
+            placeholder = null,
+            label = null,
+            initialValue = null
+        )
+        ActivityScenario.launch<EditTextActivity>(intent).use {
+            composeTestRule.onNodeWithTag(MAIN).assertTextEquals(DEFAULT_PLACEHOLDER, "")
+            composeTestRule.onNodeWithTag(TITLE).assertTextEquals(DEFAULT_TITLE)
+            composeTestRule.onNodeWithTag(MAIN).performClick()
+            composeTestRule.onNodeWithText(DEFAULT_PLACEHOLDER).assertIsDisplayed()
         }
     }
 
