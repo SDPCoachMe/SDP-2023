@@ -33,7 +33,10 @@ import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.Dashboard.TestTags.Companion.MENU_LIST
-import com.github.sdpcoachme.map.MapActivity
+import com.github.sdpcoachme.auth.LoginActivity
+import com.github.sdpcoachme.location.MapActivity
+import com.github.sdpcoachme.profile.CoachesListActivity
+import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.schedule.ScheduleActivity
 import kotlinx.coroutines.launch
 
@@ -106,7 +109,7 @@ fun Dashboard(appContent: @Composable (Modifier) -> Unit, email: String, title: 
                     MenuItem(tag = SCHEDULE, title = "Schedule",
                         contentDescription = "See schedule",
                         icon = Default.CheckCircle),
-                    MenuItem(tag = PROFILE, title = "Profile",
+                    MenuItem(tag = PROFILE, title = "My profile",
                         contentDescription = "Go to profile",
                         icon = Default.AccountCircle),
                     MenuItem(tag = COACHES_LIST, title = "Nearby coaches",
