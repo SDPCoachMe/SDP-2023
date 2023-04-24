@@ -76,7 +76,6 @@ class InAppNotifierTest {
 
     @Test
     fun onMessageReceivedOpensChatActivityWhenTypeIsMessagingAndSenderIsKnown() {
-        val context = (getInstrumentation().targetContext.applicationContext as CoachMeApplication)
         val intent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
 
         ActivityScenario.launch<MapActivity>(intent).use {
@@ -93,14 +92,10 @@ class InAppNotifierTest {
     
     @Test
     fun onMessageReceivedRedirectsToLoginActivityWhenCurrentUserEmailIsNotSet() {
-        database.setCurrentEmail("")
-
-
         val intent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
 
         ActivityScenario.launch<MapActivity>(intent).use {
-
-
+            database.setCurrentEmail("")
             sendAndClickOnNotification("Title", "Body", toUser.email, "messaging")
 
             // Check if LoginActivity is opened
@@ -121,7 +116,7 @@ class InAppNotifierTest {
         InAppNotifier(context, database).onMessageReceived(
             expectedTitle,
             expectedBody,
-            toUser.email,
+            senderEmail,
             type
         )
 

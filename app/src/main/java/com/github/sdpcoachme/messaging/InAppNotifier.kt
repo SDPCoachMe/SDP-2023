@@ -12,6 +12,13 @@ import com.github.sdpcoachme.LoginActivity
 import com.github.sdpcoachme.firebase.database.Database
 import com.google.firebase.messaging.FirebaseMessagingService
 
+/**
+ * This class handles the incoming messages and sends a push notification.
+ * It has been created to enable testing of the push notifications.
+ *
+ * @param context Context of the application
+ * @param database Database of the application
+ */
 class InAppNotifier(val context: Context, val database: Database) {
     private var notificationId = 0
 

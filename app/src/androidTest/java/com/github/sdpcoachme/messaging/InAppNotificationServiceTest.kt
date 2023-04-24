@@ -4,7 +4,6 @@ import android.content.Intent
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.espresso.intent.Intents
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
@@ -12,7 +11,6 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.firebase.database.MockDatabase
 import com.github.sdpcoachme.location.UserLocationSamples
 import com.github.sdpcoachme.map.MapActivity
-import com.google.firebase.messaging.RemoteMessage
 import junit.framework.TestCase.assertTrue
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
