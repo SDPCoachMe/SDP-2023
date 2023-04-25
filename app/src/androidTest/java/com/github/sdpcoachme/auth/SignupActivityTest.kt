@@ -46,7 +46,7 @@ open class SignupActivityTest {
         MockLocationAutocompleteHandler.DEFAULT_LOCATION, // Make sure to use this here, so that
         // the test does not fail if the default location returned by the mock autocomplete handler
         // changes
-        false, emptyList()
+        false
     )
     private val defaultCoach = defaultUser.copy(coach = true)
     private val exceptionUser = defaultUser.copy(email = "throw@Exception.com")

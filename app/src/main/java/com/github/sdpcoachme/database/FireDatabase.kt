@@ -1,12 +1,10 @@
 package com.github.sdpcoachme.database
 
-import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
+import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
-import com.github.sdpcoachme.schedule.Schedule
-import com.google.common.reflect.TypeToken
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -54,25 +52,22 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         return childExists(accounts, userID)
     }
 
-    override fun addEvents(email: String, events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Void> {
+    override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Void> {
         /*return getUser(email).thenCompose {
             val updatedUserInfo = it.copy(events = it.events + events)
             updateUser(updatedUserInfo)
         }*/
-        return getSchedule(email).thenCompose {
+        val id = currEmail.replace('.', ',')
+        return getSchedule(currentWeekMonday).thenCompose {
             val updatedSchedule = it.copy(events = it.events + events)
-            setChild(schedule, email, updatedSchedule)
+            setChild(schedule, id, updatedSchedule)
         }
     }
 
-    override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        val id = email.replace('.', ',')
+    override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        val id = currEmail.replace('.', ',')
         return getChild(schedule, id).thenApply { it.getValue(Schedule::class.java)!! }
             .exceptionally { Schedule() }
-    }
-
-    override fun getEvents(email: String): CompletableFuture<List<Event>> {
-        return getSchedule(email).thenApply { it.events }
     }
 
     override fun getCurrentEmail(): String {

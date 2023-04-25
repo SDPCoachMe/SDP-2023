@@ -148,8 +148,7 @@ class SignupActivity : ComponentActivity() {
                                 location = location,
                                 coach = isCoach,
                                 // sports added later in SelectSportsActivity
-                                sports = listOf(),
-                                events = listOf()
+                                sports = listOf()
                             )
                             database.updateUser(newUser)
                     }.thenAccept {

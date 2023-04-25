@@ -6,16 +6,32 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowLeft
 import androidx.compose.material.icons.filled.ArrowRight
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -35,9 +51,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.schedule.Event
-import com.github.sdpcoachme.data.schedule.ShownEvent
-import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.schedule.Schedule
+import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity
@@ -95,9 +110,11 @@ class ScheduleActivity : ComponentActivity() {
             val errorMsg = "Schedule did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
+            val startMonday = getStartMonday()
             //TODO: For demo, let this function run once to add sample events to the database
-            database.addEvents(email, sampleEvents).thenRun {
-                val futureDBSchedule: CompletableFuture<Schedule> = database.getSchedule(email, getStartMonday())
+            database.addEvents(sampleEvents, startMonday).thenRun {
+                val futureDBSchedule: CompletableFuture<Schedule> = database.getSchedule(startMonday)
+                println("Got futureDBSchedule")
 
                 setContent {
                     CoachMeTheme {
@@ -123,14 +140,16 @@ fun Schedule(
     database: Database,
     modifier: Modifier = Modifier,
 ) {
+    // the starting day is always the monday of the current week
+    var shownWeekMonday by remember { mutableStateOf<LocalDate>(getStartMonday()) }
     var events by remember { mutableStateOf(emptyList<Event>()) }
-    var eventsFuture by remember { mutableStateOf(futureDBSchedule.thenApply { it.events }) }
+    var eventsFuture by remember { mutableStateOf(futureDBSchedule.thenApply { Schedule(events = it.events) }) }
     val context = LocalContext.current
 
     LaunchedEffect(eventsFuture) {
         eventsFuture.thenAccept { e ->
             if (e != null) {
-                events = e
+                events = e.events
                 eventsFuture = CompletableFuture.completedFuture(null)
             }
         }.exceptionally {
@@ -143,13 +162,12 @@ fun Schedule(
 
     val dayWidth = LocalConfiguration.current.screenWidthDp.dp / ColumnsPerWeek
     val verticalScrollState = rememberScrollState()
-    // the starting day is always the monday of the current week
-    var shownWeekMonday by remember { mutableStateOf<LocalDate>(getStartMonday()) }
+
 
     fun updateCurrentWeekMonday(weeksToAdd: Int) {
         shownWeekMonday = shownWeekMonday.plusWeeks(weeksToAdd.toLong())
         // check if cached events are available and if not, get them from the database and cache them
-        database.getSchedule(email, shownWeekMonday).thenAccept { schedule ->
+        database.getSchedule(shownWeekMonday).thenAccept { schedule ->
             events = schedule.events
         }
     }

@@ -1,7 +1,5 @@
 package com.github.sdpcoachme.database
 
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
@@ -53,18 +51,16 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         return wrappedDatabase.userExists(email)
     }
 
-    private fun getCacheKey(email: String, currentWeekMonday: LocalDate): String {
-        return "$email:$currentWeekMonday"
-    }
-
     // Note: to efficiently use caching, we do not use the wrappedDatabase's addEventsToUser method
-    override fun addEvents(email: String, events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Void> {
+    override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Void> {
         /*return getUser(email).thenCompose {
             val updatedUserInfo = it.copy(events = it.events + events)
             updateUser(updatedUserInfo)
         }*/
+        val email = wrappedDatabase.getCurrentEmail()
         // TODO: check this and make some comments
-        return wrappedDatabase.addEvents(email, events, currentWeekMonday).thenAccept {
+        return wrappedDatabase.addEvents(events, currentWeekMonday).thenAccept {
+            println("Adding events to cache")
             cachedSchedules[email] = cachedSchedules[email]?.plus(events) ?: events.filter {
                 val start = LocalDateTime.parse(it.start).toLocalDate()
                 val end = LocalDateTime.parse(it.end).toLocalDate()
@@ -76,12 +72,13 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     }
 
     // Note: checks if it is time to prefetch
-    override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+    override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        val email = wrappedDatabase.getCurrentEmail()
         return if (currentWeekMonday <= minCachedMonday || currentWeekMonday >= maxCachedMonday) {
             cachedSchedules.remove(email)
             currentShownMonday = currentWeekMonday
-            wrappedDatabase.getSchedule(email, currentWeekMonday).thenApply {
-                it.copy(events = it.events.filter {
+            wrappedDatabase.getSchedule(currentWeekMonday).thenApply { schedule ->
+                schedule.copy(events = schedule.events.filter {
                     val start = LocalDateTime.parse(it.start).toLocalDate()
                     val end = LocalDateTime.parse(it.end).toLocalDate()
                     start >= currentWeekMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND) && end <= currentWeekMonday.plusWeeks(
@@ -90,12 +87,8 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
                 })
             }
         } else {
-            CompletableFuture.completedFuture(Schedule(email, cachedSchedules[email] ?: listOf()))
+            CompletableFuture.completedFuture(Schedule(cachedSchedules[email] ?: listOf()))
         }
-    }
-
-    override fun getEvents(email: String, currentWeekMonday: LocalDate): CompletableFuture<List<Event>> {
-        return getSchedule(email, currentWeekMonday).thenApply { it.events }
     }
 
     override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {

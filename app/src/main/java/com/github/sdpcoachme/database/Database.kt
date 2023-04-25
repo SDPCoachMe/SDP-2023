@@ -71,15 +71,8 @@ interface Database {
      * @return A future that will complete when the events have been added. If the user does not exist,
      * the future will complete exceptionally with a NoSuchKeyException.
      */
-    fun addEvents(email: String, events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Void>
+    fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Void>
 
-    /**
-     * Get events from the database
-     * @param email The email of the user to get the events from
-     * @return A future that will complete with the events. If the user does not exist,
-     * the future will complete exceptionally with a NoSuchKeyException.
-     */
-    fun getEvents(email: String, currentWeekMonday: LocalDate): CompletableFuture<List<Event>>
 
     /**
      * Get the schedule from the database
@@ -87,7 +80,7 @@ interface Database {
      * @return A future that will complete with the schedule. If the user does not exist,
      * the future will complete exceptionally with a NoSuchKeyException.
      */
-    fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule>
+    fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule>
 
     /**
      * Get the current user's email
