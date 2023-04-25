@@ -41,21 +41,16 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Test class for the Dashboard. As the Dashboard is built over all other activities, we set the
- * main testing activity here to be the MapActivity (see mockActivity val). But the tests of this class should only
+ * Test class for the Dashboard. But the tests of this class should only
  * be specific to the dashboard functionality and stay generic to other activities.
  */
 @RunWith(AndroidJUnit4::class)
 class DashboardTest {
 
-    private val mockActivity = MapActivity::class.java
-
     private val EXISTING_EMAIL = "example@email.com"
 
     private val database = (InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as CoachMeApplication).database
-
-    private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), mockActivity)
 
     @get:Rule
     val composeTestRule = createComposeRule()
@@ -68,12 +63,8 @@ class DashboardTest {
     val mRuntimePermissionRule: GrantPermissionRule = GrantPermissionRule.grant(ACCESS_FINE_LOCATION)
 
     @Before
-    fun setUp() {
-        database.setCurrentEmail(EXISTING_EMAIL)
-    }
-
-    @Before
     fun initIntents() {
+        database.setCurrentEmail(EXISTING_EMAIL)
         Intents.init()
     }
 
@@ -82,75 +73,90 @@ class DashboardTest {
         Intents.release()
     }
 
+    /**
+     * Helper method to set the Dashboard to our composeTestRule
+     */
+    private fun setUpDashboard(withoutEmail: Boolean = false) {
+        if (withoutEmail) {
+            database.setCurrentEmail("")
+        }
+        composeTestRule.setContent {
+            Dashboard {}
+        }
+    }
+
+    /**
+     * Helper method to set the Dashboard with an arbitrarily chosen activity, to provide an
+     * application context
+     */
+    private fun setUpDashboardWithActivityContext(): ActivityScenario<MapActivity>? {
+        val mockActivity = MapActivity::class.java
+        val mockIntent = Intent(ApplicationProvider.getApplicationContext(), mockActivity)
+        return ActivityScenario.launch<MapActivity>(mockIntent)
+    }
+
     @Test
     fun drawerOpensOnMenuClick() {
-        ActivityScenario.launch<MapActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
-            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
-            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
-        }
+        setUpDashboard()
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
+        composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
     }
 
     @Test
     fun drawerClosesOnLeftSwipe() {
-        ActivityScenario.launch<MapActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
-            // closes on left swipe
-            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
-            composeTestRule.onRoot().performTouchInput { swipeLeft() }
-            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
-        }
+        setUpDashboard()
+        composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+        // closes on left swipe
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
+        composeTestRule.onRoot().performTouchInput { swipeLeft() }
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
     }
 
     @Test
     fun drawerIgnoresInvalidSwipe() {
-        ActivityScenario.launch<MapActivity>(defaultIntent).use {
-            // ignores right swipe if opened
-            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
-            composeTestRule.onRoot().performTouchInput { swipeRight() }
-            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
-        }
+        setUpDashboard()
+        // ignores right swipe if opened
+        composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+        composeTestRule.onRoot().performTouchInput { swipeRight() }
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
     }
 
     @Test
     fun drawerClosesOnOutsideTouch() {
-        ActivityScenario.launch<MapActivity>(defaultIntent).use {
-            val width = composeTestRule.onRoot().getBoundsInRoot().width
-            val height = composeTestRule.onRoot().getBoundsInRoot().height
-            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
-            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
-            composeTestRule.onRoot().performTouchInput {
-                click(position = Offset(width.toPx() - 10, height.toPx() / 2))
-            }
-            composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
+        setUpDashboard()
+        val width = composeTestRule.onRoot().getBoundsInRoot().width
+        val height = composeTestRule.onRoot().getBoundsInRoot().height
+        composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsDisplayed()
+        composeTestRule.onRoot().performTouchInput {
+            click(position = Offset(width.toPx() - 10, height.toPx() / 2))
         }
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
     }
 
     @Test
     fun drawerBodyContainsClickableMenu() {
-        ActivityScenario.launch<MapActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(MENU_LIST).onChildren().assertAll(hasClickAction())
-        }
+        setUpDashboard()
+        composeTestRule.onNodeWithTag(MENU_LIST).onChildren().assertAll(hasClickAction())
     }
 
     @Test
     fun dashboardDisplaysCorrectEmailFromReceivedIntent() {
-        ActivityScenario.launch<MapActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(DASHBOARD_EMAIL).assert(hasText(text = EXISTING_EMAIL))
-        }
+        setUpDashboard()
+        composeTestRule.onNodeWithTag(DASHBOARD_EMAIL).assert(hasText(text = EXISTING_EMAIL))
     }
     private fun dashboardCorrectlyRedirectsOnMenuItemClick(
         tag: String,
         intentMatcher: Matcher<Intent>
     ) {
-        ActivityScenario.launch<MapActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(tag).performClick()
-            intended(intentMatcher)
-        }
+        composeTestRule.onNodeWithTag(tag).performClick()
+        intended(intentMatcher)
     }
 
     @Test
     fun dashboardCorrectlyRedirectsOnProfileClick() {
+        setUpDashboard()
         dashboardCorrectlyRedirectsOnMenuItemClick(
             PROFILE,
             hasComponent(ProfileActivity::class.java.name)
@@ -158,14 +164,18 @@ class DashboardTest {
     }
     @Test
     fun dashboardCorrectlyRedirectsOnLogOutClick() {
-        dashboardCorrectlyRedirectsOnMenuItemClick(
-            LOGOUT,
-            hasComponent(LoginActivity::class.java.name)
-        )
+        // needs an application context here to get the authenticator
+        setUpDashboardWithActivityContext().use {
+            dashboardCorrectlyRedirectsOnMenuItemClick(
+                LOGOUT,
+                hasComponent(LoginActivity::class.java.name)
+            )
+        }
     }
 
     @Test
     fun dashboardCorrectlyRedirectsOnCoachesListClick() {
+        setUpDashboard()
         dashboardCorrectlyRedirectsOnMenuItemClick(
             COACHES_LIST,
             hasComponent(CoachesListActivity::class.java.name)
@@ -174,6 +184,7 @@ class DashboardTest {
 
     @Test
     fun dashboardCorrectlyRedirectsOnMessagingClick() {
+        setUpDashboard()
         dashboardCorrectlyRedirectsOnMenuItemClick(
             MESSAGING,
             hasComponent(CoachesListActivity::class.java.name)
@@ -182,6 +193,7 @@ class DashboardTest {
 
     @Test
     fun dashboardCorrectlyRedirectsOnScheduleClick() {
+        setUpDashboard()
         dashboardCorrectlyRedirectsOnMenuItemClick(
             SCHEDULE,
             hasComponent(ScheduleActivity::class.java.name)
@@ -196,9 +208,11 @@ class DashboardTest {
         }
     }
 
+    // This test is not very crucial here, just verifies that for some activity, the dashboard
+    // behaves correctly.
     @Test
     fun currentAppActivityIsDashboardContent() {
-        ActivityScenario.launch<MapActivity>(defaultIntent).use {
+        setUpDashboardWithActivityContext().use {
             val context = (InstrumentationRegistry.getInstrumentation()
                 .targetContext.applicationContext as CoachMeApplication)
             val mapTag = MapActivity.TestTags.MAP + context.userLocation.value.toString()
@@ -207,13 +221,9 @@ class DashboardTest {
         }
     }
 
-
     @Test
     fun errorPageIsShownWhenDashboardIsLaunchedWithEmptyCurrentEmail() {
-        database.setCurrentEmail("")
-        composeTestRule.setContent {
-            Dashboard {}
-        }
+        setUpDashboard(true)
         composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
         composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
     }
