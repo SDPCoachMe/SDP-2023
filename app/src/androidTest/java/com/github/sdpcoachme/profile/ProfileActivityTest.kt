@@ -25,6 +25,7 @@ import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.Test
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.autocomplete.MockLocationAutocompleteHandler.Companion.DEFAULT_LOCATION
 import com.github.sdpcoachme.messaging.ChatActivity
+import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.Buttons.Companion.CANCEL
 import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.TextFields.Companion.MAIN
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Buttons.Companion.MESSAGE_COACH
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.COACH_SWITCH
@@ -257,6 +258,20 @@ class ProfileActivityTest {
     }
 
     @Test
+    fun editFirstNameThenCancelDoesNothing() {
+        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        val newFieldValue = "new"
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
+            waitForUpdate(it)
+            composeTestRule.onNodeWithTag(FIRST_NAME, useUnmergedTree = true).performClick()
+            composeTestRule.onNodeWithTag(MAIN, useUnmergedTree = true).performTextClearance()
+            composeTestRule.onNodeWithTag(MAIN, useUnmergedTree = true).performTextInput(newFieldValue)
+            composeTestRule.onNodeWithTag(CANCEL, useUnmergedTree = true).performClick()
+            composeTestRule.onNodeWithTag(FIRST_NAME, useUnmergedTree = true).assertTextEquals(NON_COACH_2.firstName)
+        }
+    }
+
+    @Test
     fun editEmailNotPossible() {
         getDatabase().setCurrentEmail(NON_COACH_2.email)
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
@@ -279,7 +294,7 @@ class ProfileActivityTest {
     }
 
     @Test
-    fun editSports() {
+    fun editSportsClickOnAllSportsResultsInComplementChosen() {
         getDatabase().setCurrentEmail(NON_COACH_2.email)
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             waitForUpdate(it)
@@ -291,12 +306,33 @@ class ProfileActivityTest {
             }
             composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.DONE, useUnmergedTree = true).performClick()
 
+            waitForUpdate(it)
             // Given that we click on all sports, the list of sports is the complement
             for (sport in Sports.values().toSet() - NON_COACH_2.sports.toSet()) {
                 composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).onChildren().assertAny(
                     hasContentDescription(sport.sportName))
             }
 
+        }
+    }
+
+    @Test
+    fun editSportsThenCancelDoesNothing() {
+        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
+            waitForUpdate(it)
+            composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).performClick()
+
+            for (rowTag in ROW_TEXT_LIST) {
+                composeTestRule.onNodeWithTag(rowTag.ROW, useUnmergedTree = true).performClick()
+            }
+            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.CANCEL, useUnmergedTree = true).performClick()
+
+            // List of sports should be as it was before
+            for (sport in NON_COACH_2.sports.toSet()) {
+                composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).onChildren().assertAny(
+                    hasContentDescription(sport.sportName))
+            }
         }
     }
 

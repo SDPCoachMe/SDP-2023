@@ -69,8 +69,8 @@ class EditTextActivity : ComponentActivity() {
         private const val PLACEHOLDER_KEY = "placeholder"
         private const val TITLE_KEY = "title"
 
-        private const val DEFAULT_PLACEHOLDER = "Enter text"
-        private const val DEFAULT_TITLE = "Edit"
+        const val DEFAULT_PLACEHOLDER = "Enter text"
+        const val DEFAULT_TITLE = "Edit"
 
         private const val RETURN_VALUE_KEY = "returnValue"
 
