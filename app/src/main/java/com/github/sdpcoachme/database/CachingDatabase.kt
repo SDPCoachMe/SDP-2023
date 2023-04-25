@@ -65,7 +65,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     }
 
     override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
-        // if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat)
+        // if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat from the db)
         if (chats.containsKey(chatId)) {
             chats[chatId] = chats[chatId]!!.copy(messages = chats[chatId]!!.messages + message)
         }
@@ -73,7 +73,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     }
 
     override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
-        // Also here, if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat)
+        // Also here, if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat from the db)
         if (chats.containsKey(chatId)) {
             chats[chatId] = chats[chatId]!!.copy(messages = chats[chatId]!!.messages.map {
                 if (it.sender != email) {
@@ -87,7 +87,11 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     }
 
     override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
-        wrappedDatabase.addChatListener(chatId, onChange)
+        val cachingOnChange = { chat: Chat ->
+            chats[chatId] = chat
+            onChange(chat)
+        }
+        wrappedDatabase.addChatListener(chatId, cachingOnChange)
     }
 
     override fun removeChatListener(chatId: String) {

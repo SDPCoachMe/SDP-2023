@@ -310,13 +310,20 @@ class CachingDatabaseTest {
 
     @Test
     fun addChatListenerPropagatesToWrappedDatabase() {
+        var timesCalled = 0
         var receivedChatId = ""
-        var onChangeWorks = false
-        val onChange: (Chat) -> Unit =  { (_) -> run { onChangeWorks = true } }
+        var onChangeCalled = false
+        val onChange: (Chat) -> Unit =  { (_) -> run { onChangeCalled = true } }
         class AddChatListenerDB: MockDatabase() {
             override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
                 receivedChatId = chatId
+                // called to simulate a change in the database and test the caching database
                 onChange(defaultChat)
+            }
+
+            override fun getChat(chatId: String): CompletableFuture<Chat> {
+                timesCalled++
+                return CompletableFuture.completedFuture(Chat())
             }
         }
 
@@ -325,7 +332,16 @@ class CachingDatabaseTest {
         cachingDatabase.addChatListener("chatId") { onChange(it) }
 
         assertThat(receivedChatId, `is`("chatId"))
-        assertTrue(onChangeWorks)
+        assertTrue(onChangeCalled)
+
+        val isCorrect = cachingDatabase.getChat("chatId").thenApply {
+            assertThat(timesCalled, `is`(0))
+            assertThat(it, `is`(defaultChat))
+            true
+        }.exceptionally { false }
+            .get(5, SECONDS)
+
+        assertTrue(isCorrect)
     }
 
     @Test
