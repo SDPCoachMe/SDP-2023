@@ -100,7 +100,7 @@ class ScheduleActivityTest {
 
         ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
             initiallyDisplayed.forEach { tag ->
-                composeTestRule.onNodeWithTag(tag).assertExists()
+                composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).assertExists()
             }
         }
     }
@@ -129,24 +129,23 @@ class ScheduleActivityTest {
         Intents.release()
     }
 
-    // TODO: Adapt tests to new database structure
-    /*@Test
+    @Test
     fun eventsOfCurrentWeekAreDisplayedCorrectly() {
-        database.addEvents(defaultEmail, eventList).thenRun {
+        database.setCurrentEmail(defaultEmail)
+        database.addEvents(eventList, currentMonday).thenRun {
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
-                val userInfo = database.getUser(defaultEmail)
-                userInfo.thenAccept {
+                val schedule = database.getSchedule(currentMonday)
+                schedule.thenAccept {
                     it.events.forEach { event ->
                         composeTestRule.onNodeWithText(event.name).assertExists()
                     }
                 }
             }
         }
-    }*/
+    }
 
-    // TODO: Adapt tests to new database structure
-    /*@Test
+    @Test
     fun multiDayEventOfCurrentWeekIsDisplayedCorrectly() {
         val multiDayEvent = Event(
             name = "Multi Day Event",
@@ -155,11 +154,12 @@ class ScheduleActivityTest {
             end = currentMonday.plusDays(2).atTime(15, 0, 0).toString(),
             description = "This is a multi day event.",
         )
-        database.addEvents(defaultEmail, listOf(multiDayEvent)).thenRun {
+        database.addEvents(listOf(multiDayEvent), currentMonday).thenRun {
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
-                val userInfo = database.getUser(defaultEmail)
-                userInfo.thenAccept {
+
+                val schedule = database.getSchedule(currentMonday)
+                schedule.thenAccept {
                     val expectedShownEvents = listOf(
                         ShownEvent(
                             name = multiDayEvent.name,
@@ -194,10 +194,9 @@ class ScheduleActivityTest {
                 }
             }
         }
-    }*/
+    }
 
-    // TODO: Adapt tests to new database structure
-    /*@Test
+    @Test
     fun multiWeekEventIsDisplayedCorrectly() {
         val multiWeekEvent = Event(
             name = "Multi Week Event",
@@ -206,11 +205,12 @@ class ScheduleActivityTest {
             end = nextMonday.plusDays(1).atTime(15, 0, 0).toString(),
             description = "This is a multi week event.",
         )
-        database.addEvents(defaultEmail, listOf(multiWeekEvent)).thenRun {
+        database.addEvents(listOf(multiWeekEvent), currentMonday).thenRun {
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
-                val userInfo = database.getUser(defaultEmail)
-                userInfo.thenAccept {
+
+                val schedule = database.getSchedule(currentMonday)
+                schedule.thenAccept {
                     val expectedShownEvents = listOf(
                         ShownEvent(
                             name = multiWeekEvent.name,
@@ -260,10 +260,9 @@ class ScheduleActivityTest {
                 }
             }
         }
-    }*/
+    }
 
-    // TODO: Adapt tests to new database structure
-    /*@Test
+    @Test
     fun eventsOfNextWeekAreDisplayedCorrectly() {
         val nextWeekEvent = Event(
             name = "Next Week Event",
@@ -272,12 +271,13 @@ class ScheduleActivityTest {
             end = nextMonday.atTime(15, 0, 0).toString(),
             description = "This is an event of the next week.",
         )
-        database.addEvents(defaultEmail, listOf(nextWeekEvent)).thenRun {
+        database.addEvents(listOf(nextWeekEvent), currentMonday).thenRun {
             database.setCurrentEmail(defaultEmail)
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
-                val userInfo = database.getUser(defaultEmail)
-                userInfo.thenAccept {
+
+                val schedule = database.getSchedule(currentMonday)
+                schedule.thenAccept {
                     val expectedShownEvents = listOf(
                         ShownEvent(
                             name = nextWeekEvent.name,
@@ -294,10 +294,9 @@ class ScheduleActivityTest {
                 }
             }
         }
-    }*/
+    }
 
-    // TODO: Adapt tests to new database structure
-    /*@Test
+    @Test
     fun eventsOfPreviousWeekAreDisplayedCorrectly() {
         val previousMonday = currentMonday.minusDays(7)
         val previousWeekEvent = Event(
@@ -307,12 +306,13 @@ class ScheduleActivityTest {
             end = previousMonday.atTime(15, 0, 0).toString(),
             description = "This is an event of the previous week.",
         )
-        database.addEvents(defaultEmail, listOf(previousWeekEvent)).thenRun {
+        database.addEvents(listOf(previousWeekEvent), currentMonday).thenRun {
             database.setCurrentEmail(defaultEmail)
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
-                val userInfo = database.getUser(defaultEmail)
-                userInfo.thenAccept {
+
+                val schedule = database.getSchedule(currentMonday)
+                schedule.thenAccept {
                     val expectedShownEvents = listOf(
                         ShownEvent(
                             name = previousWeekEvent.name,
@@ -329,7 +329,7 @@ class ScheduleActivityTest {
                 }
             }
         }
-    }*/
+    }
 
     // TODO: currently the tests work fine locally, but fail on the CI server. Fix this in the future.
 /*@Test

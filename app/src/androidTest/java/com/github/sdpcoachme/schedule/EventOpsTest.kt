@@ -1,8 +1,8 @@
 package com.github.sdpcoachme.schedule
 
 import androidx.compose.ui.graphics.Color
-import com.github.sdpcoachme.data.Event
-import com.github.sdpcoachme.data.ShownEvent
+import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.ShownEvent
 import junit.framework.TestCase
 import org.junit.Test
 import java.time.DayOfWeek

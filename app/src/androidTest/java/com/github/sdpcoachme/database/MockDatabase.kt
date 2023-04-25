@@ -1,10 +1,12 @@
 package com.github.sdpcoachme.database
 
-import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
+import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.Schedule
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
@@ -15,7 +17,6 @@ class MockDatabase: Database {
 
     // TODO: database should be empty by default, and tests should add data to it.
     //  This way, we can make sure each test is independent from the others
-
     private val defaultEmail = "example@email.com"
     private val defaultUserInfo = UserInfo(
         "John",
@@ -55,9 +56,15 @@ class MockDatabase: Database {
         accounts = hashMapOf(defaultEmail to defaultUserInfo)
     }
 
+    fun restoreDefaultSchedulesSetup() {
+        schedules = hashMapOf()
+    }
+
 
     // TODO: type any is not ideal, needs refactoring
     private var accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
+
+    private var schedules = hashMapOf<String, Schedule>()
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         if (user.email == "throw@Exception.com") {
@@ -88,11 +95,29 @@ class MockDatabase: Database {
         return getMap(accounts, email).thenApply { it != null }
     }
 
-    override fun addEvents(email: String, events: List<Event>): CompletableFuture<Void> {
-        return getUser(email).thenCompose { user ->
-            val newUserInfo = user.copy(events = user.events + events)
-            setMap(accounts, email, newUserInfo)
+    override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Void> {
+        if (currEmail == "throw@Exception.com") {
+            val error = CompletableFuture<Void>()
+            error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
+            return error
         }
+        return getSchedule(currentWeekMonday).thenCompose { schedule ->
+            val newSchedule = schedule.copy(events = schedule.events + events)
+            schedules[currEmail] = newSchedule
+            val future = CompletableFuture<Void>()
+            future.complete(null)
+            future
+        }
+    }
+
+    override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        if (currEmail == "throwGet@Exception.com") {
+            val error = CompletableFuture<Schedule>()
+            error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
+            return error
+        }
+        return schedules[currEmail]?.let { CompletableFuture.completedFuture(it) }
+            ?: CompletableFuture.completedFuture(Schedule(emptyList()))
     }
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {
