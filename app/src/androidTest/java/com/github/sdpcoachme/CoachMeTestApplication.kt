@@ -2,10 +2,10 @@ package com.github.sdpcoachme
 
 import android.content.Context
 import androidx.activity.result.ActivityResultCaller
-import com.github.sdpcoachme.firebase.auth.Authenticator
-import com.github.sdpcoachme.firebase.auth.MockAuthenticator
-import com.github.sdpcoachme.firebase.database.Database
-import com.github.sdpcoachme.firebase.database.MockDatabase
+import com.github.sdpcoachme.auth.Authenticator
+import com.github.sdpcoachme.auth.MockAuthenticator
+import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.location.autocomplete.LocationAutocompleteHandler
 import com.github.sdpcoachme.location.autocomplete.MockLocationAutocompleteHandler
 

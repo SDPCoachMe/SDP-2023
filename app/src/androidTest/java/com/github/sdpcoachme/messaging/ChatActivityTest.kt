@@ -13,13 +13,13 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.*
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.data.UserLocationSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.messaging.Message
+import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
-import com.github.sdpcoachme.firebase.database.Database
-import com.github.sdpcoachme.firebase.database.MockDatabase
-import com.github.sdpcoachme.location.UserLocationSamples.Companion.LAUSANNE
-import com.github.sdpcoachme.location.UserLocationSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.BACK
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SCROLL_TO_BOTTOM
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SEND
@@ -27,6 +27,8 @@ import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_BOX
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_MESSAGE
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
+import com.github.sdpcoachme.profile.CoachesListActivity
+import com.github.sdpcoachme.profile.ProfileActivity
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
@@ -77,7 +79,7 @@ class ChatActivityTest {
     fun setup() {
         database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
         database.setCurrentEmail(currentUser.email)
-        database.updateUser(toUser)
+        database.updateUser(toUser).join()
     }
 
     @After

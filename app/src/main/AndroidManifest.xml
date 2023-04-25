@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
-    <!-- Permissions needed to run the app.
+    <!--
+    Permissions needed to run the app.
     For Android > 10, this permissions need to be given at runtime,
-    so not anymore at installation -->
+    so not anymore at installation
+    -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
@@ -25,22 +26,26 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CoachMe"
         tools:targetApi="31">
-        
+        <activity
+            android:name=".profile.EditTextActivity"
+            android:exported="false"
+            android:label="@string/title_activity_edit_text"
+            android:theme="@style/Theme.CoachMe" />
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="${MAPS_API_KEY}" />
-            <!-- MAPS_API_KEY retrieved from local.properties -->
+            android:value="${MAPS_API_KEY}" /> <!-- MAPS_API_KEY retrieved from local.properties -->
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
-            
+
         <activity
-            android:name=".CoachesListActivity"
+            android:name=".profile.CoachesListActivity"
             android:exported="false"
             android:label="@string/title_activity_coaches_list"
             android:theme="@style/Theme.CoachMe" />
         <activity
-            android:name=".LoginActivity"
+            android:name=".auth.LoginActivity"
             android:exported="true"
             android:theme="@style/Theme.CoachMe">
             <intent-filter>
@@ -50,7 +55,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".SignupActivity"
+            android:name=".auth.SignupActivity"
             android:exported="false"
             android:label="@string/title_activity_signup"
             android:theme="@style/Theme.CoachMe" />
@@ -65,12 +70,12 @@
             android:label="@string/title_activity_schedule"
             android:theme="@style/Theme.CoachMe" />
         <activity
-            android:name=".ProfileActivity"
+            android:name=".profile.ProfileActivity"
             android:exported="false"
             android:label="@string/title_activity_edit_profile"
             android:theme="@style/Theme.CoachMe" />
         <activity
-            android:name=".SelectSportsActivity"
+            android:name=".profile.SelectSportsActivity"
             android:exported="true"
             android:label="@string/title_activity_multiselect_list"
             android:theme="@style/Theme.CoachMe" />
@@ -81,7 +86,7 @@
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.CoachMe" />
         <activity
-            android:name=".map.MapActivity"
+            android:name=".location.MapActivity"
             android:exported="false"
             android:label="@string/title_activity_map"
             android:theme="@style/Theme.CoachMe" />

@@ -5,11 +5,11 @@ import android.content.Context
 import androidx.activity.result.ActivityResultCaller
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import com.github.sdpcoachme.firebase.auth.Authenticator
-import com.github.sdpcoachme.firebase.auth.GoogleAuthenticator
-import com.github.sdpcoachme.firebase.database.CachingDatabase
-import com.github.sdpcoachme.firebase.database.Database
-import com.github.sdpcoachme.firebase.database.FireDatabase
+import com.github.sdpcoachme.auth.Authenticator
+import com.github.sdpcoachme.auth.GoogleAuthenticator
+import com.github.sdpcoachme.database.CachingDatabase
+import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.FireDatabase
 import com.github.sdpcoachme.location.autocomplete.GooglePlacesAutocompleteHandler
 import com.github.sdpcoachme.location.autocomplete.LocationAutocompleteHandler
 import com.google.android.gms.maps.model.LatLng

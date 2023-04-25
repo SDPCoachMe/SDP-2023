@@ -24,13 +24,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.CoachesListActivity
-import com.github.sdpcoachme.ProfileActivity
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
+import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
-import com.github.sdpcoachme.firebase.database.Database
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.BACK
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SCROLL_TO_BOTTOM
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SEND
@@ -38,6 +36,8 @@ import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_BOX
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_MESSAGE
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
+import com.github.sdpcoachme.profile.CoachesListActivity
+import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.ui.theme.Purple500
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.RemoteMessage
