@@ -294,7 +294,7 @@ class ProfileActivityTest {
     }
 
     @Test
-    fun editSports() {
+    fun editSportsClickOnAllSportsResultsInComplementChosen() {
         getDatabase().setCurrentEmail(NON_COACH_2.email)
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             waitForUpdate(it)

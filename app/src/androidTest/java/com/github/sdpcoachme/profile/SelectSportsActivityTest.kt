@@ -54,7 +54,7 @@ open class SelectSportsActivityTest {
     }
 
     @Test
-    fun defaultParametersDisplayedCorrectly() {
+    fun defaultParametersAreDisplayedProperly() {
         ActivityScenario.launch<SelectSportsActivity>(launchSelectSports).use {
             composeTestRule.onNodeWithTag(TITLE).assertIsDisplayed().assertTextEquals(DEFAULT_TITLE)
             composeTestRule.onNodeWithTag(DONE).assertIsDisplayed()
@@ -66,7 +66,7 @@ open class SelectSportsActivityTest {
     }
 
     @Test
-    fun parametersDisplayedCorrectly() {
+    fun intentParametersAreDisplayedProperly() {
         val title = "Title"
         val initialValue = listOf(Sports.SKI, Sports.SWIMMING)
         val intent = SelectSportsActivity.getIntent(
