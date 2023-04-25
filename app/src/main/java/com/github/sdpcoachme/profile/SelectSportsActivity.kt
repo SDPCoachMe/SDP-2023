@@ -136,7 +136,7 @@ class SelectSportsActivity : ComponentActivity() {
             }
         }
 
-        @Suppress("UNCHECKED_CAST")
+        @Suppress("UNCHECKED_CAST", "DEPRECATION")
         private fun getValueFromIntent(intent: Intent): List<Sports> {
             // Note: here we use this deprecated method, since using the new method requires API
             // TIRAMISU, and we don't require it for our app.
@@ -153,7 +153,7 @@ class SelectSportsActivity : ComponentActivity() {
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST", "DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

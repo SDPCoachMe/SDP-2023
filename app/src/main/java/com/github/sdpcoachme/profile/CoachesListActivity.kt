@@ -28,7 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.Dashboard
+import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
@@ -82,22 +82,19 @@ class CoachesListActivity : ComponentActivity() {
                     stateLoading.complete(null)
                 }
 
+                val title = if (isViewingContacts) stringResource(R.string.contacts)
+                else stringResource(R.string.title_activity_coaches_list)
+
                 CoachMeTheme {
-                    val title = if (isViewingContacts) stringResource(R.string.contacts)
-                                else stringResource(R.string.title_activity_coaches_list)
-                    val appContent: @Composable (Modifier) -> Unit = { modifier ->
-                        Column(
-                            modifier = modifier
-                                .fillMaxSize()
-                        ) {
+                    Dashboard(title) {
+                        Column(modifier = it.fillMaxSize()) {
                             LazyColumn {
-                                items(listOfCoaches) { user ->
+                                items(listOfCoaches) {user ->
                                     UserInfoListItem(user, isViewingContacts)
                                 }
                             }
                         }
                     }
-                    Dashboard(appContent, email, title)
                 }
             }
         }
