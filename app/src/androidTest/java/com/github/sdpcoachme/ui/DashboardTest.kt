@@ -4,7 +4,7 @@ import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Intent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import androidx.test.core.app.ActivityScenario
@@ -27,6 +27,8 @@ import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.auth.LoginActivity
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
+import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.profile.CoachesListActivity
 import com.github.sdpcoachme.profile.ProfileActivity
@@ -56,7 +58,7 @@ class DashboardTest {
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), mockActivity)
 
     @get:Rule
-    val composeTestRule = createEmptyComposeRule()
+    val composeTestRule = createComposeRule()
 
     // WARNING : this rule will try to grant permissions on the device.
     // Make sure to "Allow granting permissions and simulating input via USB debugging"
@@ -203,6 +205,17 @@ class DashboardTest {
             composeTestRule.onNodeWithTag(mapTag).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
         }
+    }
+
+
+    @Test
+    fun errorPageIsShownWhenDashboardIsLaunchedWithEmptyCurrentEmail() {
+        database.setCurrentEmail("")
+        composeTestRule.setContent {
+            Dashboard {}
+        }
+        composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
     }
 
 }
