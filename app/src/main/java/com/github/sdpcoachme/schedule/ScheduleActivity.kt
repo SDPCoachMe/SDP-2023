@@ -112,18 +112,17 @@ class ScheduleActivity : ComponentActivity() {
         } else {
             val startMonday = getStartMonday()
             //TODO: For demo, let this function run once to add sample events to the database
-            database.addEvents(sampleEvents, startMonday).thenRun {
+            //database.addEvents(sampleEvents, startMonday).thenRun {
                 val futureDBSchedule: CompletableFuture<Schedule> = database.getSchedule(startMonday)
-                println("Got futureDBSchedule")
 
                 setContent {
                     CoachMeTheme {
                         Surface(color = MaterialTheme.colors.background) {
-                            Schedule(email, futureDBSchedule, database)
+                            Schedule(futureDBSchedule, database)
                         }
                     }
                 }
-            }
+            //}
         }
     }
 }
@@ -135,7 +134,6 @@ private class EventDataModifier(val event: ShownEvent) : ParentDataModifier {
 private const val ColumnsPerWeek = 7
 @Composable
 fun Schedule(
-    email: String,
     futureDBSchedule: CompletableFuture<Schedule>,
     database: Database,
     modifier: Modifier = Modifier,
