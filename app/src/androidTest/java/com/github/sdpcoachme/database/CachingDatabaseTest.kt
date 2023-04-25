@@ -87,7 +87,7 @@ class CachingDatabaseTest {
         val addUser = cachingDatabase.updateUser(willSmithUser)
             .thenApply { cachingDatabase.clearCache() }
 
-        addUser.thenCompose { cachingDatabase.addEventsToUser(willSmithUser.email, eventList) }
+        addUser.thenCompose { cachingDatabase.addEvents(willSmithUser.email, eventList) }
             .get(5, SECONDS)
         assertTrue(cachingDatabase.isCached(willSmithUser.email))
 

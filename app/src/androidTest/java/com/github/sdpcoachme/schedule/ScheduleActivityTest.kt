@@ -81,7 +81,7 @@ class ScheduleActivityTest {
     fun addEventsToDatabaseUpdatesUserInfoCorrectly() {
         val oldUserInfo = database.getUser(defaultEmail)
 
-        database.addEventsToUser(defaultEmail, eventList)
+        database.addEvents(defaultEmail, eventList)
 
         val newUserInfo = database.getUser(defaultEmail)
         newUserInfo.thenAccept {
@@ -130,7 +130,7 @@ class ScheduleActivityTest {
 
     @Test
     fun eventsOfCurrentWeekAreDisplayedCorrectly() {
-        database.addEventsToUser(defaultEmail, eventList).thenRun {
+        database.addEvents(defaultEmail, eventList).thenRun {
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
                 val userInfo = database.getUser(defaultEmail)
@@ -152,7 +152,7 @@ class ScheduleActivityTest {
             end = currentMonday.plusDays(2).atTime(15, 0, 0).toString(),
             description = "This is a multi day event.",
         )
-        database.addEventsToUser(defaultEmail, listOf(multiDayEvent)).thenRun {
+        database.addEvents(defaultEmail, listOf(multiDayEvent)).thenRun {
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
                 val userInfo = database.getUser(defaultEmail)
@@ -202,7 +202,7 @@ class ScheduleActivityTest {
             end = nextMonday.plusDays(1).atTime(15, 0, 0).toString(),
             description = "This is a multi week event.",
         )
-        database.addEventsToUser(defaultEmail, listOf(multiWeekEvent)).thenRun {
+        database.addEvents(defaultEmail, listOf(multiWeekEvent)).thenRun {
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
                 val userInfo = database.getUser(defaultEmail)
@@ -268,7 +268,7 @@ class ScheduleActivityTest {
             end = nextMonday.atTime(15, 0, 0).toString(),
             description = "This is an event of the next week.",
         )
-        database.addEventsToUser(defaultEmail, listOf(nextWeekEvent)).thenRun {
+        database.addEvents(defaultEmail, listOf(nextWeekEvent)).thenRun {
             database.setCurrentEmail(defaultEmail)
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
@@ -302,7 +302,7 @@ class ScheduleActivityTest {
             end = previousMonday.atTime(15, 0, 0).toString(),
             description = "This is an event of the previous week.",
         )
-        database.addEventsToUser(defaultEmail, listOf(previousWeekEvent)).thenRun {
+        database.addEvents(defaultEmail, listOf(previousWeekEvent)).thenRun {
             database.setCurrentEmail(defaultEmail)
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()

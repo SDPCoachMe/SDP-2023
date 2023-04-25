@@ -34,12 +34,16 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.data.Event
-import com.github.sdpcoachme.data.ShownEvent
+import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity
+import com.github.sdpcoachme.schedule.EventOps.Companion.getDayFormatter
+import com.github.sdpcoachme.schedule.EventOps.Companion.getEventTimeFormatter
+import com.github.sdpcoachme.schedule.EventOps.Companion.getStartMonday
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.github.sdpcoachme.ui.theme.Purple500
 import java.time.DayOfWeek
@@ -92,17 +96,17 @@ class ScheduleActivity : ComponentActivity() {
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
             //TODO: For demo, let this function run once to add sample events to the database
-            //database.addEventsToUser(email, sampleEvents).thenRun {
-                val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email)
+            database.addEvents(email, sampleEvents).thenRun {
+                val futureDBSchedule: CompletableFuture<Schedule> = database.getSchedule(email, getStartMonday())
 
                 setContent {
                     CoachMeTheme {
                         Surface(color = MaterialTheme.colors.background) {
-                            Schedule(futureUserInfo)
+                            Schedule(email, futureDBSchedule, database)
                         }
                     }
                 }
-            //}
+            }
         }
     }
 }
@@ -114,11 +118,13 @@ private class EventDataModifier(val event: ShownEvent) : ParentDataModifier {
 private const val ColumnsPerWeek = 7
 @Composable
 fun Schedule(
-    futureUserInfo: CompletableFuture<UserInfo>,
+    email: String,
+    futureDBSchedule: CompletableFuture<Schedule>,
+    database: Database,
     modifier: Modifier = Modifier,
 ) {
     var events by remember { mutableStateOf(emptyList<Event>()) }
-    var eventsFuture by remember { mutableStateOf(futureUserInfo.thenApply { it.events }) }
+    var eventsFuture by remember { mutableStateOf(futureDBSchedule.thenApply { it.events }) }
     val context = LocalContext.current
 
     LaunchedEffect(eventsFuture) {
@@ -138,12 +144,14 @@ fun Schedule(
     val dayWidth = LocalConfiguration.current.screenWidthDp.dp / ColumnsPerWeek
     val verticalScrollState = rememberScrollState()
     // the starting day is always the monday of the current week
-    val startMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-
-    var shownWeekMonday by remember { mutableStateOf(startMonday) }
+    var shownWeekMonday by remember { mutableStateOf<LocalDate>(getStartMonday()) }
 
     fun updateCurrentWeekMonday(weeksToAdd: Int) {
         shownWeekMonday = shownWeekMonday.plusWeeks(weeksToAdd.toLong())
+        // check if cached events are available and if not, get them from the database and cache them
+        database.getSchedule(email, shownWeekMonday).thenAccept { schedule ->
+            events = schedule.events
+        }
     }
 
     Column(modifier = modifier
@@ -359,8 +367,8 @@ fun BasicSchedule(
 }
 
 private fun Modifier.eventData(event: ShownEvent) = this.then(EventDataModifier(event))
-private val EventTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-private val DayFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
+private val EventTimeFormatter: DateTimeFormatter = getEventTimeFormatter()
+private val DayFormatter = getDayFormatter()
 
 @Composable
 fun BasicEvent(
