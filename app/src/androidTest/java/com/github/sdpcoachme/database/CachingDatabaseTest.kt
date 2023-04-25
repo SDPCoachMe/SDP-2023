@@ -6,22 +6,18 @@ package com.github.sdpcoachme.database
 
 import androidx.compose.ui.graphics.Color
 import com.github.sdpcoachme.data.Event
+import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.NEW_YORK
-import com.github.sdpcoachme.data.UserInfo
-import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertTrue
-import com.github.sdpcoachme.firebase.database.CachingDatabase
-import com.github.sdpcoachme.firebase.database.MockDatabase
 import junit.framework.TestCase.*
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
-import java.util.concurrent.TimeUnit.SECONDS
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit.SECONDS
 
 class CachingDatabaseTest {
 

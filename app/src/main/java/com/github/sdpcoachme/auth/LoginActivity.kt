@@ -34,9 +34,6 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.location.MapActivity
-import com.github.sdpcoachme.firebase.auth.Authenticator
-import com.github.sdpcoachme.firebase.database.Database
-import com.github.sdpcoachme.map.MapActivity
 import com.github.sdpcoachme.messaging.InAppNotificationService.Companion.addFCMTokenToDatabase
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 

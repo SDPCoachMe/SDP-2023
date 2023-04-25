@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.util.Log
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.database.Database
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService

@@ -7,9 +7,9 @@ import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
 import androidx.core.app.NotificationCompat
-import com.github.sdpcoachme.CoachesListActivity
-import com.github.sdpcoachme.LoginActivity
-import com.github.sdpcoachme.firebase.database.Database
+import com.github.sdpcoachme.auth.LoginActivity
+import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.profile.CoachesListActivity
 import com.google.firebase.messaging.FirebaseMessagingService
 
 /**
