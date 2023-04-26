@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -247,43 +249,52 @@ fun ScheduleTitleRow(
                 .align(Alignment.CenterVertically)
                 .padding(start = 10.dp)
         )
-        IconButton(
-            onClick = { onLeftArrowClick() },
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End,
             modifier = Modifier
-                .testTag(ScheduleActivity.TestTags.Buttons.LEFT_ARROW_BUTTON)
-                //.padding(start = 20.dp)
-                .align(Alignment.CenterVertically)
+                .fillMaxWidth()
         ) {
-            Icon(
-                imageVector = Icons.Default.ArrowLeft,
-                contentDescription = "Left arrow",
-                modifier = Modifier.align(Alignment.CenterVertically),
-                tint = Color.White
+            IconButton(
+                onClick = { onLeftArrowClick() },
+                modifier = Modifier
+                    .testTag(ScheduleActivity.TestTags.Buttons.LEFT_ARROW_BUTTON)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowLeft,
+                    contentDescription = "Left arrow",
+                    tint = Color.White
+                )
+            }
+
+            val formatter = DateTimeFormatter.ofPattern("d MMM")
+            val maxTextWidth = LocalConfiguration.current.screenWidthDp.dp / 5
+            Text(
+                text = "${shownWeekMonday.format(formatter)} - \n${
+                    shownWeekMonday.plusDays(6).format(formatter)
+                }",
+                style = MaterialTheme.typography.subtitle1,
+                color = Color.White,
+                modifier = Modifier
+                    .testTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD)
+                    .align(Alignment.CenterVertically)
+                    .widthIn(max = maxTextWidth)
             )
-        }
-        val formatter = DateTimeFormatter.ofPattern("d MMM")
-        Text(
-            text = "${shownWeekMonday.format(formatter)} - ${shownWeekMonday.plusDays(6).format(formatter)}",
-            style = MaterialTheme.typography.subtitle1,
-            color = Color.White,
-            modifier = Modifier
-                .testTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD)
-                .align(Alignment.CenterVertically)
-                //.padding(horizontal = 5.dp, vertical = 8.dp)
-        )
-        IconButton(
-            onClick = { onRightArrowClick() },
-            modifier = Modifier
-                .testTag(ScheduleActivity.TestTags.Buttons.RIGHT_ARROW_BUTTON)
-                //.padding(end = 20.dp)
-                .align(Alignment.CenterVertically)
-        ) {
-            Icon(
-                imageVector = Icons.Default.ArrowRight,
-                contentDescription = "Right arrow",
-                modifier = Modifier.align(Alignment.CenterVertically),
-                tint = Color.White
-            )
+
+
+            IconButton(
+                onClick = { onRightArrowClick() },
+                modifier = Modifier
+                    .testTag(ScheduleActivity.TestTags.Buttons.RIGHT_ARROW_BUTTON)
+                    .align(Alignment.CenterVertically)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowRight,
+                    contentDescription = "Right arrow",
+                    tint = Color.White
+                )
+            }
         }
     }
 }
