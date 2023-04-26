@@ -26,7 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.Dashboard
+import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
@@ -109,18 +109,19 @@ class ProfileActivity : ComponentActivity() {
             selectSportsHandler = SelectSportsActivity.getHandler(this)
 
             setContent {
+                val title =
+                    if (isViewingCoach) stringResource(R.string.coach_profile)
+                    else stringResource(R.string.my_profile)
+
                 CoachMeTheme {
-                    val appContent: @Composable (Modifier) -> Unit = { modifier ->
+                    Dashboard(title) {
                         Surface(
-                            modifier = modifier.fillMaxSize(),
+                            modifier = it.fillMaxSize(),
                             color = MaterialTheme.colors.background
                         ) {
                             Profile(email, futureUserInfo, isViewingCoach)
                         }
                     }
-                    Dashboard(appContent, email, if (isViewingCoach) stringResource(R.string.coach_profile) else stringResource(
-                        R.string.my_profile
-                    ))
                 }
             }
         }

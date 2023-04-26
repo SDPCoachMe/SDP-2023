@@ -24,7 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.Dashboard
+import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
@@ -95,12 +95,14 @@ class MapActivity : ComponentActivity() {
             val futureUsers = database.getAllUsers().thenApply { users -> users.filter { it.coach } }
             setContent {
                 CoachMeTheme {
-                    val dashboardContent: @Composable (Modifier) -> Unit = { modifier ->
-                        Map(modifier = modifier, lastUserLocation = lastUserLocation,
-                            futureCoachesToDisplay = futureUsers, markerLoading = markerLoading,
+                    Dashboard {
+                        Map(
+                            modifier = it,
+                            lastUserLocation = lastUserLocation,
+                            futureCoachesToDisplay = futureUsers,
+                            markerLoading = markerLoading,
                             mapLoading = mapLoading)
                     }
-                    Dashboard(dashboardContent, email)
                 }
             }
         }
@@ -190,9 +192,7 @@ fun Map(
 
     GoogleMap(
         // test tag contains lastUserLocation info to allow simple recomposition tracking
-        modifier = modifier
-            .fillMaxSize()
-            .testTag(MAP + lastUserLocation.value.toString()),
+        modifier = modifier.fillMaxSize().testTag(MAP + lastUserLocation.value.toString()),
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
             isMyLocationEnabled = lastUserLocation.value != null,
