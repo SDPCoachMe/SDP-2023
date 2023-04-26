@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "sdp-firebase-bootcamp-7fa21"
-  }
+    "default": "coach-me-381521"
+  },
+  "targets": {},
+  "etags": {}
 }

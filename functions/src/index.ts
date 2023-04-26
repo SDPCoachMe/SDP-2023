@@ -4,6 +4,7 @@ import * as admin from "firebase-admin";
 
 admin.initializeApp({
   credential: admin.credential.applicationDefault(),
+  databaseURL: "https://coach-me-381521-default-rtdb.europe-west1.firebasedatabase.app",
 });
 
 // // Start writing functions
