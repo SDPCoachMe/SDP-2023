@@ -287,7 +287,7 @@ class CachingDatabaseTest {
     }
 
     @Test
-    fun sendForNotCachedChatDoesNotCacheTheChat() {
+    fun markMessageAsReadForNotCachedChatDoesNotCacheTheChat() {
 
         val wrappedDatabase = MarkMessagesAsReadDB(defaultChat)
         val cachingDatabase = CachingDatabase(wrappedDatabase)
