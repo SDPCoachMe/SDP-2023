@@ -1,50 +1,34 @@
 {
   "project_info": {
-    "project_number": "781176350384",
-    "firebase_url": "https://sdp-firebase-bootcamp-7fa21-default-rtdb.europe-west1.firebasedatabase.app",
-    "project_id": "sdp-firebase-bootcamp-7fa21",
-    "storage_bucket": "sdp-firebase-bootcamp-7fa21.appspot.com"
+    "project_number": "181774805720",
+    "firebase_url": "https://coach-me-381521-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "coach-me-381521",
+    "storage_bucket": "coach-me-381521.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:781176350384:android:3c9e03561bed75ec933d75",
+        "mobilesdk_app_id": "1:181774805720:android:59bbe1dd833466034685ad",
         "android_client_info": {
           "package_name": "com.github.sdpcoachme"
         }
       },
       "oauth_client": [
         {
-          "client_id": "781176350384-pq653r46k140ap4mbmeq2bllb030frq4.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.github.sdpcoachme",
-            "certificate_hash": "f96af7726bdbd702a46ed4f883143fe9e9e6ad6d"
-          }
-        },
-        {
-          "client_id": "781176350384-qlaipdkrp9tt6g64ntg1fulp26iij1va.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.github.sdpcoachme",
-            "certificate_hash": "5fb3b131d7bf2c9641dbb78b4c2b782aac3e322b"
-          }
-        },
-        {
-          "client_id": "781176350384-k4c7oqt1574m6l5h3p33m84t1p8vtftr.apps.googleusercontent.com",
+          "client_id": "181774805720-46emq5juju9r8v3k2sqjn4c2hdsr802v.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyD1fr4PyUvQWgKqlpMZ_5dhKqQzgrgsl4U"
+          "current_key": "AIzaSyCvhOGszBayoyjoK5PsqVQdEL61bLNYneY"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "781176350384-k4c7oqt1574m6l5h3p33m84t1p8vtftr.apps.googleusercontent.com",
+              "client_id": "181774805720-46emq5juju9r8v3k2sqjn4c2hdsr802v.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
