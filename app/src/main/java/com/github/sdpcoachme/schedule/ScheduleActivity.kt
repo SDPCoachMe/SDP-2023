@@ -251,7 +251,7 @@ fun ScheduleTitleRow(
             onClick = { onLeftArrowClick() },
             modifier = Modifier
                 .testTag(ScheduleActivity.TestTags.Buttons.LEFT_ARROW_BUTTON)
-                .padding(start = 20.dp)
+                //.padding(start = 20.dp)
                 .align(Alignment.CenterVertically)
         ) {
             Icon(
@@ -269,13 +269,13 @@ fun ScheduleTitleRow(
             modifier = Modifier
                 .testTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD)
                 .align(Alignment.CenterVertically)
-                .padding(horizontal = 5.dp, vertical = 8.dp)
+                //.padding(horizontal = 5.dp, vertical = 8.dp)
         )
         IconButton(
             onClick = { onRightArrowClick() },
             modifier = Modifier
                 .testTag(ScheduleActivity.TestTags.Buttons.RIGHT_ARROW_BUTTON)
-                .padding(end = 20.dp)
+                //.padding(end = 20.dp)
                 .align(Alignment.CenterVertically)
         ) {
             Icon(

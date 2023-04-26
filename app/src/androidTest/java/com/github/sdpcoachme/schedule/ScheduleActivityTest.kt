@@ -10,8 +10,8 @@ import androidx.test.espresso.intent.Intents
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.Dashboard
-import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.ui.Dashboard
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
@@ -19,6 +19,7 @@ import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.Test
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.BASIC_SCHEDULE
 import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.WEEK_HEADER
+import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -28,6 +29,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters
+import java.util.concurrent.TimeUnit.SECONDS
 
 @RunWith(AndroidJUnit4::class)
 class ScheduleActivityTest {
@@ -77,19 +79,19 @@ class ScheduleActivityTest {
         database.setCurrentEmail(defaultEmail)
     }
 
-    // TODO: Adapt tests to new database structure
-    /*@Test
+    // TODO: Maybe move this to database tests
+    @Test
     fun addEventsToDatabaseUpdatesScheduleCorrectly() {
-        val oldSchedule = database.getSchedule(defaultEmail)
+        val oldSchedule = database.getSchedule(currentMonday)
 
-        database.addEvents(defaultEmail, eventList)
+        database.addEvents(eventList, currentMonday)
 
-        val newUserInfo = database.getUser(defaultEmail)
-        newUserInfo.thenAccept {
-            assertTrue(oldUserInfo != newUserInfo)
+        val newSchedule = database.getSchedule(currentMonday)
+        newSchedule.thenAccept {
+            assertTrue(oldSchedule != newSchedule)
             assertTrue(it.events == eventList)
         }
-    }*/
+    }
 
     @Test
     fun correctInitialScreenContent() {
@@ -136,11 +138,12 @@ class ScheduleActivityTest {
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
                 val schedule = database.getSchedule(currentMonday)
-                schedule.thenAccept {
+                val nonnull = schedule.thenAccept {
                     it.events.forEach { event ->
                         composeTestRule.onNodeWithText(event.name).assertExists()
                     }
-                }
+                }.exceptionally { null }.get(5, SECONDS)
+                assertNotNull(nonnull)
             }
         }
     }
@@ -159,7 +162,7 @@ class ScheduleActivityTest {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
 
                 val schedule = database.getSchedule(currentMonday)
-                schedule.thenAccept {
+                val nonnull = schedule.thenAccept {
                     val expectedShownEvents = listOf(
                         ShownEvent(
                             name = multiDayEvent.name,
@@ -191,7 +194,8 @@ class ScheduleActivityTest {
                     )
                     val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)
                     assertTrue(expectedShownEvents == actualShownEvents)
-                }
+                }.exceptionally { null }.get(5, SECONDS)
+                assertNotNull(nonnull)
             }
         }
     }
@@ -210,7 +214,7 @@ class ScheduleActivityTest {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
 
                 val schedule = database.getSchedule(currentMonday)
-                schedule.thenAccept {
+                val nonnull = schedule.thenAccept {
                     val expectedShownEvents = listOf(
                         ShownEvent(
                             name = multiWeekEvent.name,
@@ -257,7 +261,8 @@ class ScheduleActivityTest {
                     )
                     val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)
                     assertTrue(expectedShownEvents == actualShownEvents)
-                }
+                }.exceptionally { null }.get(5, SECONDS)
+                assertNotNull(nonnull)
             }
         }
     }
@@ -277,7 +282,7 @@ class ScheduleActivityTest {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
 
                 val schedule = database.getSchedule(currentMonday)
-                schedule.thenAccept {
+                val nonnull = schedule.thenAccept {
                     val expectedShownEvents = listOf(
                         ShownEvent(
                             name = nextWeekEvent.name,
@@ -291,7 +296,8 @@ class ScheduleActivityTest {
                     )
                     val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)
                     assertTrue(expectedShownEvents == actualShownEvents)
-                }
+                }.exceptionally { null }.get(5, SECONDS)
+                assertNotNull(nonnull)
             }
         }
     }
@@ -312,7 +318,7 @@ class ScheduleActivityTest {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
 
                 val schedule = database.getSchedule(currentMonday)
-                schedule.thenAccept {
+                val nonnull = schedule.thenAccept {
                     val expectedShownEvents = listOf(
                         ShownEvent(
                             name = previousWeekEvent.name,
@@ -326,7 +332,8 @@ class ScheduleActivityTest {
                     )
                     val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)
                     assertTrue(expectedShownEvents == actualShownEvents)
-                }
+                }.exceptionally { null }.get(5, SECONDS)
+                assertNotNull(nonnull)
             }
         }
     }
