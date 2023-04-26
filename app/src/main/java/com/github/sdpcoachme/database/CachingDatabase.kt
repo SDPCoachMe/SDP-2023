@@ -11,6 +11,8 @@ import java.util.concurrent.CompletableFuture
  */
 class CachingDatabase(private val wrappedDatabase: Database) : Database {
     private val cachedUsers = mutableMapOf<String, UserInfo>()
+    private val contacts = mutableMapOf<String, List<UserInfo>>()
+    private val chats = mutableMapOf<String, Chat>()
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         return wrappedDatabase.updateUser(user).thenAccept { cachedUsers[user.email] = user }
@@ -49,32 +51,50 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     }
 
     override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
-        // TODO implement in next sprint
-        return wrappedDatabase.getChatContacts(email)
+        if (contacts.containsKey(email)) {
+            return CompletableFuture.completedFuture(contacts[email])
+        }
+        return wrappedDatabase.getChatContacts(email).thenApply { it.also { contacts[email] = it } }
     }
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {
-        // TODO implement in next sprint
-        return wrappedDatabase.getChat(chatId)
+        if (chats.containsKey(chatId)) {
+            return CompletableFuture.completedFuture(chats[chatId]!!)
+        }
+        return wrappedDatabase.getChat(chatId).thenApply { it.also { chats[chatId] = it } }
     }
 
     override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
-        // TODO implement in next sprint
-        return wrappedDatabase.sendMessage(chatId, message)
+        // if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat from the db)
+        if (chats.containsKey(chatId)) {
+            chats[chatId] = chats[chatId]!!.copy(messages = chats[chatId]!!.messages + message)
+        }
+        return wrappedDatabase.sendMessage(chatId, message) // we only the chat with the new message if the chat is already cached
     }
 
     override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
-        // TODO implement in next sprint
+        // Also here, if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat from the db)
+        if (chats.containsKey(chatId)) {
+            chats[chatId] = chats[chatId]!!.copy(messages = chats[chatId]!!.messages.map {
+                if (it.sender != email) {
+                    it.copy(readByRecipient = true)
+                } else {
+                    it
+                }
+            })
+        }
         return wrappedDatabase.markMessagesAsRead(chatId, email)
     }
 
     override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
-        // TODO implement in next sprint (adapt onChange to change this here and then call the passed onChange!)
-        wrappedDatabase.addChatListener(chatId, onChange)
+        val cachingOnChange = { chat: Chat ->
+            chats[chatId] = chat
+            onChange(chat)
+        }
+        wrappedDatabase.addChatListener(chatId, cachingOnChange)
     }
 
     override fun removeChatListener(chatId: String) {
-        // TODO implement in next sprint
         wrappedDatabase.removeChatListener(chatId)
     }
 

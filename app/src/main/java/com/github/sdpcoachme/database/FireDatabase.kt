@@ -89,7 +89,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
         val id = chatId.replace('.', ',')
         return getChat(id).thenCompose { chat ->
-            val updatedChat = chat.copy(messages = chat.messages + message)
+            val updatedChat = chat.copy(id = chatId, messages = chat.messages + message)
             setChild(chats, id, updatedChat)
         }
     }
