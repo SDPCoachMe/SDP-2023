@@ -102,6 +102,8 @@ class CachingDatabaseTest {
         assertEquals(willSmithUser.copy(events = eventList), retrievedUser)
     }*/
 
+    // TODO: Add tests for schedule caching
+
     @Test
     fun getChatContactsCachesContacts() {
         var timesCalled = 0
