@@ -1,6 +1,6 @@
 package com.github.sdpcoachme.data.messaging
 
-enum class ReadCheckMarks {
+enum class ReadState {
         SENT,
         RECEIVED,
         READ,

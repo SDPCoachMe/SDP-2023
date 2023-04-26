@@ -4,6 +4,7 @@ import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
+import com.github.sdpcoachme.data.messaging.ReadState
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -78,7 +79,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         if (chats.containsKey(chatId)) {
             chats[chatId] = chats[chatId]!!.copy(messages = chats[chatId]!!.messages.map {
                 if (it.sender != email) {
-                    it.copy(readByRecipient = true)
+                    it.copy(readState = ReadState.READ)
                 } else {
                     it
                 }

@@ -16,6 +16,7 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.messaging.Message
+import com.github.sdpcoachme.data.messaging.ReadState
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
@@ -80,13 +81,14 @@ class ChatActivityTest {
         database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
         database.setCurrentEmail(currentUser.email)
         database.updateUser(toUser).join()
+        database.updateUser(currentUser).join()
     }
 
     @After
     fun tearDown() {
         if (database is MockDatabase) {
             (database as MockDatabase).restoreDefaultChatSetup()
-            println("MockDatabase was torn down")
+            (database as MockDatabase).restoreDefaultAccountsSetup()
         }
     }
 
@@ -216,48 +218,60 @@ class ChatActivityTest {
     }
 
     @Test
-    fun messageSentByOtherUserDoesNotContainIsReadCheckMark() {
+    fun messageSentByOtherUserDoesNotContainReadStateCheckMark() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
 
             database.sendMessage(chatId, Message(toUser.email, "", LocalDateTime.now().toString()))
 
-            composeTestRule.onNodeWithTag(CHAT_MESSAGE.IS_READ, useUnmergedTree = true)
+            composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertDoesNotExist()
         }
     }
 
     @Test
-    fun messageSentByCurrentUserContainsIsReadCheckMark() {
+    fun messageSentByCurrentUserContainsReadStateCheckMark() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
 
             database.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString()))
 
-            composeTestRule.onNodeWithTag(CHAT_MESSAGE.IS_READ, useUnmergedTree = true)
+            composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertIsDisplayed()
         }
     }
 
     @Test
-    fun notReadMarkIsDisplayedWhenMessageNotYetReadByRecipient() {
+    fun sentMarkIsDisplayedWhenMessageNotYetReceivedByRecipient() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
 
-            database.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), false))
+            database.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), ReadState.SENT))
 
-            composeTestRule.onNodeWithTag(CHAT_MESSAGE.IS_READ, useUnmergedTree = true)
+            composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertIsDisplayed()
-                .assertContentDescriptionEquals("Not read by recipient icon")
+                .assertContentDescriptionEquals("message sent icon")
         }
     }
 
     @Test
-    fun readMarkIsDisplayedWhenMessageNotYetReadByRecipient() {
+    fun receivedMarkIsDisplayedWhenMessageOnlyReceivedByRecipient() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
 
-            database.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), true))
+            database.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), ReadState.RECEIVED))
 
-            composeTestRule.onNodeWithTag(CHAT_MESSAGE.IS_READ, useUnmergedTree = true)
+            composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertIsDisplayed()
-                .assertContentDescriptionEquals("read by recipient icon")
+                .assertContentDescriptionEquals("message received icon")
+        }
+    }
+
+    @Test
+    fun readMarkIsDisplayedWhenMessageReadByRecipient() {
+        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+
+            database.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), ReadState.READ))
+
+            composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
+                .assertIsDisplayed()
+                .assertContentDescriptionEquals("message read icon")
         }
     }
     

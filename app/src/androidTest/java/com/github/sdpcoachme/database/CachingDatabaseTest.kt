@@ -11,6 +11,7 @@ import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
+import com.github.sdpcoachme.data.messaging.ReadState
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
@@ -200,7 +201,7 @@ class CachingDatabaseTest {
             "New Message!",
             defaultUser.email,
             LocalDateTime.now().toString(),
-            false
+            ReadState.SENT
         )
         val expectedChat = defaultChat.copy(messages = defaultMessages + newMessage)
 
@@ -235,7 +236,7 @@ class CachingDatabaseTest {
             "New Message!",
             defaultUser.email,
             LocalDateTime.now().toString(),
-            false
+            ReadState.SENT
         )
 
         val wrappedDatabase = SendMessageDB(defaultChat)
@@ -274,7 +275,7 @@ class CachingDatabaseTest {
     fun markMessagesAsReadForCachedChatUpdatesCache() {
         val expectedChat = defaultChat.copy(messages = defaultChat.messages.map {
             if (it.sender != defaultUser.email)
-                it.copy(readByRecipient = true)
+                it.copy(readState = ReadState.READ)
             else
                 it
         })
@@ -534,25 +535,25 @@ class CachingDatabaseTest {
             defaultUser.email,
             "Hello",
             LocalDateTime.now().toString(),
-            true
+            ReadState.READ
         ),
         Message(
             defaultUser.email,
             "Hello number 2",
             LocalDateTime.now().toString(),
-            false
+            ReadState.RECEIVED
         ),
         Message(
             willSmithUser.email,
             "Hi",
             LocalDateTime.now().toString(),
-            true
+            ReadState.SENT
         ),
         Message(
             willSmithUser.email,
             "Goodby",
             LocalDateTime.now().toString(),
-            false
+            ReadState.SENT
         )
     )
     private val defaultChat = Chat().copy(

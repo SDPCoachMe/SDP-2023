@@ -4,6 +4,7 @@ import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
+import com.github.sdpcoachme.data.messaging.ReadState
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -22,7 +23,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private var currEmail = ""
     private val chats: DatabaseReference = rootDatabase.child("coachme").child("messages")
     private val fcmTokens: DatabaseReference = rootDatabase.child("coachme").child("fcmTokens")
-    var valueEventListener: ValueEventListener? = null
+    private var valueEventListener: ValueEventListener? = null
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         val userID = user.email.replace('.', ',')
@@ -100,12 +101,12 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
         val id = chatId.replace('.', ',')
         return getChat(id).thenCompose { chat ->
-            val readBys = chat.messages.filter { it.sender != email }.map { it.readByRecipient }
+            val readStates = chat.messages.filter { it.sender != email }.map { it.readState }
 
-            if (readBys.isNotEmpty() && readBys.contains(false)) { // check if update is needed
+            if (!readStates.all { it == ReadState.READ }) { // check if update is needed
                 val updatedMessages = chat.messages.map { message ->
                     if (message.sender != email) {
-                        message.copy(readByRecipient = true)
+                        message.copy(readState = ReadState.READ)
                     } else {
                         message
                     }

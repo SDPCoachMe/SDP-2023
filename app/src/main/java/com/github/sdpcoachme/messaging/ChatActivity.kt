@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +28,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
+import com.github.sdpcoachme.data.messaging.ReadState
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.BACK
@@ -74,7 +76,7 @@ class ChatActivity : ComponentActivity() {
             val LABEL = "${tag}Label"
             val TIMESTAMP = "${tag}Timestamp"
             val DATE_ROW = "${tag}DateRow"
-            val IS_READ = "${tag}IsRead"
+            val READ_STATE = "${tag}READ_STATE"
         }
 
         class Buttons {
@@ -430,12 +432,33 @@ fun MessageRow(message: Message,
             // once online/offline mode implemented, we could add the single + double check mark functionality
             // similar to whatsapp
             if (message.sender == currentUserEmail) {
+                val imgVector: ImageVector
+                val contentDescr: String
+                val color: Color
+                when (message.readState) {
+                    ReadState.SENT -> {
+                        imgVector = Icons.Default.Check
+                        contentDescr = "message sent icon"
+                        color = timeAndUnreadMarkColor
+                    }
+                    ReadState.RECEIVED -> {
+                        imgVector = Icons.Default.DoneAll
+                        contentDescr = "message received icon"
+                        color = timeAndUnreadMarkColor
+                    }
+                    ReadState.READ -> {
+                        imgVector = Icons.Default.DoneAll
+                        contentDescr = "message read icon"
+                        color = readMarkColor
+                    }
+                }
+
                 Icon(
-                    imageVector = if (message.readByRecipient) Icons.Default.DoneAll else Icons.Default.Check,
-                    contentDescription = (if (message.readByRecipient) "" else "Not ") + "read by recipient icon",
-                    tint = if (message.readByRecipient) readMarkColor else timeAndUnreadMarkColor,
+                    imageVector = imgVector,
+                    contentDescription = contentDescr,
+                    tint = color,
                     modifier = Modifier
-                        .testTag(CHAT_MESSAGE.IS_READ)
+                        .testTag(CHAT_MESSAGE.READ_STATE)
                         .fillMaxWidth(0.07f)
                         .padding(start = 0.dp, end = 0.dp, top = 5.dp, bottom = 2.dp)
                         .align(Alignment.BottomEnd)
@@ -498,7 +521,7 @@ fun ChatField(currentUserEmail: String,
 
                     database.sendMessage(
                         chatId,
-                        Message(currentUserEmail, message.trim(), LocalDateTime.now().toString(), false)
+                        Message(currentUserEmail, message.trim(), LocalDateTime.now().toString(), ReadState.SENT)
                     ).thenAccept {
                         onSend()
                     }
