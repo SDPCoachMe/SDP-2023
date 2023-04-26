@@ -11,7 +11,6 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.Dashboard
 import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.SIGN_IN
 import com.github.sdpcoachme.auth.LoginActivity.TestTags.Companion.INFO_TEXT
 import com.github.sdpcoachme.data.UserInfo
@@ -21,6 +20,7 @@ import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
+import com.github.sdpcoachme.ui.Dashboard
 import junit.framework.TestCase.assertNull
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
