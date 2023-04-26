@@ -351,9 +351,9 @@ class ScheduleActivityTest {
             composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
             composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).assertExists()
             composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).performClick()
-            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(7).format(formatter)} - ${currentMonday.plusDays(13).format(formatter)}")
+            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(7).format(formatter)} - \n${currentMonday.plusDays(13).format(formatter)}")
             composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).performClick()
-            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(14).format(formatter)} - ${currentMonday.plusDays(20).format(formatter)}")
+            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(14).format(formatter)} - \n${currentMonday.plusDays(20).format(formatter)}")
         }
     }
 
@@ -365,9 +365,9 @@ class ScheduleActivityTest {
             composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
             composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).assertExists()
             composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).performClick()
-            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(7).format(formatter)} - ${currentMonday.minusDays(1).format(formatter)}")
+            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(7).format(formatter)} - \n${currentMonday.minusDays(1).format(formatter)}")
             composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).performClick()
-            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(14).format(formatter)} - ${currentMonday.minusDays(8).format(formatter)}")
+            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(14).format(formatter)} - \n${currentMonday.minusDays(8).format(formatter)}")
         }
     }
 
