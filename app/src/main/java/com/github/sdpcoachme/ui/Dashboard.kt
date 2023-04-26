@@ -1,5 +1,6 @@
-package com.github.sdpcoachme
+package com.github.sdpcoachme.ui
 
+import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,24 +21,27 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.COACHES_LIST
-import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
-import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.HELP
-import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.LOGOUT
-import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.MESSAGING
-import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.PLAN
-import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.PROFILE
-import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.SCHEDULE
-import com.github.sdpcoachme.Dashboard.TestTags.Buttons.Companion.SETTINGS
-import com.github.sdpcoachme.Dashboard.TestTags.Companion.BAR_TITLE
-import com.github.sdpcoachme.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
-import com.github.sdpcoachme.Dashboard.TestTags.Companion.DRAWER_HEADER
-import com.github.sdpcoachme.Dashboard.TestTags.Companion.MENU_LIST
+import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.R
 import com.github.sdpcoachme.auth.LoginActivity
+import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.profile.CoachesListActivity
 import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.schedule.ScheduleActivity
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.COACHES_LIST
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HELP
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.LOGOUT
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.MESSAGING
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.PLAN
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.PROFILE
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.SCHEDULE
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.SETTINGS
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.MENU_LIST
 import kotlinx.coroutines.launch
 
 /**
@@ -72,8 +76,8 @@ class Dashboard {
  * @param appContent = set here the root composable of the current launched activity
  */
 @Composable
-fun Dashboard(appContent: @Composable (Modifier) -> Unit, email: String) {
-    Dashboard(appContent, email, null)
+fun Dashboard(appContent: @Composable (Modifier) -> Unit) {
+    Dashboard(null, appContent)
 }
 
 /**
@@ -82,7 +86,7 @@ fun Dashboard(appContent: @Composable (Modifier) -> Unit, email: String) {
  * @param title = title to display on the top application bar
  */
 @Composable
-fun Dashboard(appContent: @Composable (Modifier) -> Unit, email: String, title: String?) {
+fun Dashboard(title: String?, appContent: @Composable (Modifier) -> Unit) {
 
     val context = LocalContext.current
     // equivalent to remember { ScaffoldState(...) }
@@ -100,7 +104,7 @@ fun Dashboard(appContent: @Composable (Modifier) -> Unit, email: String, title: 
             )},
         drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
         drawerContent = {
-            DrawerHeader(email)
+            DrawerHeader(context)
             DrawerBody(
                 items = listOf(
                     MenuItem(tag = PLAN, title = "Map",
@@ -188,21 +192,30 @@ fun AppBar(title: String, onNavigationIconClick: () -> Unit) {
 }
 
 @Composable
-fun DrawerHeader(email: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 40.dp)
-            .testTag(DRAWER_HEADER),
-        contentAlignment = Alignment.Center,
-        content = {
-            Column(horizontalAlignment = CenterHorizontally) {
-                Text(text = "Dashboard", fontSize = 50.sp)
-                Text(modifier = Modifier.testTag(DASHBOARD_EMAIL),
-                    text = email, fontSize = 20.sp)
+fun DrawerHeader(context: Context) {
+    val email = (context.applicationContext as CoachMeApplication).database.getCurrentEmail()
+
+    if (email.isEmpty()) {
+        val errorMsg = "Dashboard did not receive an email address.\n Please return to the login page and try again."
+        ErrorHandlerLauncher().launchExtrasErrorHandler(context, errorMsg)
+    } else {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 40.dp)
+                .testTag(DRAWER_HEADER),
+            contentAlignment = Alignment.Center,
+            content = {
+                Column(horizontalAlignment = CenterHorizontally) {
+                    Text(text = "Dashboard", fontSize = 50.sp)
+                    Text(
+                        modifier = Modifier.testTag(DASHBOARD_EMAIL),
+                        text = email, fontSize = 20.sp
+                    )
+                }
             }
-        }
-    )
+        )
+    }
 }
 
 @Composable

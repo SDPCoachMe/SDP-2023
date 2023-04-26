@@ -1,87 +1,203 @@
 package com.github.sdpcoachme.profile
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultCaller
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.Button
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.Sports
-import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.database.Database
-import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
-import com.github.sdpcoachme.location.MapActivity
+import com.github.sdpcoachme.profile.SelectSportsActivity.TestTags.Buttons.Companion.CANCEL
+import com.github.sdpcoachme.profile.SelectSportsActivity.TestTags.Buttons.Companion.DONE
+import com.github.sdpcoachme.profile.SelectSportsActivity.TestTags.Companion.TITLE
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
 
+/**
+ * Activity that allows the user to select sports. To launch this activity from another caller activity,
+ * first run getHandler from the onCreate method of your caller activity. This registers the handler
+ * with the caller activity. Then, use the handler (lambda returned by getHandler) to launch the activity.
+ *
+ * The handler can be called from anywhere in the caller activity, and takes an Intent as a parameter.
+ * The Intent should be created using the getIntent method of this class. The handler returns a
+ * CompletableFuture that completes with the result value inputted by the user.
+ *
+ * See https://developer.android.com/training/basics/intents/result for more information.
+ */
 class SelectSportsActivity : ComponentActivity() {
 
     class TestTags {
-        class ListRowTag(tag: String) {
-            val TEXT = "${tag}Text"
-            val ICON = "${tag}Icon"
-            val ROW = "${tag}Row"
+        class ListRowTag(sport: Sports) {
+            val TEXT = "${sport.sportName}Text"
+            val ICON = "${sport.sportName}Icon"
+            val ROW = "${sport.sportName}Row"
         }
         class MultiSelectListTag {
             companion object {
                 const val LAZY_SELECT_COLUMN = "lazySelectColumn"
-                val ROW_TEXT_LIST = Sports.values().map { ListRowTag(it.sportName) }
+                val ROW_TEXT_LIST = Sports.values().map { ListRowTag(it) }
             }
         }
         class Buttons {
             companion object {
-                const val REGISTER = "registerButton"
+                const val DONE = "done"
+                const val CANCEL = "cancel"
             }
         }
         companion object {
-            const val LIST_TITLE = "listTitle"
+            const val TITLE = "title"
             const val COLUMN = "column"
         }
     }
 
-    private lateinit var database : Database
-    private lateinit var email: String
+    // TODO: a lot of code duplication between this class and EditTextActivity.
+    //  Consider refactoring to a common base class, when time allows.
+    companion object {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        database = (application as CoachMeApplication).database
-        email = database.getCurrentEmail()
+        private const val INITIAL_VALUE_KEY = "initialValue"
+        private const val TITLE_KEY = "title"
 
-        if(email.isEmpty()) {
-            val errorMsg = "The sport selection did not receive an email address." +
-                    "\n Please return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
+        const val DEFAULT_TITLE = "Select sports"
+
+        private const val RETURN_VALUE_KEY = "returnValue"
+
+        /**
+         * Creates an Intent that can be used to launch this activity.
+         *
+         * @param context The context of the caller activity.
+         * @param initialValue The initial selected sports to display.
+         * @param title The title displayed in the app bar.
+         * @return An Intent that can be used to launch this activity.
+         */
+        fun getIntent(
+            context: Context,
+            title: String? = null,
+            initialValue: List<Sports>? = null
+        ): Intent {
+            val intent = Intent(context, SelectSportsActivity::class.java)
+            intent.putExtra(TITLE_KEY, title)
+            intent.putExtra(INITIAL_VALUE_KEY, initialValue?.toTypedArray())
+            return intent
         }
 
-        val isEditingProfile = intent.getBooleanExtra("isEditingProfile", false)
+        /**
+         * Creates a handler that can be used to launch this activity. This method should be called
+         * from the onCreate method of the caller activity. The returned handler can be called from
+         * anywhere in the caller activity, and takes an Intent as a parameter. The Intent should be
+         * created using the getIntent method of this class.
+         *
+         * @param caller The caller activity.
+         * @return A handler that can be used to launch this activity.
+         */
+        fun getHandler(caller: ActivityResultCaller): (Intent) -> CompletableFuture<List<Sports>> {
+            // Keep a reference to the future so we can complete it later
+            lateinit var futureValue: CompletableFuture<List<Sports>>
+            // Set up lambda that handles result
+            val launcher = caller.registerForActivityResult(
+                ActivityResultContracts.StartActivityForResult()
+            ) { result: ActivityResult ->
+                when (result.resultCode) {
+                    RESULT_OK -> {
+                        result.data!!.let {
+                            futureValue.complete(getValueFromIntent(it))
+                        }
+                    }
+                    RESULT_CANCELED -> {
+                        // The user canceled the operation
+                        futureValue.completeExceptionally(SelectSportsCancelledException())
+                    }
+                    else -> {
+                        // There was an unknown error
+                        futureValue.completeExceptionally(SelectSportsFailedException())
+                    }
+                }
+            }
+
+            return { intent ->
+                futureValue = CompletableFuture<List<Sports>>()
+                launcher.launch(intent)
+                futureValue
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST", "DEPRECATION")
+        private fun getValueFromIntent(intent: Intent): List<Sports> {
+            // Note: here we use this deprecated method, since using the new method requires API
+            // TIRAMISU, and we don't require it for our app.
+            // Note 2: We never send null anyways, so double bang is safe here.
+            return (intent.getSerializableExtra(RETURN_VALUE_KEY)!! as Array<Sports>).toList()
+        }
+
+        // Used to handle edit text activity errors or cancelling
+        class SelectSportsFailedException(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {
+            constructor(cause: Throwable) : this(null, cause)
+        }
+        class SelectSportsCancelledException(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {
+            constructor(cause: Throwable) : this(null, cause)
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST", "DEPRECATION")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Note: here we use this deprecated method, since using the new method requires API
+        // TIRAMISU, and we don't require it for our app.
+        val initialValue = (intent.getSerializableExtra(INITIAL_VALUE_KEY) as? Array<Sports>)?.toList() ?: emptyList()
+        val title = intent.getStringExtra(TITLE_KEY) ?: DEFAULT_TITLE
+
         setContent {
             CoachMeTheme {
-                FavoriteSportsSelection(isEditingProfile, database.getUser(email))
+                SelectSportsLayout(
+                    onSubmit = {
+                        setResult(RESULT_OK, Intent().putExtra(RETURN_VALUE_KEY, it.toTypedArray()))
+                        finish()
+                    },
+                    onCancel = {
+                        setResult(RESULT_CANCELED)
+                        finish()
+                    },
+                    initialValue = initialValue,
+                    title = title
+                )
             }
         }
     }
 
+    /**
+     * The layout of the activity.
+     *
+     * @param initialValue The initial selected sports to display.
+     * @param onCancel A callback to be called when the user cancels the operation.
+     * @param onSubmit A callback to be called when the user submits the operation.
+     * @param title The title displayed in the app bar.
+     */
     @Composable
-    fun FavoriteSportsSelection(isEditingProfile: Boolean, userFuture: CompletableFuture<UserInfo>) {
-        val context = LocalContext.current
+    fun SelectSportsLayout(
+        initialValue: List<Sports>,
+        onCancel: () -> Unit,
+        onSubmit: (List<Sports>) -> Unit,
+        title: String
+    ) {
         var sportItems by remember {
-            mutableStateOf(Sports.values().map { ListItem(it, false) })
+            mutableStateOf(Sports.values().map { ListItem(it, initialValue.contains(it)) })
         }
-        var userInfo by remember { mutableStateOf(userFuture) }
 
         val toggleSelectSport: (Sports) -> Unit = { sport ->
             sportItems = sportItems.map { item ->
@@ -93,62 +209,53 @@ class SelectSportsActivity : ComponentActivity() {
             }
         }
 
-        userInfo.thenAccept { user ->
-            if (user != null) {
-                sportItems = sportItems.map { item ->
-                    if (user.sports.contains(item.element)) {
-                        item.copy(selected = true)
-                    } else {
-                        item
-                    }
-                }
-                userInfo = CompletableFuture.completedFuture(null)
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(title, modifier = Modifier.testTag(TITLE))
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onCancel, modifier = Modifier.testTag(CANCEL)) {
+                            Icon(Icons.Filled.ArrowBack, "Back")
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = {
+                                onSubmit(sportItems.filter { it.selected }.map { it.element })
+                            },
+                            modifier = Modifier.testTag(DONE)
+                        ) {
+                            Icon(Icons.Filled.Done, "Done",
+                                tint = MaterialTheme.colors.onPrimary)
+                        }
+                    })
             }
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .testTag(TestTags.COLUMN),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Select your favorite sports:",
-                modifier = Modifier.testTag(TestTags.LIST_TITLE)
-            )
-            MultiSelectList(
-                items = sportItems,
-                toggleSelectSport = toggleSelectSport
-            )
-            Button(
-                modifier = Modifier.testTag(TestTags.Buttons.REGISTER),
-                onClick = {
-                    database.getUser(email)
-                        .thenApply { user -> user.copy(
-                            sports = sportItems.filter { it.selected }.map { it.element })
-                        }
-                        .thenApply { user -> database.updateUser(user) }
-                        .thenApply {
-                            val targetClass =
-                                if (isEditingProfile) ProfileActivity::class.java
-                                else MapActivity::class.java
-                            val intent = Intent(context, targetClass)
-                            startActivity(intent)
-                        }.exceptionally {
-                            println("inside the error handler $it")
-                            val errorMsg = "There was a database error.\nPlease return to the login page and try again."
-                            ErrorHandlerLauncher().launchExtrasErrorHandler(
-                                context, errorMsg)
-                        }
-                }
-            )
-            { Text("REGISTER") }
-
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 20.dp)
+                    .testTag(TestTags.COLUMN),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                MultiSelectList(
+                    items = sportItems,
+                    toggleSelectSport = toggleSelectSport
+                )
+            }
         }
     }
 
+    /**
+     * Composable that displays a list of sports that can be selected.
+     * @param items The list of sports to display.
+     * @param toggleSelectSport A function that will be called whenever a sport is selected or
+     * unselected.
+     */
     @Composable
     fun MultiSelectList(items: List<ListItem<Sports>>, toggleSelectSport: (Sports) -> Unit) {
         LazyColumn(
@@ -171,16 +278,13 @@ class SelectSportsActivity : ComponentActivity() {
                     Text(text = items[i].element.sportName,
                         modifier = Modifier.testTag(
                             TestTags.MultiSelectListTag.ROW_TEXT_LIST[i].TEXT))
-                    if (items[i].selected) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = "Selected",
-                            tint = Color.Black,
-                            modifier = Modifier
-                                .size(20.dp)
-                                .testTag(TestTags.MultiSelectListTag.ROW_TEXT_LIST[i].ICON)
-                        )
-                    }
+                    Icon(
+                        imageVector = if (items[i].selected) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
+                        contentDescription = "Selected",
+                        tint = MaterialTheme.colors.primary,
+                        modifier = if (items[i].selected) Modifier.size(20.dp).testTag(TestTags.MultiSelectListTag.ROW_TEXT_LIST[i].ICON)
+                                    else Modifier.size(20.dp)
+                    )
                 }
             }
         }

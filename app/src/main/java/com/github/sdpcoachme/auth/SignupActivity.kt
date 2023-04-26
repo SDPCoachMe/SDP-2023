@@ -21,11 +21,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.profile.SelectSportsActivity
+import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
+import com.github.sdpcoachme.data.UserLocation
 import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
+import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.location.autocomplete.LocationAutocompleteHandler
+import com.github.sdpcoachme.profile.SelectSportsActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
 
@@ -52,6 +55,7 @@ class SignupActivity : ComponentActivity() {
     private lateinit var database : Database
     private lateinit var email: String
     private lateinit var locationAutocompleteHandler: LocationAutocompleteHandler
+    private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,6 +68,9 @@ class SignupActivity : ComponentActivity() {
         } else {
             // Set up handler for calls to location autocomplete
             locationAutocompleteHandler = (application as CoachMeApplication).locationAutocompleteHandler(this, this)
+
+            // Set up handler for calls to select sports
+            selectSportsHandler = SelectSportsActivity.getHandler(this)
 
             setContent {
                 CoachMeTheme {
@@ -136,31 +143,53 @@ class SignupActivity : ComponentActivity() {
             Button(
                 modifier = Modifier.testTag(TestTags.Buttons.SIGN_UP),
                 onClick = {
+                    var newUser = UserInfo(
+                        firstName = firstName,
+                        lastName = lastName,
+                        email = email,
+                        phone = phone,
+                        coach = isCoach,
+                        // location added later with LocationAutocompleteHandler
+                        location = UserLocation(),
+                        // sports added later in SelectSportsActivity
+                        sports = listOf()
+                    )
                     // Launch autocomplete activity, then wait for result
-                    locationAutocompleteHandler.launch().thenCompose {
-                        location ->
-                            // Add the new user to the database
-                            val newUser = UserInfo(
-                                firstName = firstName,
-                                lastName = lastName,
-                                email = email,
-                                phone = phone,
-                                location = location,
-                                coach = isCoach,
-                                // sports added later in SelectSportsActivity
-                                sports = listOf()
-                            )
-                            database.updateUser(newUser)
-                    }.thenAccept {
-                        // To notify test framework that we sent UserInfo to database
+                    locationAutocompleteHandler.launch().thenCompose { location ->
+                        newUser = newUser.copy(location = location)
+                        // Update database
+                        // Note: the reason we update the database here already is for compatibility
+                        // with the test framework. Obscure issues appear if we allow the signup
+                        // activity to launch the map activity in the tests. This means that we have
+                        // to test that the database is updated correctly here, instead of after the
+                        // map activity is launched.
+                        database.updateUser(newUser)
+                    }.thenCompose {
+                        // Notify test framework that the activity has finished sending data to the database
                         databaseStateSending.complete(null)
                         // Launch SelectSportsActivity
-                        val intent = Intent(context, SelectSportsActivity::class.java)
-                        startActivity(intent)
+                        selectSportsHandler(
+                            SelectSportsActivity.getIntent(
+                                context = context,
+                                initialValue = emptyList(),
+                                title = "Select favorite sports"
+                            )
+                        )
+                    }.thenCompose { sports ->
+                        newUser = newUser.copy(sports = sports)
+                        // Update database with sports (this one is not tested)
+                        database.updateUser(newUser)
+                    }.thenAccept {
+                        // Go to main activity
+                        startActivity(Intent(context, MapActivity::class.java))
                     }.exceptionally {
                         when (it.cause) {
                             is LocationAutocompleteHandler.AutocompleteCancelledException -> {
                                 // The user cancelled the Places Autocomplete activity
+                                // For now, do nothing, which allows the user to click on NEXT and try again.
+                            }
+                            is SelectSportsActivity.Companion.SelectSportsCancelledException -> {
+                                // The user cancelled the Select Sports activity
                                 // For now, do nothing, which allows the user to click on NEXT and try again.
                             }
                             else -> {
@@ -177,7 +206,7 @@ class SignupActivity : ComponentActivity() {
                     }
                 }
             )
-            { Text("SELECT LOCATION") }
+            { Text("SELECT HOME LOCATION") }
         }
     }
 }

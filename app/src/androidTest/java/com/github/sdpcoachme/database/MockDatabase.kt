@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * A mock database class
  */
-class MockDatabase: Database {
+open class MockDatabase: Database {
 
     // TODO: database should be empty by default, and tests should add data to it.
     //  This way, we can make sure each test is independent from the others
