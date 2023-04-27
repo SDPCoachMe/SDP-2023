@@ -5,12 +5,13 @@ package com.github.sdpcoachme.database
 // Otherwise we would have complicated dependencies.
 
 import androidx.compose.ui.graphics.Color
-import com.github.sdpcoachme.data.Event
+import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
+import com.github.sdpcoachme.data.schedule.Schedule
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
 import org.hamcrest.CoreMatchers.`is`
@@ -86,19 +87,108 @@ class CachingDatabaseTest {
     }
 
     @Test
-    fun addEventsToUserPutsUserInCacheAndUpdatesEvents() {
-        val wrappedDatabase = MockDatabase()
+    fun addEventsAddsThemToWrappedDatabase() {
+        var timesCalled = 0
+        class ScheduleDB: MockDatabase() {
+            override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+                timesCalled++
+                return CompletableFuture.completedFuture(Schedule(events))
+            }
+        }
+
+        val wrappedDatabase = ScheduleDB()
         val cachingDatabase = CachingDatabase(wrappedDatabase)
-        val addUser = cachingDatabase.updateUser(willSmithUser)
-            .thenApply { cachingDatabase.clearCache() }
+        cachingDatabase.setCurrentEmail(exampleEmail)
+        val isCorrect = cachingDatabase.addEvents(eventList, currentMonday)
+            .thenApply {
+                assertThat(timesCalled, `is`(1))
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
 
-        addUser.thenCompose { cachingDatabase.addEventsToUser(willSmithUser.email, eventList) }
-            .get(5, SECONDS)
-        assertTrue(cachingDatabase.isCached(willSmithUser.email))
+        assertTrue(isCorrect)
+    }
 
-        val retrievedUser = cachingDatabase.getUser(willSmithUser.email)
-            .get(5, SECONDS)
-        assertEquals(willSmithUser.copy(events = eventList), retrievedUser)
+    @Test
+    fun getScheduleWithCorrectCacheReturnsCachedSchedule() {
+        var timesCalled = 0
+        class ScheduleDB: MockDatabase() {
+            override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+                timesCalled++
+                return CompletableFuture.completedFuture(Schedule(eventList))
+            }
+        }
+
+        val wrappedDatabase = ScheduleDB()
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+        cachingDatabase.setCurrentEmail(exampleEmail)
+        val isCorrect = cachingDatabase.getSchedule(currentMonday)
+            .thenCompose {
+                assertThat(timesCalled, `is`(1))
+                cachingDatabase.getSchedule(currentMonday)
+            }.thenApply {
+                assertThat(timesCalled, `is`(1))
+                assertThat(it.events, `is`(cachedEvents))
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+        assertTrue(isCorrect)
+    }
+
+    @Test
+    fun getScheduleWithEmptyCacheCachesCorrectSchedule() {
+        var timesCalled = 0
+        class ScheduleDB: MockDatabase() {
+            override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+                timesCalled++
+                return CompletableFuture.completedFuture(Schedule(eventList))
+            }
+        }
+
+        val wrappedDatabase = ScheduleDB()
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+        cachingDatabase.setCurrentEmail(exampleEmail)
+        val isCorrect = cachingDatabase.getSchedule(currentMonday)
+            .thenApply {
+                assertThat(timesCalled, `is`(1))
+                assertThat(it.events, `is`(cachedEvents))
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(isCorrect)
+    }
+
+    @Test
+    fun getScheduleWithNewCurrentMondayCachesCorrectSchedule() {
+        var timesCalled = 0
+        class ScheduleDB: MockDatabase() {
+            override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+                timesCalled++
+                return CompletableFuture.completedFuture(Schedule(eventList))
+            }
+        }
+
+        val wrappedDatabase = ScheduleDB()
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+        cachingDatabase.setCurrentEmail(exampleEmail)
+        val isCorrect = cachingDatabase.getSchedule(currentMonday)
+            .thenCompose {
+                assertThat(timesCalled, `is`(1))
+                assertThat(it.events, `is`(cachedEvents))
+                cachingDatabase.getSchedule(currentMonday.plusWeeks(6))
+            }.thenApply {
+                assertThat(timesCalled, `is`(2))
+                assertThat(it.events, `is`(nonCachedEvents))
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(isCorrect)
     }
 
     @Test
@@ -176,7 +266,6 @@ class CachingDatabaseTest {
     }
     @Test
     fun sendingMessageForCachedChatUpdatesThatChatInsideTheCache() {
-
         val newMessage = Message(
             "New Message!",
             defaultUser.email,
@@ -270,9 +359,6 @@ class CachingDatabaseTest {
                     .thenCompose {
                         cachingDatabase.getChat(defaultChat.id)
                             .thenApply {
-                                println("times called ${wrappedDatabase.timesCalled()}")
-                                println("same as expected chat: ${it == expectedChat}")
-
                                 assertThat(wrappedDatabase.timesCalled(), `is`(1))
                                 assertThat(it, `is`(expectedChat))
 
@@ -288,7 +374,6 @@ class CachingDatabaseTest {
 
     @Test
     fun markMessageAsReadForNotCachedChatDoesNotCacheTheChat() {
-
         val wrappedDatabase = MarkMessagesAsReadDB(defaultChat)
         val cachingDatabase = CachingDatabase(wrappedDatabase)
 
@@ -372,9 +457,7 @@ class CachingDatabaseTest {
         exampleEmail,
         "1234567890",
         LAUSANNE,
-        false,
-        emptyList(),
-        emptyList()
+        false
     )
 
     private val willSmithUser = UserInfo(
@@ -383,9 +466,7 @@ class CachingDatabaseTest {
         "oui@non.com",
         "0000000000",
         NEW_YORK,
-        false,
-        emptyList(),
-        emptyList()
+        false
     )
 
     private val rogerFedererUser = UserInfo(
@@ -394,9 +475,7 @@ class CachingDatabaseTest {
         "roger@federer.com",
         "1111111111",
         LAUSANNE,
-        true,
-        emptyList(),
-        emptyList()
+        true
     )
 
     private val userList = listOf(defaultUser, willSmithUser, rogerFedererUser)
@@ -435,7 +514,7 @@ class CachingDatabaseTest {
 
     val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
-    private val eventList = listOf(
+    private val cachedEvents = listOf(
         Event(
             name = "Google I/O Keynote",
             color = Color(0xFFAFBBF2).value.toString(),
@@ -473,6 +552,15 @@ class CachingDatabaseTest {
         )
     )
 
+    private val nonCachedEvents = listOf(
+        Event(
+            name = "Event outside of cache borders",
+            color = Color(0xFF6DD3CE).value.toString(),
+            start = currentMonday.plusWeeks(5).atTime(13, 0, 0).toString(),
+            end = currentMonday.plusWeeks(5).atTime(15, 0, 0).toString(),
+        )
+    )
 
+    private val eventList = cachedEvents + nonCachedEvents
 
 }

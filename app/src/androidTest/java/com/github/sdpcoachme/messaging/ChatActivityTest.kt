@@ -54,7 +54,6 @@ class ChatActivityTest {
         "0987654321",
         LAUSANNE,
         true,
-        emptyList(),
         emptyList()
     )
     private val defaultIntent = Intent(
@@ -69,7 +68,6 @@ class ChatActivityTest {
         "0123456789",
         NEW_YORK,
         false,
-        emptyList(),
         emptyList()
     )
     private val chatId = (currentUser.email + toUser.email)

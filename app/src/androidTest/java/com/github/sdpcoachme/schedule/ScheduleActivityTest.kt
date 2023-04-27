@@ -12,14 +12,21 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
-import com.github.sdpcoachme.data.Event
-import com.github.sdpcoachme.data.ShownEvent
+import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.ShownEvent
+import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.MapActivity
+import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Buttons.Companion.LEFT_ARROW_BUTTON
+import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Buttons.Companion.RIGHT_ARROW_BUTTON
 import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.BASIC_SCHEDULE
 import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.WEEK_HEADER
+import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.TextFields.Companion.CURRENT_WEEK_TEXT_FIELD
+import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertTrue
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -27,12 +34,13 @@ import org.junit.runner.RunWith
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
+import java.util.concurrent.TimeUnit.SECONDS
 
 @RunWith(AndroidJUnit4::class)
 class ScheduleActivityTest {
-    private val database = (InstrumentationRegistry.getInstrumentation()
-        .targetContext.applicationContext as CoachMeApplication).database
+    private lateinit var database: Database
     private val defaultEmail = "example@email.com"
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
 
@@ -74,19 +82,16 @@ class ScheduleActivityTest {
 
     @Before
     fun setup() {
+        database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
         database.setCurrentEmail(defaultEmail)
     }
 
-    @Test
-    fun addEventsToDatabaseUpdatesUserInfoCorrectly() {
-        val oldUserInfo = database.getUser(defaultEmail)
-
-        database.addEventsToUser(defaultEmail, eventList)
-
-        val newUserInfo = database.getUser(defaultEmail)
-        newUserInfo.thenAccept {
-            assertTrue(oldUserInfo != newUserInfo)
-            assertTrue(it.events == eventList)
+    @After
+    fun teardown() {
+        database.setCurrentEmail("")
+        if (database is MockDatabase) {
+            (database as MockDatabase).restoreDefaultSchedulesSetup()
+            println("MockDatabase was torn down")
         }
     }
 
@@ -99,7 +104,7 @@ class ScheduleActivityTest {
 
         ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
             initiallyDisplayed.forEach { tag ->
-                composeTestRule.onNodeWithTag(tag).assertExists()
+                composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).assertExists()
             }
         }
     }
@@ -130,15 +135,17 @@ class ScheduleActivityTest {
 
     @Test
     fun eventsOfCurrentWeekAreDisplayedCorrectly() {
-        database.addEventsToUser(defaultEmail, eventList).thenRun {
+        database.setCurrentEmail(defaultEmail)
+        database.addEvents(eventList, currentMonday).thenRun {
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
-                val userInfo = database.getUser(defaultEmail)
-                userInfo.thenAccept {
+                val schedule = database.getSchedule(currentMonday)
+                val nonnull = schedule.thenAccept {
                     it.events.forEach { event ->
                         composeTestRule.onNodeWithText(event.name).assertExists()
                     }
-                }
+                }.exceptionally { null }.get(5, SECONDS)
+                assertNotNull(nonnull)
             }
         }
     }
@@ -152,11 +159,12 @@ class ScheduleActivityTest {
             end = currentMonday.plusDays(2).atTime(15, 0, 0).toString(),
             description = "This is a multi day event.",
         )
-        database.addEventsToUser(defaultEmail, listOf(multiDayEvent)).thenRun {
+        database.addEvents(listOf(multiDayEvent), currentMonday).thenRun {
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
-                val userInfo = database.getUser(defaultEmail)
-                userInfo.thenAccept {
+
+                val schedule = database.getSchedule(currentMonday)
+                val nonnull = schedule.thenAccept {
                     val expectedShownEvents = listOf(
                         ShownEvent(
                             name = multiDayEvent.name,
@@ -188,7 +196,8 @@ class ScheduleActivityTest {
                     )
                     val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)
                     assertTrue(expectedShownEvents == actualShownEvents)
-                }
+                }.exceptionally { null }.get(5, SECONDS)
+                assertNotNull(nonnull)
             }
         }
     }
@@ -202,11 +211,12 @@ class ScheduleActivityTest {
             end = nextMonday.plusDays(1).atTime(15, 0, 0).toString(),
             description = "This is a multi week event.",
         )
-        database.addEventsToUser(defaultEmail, listOf(multiWeekEvent)).thenRun {
+        database.addEvents(listOf(multiWeekEvent), currentMonday).thenRun {
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
-                val userInfo = database.getUser(defaultEmail)
-                userInfo.thenAccept {
+
+                val schedule = database.getSchedule(currentMonday)
+                val nonnull = schedule.thenAccept {
                     val expectedShownEvents = listOf(
                         ShownEvent(
                             name = multiWeekEvent.name,
@@ -253,11 +263,11 @@ class ScheduleActivityTest {
                     )
                     val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)
                     assertTrue(expectedShownEvents == actualShownEvents)
-                }
+                }.exceptionally { null }.get(5, SECONDS)
+                assertNotNull(nonnull)
             }
         }
     }
-
 
     @Test
     fun eventsOfNextWeekAreDisplayedCorrectly() {
@@ -268,12 +278,13 @@ class ScheduleActivityTest {
             end = nextMonday.atTime(15, 0, 0).toString(),
             description = "This is an event of the next week.",
         )
-        database.addEventsToUser(defaultEmail, listOf(nextWeekEvent)).thenRun {
+        database.addEvents(listOf(nextWeekEvent), currentMonday).thenRun {
             database.setCurrentEmail(defaultEmail)
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
-                val userInfo = database.getUser(defaultEmail)
-                userInfo.thenAccept {
+
+                val schedule = database.getSchedule(currentMonday)
+                val nonnull = schedule.thenAccept {
                     val expectedShownEvents = listOf(
                         ShownEvent(
                             name = nextWeekEvent.name,
@@ -287,7 +298,8 @@ class ScheduleActivityTest {
                     )
                     val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)
                     assertTrue(expectedShownEvents == actualShownEvents)
-                }
+                }.exceptionally { null }.get(5, SECONDS)
+                assertNotNull(nonnull)
             }
         }
     }
@@ -302,12 +314,13 @@ class ScheduleActivityTest {
             end = previousMonday.atTime(15, 0, 0).toString(),
             description = "This is an event of the previous week.",
         )
-        database.addEventsToUser(defaultEmail, listOf(previousWeekEvent)).thenRun {
+        database.addEvents(listOf(previousWeekEvent), currentMonday).thenRun {
             database.setCurrentEmail(defaultEmail)
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
-                val userInfo = database.getUser(defaultEmail)
-                userInfo.thenAccept {
+
+                val schedule = database.getSchedule(currentMonday)
+                val nonnull = schedule.thenAccept {
                     val expectedShownEvents = listOf(
                         ShownEvent(
                             name = previousWeekEvent.name,
@@ -321,39 +334,38 @@ class ScheduleActivityTest {
                     )
                     val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)
                     assertTrue(expectedShownEvents == actualShownEvents)
-                }
+                }.exceptionally { null }.get(5, SECONDS)
+                assertNotNull(nonnull)
             }
         }
     }
 
-    // TODO: currently the tests work fine locally, but fail on the CI server. Fix this in the future.
-/*@Test
+    private val formatter = DateTimeFormatter.ofPattern("d MMM")
+    @Test
     fun clickOnRightArrowButtonChangesWeekCorrectly() {
-        val formatter = DateTimeFormatter.ofPattern("d MMM")
         val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
         ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
             composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
             composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).assertExists()
-            composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).performClick()
-            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(7).format(formatter)} - ${currentMonday.plusDays(13).format(formatter)}")
-            composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).performClick()
-            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(14).format(formatter)} - ${currentMonday.plusDays(20).format(formatter)}")
+            composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).performClick()    // switch 1 week forward
+            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(7).format(formatter)} - \n${currentMonday.plusDays(13).format(formatter)}")
+            composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).performClick()    // switch 1 week forward
+            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(14).format(formatter)} - \n${currentMonday.plusDays(20).format(formatter)}")
         }
     }
 
     @Test
     fun clickOnLeftArrowButtonChangesWeekCorrectly() {
-        val formatter = DateTimeFormatter.ofPattern("d MMM")
         val scheduleIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
         ActivityScenario.launch<ScheduleActivity>(scheduleIntent).use {
             composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
             composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).assertExists()
-            composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).performClick()
-            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(7).format(formatter)} - ${currentMonday.minusDays(1).format(formatter)}")
-            composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).performClick()
-            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(14).format(formatter)} - ${currentMonday.minusDays(8).format(formatter)}")
+            composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).performClick()   // switch 1 week backward
+            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(7).format(formatter)} - \n${currentMonday.minusDays(1).format(formatter)}")
+            composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).performClick()  // switch 1 week backward
+            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(14).format(formatter)} - \n${currentMonday.minusDays(8).format(formatter)}")
         }
-    }*/
+    }
 
 
     // This test does not work for now because of some bug of google that might be fixed in the future

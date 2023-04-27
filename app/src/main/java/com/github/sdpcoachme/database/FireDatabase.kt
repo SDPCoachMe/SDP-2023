@@ -1,13 +1,15 @@
 package com.github.sdpcoachme.database
 
-import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
+import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.Schedule
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
+import java.time.LocalDate
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -19,6 +21,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
     private var currEmail = ""
     private val chats: DatabaseReference = rootDatabase.child("coachme").child("messages")
+    private val schedule: DatabaseReference = rootDatabase.child("coachme").child("schedule")
     var valueEventListener: ValueEventListener? = null
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
@@ -49,11 +52,18 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         return childExists(accounts, userID)
     }
 
-    override fun addEventsToUser(email: String, events: List<Event>): CompletableFuture<Void> {
-        return getUser(email).thenCompose {
-            val updatedUserInfo = it.copy(events = it.events + events)
-            updateUser(updatedUserInfo)
+    override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        val id = currEmail.replace('.', ',')
+        return getSchedule(currentWeekMonday).thenCompose {
+            val updatedSchedule = it.copy(events = it.events + events)  // Add new events to the schedule
+            setChild(schedule, id, updatedSchedule).thenApply { updatedSchedule }// Update DB
         }
+    }
+
+    override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        val id = currEmail.replace('.', ',')
+        return getChild(schedule, id).thenApply { it.getValue(Schedule::class.java)!! }
+            .exceptionally { Schedule() }
     }
 
     override fun getCurrentEmail(): String {
