@@ -56,17 +56,17 @@ class InAppNotifier(val context: Context, val database: Database) {
         //       Once the storing of the email offline is done, this will work and the if check can be removed
 
         // The more info we receive, the more we can customize the notification's behaviour (up until the chat itself)
-        val intent = Intent(
-            context,
-            if (database.getCurrentEmail().isEmpty()) LoginActivity::class.java
-            else if (sender.isEmpty()) CoachesListActivity::class.java
-            else ChatActivity::class.java
-        )
-
-        if (sender.isNotEmpty()) {
-            intent.putExtra("toUserEmail", sender)
-        } else {
-            intent.putExtra("isViewingContacts", true)
+        val intent: Intent
+        when {
+            database.getCurrentEmail().isEmpty() -> {
+                intent = Intent(context, LoginActivity::class.java)
+                    .putExtra("sender", sender)
+                intent.action = "OPEN_CHAT_ACTIVITY"
+            }
+            sender.isEmpty() -> intent = Intent(context, CoachesListActivity::class.java)
+                .putExtra("isViewingContacts", true)
+            else -> intent = Intent(context, ChatActivity::class.java)
+                .putExtra("toUserEmail", sender)
         }
 
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)

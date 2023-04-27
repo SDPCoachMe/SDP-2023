@@ -29,7 +29,7 @@ open class LoginActivityTest {
     private lateinit var deleteInfoText: String
 
     @Before
-    fun startLoginActivityFromHomeScreen() {
+    open fun startLoginActivityFromHomeScreen() {
         FirebaseAuth.getInstance().signOut()
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val targetContext = instrumentation.targetContext

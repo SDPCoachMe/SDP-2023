@@ -54,6 +54,7 @@ class LoginActivity : ComponentActivity() {
         }
     }
 
+    private lateinit var userExistsIntent: Intent
     private lateinit var database : Database
     private var signInInfo: String by mutableStateOf("Not signed in")
     private lateinit var authenticator: Authenticator
@@ -85,10 +86,13 @@ class LoginActivity : ComponentActivity() {
         // Check if a notification was clicked
         val pushNotificationIntent = intent
         val action = pushNotificationIntent.action
+        userExistsIntent = Intent(this, MapActivity::class.java)
         if (action.equals("OPEN_CHAT_ACTIVITY") && pushNotificationIntent.getStringExtra("sender") != null) {
-            // This part will work once the offline mode is implemented and the user is logged in automatically after the first login
+            userExistsIntent = Intent(this, ChatActivity::class.java)
+                        .putExtra("toUserEmail", pushNotificationIntent.getStringExtra("sender"))
+
             if (database.getCurrentEmail().isNotEmpty()) {
-                launchActivity(ChatActivity::class.java, pushNotificationIntent.getStringExtra("sender"))
+                startActivity(userExistsIntent)
             }
         }
 
@@ -148,24 +152,14 @@ class LoginActivity : ComponentActivity() {
     private fun launchPostLoginActivity(email: String) {
         database.userExists(email).thenAccept { exists ->
             if (exists) {
-                if (intent.action == "OPEN_CHAT_ACTIVITY" && intent.getStringExtra("sender") != null) {
-                    launchActivity(ChatActivity::class.java, intent.getStringExtra("sender"))
-                } else {
-                    launchActivity(MapActivity::class.java)
-                }
+                startActivity(userExistsIntent)
             } else {
-                launchActivity(SignupActivity::class.java)
+                startActivity(Intent(this, SignupActivity::class.java))
             }
 
             askNotificationPermission()
             addFCMTokenToDatabase(database)
         }
-    }
-
-    private fun launchActivity(activity: Class<*>, extra: String? = null) {
-        val intent = Intent(this, activity)
-        if (extra != null) intent.putExtra("toUserEmail", extra)
-        startActivity(intent)
     }
 
     /**
