@@ -66,17 +66,16 @@ interface Database {
 
     /**
      * Add events to the database
-     * @param email The email of the user to add the events to
      * @param events The events to add
-     * @return A future that will complete when the events have been added. If the user does not exist,
-     * the future will complete exceptionally with a NoSuchKeyException.
+     * @param currentWeekMonday The monday of the current week
+     * @return A future with currently stored schedule that will complete when the events have been added.
      */
-    fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Void>
+    fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule>
 
 
     /**
      * Get the schedule from the database
-     * @param email The email of the user to get the schedule from
+     * @param currentWeekMonday The monday of the current week
      * @return A future that will complete with the schedule. If the user does not exist,
      * the future will complete exceptionally with a NoSuchKeyException.
      */

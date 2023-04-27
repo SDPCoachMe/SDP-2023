@@ -149,6 +149,7 @@ fun Schedule(
     var eventsFuture by remember { mutableStateOf(futureDBSchedule.thenApply { Schedule(events = it.events) }) }
     val context = LocalContext.current
 
+    // Launch an effect when the eventsFuture changes
     LaunchedEffect(eventsFuture) {
         eventsFuture.thenAccept { e ->
             if (e != null) {
@@ -169,7 +170,7 @@ fun Schedule(
 
     fun updateCurrentWeekMonday(weeksToAdd: Int) {
         shownWeekMonday = shownWeekMonday.plusWeeks(weeksToAdd.toLong())
-        // check if cached events are available and if not, get them from the database and cache them
+        // Update the cached events and if not already cached, get the events from the database
         database.getSchedule(shownWeekMonday).thenAccept { schedule ->
             events = schedule.events
         }
@@ -269,6 +270,7 @@ fun ScheduleTitleRow(
             }
 
             val formatter = DateTimeFormatter.ofPattern("d MMM")
+            // To prevent the text from being too long, set a max width
             val maxTextWidth = LocalConfiguration.current.screenWidthDp.dp / 5
             Text(
                 text = "${shownWeekMonday.format(formatter)} - \n${
@@ -377,6 +379,7 @@ fun BasicSchedule(
     ) { measureables, constraints ->
         val height = hourHeight.roundToPx() * 24
         val width = dayWidth.roundToPx() * ColumnsPerWeek
+        // This part measures the events and ensures that the event size corresponds to the event duration
         val placeablesWithEvents = measureables.map { measurable ->
             val event = measurable.parentData as ShownEvent
             val eventDurationMinutes = ChronoUnit.MINUTES.between(LocalDateTime.parse(event.start), LocalDateTime.parse(event.end))
@@ -384,6 +387,7 @@ fun BasicSchedule(
             val placeable = measurable.measure(constraints.copy(minWidth = dayWidth.roundToPx(), maxWidth = dayWidth.roundToPx(), minHeight = eventHeight, maxHeight = eventHeight))
             Pair(placeable, event)
         }
+        // This part ensures that the events are placed correctly
         layout(width, height) {
             placeablesWithEvents.forEach { (placeable, event) ->
                 val eventOffsetMinutes = ChronoUnit.MINUTES.between(LocalTime.MIN, LocalDateTime.parse(event.start).toLocalTime())

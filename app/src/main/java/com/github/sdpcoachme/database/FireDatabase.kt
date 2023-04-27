@@ -52,15 +52,11 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         return childExists(accounts, userID)
     }
 
-    override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Void> {
-        /*return getUser(email).thenCompose {
-            val updatedUserInfo = it.copy(events = it.events + events)
-            updateUser(updatedUserInfo)
-        }*/
+    override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         val id = currEmail.replace('.', ',')
         return getSchedule(currentWeekMonday).thenCompose {
-            val updatedSchedule = it.copy(events = it.events + events)
-            setChild(schedule, id, updatedSchedule)
+            val updatedSchedule = it.copy(events = it.events + events)  // Add new events to the schedule
+            setChild(schedule, id, updatedSchedule).thenApply { updatedSchedule }// Update DB
         }
     }
 

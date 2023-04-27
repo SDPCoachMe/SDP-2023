@@ -54,16 +54,18 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     }
 
     // Note: to efficiently use caching, we do not use the wrappedDatabase's addEventsToUser method
-    override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Void> {
+    override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         val email = wrappedDatabase.getCurrentEmail()
-        return wrappedDatabase.addEvents(events, currentWeekMonday).thenAccept {
+
+        return wrappedDatabase.addEvents(events, currentWeekMonday).thenApply {
+            // Update the cached schedule
             cachedSchedules[email] = cachedSchedules[email]?.plus(events) ?: events.filter {
                 val start = LocalDateTime.parse(it.start).toLocalDate()
                 val end = LocalDateTime.parse(it.end).toLocalDate()
-                start >= currentWeekMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND) && end <= currentWeekMonday.plusWeeks(
-                    CACHED_SCHEDULE_WEEKS_AHEAD + 1
-                )
+                start >= currentWeekMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
+                        && end < currentWeekMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
             }
+            Schedule(cachedSchedules[email] ?: listOf())
         }
     }
 
@@ -72,26 +74,26 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         val email = wrappedDatabase.getCurrentEmail()
         currentShownMonday = currentWeekMonday
 
-        if (!cachedSchedules.containsKey(email)) {
+        if (!cachedSchedules.containsKey(email)) {  // If no cached schedule for that account, we fetch the schedule from the db
             return wrappedDatabase.getSchedule(currentWeekMonday).thenApply { schedule ->
-                val events = schedule.events.filter {
+                val events = schedule.events.filter {   // We only cache the events that are in the current week or close to it
                     val start = LocalDateTime.parse(it.start).toLocalDate()
                     val end = LocalDateTime.parse(it.end).toLocalDate()
                     start >= minCachedMonday && end <= maxCachedMonday
                 }
-                schedule.copy(events = events).also {
+                schedule.copy(events = events).also {   // Update the cache
                     cachedSchedules[email] = it.events
                 }
             }
         }
         else {
+            // If it is time to prefetch (because displayed week is too close to the edge of the cached schedule), we fetch the schedule from the db
             if (currentWeekMonday <= minCachedMonday || currentWeekMonday >= maxCachedMonday) {
                 cachedSchedules.remove(email)
-                if (currentWeekMonday <= minCachedMonday) {
-                    minCachedMonday = currentWeekMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
-                } else {
-                    maxCachedMonday = currentWeekMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
-                }
+
+                // Update the cached schedule's prefetch boundaries
+                minCachedMonday = currentWeekMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
+                maxCachedMonday = currentWeekMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
 
                 return wrappedDatabase.getSchedule(currentWeekMonday).thenApply { schedule ->
                     val events = schedule.events.filter {
@@ -100,11 +102,12 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
                         start >= minCachedMonday && end <= maxCachedMonday
                     }
                     schedule.copy(events = events).also {
-                        cachedSchedules[email] = it.events
+                        cachedSchedules[email] = it.events  // Update the cache
                     }
                 }
             }
             else {
+                // If no need to prefetch, we return the cached schedule
                 currentShownMonday = currentWeekMonday
                 return CompletableFuture.completedFuture(Schedule(cachedSchedules[email] ?: listOf()))
             }

@@ -46,6 +46,11 @@ open class MockDatabase: Database {
     private var chatId = ""
     private var onChange: (Chat) -> Unit = {}
 
+    // TODO: type any is not ideal, needs refactoring
+    private var accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
+
+    private var schedules = hashMapOf<String, Schedule>()
+
     fun restoreDefaultChatSetup() {
         chat = Chat(participants = listOf(defaultEmail, toEmail))
         chatId = ""
@@ -59,12 +64,6 @@ open class MockDatabase: Database {
     fun restoreDefaultSchedulesSetup() {
         schedules = hashMapOf()
     }
-
-
-    // TODO: type any is not ideal, needs refactoring
-    private var accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
-
-    private var schedules = hashMapOf<String, Schedule>()
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         if (user.email == "throw@Exception.com") {
@@ -95,16 +94,16 @@ open class MockDatabase: Database {
         return getMap(accounts, email).thenApply { it != null }
     }
 
-    override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Void> {
+    override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         if (currEmail == "throw@Exception.com") {
-            val error = CompletableFuture<Void>()
+            val error = CompletableFuture<Schedule>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
         }
         return getSchedule(currentWeekMonday).thenCompose { schedule ->
             val newSchedule = schedule.copy(events = schedule.events + events)
             schedules[currEmail] = newSchedule
-            val future = CompletableFuture<Void>()
+            val future = CompletableFuture<Schedule>()
             future.complete(null)
             future
         }
