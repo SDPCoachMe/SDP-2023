@@ -11,6 +11,7 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiDevice
 import com.github.sdpcoachme.*
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
@@ -31,7 +32,9 @@ import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_F
 import com.github.sdpcoachme.profile.CoachesListActivity
 import com.github.sdpcoachme.profile.ProfileActivity
 import org.hamcrest.CoreMatchers.allOf
+import org.hamcrest.CoreMatchers.hasItem
 import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.CoreMatchers.not
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.lessThan
 import org.junit.After
@@ -41,6 +44,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.Duration
 import java.time.LocalDateTime
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class ChatActivityTest {
@@ -177,6 +181,57 @@ class ChatActivityTest {
             composeTestRule.onNodeWithText("${toUser.firstName} ${toUser.lastName}")
                 .assertIsDisplayed()
             Intents.release()
+        }
+    }
+
+    @Test
+    fun chatListenerAddedAtStartUp() {
+        val mockDB = database as MockDatabase
+        assertThat(mockDB.numberOfAddChatListenerCalls(), `is`(0))
+
+        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+            assertThat(mockDB.numberOfAddChatListenerCalls(), `is`(1))
+        }
+    }
+
+    @Test
+    fun pressingBackButtonRemovesChatListener() {
+        val mockDB = database as MockDatabase
+        assertThat(mockDB.numberOfRemovedChatListenerCalls(), `is`(0))
+        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+
+            val callsBeforeBack = mockDB.numberOfRemovedChatListenerCalls()
+            device.pressBack()
+            assertThat(mockDB.numberOfRemovedChatListenerCalls(), `is`(callsBeforeBack + 1))
+        }
+    }
+
+    @Test
+    fun whenReceivingAMessageFromANewContactThatContactIsAddedToTheUserInfoContactList() {
+        assertThat(currentUser.chatContacts, not(hasItem(toUser.email)))
+
+        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+            device.waitForIdle()
+            val updatedUser = database.getUser(currentUser.email).get(5, TimeUnit.SECONDS)
+
+            assertThat(updatedUser.chatContacts, hasItem(toUser.email))
+        }
+    }
+
+    @Test
+    fun whenReceivingAMessageFromAnExistingContactThatContactIsAddedToTheUserInfoContactList() {
+        val user = currentUser.copy(chatContacts = listOf(toUser.email))
+        assertThat(user.chatContacts, hasItem(toUser.email))
+        database.updateUser(user)
+
+        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+            device.waitForIdle()
+            val updatedUser = database.getUser(user.email).get(5, TimeUnit.SECONDS)
+
+            assertThat(updatedUser.chatContacts, hasItem(toUser.email))
         }
     }
 

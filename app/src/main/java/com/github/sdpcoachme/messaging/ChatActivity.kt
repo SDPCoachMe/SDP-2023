@@ -120,6 +120,7 @@ class ChatActivity : ComponentActivity() {
             // messages are only marked as read when ins the chat
             onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
+                    println("ChatActivity: onBackPressed")
                     database.removeChatListener(chatId)
                     finish()
                 }
