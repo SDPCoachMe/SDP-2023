@@ -88,8 +88,9 @@ class LoginActivity : ComponentActivity() {
         val action = pushNotificationIntent.action
         userExistsIntent = Intent(this, MapActivity::class.java)
         if (action.equals("OPEN_CHAT_ACTIVITY") && pushNotificationIntent.getStringExtra("sender") != null) {
+
             userExistsIntent = Intent(this, ChatActivity::class.java)
-                        .putExtra("toUserEmail", pushNotificationIntent.getStringExtra("sender"))
+                .putExtra("toUserEmail", pushNotificationIntent.getStringExtra("sender"))
 
             if (database.getCurrentEmail().isNotEmpty()) {
                 startActivity(userExistsIntent)

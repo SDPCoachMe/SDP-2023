@@ -97,4 +97,6 @@ class InAppNotifier(val context: Context, val database: Database) {
         notificationManager.createNotificationChannel(channel)
         notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
     }
+
+
 }
