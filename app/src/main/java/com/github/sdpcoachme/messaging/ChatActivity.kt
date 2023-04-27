@@ -3,6 +3,7 @@ package com.github.sdpcoachme.messaging
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -114,6 +115,16 @@ class ChatActivity : ComponentActivity() {
                     database.updateUser(newUser)
                 }
             }
+
+            // needed to remove the chat listener from the db so that
+            // messages are only marked as read when ins the chat
+            onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    database.removeChatListener(chatId)
+                    finish()
+                }
+            })
+
 
             // Mark all messages addressed to recipient as read
             database.markMessagesAsRead(chatId, currentUserEmail)
