@@ -9,11 +9,6 @@ admin.initializeApp({
 
 // // Start writing functions
 // // https://firebase.google.com/docs/functions/typescript
-//
-// export const helloWorld = functions.https.onRequest((request, response) => {
-//   functions.logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
 
 /*
     ========================================
@@ -41,6 +36,8 @@ admin.initializeApp({
         to open the Emulator UI in your browser
      - there, you can also upload a database instance from a json file
         (that you can download from the actual database in the Firebase console)
+
+     ========================================
 */
 
 // This cloud function listens for changes in the
@@ -53,13 +50,14 @@ export const sendPushNotification = functions.database
     const chatId = context.params.chatId;
     const message = change.after.val();
     const sender = message.sender;
-    const readByRecipient = message.readByRecipient;
+    const readState = message.readState;
 
     const senderWithCommas = sender.replace(/\./g, ",");
     const recipient = chatId.replace(senderWithCommas, "");
 
-    // if recipient has already read the message, no need for push notification
-    if (readByRecipient == true) {
+    // if recipient has already read the message or
+    // received a push notification for it, no need for push notification
+    if (readState == "RECEIVED" || readState == "READ") {
       return;
     }
 
@@ -98,5 +96,9 @@ export const sendPushNotification = functions.database
       },
     };
 
+    // send push notification
     await admin.messaging().sendToDevice(recipientTokenSnapshot.val(), payload);
+
+    // update readState to RECEIVED
+    await change.after.ref.update({readState: "RECEIVED"});
   });
