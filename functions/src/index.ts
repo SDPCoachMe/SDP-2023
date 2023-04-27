@@ -89,6 +89,7 @@ export const sendPushNotification = functions.database
       notification: {
         title: `New message from ${firstNameSender} ${lastNameSender}`,
         body: message.content,
+        click_action: "OPEN_CHAT_ACTIVITY",
       },
       data: {
         notificationType: "messaging",

@@ -34,6 +34,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.location.MapActivity
+import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.messaging.InAppNotificationService.Companion.addFCMTokenToDatabase
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
@@ -80,6 +81,17 @@ class LoginActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         authenticator = (application as CoachMeApplication).authenticator
         database =  (application as CoachMeApplication).database
+
+        // Check if a notification was clicked
+        val pushNotificationIntent = intent
+        val action = pushNotificationIntent.action
+        if (action.equals("OPEN_CHAT_ACTIVITY") && pushNotificationIntent.getStringExtra("sender") != null) {
+            // This part will work once the offline mode is implemented and the user is logged in automatically after the first login
+            if (database.getCurrentEmail().isNotEmpty()) {
+                launchActivity(ChatActivity::class.java, pushNotificationIntent.getStringExtra("sender"))
+            }
+        }
+
 
         setContent {
             CoachMeTheme {
@@ -136,7 +148,11 @@ class LoginActivity : ComponentActivity() {
     private fun launchPostLoginActivity(email: String) {
         database.userExists(email).thenAccept { exists ->
             if (exists) {
-                launchActivity(MapActivity::class.java)
+                if (intent.action == "OPEN_CHAT_ACTIVITY" && intent.getStringExtra("sender") != null) {
+                    launchActivity(ChatActivity::class.java, intent.getStringExtra("sender"))
+                } else {
+                    launchActivity(MapActivity::class.java)
+                }
             } else {
                 launchActivity(SignupActivity::class.java)
             }
@@ -146,8 +162,9 @@ class LoginActivity : ComponentActivity() {
         }
     }
 
-    private fun launchActivity(activity: Class<*>) {
+    private fun launchActivity(activity: Class<*>, extra: String? = null) {
         val intent = Intent(this, activity)
+        if (extra != null) intent.putExtra("toUserEmail", extra)
         startActivity(intent)
     }
 
