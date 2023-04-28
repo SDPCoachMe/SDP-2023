@@ -20,6 +20,8 @@ import com.google.firebase.messaging.FirebaseMessagingService
  * @param database Database of the application
  */
 class InAppNotifier(val context: Context, val database: Database) {
+    private val channelId = "fcm_default_channel"
+
 
     /**
      * Sends a push notification with the supplied arguments as parameters.
@@ -44,16 +46,15 @@ class InAppNotifier(val context: Context, val database: Database) {
     }
 
     /**
-     * Create and show a simple notification containing the received FCM message for in-app push notifications.
+     * Create and show a notification containing the received FCM message for in-app push notifications.
+     * Depending on the current state of the application, the notification will open the chat activity,
+     * the coaches list activity or the login activity (based on current user's email and the sender argument).
      *
      * @param notificationTitle Title of the notification
      * @param notificationBody Body of the notification
+     * @param sender Email of the sender
      */
     private fun sendMessagingNotification(notificationTitle: String, notificationBody: String, sender: String) {
-
-        // TODO: at the moment, if the user is still in the login activity, the notification will cause an error (no email yet).
-        //       Therefore, we are checking if the email is empty and if so, we send the user to the login activity.
-        //       Once the storing of the email offline is done, this will work and the if check can be removed
 
         // The more info we receive, the more we can customize the notification's behaviour (up until the chat itself)
         val intent: Intent
@@ -77,7 +78,18 @@ class InAppNotifier(val context: Context, val database: Database) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val channelId = "fcm_default_channel"
+        val (notificationBuilder, notificationManager, channel) =
+            createNotificationElements(notificationTitle, notificationBody, pendingIntent)
+
+        notificationManager.createNotificationChannel(channel)
+        notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
+    }
+
+    private fun createNotificationElements(
+        notificationTitle: String,
+        notificationBody: String,
+        pendingIntent: PendingIntent?
+    ): Triple<NotificationCompat.Builder, NotificationManager, NotificationChannel> {
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         val notificationBuilder = NotificationCompat.Builder(context, channelId)
             .setContentTitle(notificationTitle) // Set the title of the notification
@@ -86,7 +98,8 @@ class InAppNotifier(val context: Context, val database: Database) {
             .setAutoCancel(true)
             .setSound(defaultSoundUri)
             .setContentIntent(pendingIntent)
-        val notificationManager = context.getSystemService(FirebaseMessagingService.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager =
+            context.getSystemService(FirebaseMessagingService.NOTIFICATION_SERVICE) as NotificationManager
 
         // Since android Oreo notification channel is needed.
         val channel = NotificationChannel(
@@ -94,9 +107,6 @@ class InAppNotifier(val context: Context, val database: Database) {
             "Channel human readable title",
             NotificationManager.IMPORTANCE_DEFAULT
         )
-        notificationManager.createNotificationChannel(channel)
-        notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
+        return Triple(notificationBuilder, notificationManager, channel)
     }
-
-
 }
