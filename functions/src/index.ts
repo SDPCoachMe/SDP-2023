@@ -1,5 +1,7 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import {Change} from "firebase-functions";
+import {DataSnapshot} from "@firebase/database-types";
 
 
 admin.initializeApp({
@@ -37,13 +39,19 @@ admin.initializeApp({
      - there, you can also upload a database instance from a json file
         (that you can download from the actual database in the Firebase console)
 
+     To deploy the cloud function to Firebase, run the command:
+     "firebase deploy --only functions"
+
      ========================================
 */
 
-// This cloud function listens for changes in the
-// messages node of the database and sends a push notification to the
-// recipient of the message if the
-// recipient has not already read the message
+/**
+ * Cloud function that sends a push notification to the recipient
+ * of the message if the recipient has not already read the message.
+ *
+ * @param change - the database write event that triggered the function
+ * @param context - the context of the function
+ */
 export const sendPushNotification = functions.database
   .ref("/coachme/messages/{chatId}/messages/{messageId}")
   .onWrite(async (change, context) => {
@@ -63,18 +71,8 @@ export const sendPushNotification = functions.database
 
     const [recipientTokenSnapshot,
       firstNameSenderSnapshot,
-      lastNameSenderSnapshot] =
-        await Promise.all([
-          change.after.ref.root
-            .child("/coachme/fcmTokens/" + recipient)
-            .once("value"),
-          change.after.ref.root
-            .child("/coachme/accounts/" + senderWithCommas + "/firstName")
-            .once("value"),
-          change.after.ref.root
-            .child("/coachme/accounts/" + senderWithCommas + "/lastName")
-            .once("value"),
-        ]);
+      lastNameSenderSnapshot]: DataSnapshot[] =
+        await fetchSnapshotValues(change, senderWithCommas, recipient);
 
     // if no token found for given recipient (i.e., .val() returns null)
     // return without sending push notification
@@ -82,23 +80,9 @@ export const sendPushNotification = functions.database
       return;
     }
 
-    const firstNameSender = firstNameSenderSnapshot.val();
-    const lastNameSender = lastNameSenderSnapshot.val();
-
-    const payload = {
-      notification: {
-        title: `New message from ${firstNameSender} ${lastNameSender}`,
-        body: message.content,
-        // needed to tell the app to open the chat activity
-        click_action: "OPEN_CHAT_ACTIVITY",
-      },
-      data: {
-        // needed to tell the app what type of notification this is
-        // (to enable different types of push notifications in the future)
-        notificationType: "messaging",
-        sender: sender,
-      },
-    };
+    const payload = createPayload(
+      firstNameSenderSnapshot.val(), lastNameSenderSnapshot.val(),
+      message.content, sender);
 
     // send push notification
     await admin.messaging().sendToDevice(recipientTokenSnapshot.val(), payload);
@@ -106,3 +90,72 @@ export const sendPushNotification = functions.database
     // update readState to RECEIVED
     await change.after.ref.update({readState: "RECEIVED"});
   });
+
+
+/**
+ * Helper function that fetches snapshot values for the recipient token,
+ * sender's first name, and sender's last name from the database in parallel.
+ *
+ * @param {Change<DataSnapshot>} change The database change object.
+ * @param {string} senderWithCommas The sender ID with dots replaced by commas.
+ * @param {string} recipientWithCommas The ID of the recipient with
+ *   dots replaced by commas.
+ * @return {Promise<DataSnapshot[]>} An object containing the
+ *   recipient token snapshot,
+ * sender's first name snapshot, and sender's last name snapshot.
+ */
+async function fetchSnapshotValues(
+  change: Change<DataSnapshot>,
+  senderWithCommas: string,
+  recipientWithCommas: string,
+): Promise<DataSnapshot[]> {
+  const [recipientTokenSnapshot,
+    firstNameSenderSnapshot,
+    lastNameSenderSnapshot] =
+      await Promise.all([
+        change.after.ref.root
+          .child("/coachme/fcmTokens/" + recipientWithCommas)
+          .once("value"),
+        change.after.ref.root
+          .child("/coachme/accounts/" + senderWithCommas + "/firstName")
+          .once("value"),
+        change.after.ref.root
+          .child("/coachme/accounts/" + senderWithCommas + "/lastName")
+          .once("value"),
+      ]);
+
+  return [recipientTokenSnapshot,
+    firstNameSenderSnapshot,
+    lastNameSenderSnapshot];
+}
+
+
+/**
+ * Helper function that creates the payload for the push notification.
+ *
+ * @param {string} firstNameSender - The first name of the sender.
+ * @param {string} lastNameSender - The last name of the sender.
+ * @param {string} bodyContent - The message content.
+ * @param {string} sender - The ID of the sender.
+ * @return {admin.messaging.MessagingPayload} - The payload object.
+ */
+function createPayload(
+  firstNameSender: string,
+  lastNameSender: string,
+  bodyContent: string,
+  sender: string): admin.messaging.MessagingPayload {
+  return {
+    notification: {
+      title: `${firstNameSender} ${lastNameSender}`,
+      body: bodyContent,
+      // needed to tell the app to open the chat activity
+      click_action: "OPEN_CHAT_ACTIVITY",
+    },
+    data: {
+      // needed to tell the app what type of notification this is
+      // (to enable different types of push notifications in the future)
+      notificationType: "messaging",
+      sender: sender,
+    },
+  };
+}
