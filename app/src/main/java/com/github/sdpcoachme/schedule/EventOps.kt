@@ -1,10 +1,13 @@
 package com.github.sdpcoachme.schedule
 
-import com.github.sdpcoachme.data.Event
-import com.github.sdpcoachme.data.ShownEvent
+import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.ShownEvent
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.time.temporal.TemporalAdjusters
 
 class EventOps {
     companion object {
@@ -12,8 +15,17 @@ class EventOps {
          * A map to keep track of events that span multiple days. Has to be changed once the events are modified.
          */
         private val multiDayEventMap = mutableMapOf<Event, List<ShownEvent>>()
+        private val EventTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+        private val DayFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
+        private val startMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
         fun getMultiDayEventMap() = multiDayEventMap
+
+        fun getEventTimeFormatter() = EventTimeFormatter
+
+        fun getDayFormatter() = DayFormatter
+
+        fun getStartMonday() = startMonday
 
         /**
          * Function to convert a list of DB events to a list of events that can be shown on the schedule.

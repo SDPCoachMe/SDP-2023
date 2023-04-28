@@ -6,16 +6,34 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowLeft
 import androidx.compose.material.icons.filled.ArrowRight
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -34,12 +52,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.data.Event
-import com.github.sdpcoachme.data.ShownEvent
-import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.Schedule
+import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity
+import com.github.sdpcoachme.schedule.EventOps.Companion.getDayFormatter
+import com.github.sdpcoachme.schedule.EventOps.Companion.getEventTimeFormatter
+import com.github.sdpcoachme.schedule.EventOps.Companion.getStartMonday
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.github.sdpcoachme.ui.theme.Purple500
 import java.time.DayOfWeek
@@ -91,14 +112,18 @@ class ScheduleActivity : ComponentActivity() {
             val errorMsg = "Schedule did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
+            val startMonday = getStartMonday()
             //TODO: For demo, let this function run once to add sample events to the database
-            //database.addEventsToUser(email, sampleEvents).thenRun {
-                val futureUserInfo: CompletableFuture<UserInfo> = database.getUser(email)
+            //database.addEvents(sampleEvents, startMonday).thenRun {
+                val futureDBSchedule: CompletableFuture<Schedule> = database.getSchedule(startMonday).exceptionally {
+                    println("ScheduleActivity: Error getting schedule from database")
+                    null
+                }
 
                 setContent {
                     CoachMeTheme {
                         Surface(color = MaterialTheme.colors.background) {
-                            Schedule(futureUserInfo)
+                            Schedule(futureDBSchedule, database)
                         }
                     }
                 }
@@ -114,17 +139,21 @@ private class EventDataModifier(val event: ShownEvent) : ParentDataModifier {
 private const val ColumnsPerWeek = 7
 @Composable
 fun Schedule(
-    futureUserInfo: CompletableFuture<UserInfo>,
+    futureDBSchedule: CompletableFuture<Schedule>,
+    database: Database,
     modifier: Modifier = Modifier,
 ) {
+    // the starting day is always the monday of the current week
+    var shownWeekMonday by remember { mutableStateOf<LocalDate>(getStartMonday()) }
     var events by remember { mutableStateOf(emptyList<Event>()) }
-    var eventsFuture by remember { mutableStateOf(futureUserInfo.thenApply { it.events }) }
+    var eventsFuture by remember { mutableStateOf(futureDBSchedule.thenApply { Schedule(events = it.events) }) }
     val context = LocalContext.current
 
+    // Launch an effect when the eventsFuture changes
     LaunchedEffect(eventsFuture) {
         eventsFuture.thenAccept { e ->
             if (e != null) {
-                events = e
+                events = e.events
                 eventsFuture = CompletableFuture.completedFuture(null)
             }
         }.exceptionally {
@@ -137,13 +166,14 @@ fun Schedule(
 
     val dayWidth = LocalConfiguration.current.screenWidthDp.dp / ColumnsPerWeek
     val verticalScrollState = rememberScrollState()
-    // the starting day is always the monday of the current week
-    val startMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
-    var shownWeekMonday by remember { mutableStateOf(startMonday) }
 
     fun updateCurrentWeekMonday(weeksToAdd: Int) {
         shownWeekMonday = shownWeekMonday.plusWeeks(weeksToAdd.toLong())
+        // Update the cached events and if not already cached, get the events from the database
+        database.getSchedule(shownWeekMonday).thenAccept { schedule ->
+            events = schedule.events
+        }
     }
 
     Column(modifier = modifier
@@ -220,43 +250,53 @@ fun ScheduleTitleRow(
                 .align(Alignment.CenterVertically)
                 .padding(start = 10.dp)
         )
-        IconButton(
-            onClick = { onLeftArrowClick() },
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End,
             modifier = Modifier
-                .testTag(ScheduleActivity.TestTags.Buttons.LEFT_ARROW_BUTTON)
-                .padding(start = 20.dp)
-                .align(Alignment.CenterVertically)
+                .fillMaxWidth()
         ) {
-            Icon(
-                imageVector = Icons.Default.ArrowLeft,
-                contentDescription = "Left arrow",
-                modifier = Modifier.align(Alignment.CenterVertically),
-                tint = Color.White
+            IconButton(
+                onClick = { onLeftArrowClick() },
+                modifier = Modifier
+                    .testTag(ScheduleActivity.TestTags.Buttons.LEFT_ARROW_BUTTON)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowLeft,
+                    contentDescription = "Left arrow",
+                    tint = Color.White
+                )
+            }
+
+            val formatter = DateTimeFormatter.ofPattern("d MMM")
+            // To prevent the text from being too long, set a max width
+            val maxTextWidth = LocalConfiguration.current.screenWidthDp.dp / 5
+            Text(
+                text = "${shownWeekMonday.format(formatter)} - \n${
+                    shownWeekMonday.plusDays(6).format(formatter)
+                }",
+                style = MaterialTheme.typography.subtitle1,
+                color = Color.White,
+                modifier = Modifier
+                    .testTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD)
+                    .align(Alignment.CenterVertically)
+                    .widthIn(max = maxTextWidth)
             )
-        }
-        val formatter = DateTimeFormatter.ofPattern("d MMM")
-        Text(
-            text = "${shownWeekMonday.format(formatter)} - ${shownWeekMonday.plusDays(6).format(formatter)}",
-            style = MaterialTheme.typography.subtitle1,
-            color = Color.White,
-            modifier = Modifier
-                .testTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD)
-                .align(Alignment.CenterVertically)
-                .padding(horizontal = 5.dp, vertical = 8.dp)
-        )
-        IconButton(
-            onClick = { onRightArrowClick() },
-            modifier = Modifier
-                .testTag(ScheduleActivity.TestTags.Buttons.RIGHT_ARROW_BUTTON)
-                .padding(end = 20.dp)
-                .align(Alignment.CenterVertically)
-        ) {
-            Icon(
-                imageVector = Icons.Default.ArrowRight,
-                contentDescription = "Right arrow",
-                modifier = Modifier.align(Alignment.CenterVertically),
-                tint = Color.White
-            )
+
+
+            IconButton(
+                onClick = { onRightArrowClick() },
+                modifier = Modifier
+                    .testTag(ScheduleActivity.TestTags.Buttons.RIGHT_ARROW_BUTTON)
+                    .align(Alignment.CenterVertically)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowRight,
+                    contentDescription = "Right arrow",
+                    tint = Color.White
+                )
+            }
         }
     }
 }
@@ -339,6 +379,7 @@ fun BasicSchedule(
     ) { measureables, constraints ->
         val height = hourHeight.roundToPx() * 24
         val width = dayWidth.roundToPx() * ColumnsPerWeek
+        // This part measures the events and ensures that the event size corresponds to the event duration
         val placeablesWithEvents = measureables.map { measurable ->
             val event = measurable.parentData as ShownEvent
             val eventDurationMinutes = ChronoUnit.MINUTES.between(LocalDateTime.parse(event.start), LocalDateTime.parse(event.end))
@@ -346,6 +387,7 @@ fun BasicSchedule(
             val placeable = measurable.measure(constraints.copy(minWidth = dayWidth.roundToPx(), maxWidth = dayWidth.roundToPx(), minHeight = eventHeight, maxHeight = eventHeight))
             Pair(placeable, event)
         }
+        // This part ensures that the events are placed correctly
         layout(width, height) {
             placeablesWithEvents.forEach { (placeable, event) ->
                 val eventOffsetMinutes = ChronoUnit.MINUTES.between(LocalTime.MIN, LocalDateTime.parse(event.start).toLocalTime())
@@ -359,8 +401,8 @@ fun BasicSchedule(
 }
 
 private fun Modifier.eventData(event: ShownEvent) = this.then(EventDataModifier(event))
-private val EventTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-private val DayFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
+private val EventTimeFormatter: DateTimeFormatter = getEventTimeFormatter()
+private val DayFormatter = getDayFormatter()
 
 @Composable
 fun BasicEvent(
