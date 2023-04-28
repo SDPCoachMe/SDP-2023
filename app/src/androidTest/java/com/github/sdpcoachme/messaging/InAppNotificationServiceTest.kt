@@ -19,7 +19,6 @@ import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.FIRST_NA
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.LAST_NAME
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.LOCATION
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PHONE
-import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.RemoteMessage
 import junit.framework.TestCase.assertTrue
 import org.hamcrest.CoreMatchers.`is`
@@ -47,13 +46,11 @@ class InAppNotificationServiceTest {
     )
 
     // This test does not work in the ci pipeline,
-    @Test
+//    @Test
     fun addFcmTokenToDatabasePlacesTokenIntoTheDb() {
         val database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
         database.setCurrentEmail(currentUser.email)
         database.updateUser(currentUser)
-        val appContext = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
-        FirebaseApp.initializeApp(appContext)
 
         val intent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
 
