@@ -76,7 +76,7 @@ export const sendPushNotification = functions.database
             .once("value"),
         ]);
 
-    // if no token found for given recipient (i.e., .val() returns null) or
+    // if no token found for given recipient (i.e., .val() returns null)
     // return without sending push notification
     if (!recipientTokenSnapshot.val()) {
       return;
@@ -89,9 +89,12 @@ export const sendPushNotification = functions.database
       notification: {
         title: `New message from ${firstNameSender} ${lastNameSender}`,
         body: message.content,
+        // needed to tell the app to open the chat activity
         click_action: "OPEN_CHAT_ACTIVITY",
       },
       data: {
+        // needed to tell the app what type of notification this is
+        // (to enable different types of push notifications in the future)
         notificationType: "messaging",
         sender: sender,
       },
