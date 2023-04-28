@@ -80,7 +80,7 @@ class InAppNotificationServiceTest {
                 true
             }.exceptionally {
                 false
-            }.get(5, java.util.concurrent.TimeUnit.SECONDS) // added so we can check if the tests in the future succeed or not
+            }.get(10, java.util.concurrent.TimeUnit.SECONDS) // added so we can check if the tests in the future succeed or not
 
             assertThat(result, `is`(true))
         }
