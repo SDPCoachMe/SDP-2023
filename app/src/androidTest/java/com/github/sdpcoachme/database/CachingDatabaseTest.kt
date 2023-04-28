@@ -6,8 +6,8 @@ package com.github.sdpcoachme.database
 
 import androidx.compose.ui.graphics.Color
 import com.github.sdpcoachme.data.schedule.Event
-import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
-import com.github.sdpcoachme.data.UserLocationSamples.Companion.NEW_YORK
+import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.data.UserAddressSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message

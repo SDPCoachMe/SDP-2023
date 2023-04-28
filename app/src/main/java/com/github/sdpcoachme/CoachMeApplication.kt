@@ -11,7 +11,7 @@ import com.github.sdpcoachme.database.CachingDatabase
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.database.FireDatabase
 import com.github.sdpcoachme.location.autocomplete.GooglePlacesAutocompleteHandler
-import com.github.sdpcoachme.location.autocomplete.LocationAutocompleteHandler
+import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.Places
 import com.google.firebase.FirebaseApp
@@ -37,8 +37,8 @@ open class CoachMeApplication : Application() {
 
     open val authenticator: Authenticator = GoogleAuthenticator()
 
-    open fun locationAutocompleteHandler(
+    open fun addressAutocompleteHandler(
         context: Context,
         caller: ActivityResultCaller
-    ): LocationAutocompleteHandler = GooglePlacesAutocompleteHandler(context, caller)
+    ): AddressAutocompleteHandler = GooglePlacesAutocompleteHandler(context, caller)
 }

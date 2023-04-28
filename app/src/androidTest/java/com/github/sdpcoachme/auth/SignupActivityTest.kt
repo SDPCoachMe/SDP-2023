@@ -19,7 +19,7 @@ import com.github.sdpcoachme.auth.SignupActivity.TestTags.TextFields.Companion.P
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
-import com.github.sdpcoachme.location.autocomplete.MockLocationAutocompleteHandler
+import com.github.sdpcoachme.location.autocomplete.MockAddressAutocompleteHandler
 import com.github.sdpcoachme.profile.SelectSportsActivity
 import junit.framework.TestCase
 import org.junit.After
@@ -45,8 +45,8 @@ open class SignupActivityTest {
         lastName = "Dupont",
         email= "example@email.com",
         phone = "0692000000",
-        location = MockLocationAutocompleteHandler.DEFAULT_LOCATION, // Make sure to use this here, so that
-        // the test does not fail if the default location returned by the mock autocomplete handler
+        address = MockAddressAutocompleteHandler.DEFAULT_ADDRESS, // Make sure to use this here, so that
+        // the test does not fail if the default address returned by the mock autocomplete handler
         // changes
         coach = false,
         sports = emptyList() // Given that we don't input sports, we need to have this empty here
@@ -164,7 +164,7 @@ open class SignupActivityTest {
         composeTestRule.onNodeWithTag(SIGN_UP).performClick()
 
         // Testing Google Places Autocomplete Activity is too complex, instead, we've mocked it
-        // so that it directly returns a fixed location MockLocationAutocompleteHandler.DEFAULT_LOCATION
+        // so that it directly returns a fixed address MockAddressAutocompleteHandler.DEFAULT_ADDRESS
 
         // We also don't input sports, given that an obscure bug occurs in testing once the app is redirected to
         // the MapActivity. If we don't input sports, we never get redirected to the MapActivity, and no

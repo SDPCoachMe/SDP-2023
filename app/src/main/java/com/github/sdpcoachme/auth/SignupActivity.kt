@@ -23,11 +23,11 @@ import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.UserLocation
+import com.github.sdpcoachme.data.UserAddress
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity
-import com.github.sdpcoachme.location.autocomplete.LocationAutocompleteHandler
+import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
 import com.github.sdpcoachme.profile.SelectSportsActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
@@ -54,7 +54,7 @@ class SignupActivity : ComponentActivity() {
 
     private lateinit var database : Database
     private lateinit var email: String
-    private lateinit var locationAutocompleteHandler: LocationAutocompleteHandler
+    private lateinit var addressAutocompleteHandler: AddressAutocompleteHandler
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,8 +66,8 @@ class SignupActivity : ComponentActivity() {
             val errorMsg = "The signup page did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
-            // Set up handler for calls to location autocomplete
-            locationAutocompleteHandler = (application as CoachMeApplication).locationAutocompleteHandler(this, this)
+            // Set up handler for calls to address autocomplete
+            addressAutocompleteHandler = (application as CoachMeApplication).addressAutocompleteHandler(this, this)
 
             // Set up handler for calls to select sports
             selectSportsHandler = SelectSportsActivity.getHandler(this)
@@ -149,14 +149,14 @@ class SignupActivity : ComponentActivity() {
                         email = email,
                         phone = phone,
                         coach = isCoach,
-                        // location added later with LocationAutocompleteHandler
-                        location = UserLocation(),
+                        // address added later with AddressAutocompleteHandler
+                        address = UserAddress(),
                         // sports added later in SelectSportsActivity
                         sports = listOf()
                     )
                     // Launch autocomplete activity, then wait for result
-                    locationAutocompleteHandler.launch().thenCompose { location ->
-                        newUser = newUser.copy(location = location)
+                    addressAutocompleteHandler.launch().thenCompose { address ->
+                        newUser = newUser.copy(address = address)
                         // Update database
                         // Note: the reason we update the database here already is for compatibility
                         // with the test framework. Obscure issues appear if we allow the signup
@@ -184,7 +184,7 @@ class SignupActivity : ComponentActivity() {
                         startActivity(Intent(context, MapActivity::class.java))
                     }.exceptionally {
                         when (it.cause) {
-                            is LocationAutocompleteHandler.AutocompleteCancelledException -> {
+                            is AddressAutocompleteHandler.AutocompleteCancelledException -> {
                                 // The user cancelled the Places Autocomplete activity
                                 // For now, do nothing, which allows the user to click on NEXT and try again.
                             }

@@ -1,7 +1,7 @@
 package com.github.sdpcoachme.database
 
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Event

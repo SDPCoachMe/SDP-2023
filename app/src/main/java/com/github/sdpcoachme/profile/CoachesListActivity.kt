@@ -155,7 +155,7 @@ fun UserInfoListItem(user: UserInfo, isViewingContacts: Boolean) {
                 Spacer(modifier = Modifier.width(4.dp))
                 // Temporary, until we implement proper location handling
                 Text(
-                    text = user.location.address,
+                    text = user.address.name,
                     color = Color.Gray,
                     style = MaterialTheme.typography.body2,
                     maxLines = 1,

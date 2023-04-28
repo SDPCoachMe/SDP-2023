@@ -6,8 +6,8 @@ import com.github.sdpcoachme.auth.Authenticator
 import com.github.sdpcoachme.auth.MockAuthenticator
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.database.MockDatabase
-import com.github.sdpcoachme.location.autocomplete.LocationAutocompleteHandler
-import com.github.sdpcoachme.location.autocomplete.MockLocationAutocompleteHandler
+import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
+import com.github.sdpcoachme.location.autocomplete.MockAddressAutocompleteHandler
 
 class CoachMeTestApplication : CoachMeApplication() {
     // For DI in testing, add reference to mocks here
@@ -34,8 +34,8 @@ class CoachMeTestApplication : CoachMeApplication() {
     }
     override val authenticator: Authenticator = MockAuthenticator()
 
-    override fun locationAutocompleteHandler(
+    override fun addressAutocompleteHandler(
         context: Context,
         caller: ActivityResultCaller
-    ): LocationAutocompleteHandler = MockLocationAutocompleteHandler()
+    ): AddressAutocompleteHandler = MockAddressAutocompleteHandler()
 }

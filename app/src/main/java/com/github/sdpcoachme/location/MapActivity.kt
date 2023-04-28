@@ -168,8 +168,7 @@ class MapActivity : ComponentActivity() {
 /**
  * Displays the map with the last known user location on creation.
  * The map API displays the current location but does not explicitly give the location data.
- * This is done by given a MapState via its lastKnownLocation attribute that retrieves the
- * location data. The MapState is updated by the MapViewModel in the DashboardActivity.
+ * Nearby coaches addresses are also marked on the map.
  */
 @Composable
 fun Map(
@@ -220,7 +219,7 @@ fun Map(
         coachesToDisplay.map { user ->
             val state by remember {
                 mutableStateOf(
-                    MarkerState(LatLng(user.location.latitude, user.location.longitude))
+                    MarkerState(LatLng(user.address.latitude, user.address.longitude))
                 )
             }
 
@@ -262,7 +261,7 @@ fun Map(
                         )
                         Spacer(modifier = Modifier.width(2.dp))
                         Text(
-                            text = user.location.address,
+                            text = user.address.name,
                             color = Color.Gray,
                             style = MaterialTheme.typography.body2,
                             maxLines = 1,

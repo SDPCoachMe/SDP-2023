@@ -1,42 +1,40 @@
 package com.github.sdpcoachme.data
 
-import com.github.sdpcoachme.data.UserLocation
-
-class UserLocationSamples {
+class UserAddressSamples {
     companion object {
-        val PARIS = UserLocation(
+        val PARIS = UserAddress(
             placeId = "ChIJD7fiBh9u5kcRYJSMaMOCCwQ",
-            address = "Paris, France",
+            name = "Paris, France",
             latitude = 48.856614,
             longitude = 2.3522219
         )
-        val LONDON = UserLocation(
+        val LONDON = UserAddress(
             placeId = "ChIJdd4hrwug2EcRmSrV3Vo6llI",
-            address = "London, UK",
+            name = "London, UK",
             latitude = 51.5073509,
             longitude = -0.1277583
         )
-        val NEW_YORK = UserLocation(
+        val NEW_YORK = UserAddress(
             placeId = "ChIJOwg_06VPwokRYv534QaPC8g",
-            address = "New York, NY, USA",
+            name = "New York, NY, USA",
             latitude = 40.7127281,
             longitude = -74.0060152
         )
-        val TOKYO = UserLocation(
+        val TOKYO = UserAddress(
             placeId = "ChIJ51cu8IcbXWARiRtXIothAS4",
-            address = "Tokyo, Japan",
+            name = "Tokyo, Japan",
             latitude = 35.6894875,
             longitude = 139.6917064
         )
-        val SYDNEY = UserLocation(
+        val SYDNEY = UserAddress(
             placeId = "ChIJP3Sa8ziYEmsRUKgyFmh9AQM",
-            address = "Sydney, Australia",
+            name = "Sydney, Australia",
             latitude = -33.8688197,
             longitude = 151.2092955
         )
-        val LAUSANNE = UserLocation(
+        val LAUSANNE = UserAddress(
             placeId = "ChIJ5aeJzT4pjEcRXu7iysk_F-s",
-            address = "Lausanne, Switzerland",
+            name = "Lausanne, Switzerland",
             latitude = 46.5196535,
             longitude = 6.6335972
         )
