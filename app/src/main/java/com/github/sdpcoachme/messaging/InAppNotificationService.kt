@@ -13,7 +13,7 @@ import com.google.firebase.messaging.RemoteMessage
 /**
  * This service handles all incoming push notifications.
  */
-@SuppressLint("MissingFirebaseInstanceTokenRefresh") // as we do not yet have the user's email at start up, we cannot add the token to the database then and overriding and implementing this method would cause an error.
+@SuppressLint("MissingFirebaseInstanceTokenRefresh") // as we do not yet have the user's email at start up, we cannot add the token to the database then and overriding and implementing this method could cause an error.
 class InAppNotificationService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -25,7 +25,7 @@ class InAppNotificationService : FirebaseMessagingService() {
             val sender = remoteMessage.data["sender"]
             val notificationType = remoteMessage.data["notificationType"]
 
-            // Since does not seem to be possible to create RemoteMessages containing a notification,
+            // Since it does not seem to be possible to create RemoteMessages containing a notification,
             // the in-app push notification part has been moved to the InAppNotifier class to enable testing.
             InAppNotifier(this, (application as CoachMeApplication).database)
                 .sendNotification(

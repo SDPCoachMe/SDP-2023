@@ -45,6 +45,27 @@ class InAppNotificationServiceTest {
         emptyList()
     )
 
+    @Test
+    fun onMessageReceivedWithNullArgumentDoesNothing() {
+        val context: Context = ApplicationProvider.getApplicationContext()
+        val database = (context as CoachMeApplication).database
+        database.setCurrentEmail(currentUser.email)
+        database.updateUser(currentUser)
+
+        val intent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
+
+        ActivityScenario.launch<ProfileActivity>(intent).use {
+            val message = RemoteMessage.Builder("to").build()
+            InAppNotificationService().onMessageReceived(message)
+
+            // Check that we're still in the ProfileActivity (done by checking that the tags are present)
+            composeTestRule.onNodeWithTag(FIRST_NAME, useUnmergedTree = true).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(LAST_NAME, useUnmergedTree = true).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(LOCATION, useUnmergedTree = true).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(PHONE, useUnmergedTree = true).assertIsDisplayed()
+        }
+    }
+
     // This test does not work in the ci pipeline,
 //    @Test
     fun addFcmTokenToDatabasePlacesTokenIntoTheDb() {
@@ -87,26 +108,5 @@ class InAppNotificationServiceTest {
         }
     }
 
-    @Test
-    fun onMessageReceivedWithNullArgumentDoesNothing() {
-        val context: Context = ApplicationProvider.getApplicationContext()
-        val database = (context as CoachMeApplication).database
-        database.setCurrentEmail(currentUser.email)
-        database.updateUser(currentUser)
-
-        val intent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
-
-        ActivityScenario.launch<ProfileActivity>(intent).use {
-            val message = RemoteMessage.Builder("to").build()
-            InAppNotificationService().onMessageReceived(message)
-
-            // Check that we're still in the ProfileActivity (done by checking that the tags are present)
-            composeTestRule.onNodeWithTag(FIRST_NAME, useUnmergedTree = true).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(LAST_NAME, useUnmergedTree = true).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(LOCATION, useUnmergedTree = true).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(PHONE, useUnmergedTree = true).assertIsDisplayed()
-        }
-    }
-
-    // Since it is not possible to create instances of RemoteMessage, we can't test the onMessageReceived method.
+    // Since it is not possible to create instances of RemoteMessage, we cannot test the onMessageReceived method.
 }

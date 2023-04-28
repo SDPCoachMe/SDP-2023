@@ -22,7 +22,6 @@ import com.google.firebase.messaging.FirebaseMessagingService
 class InAppNotifier(val context: Context, val database: Database) {
     private val channelId = "fcm_default_channel"
 
-
     /**
      * Sends a push notification with the supplied arguments as parameters.
      *
@@ -70,6 +69,7 @@ class InAppNotifier(val context: Context, val database: Database) {
                 .putExtra("toUserEmail", sender)
         }
 
+        // Create the pending intent to be used when the notification is clicked
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         val pendingIntent = PendingIntent.getActivity(
             context,
@@ -82,14 +82,23 @@ class InAppNotifier(val context: Context, val database: Database) {
             createNotificationElements(notificationTitle, notificationBody, pendingIntent)
 
         notificationManager.createNotificationChannel(channel)
+        // current time is used to make sure that each notification id is unique
         notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
     }
 
+    /**
+     * Creates the notification elements.
+     *
+     * @param notificationTitle Title of the notification
+     * @param notificationBody Body of the notification
+     * @param pendingIntent Intent to be used when the notification is clicked
+     */
     private fun createNotificationElements(
         notificationTitle: String,
         notificationBody: String,
         pendingIntent: PendingIntent?
     ): Triple<NotificationCompat.Builder, NotificationManager, NotificationChannel> {
+
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         val notificationBuilder = NotificationCompat.Builder(context, channelId)
             .setContentTitle(notificationTitle) // Set the title of the notification
