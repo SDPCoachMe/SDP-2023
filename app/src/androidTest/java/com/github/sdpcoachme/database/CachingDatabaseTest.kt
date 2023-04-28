@@ -5,14 +5,13 @@ package com.github.sdpcoachme.database
 // Otherwise we would have complicated dependencies.
 
 import androidx.compose.ui.graphics.Color
-import com.github.sdpcoachme.data.Event
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.ReadState
+import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
