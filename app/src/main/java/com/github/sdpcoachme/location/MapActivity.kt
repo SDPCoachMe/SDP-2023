@@ -136,7 +136,11 @@ class MapActivity : ComponentActivity() {
         }
 
     /**
-     * Performs the location retrieval. Permission are checked before this function call
+     * Performs the location retrieval. Permission are checked before this function call.
+     *
+     * The fusedLocationProviderClient.lastLocation task is null if the location is disabled on the
+     * device (also even if the last location was previously retrieved because disabling the device
+     * location clears the cache).
      */
     @SuppressLint("MissingPermission") //permission is checked before the call
     private fun getDeviceLocation(fusedLocationProviderClient: FusedLocationProviderClient) {
@@ -241,6 +245,7 @@ fun Map(
                 ) {
                     Text(
                         text = "${user.firstName} ${user.lastName}",
+                        color = Color.Black,
                         style = MaterialTheme.typography.h6,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
