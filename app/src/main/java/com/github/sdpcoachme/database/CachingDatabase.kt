@@ -3,7 +3,6 @@ package com.github.sdpcoachme.database
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
-import com.github.sdpcoachme.data.messaging.ReadState
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.schedule.EventOps.Companion.getStartMonday
@@ -141,13 +140,10 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
         // Also here, if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat from the db)
         if (chats.containsKey(chatId)) {
-            chats[chatId] = chats[chatId]!!.copy(messages = chats[chatId]!!.messages.map {
-                if (it.sender != email) {
-                    it.copy(readState = ReadState.READ)
-                } else {
-                    it
-                }
-            })
+            chats[chatId] = FireDatabase.markOtherUsersMessagesAsRead(
+                    chats[chatId]!!,
+                    email
+                )
         }
         return wrappedDatabase.markMessagesAsRead(chatId, email)
     }

@@ -5,6 +5,7 @@ package com.github.sdpcoachme.database
 // Otherwise we would have complicated dependencies.
 
 import androidx.compose.ui.graphics.Color
+import com.github.sdpcoachme.data.ChatSample
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.NEW_YORK
@@ -609,32 +610,7 @@ class CachingDatabaseTest {
     )
 
     private val userList = listOf(defaultUser, willSmithUser, rogerFedererUser)
-    private val defaultMessages = listOf(
-        Message(
-            defaultUser.email,
-            "Hello",
-            LocalDateTime.now().toString(),
-            ReadState.READ
-        ),
-        Message(
-            defaultUser.email,
-            "Hello number 2",
-            LocalDateTime.now().toString(),
-            ReadState.RECEIVED
-        ),
-        Message(
-            willSmithUser.email,
-            "Hi",
-            LocalDateTime.now().toString(),
-            ReadState.SENT
-        ),
-        Message(
-            willSmithUser.email,
-            "Goodby",
-            LocalDateTime.now().toString(),
-            ReadState.SENT
-        )
-    )
+    private val defaultMessages = ChatSample.MESSAGES
     private val defaultChat = Chat().copy(
         id = "defaultId",
         participants = listOf(willSmithUser.email, defaultUser.email),
@@ -642,8 +618,7 @@ class CachingDatabaseTest {
     )
 
 
-    val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-
+    private val currentMonday: LocalDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     private val cachedEvents = listOf(
         Event(
             name = "Google I/O Keynote",

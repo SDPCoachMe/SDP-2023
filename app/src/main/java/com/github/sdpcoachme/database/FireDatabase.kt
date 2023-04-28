@@ -112,14 +112,11 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             val readStates = chat.messages.filter { it.sender != email }.map { it.readState }
 
             if (!readStates.all { it == ReadState.READ }) { // check if update is needed
-                val updatedMessages = chat.messages.map { message ->
-                    if (message.sender != email) {
-                        message.copy(readState = ReadState.READ)
-                    } else {
-                        message
-                    }
-                }
-                setChild(chats, id, chat.copy(messages = updatedMessages))
+                setChild(chats, id, markOtherUsersMessagesAsRead(
+                        chat,
+                        email
+                    )
+                )
             } else {
                 CompletableFuture.completedFuture(null)
             }
@@ -269,6 +266,25 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             future.completeExceptionally(it)
         }
         return future
+    }
+
+    companion object {
+
+        /**
+         * Marks all messages in a list as read, except for the messages sent by the current user
+         *
+         * @param chat the chat whose messages to mark as read
+         * @param currentUserEmail the email of the current user
+         */
+        fun markOtherUsersMessagesAsRead(chat: Chat, currentUserEmail: String): Chat {
+            return chat.copy(messages = chat.messages.map { message ->
+                if (message.readState == ReadState.READ || message.sender == currentUserEmail) {
+                    message
+                } else {
+                    message.copy(readState = ReadState.READ)
+                }
+            })
+        }
     }
 }
 
