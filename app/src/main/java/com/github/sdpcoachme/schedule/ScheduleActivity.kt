@@ -19,12 +19,14 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowLeft
 import androidx.compose.material.icons.filled.ArrowRight
@@ -84,6 +86,7 @@ class ScheduleActivity : ComponentActivity() {
                 const val LEFT_ARROW_BUTTON = "leftArrowButton"
                 const val RIGHT_ARROW_BUTTON = "rightArrowButton"
                 const val BACK = "backButton"
+                const val ADD_EVENT_BUTTON = "addEventButton"
             }
         }
         class TextFields {
@@ -176,34 +179,49 @@ fun Schedule(
         }
     }
 
-    Column(modifier = modifier
-        .testTag(ScheduleActivity.TestTags.SCHEDULE_COLUMN)
-    ) {
-        ScheduleTitleRow(
-            shownWeekMonday = shownWeekMonday,
-            onLeftArrowClick = { updateCurrentWeekMonday(-1) },
-            onRightArrowClick = { updateCurrentWeekMonday(1) },
-        )
+    Box(modifier = modifier) {
+        Column(modifier = modifier
+            .testTag(ScheduleActivity.TestTags.SCHEDULE_COLUMN)
+        ) {
+            ScheduleTitleRow(
+                shownWeekMonday = shownWeekMonday,
+                onLeftArrowClick = { updateCurrentWeekMonday(-1) },
+                onRightArrowClick = { updateCurrentWeekMonday(1) },
+            )
 
-        WeekHeader(
-            shownWeekMonday = shownWeekMonday,
-            dayWidth = dayWidth,
-        )
+            WeekHeader(
+                shownWeekMonday = shownWeekMonday,
+                dayWidth = dayWidth,
+            )
 
-        // filter events to only show events in the current week
-        val eventsToShow = EventOps.eventsToWrappedEvents(events)
-        BasicSchedule(
-            events = eventsToShow.filter {event ->
-                val eventDate = LocalDateTime.parse(event.start).toLocalDate()
-                eventDate >= shownWeekMonday && eventDate < shownWeekMonday.plusWeeks(1)
-            },
-            shownMonday = shownWeekMonday,
-            dayWidth = dayWidth,
+            // filter events to only show events in the current week
+            val eventsToShow = EventOps.eventsToWrappedEvents(events)
+            BasicSchedule(
+                events = eventsToShow.filter { event ->
+                    val eventDate = LocalDateTime.parse(event.start).toLocalDate()
+                    eventDate >= shownWeekMonday && eventDate < shownWeekMonday.plusWeeks(1)
+                },
+                shownMonday = shownWeekMonday,
+                dayWidth = dayWidth,
+                modifier = Modifier
+                    .weight(1f) // Fill remaining space in the column
+                    .verticalScroll(verticalScrollState)
+                    .testTag(ScheduleActivity.TestTags.BASIC_SCHEDULE)
+            )
+        }
+
+        FloatingActionButton(
+            onClick = { EventOps.launchAddEventActivity() },
             modifier = Modifier
-                .weight(1f) // Fill remaining space in the column
-                .verticalScroll(verticalScrollState)
-                .testTag(ScheduleActivity.TestTags.BASIC_SCHEDULE)
-        )
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .testTag(ScheduleActivity.TestTags.Buttons.ADD_EVENT_BUTTON),
+            backgroundColor = Purple500) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Add Event"
+            )
+        }
     }
 }
 

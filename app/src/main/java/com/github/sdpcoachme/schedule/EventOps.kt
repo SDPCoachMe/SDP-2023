@@ -28,40 +28,6 @@ class EventOps {
         fun getStartMonday() = startMonday
 
         /**
-         * Function to convert a list of DB events to a list of events that can be shown on the schedule.
-         * If an event spans multiple days, it will be split into multiple events of type ShownEvent, one for each day.
-         *
-         * @param events The list of events to convert
-         * @return The list of events that can be shown on the schedule
-         */
-        fun eventsToWrappedEvents(events: List<Event>) : List<ShownEvent> {
-            val eventsToShow = mutableListOf<ShownEvent>()
-            events.forEach {
-                val start = LocalDateTime.parse(it.start)
-                val end = LocalDateTime.parse(it.end)
-                val startDay = start.toLocalDate()
-                val endDay = end.toLocalDate()
-
-                if (start.toLocalDate() != end.toLocalDate()) {
-                    val wrappedEvents = wrapEvent(startDay, endDay, it, start, end)
-                    eventsToShow.addAll(wrappedEvents)
-                } else {
-                    val shownEvent = ShownEvent(
-                        name = it.name,
-                        color = it.color,
-                        start = it.start,
-                        startText = start.toString(),
-                        end = it.end,
-                        endText = end.toString(),
-                        description = it.description,
-                    )
-                    eventsToShow.add(shownEvent)
-                }
-            }
-            return eventsToShow
-        }
-
-        /**
          * Function to wrap an event that spans multiple days into multiple events of type ShownEvent, one for each day.
          *
          * @param startDay The day the event starts on
@@ -120,5 +86,44 @@ class EventOps {
 
             return eventsToShow
         }
+
+        /**
+         * Function to convert a list of DB events to a list of events that can be shown on the schedule.
+         * If an event spans multiple days, it will be split into multiple events of type ShownEvent, one for each day.
+         *
+         * @param events The list of events to convert
+         * @return The list of events that can be shown on the schedule
+         */
+        fun eventsToWrappedEvents(events: List<Event>) : List<ShownEvent> {
+            val eventsToShow = mutableListOf<ShownEvent>()
+            events.forEach {
+                val start = LocalDateTime.parse(it.start)
+                val end = LocalDateTime.parse(it.end)
+                val startDay = start.toLocalDate()
+                val endDay = end.toLocalDate()
+
+                if (start.toLocalDate() != end.toLocalDate()) {
+                    val wrappedEvents = wrapEvent(startDay, endDay, it, start, end)
+                    eventsToShow.addAll(wrappedEvents)
+                } else {
+                    val shownEvent = ShownEvent(
+                        name = it.name,
+                        color = it.color,
+                        start = it.start,
+                        startText = start.toString(),
+                        end = it.end,
+                        endText = end.toString(),
+                        description = it.description,
+                    )
+                    eventsToShow.add(shownEvent)
+                }
+            }
+            return eventsToShow
+        }
+
+        fun launchAddEventActivity() {
+
+        }
+
     }
 }
