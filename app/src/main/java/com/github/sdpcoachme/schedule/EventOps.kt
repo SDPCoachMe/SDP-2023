@@ -1,5 +1,7 @@
 package com.github.sdpcoachme.schedule
 
+import android.content.Context
+import android.content.Intent
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.ShownEvent
 import java.time.DayOfWeek
@@ -121,9 +123,9 @@ class EventOps {
             return eventsToShow
         }
 
-        fun launchAddEventActivity() {
-
+        fun launchAddEventActivity(context: Context) {
+            val intent = Intent(context, CreateEventActivity::class.java)
+            context.startActivity(intent)
         }
-
     }
 }

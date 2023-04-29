@@ -211,7 +211,9 @@ fun Schedule(
         }
 
         FloatingActionButton(
-            onClick = { EventOps.launchAddEventActivity() },
+            onClick = {
+                val intent = Intent(context, CreateEventActivity::class.java)
+                context.startActivity(intent) },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
