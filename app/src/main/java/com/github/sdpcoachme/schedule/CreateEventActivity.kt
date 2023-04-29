@@ -3,13 +3,18 @@ package com.github.sdpcoachme.schedule
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
@@ -22,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -79,12 +85,12 @@ fun NewEvent() {
     var title by remember { mutableStateOf("") }
     var start by remember { mutableStateOf(LocalDateTime.now()) }
     var end by remember { mutableStateOf(LocalDateTime.now()) }
-    var color by remember { mutableStateOf(SingleColor(Color.Blue.value.toInt())) }
+    var color by remember { mutableStateOf(SingleColor(Color.Blue.toArgb(), null, null)) }
     var description by remember { mutableStateOf("") }
 
     Column (
         modifier = Modifier
-            .padding(start = 20.dp),
+            .padding(start = 20.dp, end = 20.dp),
         //horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Bottom
     ) {
@@ -100,6 +106,7 @@ fun NewEvent() {
                 modifier = Modifier
                     //.padding(start = 20.dp)
                     .height(56.dp)
+                    .fillMaxWidth()
             )
         }
 
@@ -134,7 +141,7 @@ fun NewEvent() {
                 onClick = { startDateSheet.show() },
                 style = MaterialTheme.typography.body1,
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(.8f)
             )
         }
 
@@ -164,7 +171,7 @@ fun NewEvent() {
                 onClick = { startTimeSheet.show() },
                 style = MaterialTheme.typography.body1,
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(.8f)
             )
         }
 
@@ -197,7 +204,7 @@ fun NewEvent() {
                 onClick = { endDateSheet.show() },
                 style = MaterialTheme.typography.body1,
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(.8f)
             )
         }
 
@@ -227,7 +234,7 @@ fun NewEvent() {
                 onClick = { endTimeSheet.show() },
                 style = MaterialTheme.typography.body1,
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(.8f)
             )
         }
 
@@ -249,6 +256,15 @@ fun NewEvent() {
                     onSelectColor = { color = SingleColor(it) }
                 )
             )
+            Box (
+                modifier = Modifier
+                    .weight(.8f)
+                    .fillMaxHeight(.5f)
+                    .aspectRatio(1f, true)
+                    .size(10.dp)
+                    .clickable { colorSheet.show() }
+                    .background(Color(color.colorInt!!))
+            )
         }
 
         Row (
@@ -263,6 +279,7 @@ fun NewEvent() {
                 label = { Text("Description") },
                 modifier = Modifier
                     .fillMaxHeight()
+                    .fillMaxWidth()
             )
         }
     }
