@@ -1,8 +1,9 @@
 package com.github.sdpcoachme.location
 
-import android.Manifest
+import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -24,7 +25,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
@@ -32,15 +32,18 @@ import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MARKER
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MARKER_INFO_WINDOW
 import com.github.sdpcoachme.profile.ProfileActivity
+import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.common.api.*
+import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.tasks.Task
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
+
 
 /**
  * Main map activity, launched after login. This activity contains the map view and holds
@@ -109,7 +112,7 @@ class MapActivity : ComponentActivity() {
     }
 
     /**
-     * Create an activity for result : display window to request asked permission.
+     * Create an activity for result, here display window to request asked permission.
      * If granted, launches the callback (here getDeviceLocation(...) which retrieves the user's
      * location). The contract is a predefined "function" which takes a permission as input and
      * outputs if the user has granted it or not.
@@ -128,11 +131,11 @@ class MapActivity : ComponentActivity() {
      * If the permission is denied, it requests it.
      */
     private fun getLocation() =
-        when (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+        when (ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION)) {
             PackageManager.PERMISSION_GRANTED -> {
                 getDeviceLocation(fusedLocationProviderClient)
             }
-            else -> requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            else -> requestPermissionLauncher.launch(ACCESS_FINE_LOCATION)
         }
 
     /**
@@ -155,13 +158,41 @@ class MapActivity : ComponentActivity() {
                         )
                     } else {
                         println("Location is disabled on the device")
-                        // TODO handle this case
+                        requestDeviceLocation()
                     }
                 }
             }
         } catch (e: SecurityException) {
             error("getDeviceLocation was called without correct permissions : ${e.message}")
         }
+    }
+
+    private fun requestDeviceLocation() {
+        val builder = LocationSettingsRequest.Builder()
+
+        val client: SettingsClient = LocationServices.getSettingsClient(this)
+        val task: Task<LocationSettingsResponse> = client.checkLocationSettings(builder.build())
+
+        task.addOnSuccessListener { locationSettingsResponse ->
+            println("Device location is enabled on the device.")
+        }
+
+        task.addOnFailureListener { exception ->
+            if (exception is ResolvableApiException){
+                // Location settings are not satisfied but can be fixed
+                println("Device location is enabled on the device.")
+                try {
+                    // Show the dialog by calling startResolutionForResult(),
+                    // and check the result in onActivityResult().
+                    exception.startResolutionForResult(this, 1)
+                } catch (sendEx: IntentSender.SendIntentException) {
+                    // Ignore the error.
+                }
+            }
+        }
+
+
+
     }
 }
 
@@ -195,7 +226,9 @@ fun Map(
 
     GoogleMap(
         // test tag contains lastUserLocation info to allow simple recomposition tracking
-        modifier = modifier.fillMaxSize().testTag(MAP + lastUserLocation.value.toString()),
+        modifier = modifier
+            .fillMaxSize()
+            .testTag(MAP + lastUserLocation.value.toString()),
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
             isMyLocationEnabled = lastUserLocation.value != null,
