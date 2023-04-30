@@ -166,6 +166,10 @@ class LoginActivity : ComponentActivity() {
             }
 
             askNotificationPermission()
+            // only the newest device on which the user logged in will have the FCM token
+            // and receive notifications. This is done for simplicity as otherwise, we would need to
+            // remove notifications on one device when they are read on another.
+            // This could be added/handled in a future sprint.
             addFCMTokenToDatabase(database)
         }
     }

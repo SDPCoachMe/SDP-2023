@@ -7,14 +7,36 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
+import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,7 +51,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
-import com.github.sdpcoachme.data.messaging.Message.*
+import com.github.sdpcoachme.data.messaging.Message.ReadState
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.BACK
@@ -42,8 +64,7 @@ import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_F
 import com.github.sdpcoachme.profile.CoachesListActivity
 import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.ui.theme.Purple500
-import com.google.firebase.messaging.FirebaseMessaging
-import com.google.firebase.messaging.RemoteMessage
+import kotlinx.coroutines.future.await
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
@@ -95,6 +116,8 @@ class ChatActivity : ComponentActivity() {
         }
     }
 
+    var stateLoading = CompletableFuture<Void>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -120,24 +143,18 @@ class ChatActivity : ComponentActivity() {
             // messages are only marked as read when ins the chat
             onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    println("ChatActivity: onBackPressed")
                     database.removeChatListener(chatId)
                     finish()
                 }
             })
-
-
-            // Mark all messages addressed to recipient as read
-            database.markMessagesAsRead(chatId, currentUserEmail)
 
             setContent {
                 ChatView(
                     currentUserEmail,
                     chatId,
                     database,
-                    database.getChat(chatId),
-                    database.getUser(currentUserEmail),
-                    database.getUser(toUserEmail)
+                    toUserEmail,
+                    stateLoading
                 )
             }
         }
@@ -152,43 +169,25 @@ fun ChatView(
     currentUserEmail: String,
     chatId: String,
     database: Database,
-    chatFuture: CompletableFuture<Chat>,
-    fromUserFuture: CompletableFuture<UserInfo>,
-    toUserFuture: CompletableFuture<UserInfo>
+    toUserEmail: String,
+    stateLoading: CompletableFuture<Void>
 ) {
     var chat by remember { mutableStateOf(Chat()) }
-    var fromUser by remember { mutableStateOf(UserInfo()) }
     var toUser by remember { mutableStateOf(UserInfo()) }
 
-    var chatF by remember { mutableStateOf(chatFuture) }
-    var fromUserF by remember { mutableStateOf(fromUserFuture) }
-    var toUserF by remember { mutableStateOf(toUserFuture) }
-
-    chatF.thenAccept {
-        if (it != null) {
-            chat = it
-            chatF = CompletableFuture.completedFuture(null)
-
-            database.removeChatListener(chatId) // done to remove the old one
-            database.addChatListener(chatId) {
-                newChat -> chat = newChat
-                database.markMessagesAsRead(chatId, currentUserEmail)
-            }
+    LaunchedEffect(true) {
+        toUser = database.getUser(toUserEmail).await()
+        chat = database.getChat(chatId).await()
+        database.addChatListener(chatId) { newChat ->
+            chat = newChat
+            database.markMessagesAsRead(chatId, currentUserEmail)
         }
-    }
 
-    fromUserF.thenAccept {
-        if (it != null) {
-            fromUser = it
-            fromUserF = CompletableFuture.completedFuture(null)
-        }
-    }
+        // Mark all messages addressed to recipient as read
+        database.markMessagesAsRead(chatId, currentUserEmail)
 
-    toUserF.thenAccept {
-        if (it != null) {
-            toUser = it
-            toUserF = CompletableFuture.completedFuture(null)
-        }
+        // Activity is now ready for testing
+        stateLoading.complete(null)
     }
 
     Column(modifier = Modifier
@@ -211,7 +210,7 @@ fun ChatView(
             database = database,
             chatId = chatId,
             onSend = {
-                chatF = database.getChat(chatId)
+                database.getChat(chatId).thenAccept { chat = it }
             },
             toUser = toUser
         )
@@ -290,7 +289,7 @@ fun ChatBoxContainer(
     currentUserEmail: String,
     modifier: Modifier
 ) {
-    val scrollState = rememberScrollState()
+    val scrollState = rememberScrollState(Int.MAX_VALUE)
     var onClickScroll by remember { mutableStateOf(false) }
     val endReached by remember {
         derivedStateOf {
@@ -523,14 +522,6 @@ fun ChatField(currentUserEmail: String,
         if (message.trim().isNotEmpty()) {
             IconButton(
                 onClick = {
-
-                    FirebaseMessaging.getInstance().send(
-                        RemoteMessage.Builder("f_DrdaMtT_68z8yPSb9hD-:APA91bHfjDn-r3gYYdo0JXUdz5SqPdb5a09wu0hISqpNc52z_Skezvm2GbIrpbej_v0ndPdM_DV7cvzJPD8D048MfHMX-XJJoCqg-yFMj2wDl7fOwTGVeg9n1joTkJXh7DMMRq3cojne")
-                            .setMessageId("0")
-                            .addData("my_message", "Hello World")
-                            .build()
-                    )
-
                     database.sendMessage(
                         chatId,
                         Message(currentUserEmail, message.trim(), LocalDateTime.now().toString(), ReadState.SENT)

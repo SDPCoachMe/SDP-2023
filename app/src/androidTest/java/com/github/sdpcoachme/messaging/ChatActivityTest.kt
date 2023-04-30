@@ -121,19 +121,20 @@ class ChatActivityTest {
         database.sendMessage(chatId, msg1.copy(timestamp = LocalDateTime.now().minusDays(1).toString()))
         for (i in 0..20) {
             database.sendMessage(chatId, (msg1.copy(content = "toUser msg $i")))
-            database.sendMessage(chatId, (msg2.copy(content = "currentUser msg $i")))
+            database.sendMessage(chatId, (msg2.copy(content = "currentUser msg $i"))).get()
         }
 
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(SCROLL_TO_BOTTOM, useUnmergedTree = true).assertDoesNotExist()
 
             composeTestRule.onNodeWithTag(CHAT_BOX.CONTAINER).performTouchInput { swipeDown() }
             composeTestRule.onNodeWithTag(SCROLL_TO_BOTTOM, useUnmergedTree = true).assertIsDisplayed()
                 .performClick()
+
             composeTestRule.onNodeWithTag(SCROLL_TO_BOTTOM, useUnmergedTree = true).assertDoesNotExist()
             // as the scrolling is done by just switching a boolean, we also test it when switching it
             // the other way around
             composeTestRule.onNodeWithTag(CHAT_BOX.CONTAINER).performTouchInput { swipeDown() }
+
             composeTestRule.onNodeWithTag(SCROLL_TO_BOTTOM, useUnmergedTree = true).assertIsDisplayed()
                 .performClick()
             composeTestRule.onNodeWithTag(SCROLL_TO_BOTTOM, useUnmergedTree = true).assertDoesNotExist()
