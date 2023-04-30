@@ -2,7 +2,7 @@ package com.github.sdpcoachme.data
 
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
-import com.github.sdpcoachme.data.messaging.ReadState
+import com.github.sdpcoachme.data.messaging.Message.ReadState
 import java.time.LocalDateTime
 
 class ChatSample {

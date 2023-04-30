@@ -11,4 +11,13 @@ data class Message(
 ) {
     // Constructor needed to make the data class serializable
     constructor() : this("", "", "", ReadState.SENT)
+
+    /**
+     * Enum class representing the read state of a message
+     */
+    enum class ReadState {
+        SENT,
+        RECEIVED,
+        READ,
+    }
 }

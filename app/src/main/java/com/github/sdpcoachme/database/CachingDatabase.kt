@@ -140,7 +140,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
         // Also here, if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat from the db)
         if (chats.containsKey(chatId)) {
-            chats[chatId] = FireDatabase.markOtherUsersMessagesAsRead(
+            chats[chatId] = Chat.markOtherUsersMessagesAsRead(
                     chats[chatId]!!,
                     email
                 )

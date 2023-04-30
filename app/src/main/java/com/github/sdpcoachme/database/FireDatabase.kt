@@ -2,8 +2,9 @@ package com.github.sdpcoachme.database
 
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.Chat.Companion.markOtherUsersMessagesAsRead
 import com.github.sdpcoachme.data.messaging.Message
-import com.github.sdpcoachme.data.messaging.ReadState
+import com.github.sdpcoachme.data.messaging.Message.*
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.google.firebase.database.DataSnapshot
@@ -266,25 +267,6 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             future.completeExceptionally(it)
         }
         return future
-    }
-
-    companion object {
-
-        /**
-         * Marks all messages in a list as read, except for the messages sent by the current user
-         *
-         * @param chat the chat whose messages to mark as read
-         * @param currentUserEmail the email of the current user
-         */
-        fun markOtherUsersMessagesAsRead(chat: Chat, currentUserEmail: String): Chat {
-            return chat.copy(messages = chat.messages.map { message ->
-                if (message.readState == ReadState.READ || message.sender == currentUserEmail) {
-                    message
-                } else {
-                    message.copy(readState = ReadState.READ)
-                }
-            })
-        }
     }
 }
 

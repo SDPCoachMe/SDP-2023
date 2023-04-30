@@ -13,8 +13,11 @@ import com.github.sdpcoachme.profile.CoachesListActivity
 import com.google.firebase.messaging.FirebaseMessagingService
 
 /**
- * This class handles the incoming messages and sends a push notification.
- * It has been created to enable testing of the push notifications.
+ * This class is used to send in-app push notifications to the user while the app is in the foreground.
+ * Whenever a push notification is received when in the foreground, this class is called from the
+ * InAppNotificationService class to send the adapted notification (as we know more about the app's state
+ * when the app is open).
+ * @see InAppNotificationService
  *
  * @param context Context of the application
  * @param database Database of the application

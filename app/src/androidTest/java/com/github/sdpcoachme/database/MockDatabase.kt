@@ -4,7 +4,6 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
-import com.github.sdpcoachme.data.messaging.ReadState
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
 import java.time.LocalDate
@@ -154,13 +153,7 @@ open class MockDatabase: Database {
 
 
     override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
-        chat = chat.copy(messages = chat.messages.map { message ->
-            if (message.sender == email) {
-                message.copy(readState = ReadState.READ)
-            } else {
-                message
-            }
-        })
+        chat = Chat.markOtherUsersMessagesAsRead(chat, email)
 
         return CompletableFuture.completedFuture(null)
     }

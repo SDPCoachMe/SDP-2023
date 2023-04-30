@@ -29,7 +29,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
-import com.github.sdpcoachme.data.messaging.ReadState
+import com.github.sdpcoachme.data.messaging.Message.*
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.BACK

@@ -86,12 +86,19 @@ class LoginActivity : ComponentActivity() {
         // Check if a notification was clicked
         val pushNotificationIntent = intent
         val action = pushNotificationIntent.action
+
+        // By default, if the user exists, we open the map activity after login
         userExistsIntent = Intent(this, MapActivity::class.java)
+        // If the user clicked on a chat notification, then the action is OPEN_CHAT_ACTIVITY
+        // to open the chat, the sender of the message must not be null
         if (action.equals("OPEN_CHAT_ACTIVITY") && pushNotificationIntent.getStringExtra("sender") != null) {
 
+            // prepare the intent to open the chat activity
             userExistsIntent = Intent(this, ChatActivity::class.java)
                 .putExtra("toUserEmail", pushNotificationIntent.getStringExtra("sender"))
 
+            // If the user is logged in, then we can open the chat activity directly without letting the user log in,
+            // otherwise we wait for the login process to complete and then open the chat activity
             if (database.getCurrentEmail().isNotEmpty()) {
                 startActivity(userExistsIntent)
             }
