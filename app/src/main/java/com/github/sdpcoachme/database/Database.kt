@@ -70,7 +70,7 @@ interface Database {
      * @param currentWeekMonday The monday of the current week
      * @return A future with currently stored schedule that will complete when the events have been added.
      */
-    fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule>
+    fun addEvent(event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule>
 
 
     /**

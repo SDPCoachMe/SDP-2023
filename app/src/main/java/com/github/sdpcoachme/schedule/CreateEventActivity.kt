@@ -1,5 +1,6 @@
 package com.github.sdpcoachme.schedule
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,9 +18,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material.Button
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,14 +38,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
+import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import com.github.sdpcoachme.ui.theme.Purple500
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarConfig
@@ -62,11 +78,10 @@ class CreateEventActivity : ComponentActivity() {
             val errorMsg = "New event did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
-
             setContent {
                 CoachMeTheme {
-                    Dashboard("New Event") {
-                        NewEvent()
+                    Surface(color = MaterialTheme.colors.background) {
+                        NewEvent(database)
                     }
                 }
             }
@@ -75,12 +90,14 @@ class CreateEventActivity : ComponentActivity() {
 }
 
 @Composable
-fun NewEvent() {
+fun NewEvent(database: Database) {
     val startDateSheet = rememberSheetState()
     val startTimeSheet = rememberSheetState()
     val endDateSheet = rememberSheetState()
     val endTimeSheet = rememberSheetState()
     val colorSheet = rememberSheetState()
+    val formatter = EventOps.getEventTimeFormatter()
+    val context = LocalContext.current
 
     var title by remember { mutableStateOf("") }
     var start by remember { mutableStateOf(LocalDateTime.now()) }
@@ -88,198 +105,324 @@ fun NewEvent() {
     var color by remember { mutableStateOf(SingleColor(Color.Blue.toArgb(), null, null)) }
     var description by remember { mutableStateOf("") }
 
-    Column (
+
+    //AddEventTitleRow(database, Event(title, color.colorInt.toString(), start.format(formatter), end.format(formatter), description))
+
+
+    Row(
         modifier = Modifier
-            .padding(start = 20.dp, end = 20.dp),
-        //horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Bottom
+            .fillMaxWidth()
+            .height(56.dp)
+            .background(Purple500)
     ) {
-        Row(
+        fun goBackToScheduleActivity() {
+            val intent = Intent(context, ScheduleActivity::class.java)
+            context.startActivity(intent)
+        }
+        val event = Event(title, color.colorInt.toString(), start.format(formatter), end.format(formatter), description)
+
+        // Button icon for the cancel button
+        IconButton(
+            onClick = {
+                goBackToScheduleActivity()
+            },
             modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
+                .weight(1f)
+                .padding(start = 5.dp)
+                .align(Alignment.CenterVertically)
         ) {
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Event Title") },
+            Icon(
+                imageVector = Icons.Default.Cancel,
+                contentDescription = "Cancel",
+                modifier = Modifier.align(Alignment.CenterVertically),
+                tint = Color.White
+            )
+        }
+
+        Text(
+            text = "New Event",
+            style = MaterialTheme.typography.h5,
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .padding(start = 10.dp)
+        )
+
+        // Button icon for the save button
+        IconButton(
+            onClick = {
+                EventOps.addEvent(event, database)
+                goBackToScheduleActivity()
+            },
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 5.dp)
+                .align(Alignment.CenterVertically)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Done,
+                contentDescription = "Save",
+                modifier = Modifier.align(Alignment.CenterVertically),
+                tint = Color.White
+            )
+        }
+    }
+
+    Row (
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+    ) {
+        Column (
+            modifier = Modifier
+                .padding(start = 20.dp, end = 20.dp),
+            verticalArrangement = Arrangement.Bottom
+
+        ) {
+
+
+            Row(
                 modifier = Modifier
-                    //.padding(start = 20.dp)
+                    .fillMaxWidth()
                     .height(56.dp)
-                    .fillMaxWidth()
-            )
-        }
-
-
-        // Start date
-        Row (
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            verticalAlignment = Alignment.Bottom
-        ){
-            Text(
-                text = "Start Date: ",
-                modifier = Modifier
-                    .weight(1f)
-
-            )
-            CalendarDialog(
-                state = startDateSheet,
-                config = CalendarConfig(
-                    monthSelection = true,
-                    yearSelection = true,
-                    style = CalendarStyle.MONTH,
-
-                    ),
-                selection = CalendarSelection.Date {
-                    start = it.atStartOfDay()
-                }
-            )
-            ClickableText(
-                text = AnnotatedString(start.toLocalDate().toString()),
-                onClick = { startDateSheet.show() },
-                style = MaterialTheme.typography.body1,
-                modifier = Modifier
-                    .weight(.8f)
-            )
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            Text(
-                text = "Time: ",
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 20.dp)
-            )
-            ClockDialog(
-                state = startTimeSheet,
-                config = ClockConfig(
-                    is24HourFormat = true
-                ),
-                selection = ClockSelection.HoursMinutes { hours, minutes ->
-                    start = start.withHour(hours).withMinute(minutes)
-                }
-            )
-            ClickableText(
-                text = AnnotatedString(start.toLocalTime().format(EventOps.getEventTimeFormatter())),
-                onClick = { startTimeSheet.show() },
-                style = MaterialTheme.typography.body1,
-                modifier = Modifier
-                    .weight(.8f)
-            )
-        }
-
-        // End date
-        Row (
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            verticalAlignment = Alignment.Bottom
-        ){
-            Text(
-                text = "End Date: ",
-
-                modifier = Modifier
-                    .weight(1f)
-            )
-            CalendarDialog(
-                state = endDateSheet,
-                config = CalendarConfig(
-                    monthSelection = true,
-                    yearSelection = true,
-                    style = CalendarStyle.MONTH,
-                ),
-                selection = CalendarSelection.Date {
-                    end = it.atStartOfDay().plusHours(1)
-                }
-            )
-            ClickableText(
-                text = AnnotatedString(end.toLocalDate().toString()),
-                onClick = { endDateSheet.show() },
-                style = MaterialTheme.typography.body1,
-                modifier = Modifier
-                    .weight(.8f)
-            )
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            Text(
-                text = "Time: ",
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 20.dp)
-            )
-            ClockDialog(
-                state = endTimeSheet,
-                config = ClockConfig(
-                    is24HourFormat = true
-                ),
-                selection = ClockSelection.HoursMinutes { hours, minutes ->
-                    end = end.withHour(hours).withMinute(minutes)
-                }
-            )
-            ClickableText(
-                text = AnnotatedString(end.toLocalTime().format(EventOps.getEventTimeFormatter())),
-                onClick = { endTimeSheet.show() },
-                style = MaterialTheme.typography.body1,
-                modifier = Modifier
-                    .weight(.8f)
-            )
-        }
-
-        Row (
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            Text(
-                text = "Color: ",
-                modifier = Modifier
-                    .weight(1f)
-            )
-            ColorDialog(
-                state = colorSheet,
-                selection = ColorSelection(
-                    selectedColor = color,
-                    onSelectColor = { color = SingleColor(it) }
+            ) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Event Title") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .height(56.dp)
+                        .fillMaxWidth()
+                        .fillMaxHeight()
                 )
-            )
-            Box (
+            }
+
+            // Start date
+            Row (
                 modifier = Modifier
-                    .weight(.8f)
-                    .fillMaxHeight(.5f)
-                    .aspectRatio(1f, true)
-                    .size(10.dp)
-                    .clickable { colorSheet.show() }
-                    .background(Color(color.colorInt!!))
+                    .fillMaxWidth()
+                    .height(56.dp),
+                verticalAlignment = Alignment.Bottom
+            ){
+                Text(
+                    text = "Start Date: ",
+                    modifier = Modifier
+                        .weight(1f)
+                )
+                CalendarDialog(
+                    state = startDateSheet,
+                    config = CalendarConfig(
+                        monthSelection = true,
+                        yearSelection = true,
+                        style = CalendarStyle.MONTH),
+                    selection = CalendarSelection.Date {
+                        start = it.atStartOfDay()
+                    }
+                )
+                ClickableText(
+                    text = AnnotatedString(start.toLocalDate().toString()),
+                    onClick = { startDateSheet.show() },
+                    style = MaterialTheme.typography.body1,
+                    modifier = Modifier
+                        .weight(.8f)
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Text(
+                    text = "Time: ",
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 20.dp)
+                )
+                ClockDialog(
+                    state = startTimeSheet,
+                    config = ClockConfig(
+                        is24HourFormat = true
+                    ),
+                    selection = ClockSelection.HoursMinutes { hours, minutes ->
+                        start = start.withHour(hours).withMinute(minutes)
+                    }
+                )
+                ClickableText(
+                    text = AnnotatedString(start.toLocalTime().format(EventOps.getEventTimeFormatter())),
+                    onClick = { startTimeSheet.show() },
+                    style = MaterialTheme.typography.body1,
+                    modifier = Modifier
+                        .weight(.8f)
+                )
+            }
+
+            // End date
+            Row (
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                verticalAlignment = Alignment.Bottom
+            ){
+                Text(
+                    text = "End Date: ",
+
+                    modifier = Modifier
+                        .weight(1f)
+                )
+                CalendarDialog(
+                    state = endDateSheet,
+                    config = CalendarConfig(
+                        monthSelection = true,
+                        yearSelection = true,
+                        style = CalendarStyle.MONTH,
+                    ),
+                    selection = CalendarSelection.Date {
+                        end = it.atStartOfDay().plusHours(1)
+                    }
+                )
+                ClickableText(
+                    text = AnnotatedString(end.toLocalDate().toString()),
+                    onClick = { endDateSheet.show() },
+                    style = MaterialTheme.typography.body1,
+                    modifier = Modifier
+                        .weight(.8f)
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Text(
+                    text = "Time: ",
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 20.dp)
+                )
+                ClockDialog(
+                    state = endTimeSheet,
+                    config = ClockConfig(
+                        is24HourFormat = true
+                    ),
+                    selection = ClockSelection.HoursMinutes { hours, minutes ->
+                        end = end.withHour(hours).withMinute(minutes)
+                    }
+                )
+                ClickableText(
+                    text = AnnotatedString(end.toLocalTime().format(EventOps.getEventTimeFormatter())),
+                    onClick = { endTimeSheet.show() },
+                    style = MaterialTheme.typography.body1,
+                    modifier = Modifier
+                        .weight(.8f)
+                )
+            }
+
+            Row (
+                modifier = Modifier
+                    //.fillMaxWidth()
+                    .height(56.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Text(
+                    text = "Color: ",
+                    modifier = Modifier
+                        .weight(1f)
+                )
+                ColorDialog(
+                    state = colorSheet,
+                    selection = ColorSelection(
+                        selectedColor = color,
+                        onSelectColor = { color = SingleColor(it) }
+                    )
+                )
+                Box (
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(.5f)
+                        .aspectRatio(1f, true)
+                        .size(5.dp)
+                        .clickable { colorSheet.show() }
+                        .background(Color(color.colorInt!!))
+                )
+            }
+
+            Row (
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .padding(top = 10.dp),
+                verticalAlignment = Alignment.Bottom
+            ){
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth()
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AddEventTitleRow(database: Database, event: Event) {
+    val context = LocalContext.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .background(Purple500)
+    ) {
+        fun goBackToScheduleActivity() {
+            val intent = Intent(context, ScheduleActivity::class.java)
+            context.startActivity(intent)
+        }
+
+        // Button icon for the cancel button
+        IconButton(
+            onClick = {
+                goBackToScheduleActivity()
+            },
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 5.dp)
+                .align(Alignment.CenterVertically)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Cancel,
+                contentDescription = "Cancel",
+                modifier = Modifier.align(Alignment.CenterVertically),
+                tint = Color.White
             )
         }
 
-        Row (
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Button icon for the save button
+        IconButton(
+            onClick = {
+                EventOps.addEvent(event, database)
+                goBackToScheduleActivity()
+            },
             modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(),
-            verticalAlignment = Alignment.Bottom
-        ){
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Description") },
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth()
+                .weight(1f)
+                .padding(end = 5.dp)
+                .align(Alignment.CenterVertically)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Done,
+                contentDescription = "Save",
+                modifier = Modifier.align(Alignment.CenterVertically),
+                tint = Color.White
             )
         }
     }
@@ -362,11 +505,3 @@ fun NewEventTitleRow(modifier: Modifier = Modifier) {
         )
     }
 }*/
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    CoachMeTheme {
-        NewEvent()
-    }
-}
