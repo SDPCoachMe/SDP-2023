@@ -5,24 +5,27 @@ package com.github.sdpcoachme.database
 // Otherwise we would have complicated dependencies.
 
 import androidx.compose.ui.graphics.Color
-import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.ChatSample
+import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.NEW_YORK
-import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
+import com.github.sdpcoachme.data.messaging.Message.*
+import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
 import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
-import java.util.concurrent.TimeUnit.SECONDS
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit.SECONDS
 
 class CachingDatabaseTest {
 
@@ -48,6 +51,24 @@ class CachingDatabaseTest {
         assertTrue(cachingDatabase.isCached(willSmithUser.email))
         assertTrue(cachingDatabase.userExists(willSmithUser.email).get(1, SECONDS))
         assertEquals(willSmithUser, retrievedUser)
+    }
+
+    @Test
+    fun userExistsForUncachedUserFetchesFromWrappedDB() {
+        class ExistsDB: MockDatabase()  {
+            var existsCalled = false
+            override fun userExists(email: String): CompletableFuture<Boolean> {
+                existsCalled = true
+                return CompletableFuture.completedFuture(true)
+            }
+        }
+
+        val wrappedDatabase = ExistsDB()
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+
+        assertFalse(cachingDatabase.isCached(willSmithUser.email))
+        assertTrue(cachingDatabase.userExists(willSmithUser.email).get(1, SECONDS))
+        assertTrue(wrappedDatabase.existsCalled)
     }
 
     @Test
@@ -270,7 +291,7 @@ class CachingDatabaseTest {
             "New Message!",
             defaultUser.email,
             LocalDateTime.now().toString(),
-            false
+            ReadState.SENT
         )
         val expectedChat = defaultChat.copy(messages = defaultMessages + newMessage)
 
@@ -305,7 +326,7 @@ class CachingDatabaseTest {
             "New Message!",
             defaultUser.email,
             LocalDateTime.now().toString(),
-            false
+            ReadState.SENT
         )
 
         val wrappedDatabase = SendMessageDB(defaultChat)
@@ -344,7 +365,7 @@ class CachingDatabaseTest {
     fun markMessagesAsReadForCachedChatUpdatesCache() {
         val expectedChat = defaultChat.copy(messages = defaultChat.messages.map {
             if (it.sender != defaultUser.email)
-                it.copy(readByRecipient = true)
+                it.copy(readState = ReadState.READ)
             else
                 it
         })
@@ -445,6 +466,116 @@ class CachingDatabaseTest {
         assertThat(receivedChatId, `is`("chatId"))
     }
 
+    private class TokenDB(var token: String, val email: String): MockDatabase() {
+        private var timesFetched = 0
+
+        fun timesCalled() = timesFetched
+
+        override fun getFCMToken(email: String): CompletableFuture<String> {
+            timesFetched++
+            return CompletableFuture.completedFuture(if (email == this.email) token else "")
+        }
+
+        override fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
+            if (email == this.email)
+                this.token = token
+            return CompletableFuture.completedFuture(null)
+        }
+    }
+    @Test
+    fun getFcmTokenCachesTheTokenForSubsequentRequest() {
+        val testEmail = "example@email.com"
+        val token = "------token-----"
+
+        val wrappedDatabase = TokenDB(token, testEmail)
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+
+        val noError = cachingDatabase.getFCMToken(testEmail)
+            .thenCompose {
+                assertThat(it, `is`(token))
+                assertThat(wrappedDatabase.timesCalled(), `is`(1))
+
+                cachingDatabase.getFCMToken(testEmail)
+            }.thenApply {
+                assertThat(it, `is`(token))
+                assertThat(wrappedDatabase.timesCalled(), `is`(1))
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(noError)
+    }
+
+    @Test
+    fun setFCMTokenCachesItForSubsequentGets() {
+        val testEmail = "example@email.com"
+        val token = "------token-----"
+
+        val wrappedDatabase = TokenDB(token, testEmail)
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+
+        val noError = cachingDatabase.setFCMToken(testEmail, token)
+            .thenCompose {
+                assertThat(wrappedDatabase.timesCalled(), `is`(0))
+
+                cachingDatabase.getFCMToken(testEmail)
+            }.thenApply {
+                assertThat(it, `is`(token))
+                assertThat(wrappedDatabase.timesCalled(), `is`(0))
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(noError)
+    }
+
+    @Test
+    fun getFcmTokenOnDifferentEmailsFetchesTwiceFromWrappedDB() {
+        val testEmail = "example@email.com"
+        val token = "------token-----"
+
+        val wrappedDatabase = TokenDB(token, testEmail)
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+
+        val noError = cachingDatabase.getFCMToken(testEmail)
+            .thenCompose {
+                assertThat(wrappedDatabase.timesCalled(), `is`(1))
+
+                cachingDatabase.getFCMToken("otherEmail")
+            }.thenApply {
+                assertThat(wrappedDatabase.timesCalled(), `is`(2))
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(noError)
+    }
+
+    @Test
+    fun setAndgetFcmTokenOnDifferentEmailsFetchesFromWrappedDB() {
+        val testEmail = "example@email.com"
+        val token = "------token-----"
+
+        val wrappedDatabase = TokenDB(token, testEmail)
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+
+        val noError = cachingDatabase.setFCMToken(testEmail, token)
+            .thenCompose {
+                assertThat(wrappedDatabase.timesCalled(), `is`(0))
+
+                cachingDatabase.getFCMToken("otherEmail")
+            }.thenApply {
+                assertThat(wrappedDatabase.timesCalled(), `is`(1))
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(noError)
+    }
 
 
 
@@ -479,32 +610,7 @@ class CachingDatabaseTest {
     )
 
     private val userList = listOf(defaultUser, willSmithUser, rogerFedererUser)
-    private val defaultMessages = listOf(
-        Message(
-            defaultUser.email,
-            "Hello",
-            LocalDateTime.now().toString(),
-            true
-        ),
-        Message(
-            defaultUser.email,
-            "Hello number 2",
-            LocalDateTime.now().toString(),
-            false
-        ),
-        Message(
-            willSmithUser.email,
-            "Hi",
-            LocalDateTime.now().toString(),
-            true
-        ),
-        Message(
-            willSmithUser.email,
-            "Goodby",
-            LocalDateTime.now().toString(),
-            false
-        )
-    )
+    private val defaultMessages = ChatSample.MESSAGES
     private val defaultChat = Chat().copy(
         id = "defaultId",
         participants = listOf(willSmithUser.email, defaultUser.email),
@@ -512,8 +618,7 @@ class CachingDatabaseTest {
     )
 
 
-    val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-
+    private val currentMonday: LocalDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     private val cachedEvents = listOf(
         Event(
             name = "Google I/O Keynote",
