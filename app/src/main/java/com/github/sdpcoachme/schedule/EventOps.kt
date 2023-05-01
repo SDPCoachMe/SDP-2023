@@ -1,8 +1,7 @@
 package com.github.sdpcoachme.schedule
 
-import android.content.Context
-import android.content.Intent
 import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.database.Database
 import java.time.DayOfWeek
@@ -11,6 +10,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
+import java.util.concurrent.CompletableFuture
 
 class EventOps {
     companion object {
@@ -18,13 +18,16 @@ class EventOps {
          * A map to keep track of events that span multiple days. Has to be changed once the events are modified.
          */
         private val multiDayEventMap = mutableMapOf<Event, List<ShownEvent>>()
-        private val EventTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+        private val EventDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+        private val TimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
         private val DayFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
         private val startMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
         fun getMultiDayEventMap() = multiDayEventMap
 
-        fun getEventTimeFormatter() = EventTimeFormatter
+        fun getEventDateFormatter() = EventDateFormatter
+
+        fun getEventTimeFormatter() = TimeFormatter
 
         fun getDayFormatter() = DayFormatter
 
@@ -44,6 +47,7 @@ class EventOps {
         private fun wrapEvent(
             event: Event
         ): List<ShownEvent> {
+            println("Event start: $event")
             val start = LocalDateTime.parse(event.start)
             val end = LocalDateTime.parse(event.end)
             val startDay = start.toLocalDate()
@@ -51,6 +55,7 @@ class EventOps {
 
             val eventsToShow = mutableListOf<ShownEvent>()
             val daysToFill = ChronoUnit.DAYS.between(startDay, endDay).toInt() - 1
+
             val startEvent = ShownEvent(
                 name = event.name,
                 color = event.color,
@@ -60,6 +65,7 @@ class EventOps {
                 endText = event.end,
                 description = event.description,
             )
+
             val endEvent = ShownEvent(
                 name = event.name,
                 color = event.color,
@@ -69,8 +75,12 @@ class EventOps {
                 endText = event.end,
                 description = event.description,
             )
+
             eventsToShow.add(startEvent)
             multiDayEventMap[event] = listOf(startEvent, endEvent)
+
+            println("Created new entry in multidayeventmap")
+
             if (daysToFill > 0) {
                 val middleEvents = (1..daysToFill).map { day ->
                     ShownEvent(
@@ -88,6 +98,7 @@ class EventOps {
             }
             eventsToShow.add(endEvent)
 
+            println("Return eventsToShow")
             return eventsToShow
         }
 
@@ -125,19 +136,14 @@ class EventOps {
             return eventsToShow
         }
 
-        fun launchAddEventActivity(context: Context) {
-            val intent = Intent(context, CreateEventActivity::class.java)
-            context.startActivity(intent)
-        }
-
-        fun addEvent(event: Event, database: Database) {
-            database.addEvent(event, startMonday)
+        fun addEvent(event: Event, database: Database): CompletableFuture<Schedule> {
             println("App crashes between here")
             val shownEvents = wrapEvent(event)
-            println("...and here")
             if (shownEvents.size > 1) {
                 multiDayEventMap[event] = shownEvents
             }
+            println("Add event finished")
+            return database.addEvent(event, startMonday)
         }
     }
 }

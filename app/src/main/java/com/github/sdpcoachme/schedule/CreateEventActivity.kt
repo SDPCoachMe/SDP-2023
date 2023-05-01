@@ -55,7 +55,9 @@ import com.maxkeppeler.sheets.clock.ClockDialog
 import com.maxkeppeler.sheets.clock.models.ClockConfig
 import com.maxkeppeler.sheets.clock.models.ClockSelection
 import com.maxkeppeler.sheets.color.ColorDialog
+import com.maxkeppeler.sheets.color.models.ColorConfig
 import com.maxkeppeler.sheets.color.models.ColorSelection
+import com.maxkeppeler.sheets.color.models.MultipleColors
 import com.maxkeppeler.sheets.color.models.SingleColor
 import java.time.LocalDateTime
 
@@ -90,24 +92,25 @@ fun NewEvent(database: Database) {
     val endDateSheet = rememberSheetState()
     val endTimeSheet = rememberSheetState()
     val colorSheet = rememberSheetState()
-    val formatter = EventOps.getEventTimeFormatter()
     val context = LocalContext.current
+    val formatter = EventOps.getEventDateFormatter()
 
     var eventName by remember { mutableStateOf("Test Event") }
     var start by remember { mutableStateOf(LocalDateTime.now().plusDays(1).withHour(8).withMinute(0)) }
     var end by remember { mutableStateOf(LocalDateTime.now().plusDays(1).withHour(10).withMinute(0)) }
-    var color by remember { mutableStateOf(SingleColor(Color.Blue.toArgb(), null, null)) }
+    var color by remember { mutableStateOf(0) }
     var description by remember { mutableStateOf("") }
+    var singleColor by remember { mutableStateOf(SingleColor()) }
+    var selectedColor by remember { mutableStateOf(Color.Red) }
 
     Scaffold(
         topBar = {
             fun goBackToScheduleActivity() {
                 val intent = Intent(context, ScheduleActivity::class.java)
-                println("Email in create activity database: ${database.getCurrentEmail()}")
-                intent.putExtra("email", database.getCurrentEmail())
                 context.startActivity(intent)
             }
-            val event = Event(eventName, color.colorInt.toString(), start.format(formatter), end.format(formatter), description)
+            println("signle color hex stirng: " + singleColor.colorHex)
+            val event = Event(eventName, selectedColor.value.toString(), start.format(formatter), end.format(formatter), description)
             TopAppBar(
                 title = {
                     Text("New Event")
@@ -120,9 +123,10 @@ fun NewEvent(database: Database) {
                 actions = {
                     IconButton(
                         onClick = {
-                            EventOps.addEvent(event, database)
-                            println("add event returned")
-                            goBackToScheduleActivity()
+                            EventOps.addEvent(event, database).thenAccept {
+                                goBackToScheduleActivity()
+                                println("add event returned")
+                            }
                         },
                     ) {
                         Icon(Icons.Filled.Done, "Done",
@@ -289,12 +293,35 @@ fun NewEvent(database: Database) {
                     modifier = Modifier
                         .weight(1f)
                 )
+
+                val predefinedColors = MultipleColors.ColorsInt(
+                    Color.Red.toArgb(),
+                    Color.Red.copy(alpha = 0.5f).toArgb(),
+                    Color.Green.toArgb(),
+                    Color.Blue.toArgb(),
+                )
                 ColorDialog(
                     state = colorSheet,
                     selection = ColorSelection(
-                        selectedColor = color,
-                        onSelectColor = { color = SingleColor(it) }
-                    )
+                        selectedColor = SingleColor(colorInt = color),
+                        onSelectColor = {
+                            selectedColor = when (it) {
+                                Color.Red.toArgb() -> Color.Red
+                                Color.Green.toArgb() -> Color.Green
+                                Color.Blue.toArgb() -> Color.Blue
+                                else -> Color.Red
+                            }
+
+//                            println("color selected: $it")
+//                            color = it
+//                            singleColor = SingleColor(it)
+//
+//                            if (it == Color.Red.toArgb()) {
+//                                println("color is red")
+//                            }
+                        }
+                    ),
+                    config = ColorConfig(templateColors = predefinedColors)
                 )
                 Box (
                     modifier = Modifier
@@ -303,7 +330,7 @@ fun NewEvent(database: Database) {
                         .aspectRatio(1f, true)
                         .size(5.dp)
                         .clickable { colorSheet.show() }
-                        .background(Color(color.colorInt!!))
+                        //.background(Color(color.colorInt!!))
                 )
             }
 

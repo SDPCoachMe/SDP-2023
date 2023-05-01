@@ -111,8 +111,6 @@ class ScheduleActivity : ComponentActivity() {
         database = (application as CoachMeApplication).database
         email = database.getCurrentEmail()
 
-        println("Email in schedule activity: $email")
-
         if (email.isEmpty()) {
             val errorMsg = "Schedule did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
@@ -190,8 +188,10 @@ fun Schedule(
                 dayWidth = dayWidth,
             )
 
+            println("Get shown events")
             // filter events to only show events in the current week
             val eventsToShow = EventOps.eventsToWrappedEvents(events)
+            println("Events to show: $eventsToShow")
             BasicSchedule(
                 events = eventsToShow.filter { event ->
                     val eventDate = LocalDateTime.parse(event.start).toLocalDate()
