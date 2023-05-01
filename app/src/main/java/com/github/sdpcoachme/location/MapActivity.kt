@@ -3,11 +3,11 @@ package com.github.sdpcoachme.location
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Icon
@@ -36,14 +36,13 @@ import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.google.android.gms.common.api.*
 import com.google.android.gms.location.*
+import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.tasks.Task
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
-
 
 /**
  * Main map activity, launched after login. This activity contains the map view and holds
@@ -51,8 +50,8 @@ import java.util.concurrent.CompletableFuture
  */
 class MapActivity : ComponentActivity() {
     // Allows to notice testing framework that the markers are displayed on the map
-    var markerLoading = CompletableFuture<Void>()
-    var mapLoading = CompletableFuture<Void>()
+    private var markerLoading = CompletableFuture<Void>()
+    private var mapLoading = CompletableFuture<Void>()
 
     class TestTags {
         companion object {
@@ -60,10 +59,12 @@ class MapActivity : ComponentActivity() {
             fun MARKER(user: UserInfo) = "marker-${user.email}"
             fun MARKER_INFO_WINDOW(user: UserInfo) = "infoWindow-${user.email}"
         }
+
     }
 
     companion object {
         val CAMPUS = LatLng(46.520536,6.568318)
+        const val MAX_LOCATION_DELAY = 5000
     }
 
     private lateinit var database: Database
@@ -78,11 +79,16 @@ class MapActivity : ComponentActivity() {
 
         database = (application as CoachMeApplication).database
         email = database.getCurrentEmail()
+        // lastUserLocation state contains null on first application launch
         lastUserLocation = (application as CoachMeApplication).userLocation
-
         // gets user location at map creation
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
-        getLocation()
+
+        if (locationIsPermitted()) {
+            checkLocationSetting()
+        } else {
+            requestPermissionLauncher.launch(ACCESS_FINE_LOCATION)
+        }
 
         if (email.isEmpty()) {
             val errorMsg = "The map did not receive an email address.\nPlease return to the login page and try again."
@@ -112,53 +118,98 @@ class MapActivity : ComponentActivity() {
     }
 
     /**
-     * Create an activity for result, here display window to request asked permission.
-     * If granted, launches the callback (here getDeviceLocation(...) which retrieves the user's
-     * location). The contract is a predefined "function" which takes a permission as input and
+     * Checks if the user has granted the needed permission to the application. Useful especially
+     * after application installation.
+     */
+    private fun locationIsPermitted(): Boolean {
+        val locationPermission = ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION)
+        return locationPermission == PackageManager.PERMISSION_GRANTED
+    }
+
+    /**
+     * Checks the current location settings of the device.
+     * If location service is enabled on the device, launches the location retrieval.
+     * Else, requests the user to enable the location service of the device.
+     */
+    private fun checkLocationSetting() {
+        val locationRequest = LocationRequest.Builder(PRIORITY_HIGH_ACCURACY, 0)
+        val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest.build())
+        val client: SettingsClient = LocationServices.getSettingsClient(this)
+        val locationSettingsResponse = client.checkLocationSettings(builder.build())
+
+        locationSettingsResponse.addOnSuccessListener {
+            // Location settings are satisfied, get the last known location
+            getDeviceLocation(0)
+        }
+        locationSettingsResponse.addOnFailureListener { exception ->
+            if (exception is ResolvableApiException) {
+                // Location settings are not satisfied, but this can be fixed
+                val intentSender = exception.resolution.intentSender
+                requestSettingLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+            }
+            // else, fails silently, there is no way to fix the location settings
+            println("Exception: $exception can not be resolved")
+        }
+    }
+
+    /**
+     * Create an activity for result to display a window to request location setting.
+     * The contract is a predefined "function" which takes an IntentSenderRequest as input and
+     * outputs if the user has enabled the setting or not.
+     */
+    private val requestSettingLauncher =
+        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
+            if (it.resultCode == RESULT_OK) {
+                // User enabled device location, we can now retrieve it
+                getDeviceLocation(0)
+            } else {
+                //User did not enable device location
+                //TODO put address as default location
+                // MAY also be a IntentSender.SendIntentException
+            }
+        }
+
+    /**
+     * Create an activity for result to display window to request location permission.
+     * The contract is a predefined "function" which takes a permission as input and
      * outputs if the user has granted it or not.
      */
     private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
-                getDeviceLocation(fusedLocationProviderClient)
-            } else {
-            // TODO Permission denied or only COARSE given
+                checkLocationSetting()
+            }
+            else {
+                //TODO put address as default location
             }
         }
 
     /**
-     * This function updates the state of lastUserLocation if the permission is granted.
-     * If the permission is denied, it requests it.
-     */
-    private fun getLocation() =
-        when (ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION)) {
-            PackageManager.PERMISSION_GRANTED -> {
-                getDeviceLocation(fusedLocationProviderClient)
-            }
-            else -> requestPermissionLauncher.launch(ACCESS_FINE_LOCATION)
-        }
-
-    /**
-     * Performs the location retrieval. Permission are checked before this function call.
+     * Performs the location retrieval. This function is always called with granted permissions
+     * and the device location settings enabled. This safely allows the recursive call needed in the
+     * case the device location service takes time to be deployed.
      *
-     * The fusedLocationProviderClient.lastLocation task is null if the location is disabled on the
+     * Notice that the fusedLocationProviderClient.lastLocation task is null if the location is disabled on the
      * device (also even if the last location was previously retrieved because disabling the device
      * location clears the cache).
      */
     @SuppressLint("MissingPermission") //permission is checked before the call
-    private fun getDeviceLocation(fusedLocationProviderClient: FusedLocationProviderClient) {
+    private fun getDeviceLocation(delay: Int) {
+        // getDeviceLocation should not be called more than MAX_LOCATION_DELAY time
+        if (delay >= MAX_LOCATION_DELAY) {
+            error("getDeviceLocation has reached its max recursive delay")
+        }
         try {
-            fusedLocationProviderClient.lastLocation.addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    if (task.result != null) {
-                        println("Last location has been successfully retrieved")
-                        lastUserLocation.value = LatLng(
-                            task.result.latitude,
-                            task.result.longitude
-                        )
+            fusedLocationProviderClient.lastLocation.addOnCompleteListener {
+                if (it.isSuccessful) {
+                    if (it.result != null) {
+                        lastUserLocation.value = LatLng(it.result.latitude,it.result.longitude)
                     } else {
-                        println("Location is disabled on the device")
-                        requestDeviceLocation()
+                        // Yann: I haven't found any better way to handle this so I'm open to
+                        // suggestions ! Futures and proper TimeOuts were tested but the
+                        // lastLocation task would not complete successfully nor could I find any
+                        // suitable implementation.
+                        getDeviceLocation(delay + 1)
                     }
                 }
             }
@@ -167,33 +218,6 @@ class MapActivity : ComponentActivity() {
         }
     }
 
-    private fun requestDeviceLocation() {
-        val builder = LocationSettingsRequest.Builder()
-
-        val client: SettingsClient = LocationServices.getSettingsClient(this)
-        val task: Task<LocationSettingsResponse> = client.checkLocationSettings(builder.build())
-
-        task.addOnSuccessListener { locationSettingsResponse ->
-            println("Device location is enabled on the device.")
-        }
-
-        task.addOnFailureListener { exception ->
-            if (exception is ResolvableApiException){
-                // Location settings are not satisfied but can be fixed
-                println("Device location is enabled on the device.")
-                try {
-                    // Show the dialog by calling startResolutionForResult(),
-                    // and check the result in onActivityResult().
-                    exception.startResolutionForResult(this, 1)
-                } catch (sendEx: IntentSender.SendIntentException) {
-                    // Ignore the error.
-                }
-            }
-        }
-
-
-
-    }
 }
 
 /**
