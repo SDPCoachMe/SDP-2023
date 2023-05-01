@@ -111,26 +111,22 @@ class ScheduleActivity : ComponentActivity() {
         database = (application as CoachMeApplication).database
         email = database.getCurrentEmail()
 
+        println("Email in schedule activity: $email")
+
         if (email.isEmpty()) {
             val errorMsg = "Schedule did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
             val startMonday = getStartMonday()
-            //TODO: For demo, let this function run once to add sample events to the database
-            //database.addEvents(sampleEvents, startMonday).thenRun {
-                val futureDBSchedule: CompletableFuture<Schedule> = database.getSchedule(startMonday).exceptionally {
-                    println("ScheduleActivity: Error getting schedule from database")
-                    null
-                }
+            val futureDBSchedule: CompletableFuture<Schedule> = database.getSchedule(startMonday)
 
-                setContent {
-                    CoachMeTheme {
-                        Surface(color = MaterialTheme.colors.background) {
-                            Schedule(futureDBSchedule, database)
-                        }
+            setContent {
+                CoachMeTheme {
+                    Surface(color = MaterialTheme.colors.background) {
+                        Schedule(futureDBSchedule, database)
                     }
                 }
-            //}
+            }
         }
     }
 }
@@ -213,6 +209,7 @@ fun Schedule(
         FloatingActionButton(
             onClick = {
                 val intent = Intent(context, CreateEventActivity::class.java)
+                intent.putExtra("email", database.getCurrentEmail())
                 context.startActivity(intent) },
             modifier = Modifier
                 .align(Alignment.BottomEnd)

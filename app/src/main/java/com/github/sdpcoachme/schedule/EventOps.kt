@@ -132,7 +132,9 @@ class EventOps {
 
         fun addEvent(event: Event, database: Database) {
             database.addEvent(event, startMonday)
+            println("App crashes between here")
             val shownEvents = wrapEvent(event)
+            println("...and here")
             if (shownEvents.size > 1) {
                 multiDayEventMap[event] = shownEvents
             }

@@ -6,7 +6,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,15 +17,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.ClickableText
-import androidx.compose.material.Button
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
-import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
+import androidx.compose.material.TextField
+import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.runtime.Composable
@@ -39,17 +38,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
-import com.github.sdpcoachme.location.MapActivity
-import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.github.sdpcoachme.ui.theme.Purple500
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
@@ -72,7 +66,7 @@ class CreateEventActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         database = (application as CoachMeApplication).database
-        email = database.getCurrentEmail()
+        email = intent.getStringExtra("email") ?: ""
 
         if (email.isEmpty()) {
             val errorMsg = "New event did not receive an email address.\n Please return to the login page and try again."
@@ -99,98 +93,58 @@ fun NewEvent(database: Database) {
     val formatter = EventOps.getEventTimeFormatter()
     val context = LocalContext.current
 
-    var title by remember { mutableStateOf("") }
-    var start by remember { mutableStateOf(LocalDateTime.now()) }
-    var end by remember { mutableStateOf(LocalDateTime.now()) }
+    var eventName by remember { mutableStateOf("Test Event") }
+    var start by remember { mutableStateOf(LocalDateTime.now().plusDays(1).withHour(8).withMinute(0)) }
+    var end by remember { mutableStateOf(LocalDateTime.now().plusDays(1).withHour(10).withMinute(0)) }
     var color by remember { mutableStateOf(SingleColor(Color.Blue.toArgb(), null, null)) }
     var description by remember { mutableStateOf("") }
 
-
-    //AddEventTitleRow(database, Event(title, color.colorInt.toString(), start.format(formatter), end.format(formatter), description))
-
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .background(Purple500)
-    ) {
-        fun goBackToScheduleActivity() {
-            val intent = Intent(context, ScheduleActivity::class.java)
-            context.startActivity(intent)
+    Scaffold(
+        topBar = {
+            fun goBackToScheduleActivity() {
+                val intent = Intent(context, ScheduleActivity::class.java)
+                println("Email in create activity database: ${database.getCurrentEmail()}")
+                intent.putExtra("email", database.getCurrentEmail())
+                context.startActivity(intent)
+            }
+            val event = Event(eventName, color.colorInt.toString(), start.format(formatter), end.format(formatter), description)
+            TopAppBar(
+                title = {
+                    Text("New Event")
+                },
+                navigationIcon = {
+                    IconButton(onClick = { goBackToScheduleActivity() }) {
+                        Icon(Icons.Filled.Cancel, "Cancel")
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            EventOps.addEvent(event, database)
+                            println("add event returned")
+                            goBackToScheduleActivity()
+                        },
+                    ) {
+                        Icon(Icons.Filled.Done, "Done",
+                            tint = MaterialTheme.colors.onPrimary)
+                    }
+                })
         }
-        val event = Event(title, color.colorInt.toString(), start.format(formatter), end.format(formatter), description)
-
-        // Button icon for the cancel button
-        IconButton(
-            onClick = {
-                goBackToScheduleActivity()
-            },
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 5.dp)
-                .align(Alignment.CenterVertically)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Cancel,
-                contentDescription = "Cancel",
-                modifier = Modifier.align(Alignment.CenterVertically),
-                tint = Color.White
-            )
-        }
-
-        Text(
-            text = "New Event",
-            style = MaterialTheme.typography.h5,
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .padding(start = 10.dp)
-        )
-
-        // Button icon for the save button
-        IconButton(
-            onClick = {
-                EventOps.addEvent(event, database)
-                goBackToScheduleActivity()
-            },
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 5.dp)
-                .align(Alignment.CenterVertically)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Done,
-                contentDescription = "Save",
-                modifier = Modifier.align(Alignment.CenterVertically),
-                tint = Color.White
-            )
-        }
-    }
-
-    Row (
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-    ) {
+    ) {padding ->
         Column (
             modifier = Modifier
-                .padding(start = 20.dp, end = 20.dp),
-            verticalArrangement = Arrangement.Bottom
-
+                .padding(start = 10.dp, end = 10.dp),
+            //verticalArrangement = Arrangement.Bottom
         ) {
-
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
+                    .padding(top = 10.dp),
             ) {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
+                TextField(
+                    value = eventName,
+                    onValueChange = { eventName = it },
                     label = { Text("Event Title") },
                     singleLine = true,
                     modifier = Modifier
@@ -360,13 +314,14 @@ fun NewEvent(database: Database) {
                     .padding(top = 10.dp),
                 verticalAlignment = Alignment.Bottom
             ){
-                OutlinedTextField(
+                TextField(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("Description") },
                     modifier = Modifier
                         .fillMaxHeight()
                         .fillMaxWidth()
+                        .padding(top = 10.dp)
                 )
             }
         }
