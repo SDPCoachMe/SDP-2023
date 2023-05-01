@@ -100,7 +100,7 @@ fun NewEvent(database: Database) {
     val context = LocalContext.current
     val formatterEventDate = EventOps.getEventDateFormatter()
     val formatterUserDate = EventOps.getDayFormatter()
-    val formatterUserTime = EventOps.getEventTimeFormatter()
+    val formatterUserTime = EventOps.getTimeFormatter()
 
     var eventName by remember { mutableStateOf("") }
     var start by remember { mutableStateOf(LocalDateTime.now().plusDays(1).withHour(8).withMinute(0)) }

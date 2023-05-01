@@ -20,14 +20,14 @@ class EventOps {
         private val multiDayEventMap = mutableMapOf<Event, List<ShownEvent>>()
         private val EventDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
         private val TimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-        private val DayFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
-        private val startMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        private val DayFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
+        private val startMonday: LocalDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
         fun getMultiDayEventMap() = multiDayEventMap
 
         fun getEventDateFormatter() = EventDateFormatter
 
-        fun getEventTimeFormatter() = TimeFormatter
+        fun getTimeFormatter() = TimeFormatter
 
         fun getDayFormatter() = DayFormatter
 
@@ -36,18 +36,13 @@ class EventOps {
         /**
          * Function to wrap an event that spans multiple days into multiple events of type ShownEvent, one for each day.
          *
-         * @param startDay The day the event starts on
-         * @param endDay The day the event ends on
          * @param event The event to wrap
-         * @param start The start time of the event
-         * @param end The end time of the event
          * @return A list of showable events that represent the event that spans multiple days
          *
          */
         private fun wrapEvent(
             event: Event
         ): List<ShownEvent> {
-            println("Event start: $event")
             val start = LocalDateTime.parse(event.start)
             val end = LocalDateTime.parse(event.end)
             val startDay = start.toLocalDate()
@@ -79,8 +74,6 @@ class EventOps {
             eventsToShow.add(startEvent)
             multiDayEventMap[event] = listOf(startEvent, endEvent)
 
-            println("Created new entry in multidayeventmap")
-
             if (daysToFill > 0) {
                 val middleEvents = (1..daysToFill).map { day ->
                     ShownEvent(
@@ -96,9 +89,8 @@ class EventOps {
                 eventsToShow.addAll(middleEvents)
                 multiDayEventMap[event] = multiDayEventMap[event]!! + middleEvents
             }
-            eventsToShow.add(endEvent)
 
-            println("Return eventsToShow")
+            eventsToShow.add(endEvent)
             return eventsToShow
         }
 
@@ -137,12 +129,10 @@ class EventOps {
         }
 
         fun addEvent(event: Event, database: Database): CompletableFuture<Schedule> {
-            println("App crashes between here")
             val shownEvents = wrapEvent(event)
             if (shownEvents.size > 1) {
                 multiDayEventMap[event] = shownEvents
             }
-            println("Add event finished")
             return database.addEvent(event, startMonday)
         }
     }

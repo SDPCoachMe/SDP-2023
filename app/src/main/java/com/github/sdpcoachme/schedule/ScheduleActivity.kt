@@ -61,17 +61,15 @@ import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.schedule.EventOps.Companion.getDayFormatter
-import com.github.sdpcoachme.schedule.EventOps.Companion.getEventTimeFormatter
+import com.github.sdpcoachme.schedule.EventOps.Companion.getTimeFormatter
 import com.github.sdpcoachme.schedule.EventOps.Companion.getStartMonday
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.github.sdpcoachme.ui.theme.Purple500
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.time.temporal.TemporalAdjusters
 import java.util.concurrent.CompletableFuture
 import kotlin.math.roundToInt
 
@@ -141,7 +139,7 @@ fun Schedule(
     modifier: Modifier = Modifier,
 ) {
     // the starting day is always the monday of the current week
-    var shownWeekMonday by remember { mutableStateOf<LocalDate>(getStartMonday()) }
+    var shownWeekMonday by remember { mutableStateOf(getStartMonday()) }
     var events by remember { mutableStateOf(emptyList<Event>()) }
     var eventsFuture by remember { mutableStateOf(futureDBSchedule.thenApply { Schedule(events = it.events) }) }
     val context = LocalContext.current
@@ -418,7 +416,7 @@ fun BasicSchedule(
 }
 
 private fun Modifier.eventData(event: ShownEvent) = this.then(EventDataModifier(event))
-private val EventTimeFormatter: DateTimeFormatter = getEventTimeFormatter()
+private val EventTimeFormatter: DateTimeFormatter = getTimeFormatter()
 private val DayFormatter = getDayFormatter()
 
 @Composable
@@ -455,68 +453,3 @@ fun BasicEvent(
         )
     }
 }
-
-
-// --------------------------------------------------
-// mainly for testing, debugging and demo purposes
-private val currentMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-private val lastMonday = currentMonday.minusDays(7)
-private val nextMonday = currentMonday.plusDays(7)
-private val sampleEvents = listOf(
-    Event(
-        name = "Google I/O Keynote",
-        color = Color(0xFFAFBBF2).value.toString(),
-        start = lastMonday.plusDays(1).atTime(13, 0, 0).toString(),
-        end = lastMonday.plusDays(1).atTime(15, 0, 0).toString(),
-        description = "Tune in to find out about how we're furthering our mission to organize the world’s information and make it universally accessible and useful.",
-    ),
-    Event(
-        name = "Business Trip",
-        color = Color(0xFFC9A776).value.toString(),
-        start = lastMonday.plusDays(4).atTime(9, 0, 0).toString(),
-        end = currentMonday.plusDays(1).atTime(18, 0, 0).toString(),
-        description = "I'm going to be out of the office for a business trip.",
-    ),
-    Event(
-        name = "Developer Keynote",
-        color = Color(0xFFAFBBF2).value.toString(),
-        start = currentMonday.plusDays(2).atTime(7, 0, 0).toString(),
-        end = currentMonday.plusDays(2).atTime(9, 0, 0).toString(),
-        description = "Learn about the latest updates to our developer products and platforms from Google Developers.",
-    ),
-    Event(
-        name = "What's new in Android",
-        color = Color(0xFF549C94).value.toString(),
-        start = currentMonday.plusDays(2).atTime(10, 0, 0).toString(),
-        end = currentMonday.plusDays(2).atTime(12, 0, 0).toString(),
-        description = "In this Keynote, Chet Haase, Dan Sandler, and Romain Guy discuss the latest Android features and enhancements for developers.",
-    ),
-    Event(
-        name = "What's new in Machine Learning",
-        color = Color(0xFFF4BFDB).value.toString(),
-        start = currentMonday.plusDays(2).atTime(22, 0, 0).toString(),
-        end = currentMonday.plusDays(3).atTime(4, 0, 0).toString(),
-        description = "Learn about the latest and greatest in ML from Google. We’ll cover what’s available to developers when it comes to creating, understanding, and deploying models for a variety of different applications.",
-    ),
-    Event(
-        name = "What's new in Material Design",
-        color = Color(0xFFC08A78).value.toString(),
-        start = currentMonday.plusDays(3).atTime(13, 0, 0).toString(),
-        end = currentMonday.plusDays(3).atTime(15, 0, 0).toString(),
-        description = "Learn about the latest design improvements to help you build personal dynamic experiences with Material Design.",
-    ),
-    Event(
-        name = "Jetpack Compose Basics",
-        color = Color(0xFFB98FC0).value.toString(),
-        start = nextMonday.plusDays(4).atTime(9, 0, 0).toString(),
-        end = nextMonday.plusDays(4).atTime(13, 0, 0).toString(),
-        description = "This Workshop will take you through the basics of building your first app with Jetpack Compose, Android's new modern UI toolkit that simplifies and accelerates UI development on Android.",
-    ),
-    Event(
-        name = "Holidays",
-        color = Color(0xFF71A5CE).value.toString(),
-        start = currentMonday.plusDays(4).atTime(14, 0, 0).toString(),
-        end = nextMonday.plusDays(1).atTime(18, 0, 0).toString(),
-        description = "A few days off to relax and enjoy the holidays.",
-    ),
-)
