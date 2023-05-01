@@ -17,6 +17,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     private val CACHED_SCHEDULE_WEEKS_AHEAD = 4L
     private val CACHED_SCHEDULE_WEEKS_BEHIND = 4L
     private val cachedUsers = mutableMapOf<String, UserInfo>()
+    private val cachedTokens = mutableMapOf<String, String>()
     private val contacts = mutableMapOf<String, List<UserInfo>>()
     private val chats = mutableMapOf<String, Chat>()
 
@@ -139,13 +140,10 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
         // Also here, if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat from the db)
         if (chats.containsKey(chatId)) {
-            chats[chatId] = chats[chatId]!!.copy(messages = chats[chatId]!!.messages.map {
-                if (it.sender != email) {
-                    it.copy(readByRecipient = true)
-                } else {
-                    it
-                }
-            })
+            chats[chatId] = Chat.markOtherUsersMessagesAsRead(
+                    chats[chatId]!!,
+                    email
+                )
         }
         return wrappedDatabase.markMessagesAsRead(chatId, email)
     }
@@ -160,6 +158,20 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
 
     override fun removeChatListener(chatId: String) {
         wrappedDatabase.removeChatListener(chatId)
+    }
+
+    override fun getFCMToken(email: String): CompletableFuture<String> {
+        if (cachedTokens.containsKey(email)) {
+            return CompletableFuture.completedFuture(cachedTokens[email])
+        }
+        return wrappedDatabase.getFCMToken(email).thenApply {
+            it.also { cachedTokens[email] = it }
+        }
+    }
+
+    override fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
+        cachedTokens[email] = token
+        return wrappedDatabase.setFCMToken(email, token)
     }
 
     override fun getCurrentEmail(): String {
@@ -187,5 +199,6 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     fun clearCache() {
         cachedUsers.clear()
         cachedSchedules.clear()
+        cachedTokens.clear()
     }
 }

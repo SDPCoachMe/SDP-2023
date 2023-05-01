@@ -7,8 +7,17 @@ data class Message(
     val sender: String = "",
     val content: String = "",
     val timestamp: String = "",
-    val readByRecipient: Boolean = false,
+    val readState: ReadState = ReadState.SENT,
 ) {
     // Constructor needed to make the data class serializable
-    constructor() : this("", "", "", false)
+    constructor() : this("", "", "", ReadState.SENT)
+
+    /**
+     * Enum class representing the read state of a message
+     */
+    enum class ReadState {
+        SENT,
+        RECEIVED,
+        READ,
+    }
 }

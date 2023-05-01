@@ -14,3 +14,12 @@
 .externalNativeBuild
 .cxx
 local.properties
+/firebase-debug.log
+/functions/firebase-debug.log
+/database-debug.log
+/ui-debug.log
+
+
+
+
+
