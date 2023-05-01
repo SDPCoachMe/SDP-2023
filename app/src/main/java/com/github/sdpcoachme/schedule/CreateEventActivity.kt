@@ -42,6 +42,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
@@ -58,7 +59,6 @@ import com.maxkeppeler.sheets.color.ColorDialog
 import com.maxkeppeler.sheets.color.models.ColorConfig
 import com.maxkeppeler.sheets.color.models.ColorSelection
 import com.maxkeppeler.sheets.color.models.MultipleColors
-import com.maxkeppeler.sheets.color.models.SingleColor
 import java.time.LocalDateTime
 
 class CreateEventActivity : ComponentActivity() {
@@ -98,10 +98,8 @@ fun NewEvent(database: Database) {
     var eventName by remember { mutableStateOf("Test Event") }
     var start by remember { mutableStateOf(LocalDateTime.now().plusDays(1).withHour(8).withMinute(0)) }
     var end by remember { mutableStateOf(LocalDateTime.now().plusDays(1).withHour(10).withMinute(0)) }
-    var color by remember { mutableStateOf(0) }
     var description by remember { mutableStateOf("") }
-    var singleColor by remember { mutableStateOf(SingleColor()) }
-    var selectedColor by remember { mutableStateOf(Color.Red) }
+    var selectedColor by remember { mutableStateOf(EventColors.RED.color) }
 
     Scaffold(
         topBar = {
@@ -109,7 +107,6 @@ fun NewEvent(database: Database) {
                 val intent = Intent(context, ScheduleActivity::class.java)
                 context.startActivity(intent)
             }
-            println("signle color hex stirng: " + singleColor.colorHex)
             val event = Event(eventName, selectedColor.value.toString(), start.format(formatter), end.format(formatter), description)
             TopAppBar(
                 title = {
@@ -125,7 +122,6 @@ fun NewEvent(database: Database) {
                         onClick = {
                             EventOps.addEvent(event, database).thenAccept {
                                 goBackToScheduleActivity()
-                                println("add event returned")
                             }
                         },
                     ) {
@@ -138,7 +134,6 @@ fun NewEvent(database: Database) {
         Column (
             modifier = Modifier
                 .padding(start = 10.dp, end = 10.dp),
-            //verticalArrangement = Arrangement.Bottom
         ) {
             Row(
                 modifier = Modifier
@@ -284,7 +279,6 @@ fun NewEvent(database: Database) {
 
             Row (
                 modifier = Modifier
-                    //.fillMaxWidth()
                     .height(56.dp),
                 verticalAlignment = Alignment.Bottom
             ) {
@@ -294,34 +288,26 @@ fun NewEvent(database: Database) {
                         .weight(1f)
                 )
 
-                val predefinedColors = MultipleColors.ColorsInt(
-                    Color.Red.toArgb(),
-                    Color.Red.copy(alpha = 0.5f).toArgb(),
-                    Color.Green.toArgb(),
-                    Color.Blue.toArgb(),
+                val colorMap = mapOf(
+                    EventColors.RED.color.toArgb() to EventColors.RED.color,
+                    EventColors.SALMON.color.toArgb() to EventColors.SALMON.color,
+                    EventColors.ORANGE.color.toArgb() to EventColors.ORANGE.color,
+                    EventColors.LIME.color.toArgb() to EventColors.LIME.color,
+                    EventColors.MINT.color.toArgb() to EventColors.MINT.color,
+                    EventColors.DARK_GREEN.color.toArgb() to EventColors.DARK_GREEN.color,
+                    EventColors.BLUE.color.toArgb() to EventColors.BLUE.color,
+                    EventColors.LIGHT_BLUE.color.toArgb() to EventColors.LIGHT_BLUE.color,
+                    EventColors.PURPLE.color.toArgb() to EventColors.PURPLE.color,
                 )
+
                 ColorDialog(
                     state = colorSheet,
                     selection = ColorSelection(
-                        selectedColor = SingleColor(colorInt = color),
                         onSelectColor = {
-                            selectedColor = when (it) {
-                                Color.Red.toArgb() -> Color.Red
-                                Color.Green.toArgb() -> Color.Green
-                                Color.Blue.toArgb() -> Color.Blue
-                                else -> Color.Red
-                            }
-
-//                            println("color selected: $it")
-//                            color = it
-//                            singleColor = SingleColor(it)
-//
-//                            if (it == Color.Red.toArgb()) {
-//                                println("color is red")
-//                            }
+                            selectedColor = colorMap[it] ?: EventColors.RED.color
                         }
                     ),
-                    config = ColorConfig(templateColors = predefinedColors)
+                    config = ColorConfig(templateColors = MultipleColors.ColorsInt(colorMap.keys.toList()))
                 )
                 Box (
                     modifier = Modifier
@@ -330,7 +316,7 @@ fun NewEvent(database: Database) {
                         .aspectRatio(1f, true)
                         .size(5.dp)
                         .clickable { colorSheet.show() }
-                        //.background(Color(color.colorInt!!))
+                        .background(selectedColor)
                 )
             }
 
