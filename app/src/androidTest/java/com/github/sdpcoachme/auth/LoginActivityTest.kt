@@ -17,7 +17,7 @@ import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.DELET
 import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.SIGN_IN
 import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.SIGN_OUT
 import com.github.sdpcoachme.auth.LoginActivity.TestTags.Companion.INFO_TEXT
-import com.github.sdpcoachme.data.UserLocationSamples
+import com.github.sdpcoachme.data.UserAddressSamples
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.messaging.ChatActivity
@@ -132,7 +132,7 @@ open class LoginActivityTest {
             "Doe",
             "to@email.com",
             "0987654321",
-            UserLocationSamples.LAUSANNE,
+            UserAddressSamples.LAUSANNE,
             true,
             emptyList(),
             emptyList()
@@ -143,7 +143,7 @@ open class LoginActivityTest {
             "Doe",
             "example@email.com",
             "0123456789",
-            UserLocationSamples.NEW_YORK,
+            UserAddressSamples.NEW_YORK,
             false,
             emptyList(),
             emptyList()
