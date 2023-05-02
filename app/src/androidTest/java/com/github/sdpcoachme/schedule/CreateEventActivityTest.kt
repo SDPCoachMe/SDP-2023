@@ -25,12 +25,13 @@ import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.database.MockDatabase
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.CANCEL
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.COLOR_BOX
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.END_DATE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.END_TIME
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.SAVE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.START_DATE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.START_TIME
-import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.COLOR_BOX
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Companion.SCAFFOLD
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Icons.Companion.CANCEL_ICON
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Icons.Companion.SAVE_ICON
@@ -54,7 +55,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.time.LocalTime
 
 @RunWith(AndroidJUnit4::class)
 class CreateEventActivityTest {
@@ -152,6 +152,16 @@ class CreateEventActivityTest {
     }
 
     @Test
+    fun cancelAddEventCorrectlyRedirectsToSchedule() {
+        ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(CANCEL)
+                .performClick()
+
+            intended(hasComponent(ScheduleActivity::class.java.name))
+        }
+    }
+
+    @Test
     fun addEventSavesToDatabase() {
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(EVENT_NAME)
@@ -178,7 +188,7 @@ class CreateEventActivityTest {
         }
     }
 
-    // TODO: Pressing the cancel button on the date picker works, but pressing the ok button does not
+    // Note: Pressing the cancel button on the date picker works, but pressing the ok button does not
     private fun cancelAndSavePickedDate(
         dateTag: String,
         dialogTitleTag: String,
@@ -236,7 +246,7 @@ class CreateEventActivityTest {
         }
     }
 
-    // TODO: Pressing the cancel button on the time picker works, but pressing the ok button does not
+    // Note: Pressing the cancel button on the time picker works, but pressing the ok button does not
     private fun cancelAndSavePickedTime(
         timeTag: String,
         dialogTitleTag: String,
@@ -246,7 +256,6 @@ class CreateEventActivityTest {
         val testHour2 = 5
         val testMinute1 = 3
         val testMinute2 = 0
-        val expectedTime = LocalTime.of("$testHour1$testHour2".toInt(), "$testMinute1$testMinute2".toInt())
 
         // Open time picker
         composeTestRule.onNodeWithTag(timeTag)
@@ -316,9 +325,8 @@ class CreateEventActivityTest {
         }
     }
 
-    // TODO: Check this test
     @Test
-    fun cancelAndConfirmColorWorks() {
+    fun chooseAndCancelColorPickerWorks() {
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
             val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 

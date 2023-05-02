@@ -139,6 +139,15 @@ class EventOps {
             return eventsToShow
         }
 
+        /**
+         * Function to add an event to the database.
+         * If the event spans multiple days, it will be split into multiple events of type ShownEvent, one for each day.
+         * The multiDayEventMap will be updated accordingly.
+         *
+         * @param event The event to add
+         * @param database The database to add the event to
+         * @return A completable future that will be completed when the event has been added to the database
+         */
         fun addEvent(event: Event, database: Database): CompletableFuture<Schedule> {
             val shownEvents = wrapEvent(event)
             if (shownEvents.size > 1) {

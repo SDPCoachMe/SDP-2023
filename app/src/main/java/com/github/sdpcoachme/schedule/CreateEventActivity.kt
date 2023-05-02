@@ -330,8 +330,8 @@ fun StartDateRow(
                 )
             },
             config = CalendarConfig(
-                monthSelection = true,
-                yearSelection = true,
+                monthSelection = false,
+                yearSelection = false,
                 style = CalendarStyle.MONTH),
             selection = CalendarSelection.Date {
                 onDateChange(it.atStartOfDay())
@@ -437,8 +437,8 @@ fun EndDateRow(
             },
             state = endDateSheet,
             config = CalendarConfig(
-                monthSelection = true,
-                yearSelection = true,
+                monthSelection = false,
+                yearSelection = false,
                 style = CalendarStyle.MONTH,
             ),
             selection = CalendarSelection.Date {
