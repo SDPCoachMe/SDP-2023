@@ -40,6 +40,10 @@ class EventOps {
 
         fun getDefaultEventEnd() = defaultEventEnd
 
+        fun clearMultiDayEventMap() {
+            multiDayEventMap.clear()
+        }
+
         /**
          * Function to wrap an event that spans multiple days into multiple events of type ShownEvent, one for each day.
          *

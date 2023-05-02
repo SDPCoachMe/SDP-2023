@@ -88,6 +88,7 @@ class ScheduleActivityTest {
 
     @After
     fun teardown() {
+        EventOps.clearMultiDayEventMap()
         database.setCurrentEmail("")
         if (database is MockDatabase) {
             (database as MockDatabase).restoreDefaultSchedulesSetup()
