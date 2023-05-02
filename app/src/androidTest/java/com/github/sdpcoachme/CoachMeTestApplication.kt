@@ -8,12 +8,16 @@ import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
 import com.github.sdpcoachme.location.autocomplete.MockAddressAutocompleteHandler
+import com.github.sdpcoachme.location.provider.LocationProvider
+import com.github.sdpcoachme.location.provider.MockLocationProvider
 
 class CoachMeTestApplication : CoachMeApplication() {
     // For DI in testing, add reference to mocks here
     // todo for emulator testing
     //override var database: Database = FireDatabase(Firebase.database.reference)
     override var database: Database = MockDatabase()
+    override var locationProvider: LocationProvider = MockLocationProvider()
+
     override fun onCreate() {
         super.onCreate()
         // 10.0.2.2 is the special IP address to connect to the 'localhost' of
@@ -29,6 +33,7 @@ class CoachMeTestApplication : CoachMeApplication() {
         }
          */
         database = MockDatabase()
+        locationProvider = MockLocationProvider()
 
         // Might be necessary to initialize Places SDK, but for now, we don't need it.
     }

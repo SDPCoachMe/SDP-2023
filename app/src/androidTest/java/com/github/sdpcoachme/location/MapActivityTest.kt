@@ -157,8 +157,9 @@ class MapActivityTest {
         ActivityScenario.launch<MapActivity>(defaultIntent).use {
             val context = (InstrumentationRegistry.getInstrumentation()
                 .targetContext.applicationContext as CoachMeApplication)
-            composeTestRule.waitUntil { context.userLocation.value != null }
-            val mapTag = MAP + context.userLocation.value.toString()
+            val lastLocation = context.locationProvider.getLastLocation()
+            composeTestRule.waitUntil { lastLocation.value != null }
+            val mapTag = MAP + lastLocation.value.toString()
             composeTestRule.onNodeWithTag(mapTag).assertExists().assertIsDisplayed()
         }
     }
