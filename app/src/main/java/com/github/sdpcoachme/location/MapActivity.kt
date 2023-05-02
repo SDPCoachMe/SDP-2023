@@ -132,6 +132,9 @@ class MapActivity : ComponentActivity() {
      * Else, requests the user to enable the location service of the device.
      */
     private fun checkLocationSetting() {
+        // A location request is needed to check the location settings although we don't need
+        // this request to perform a one-time location retrieval.
+        // Interval is set to 0 but it doesn't matter since we don't really use this request.
         val locationRequest = LocationRequest.Builder(PRIORITY_HIGH_ACCURACY, 0)
         val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest.build())
         val client: SettingsClient = LocationServices.getSettingsClient(this)
@@ -146,9 +149,10 @@ class MapActivity : ComponentActivity() {
                 // Location settings are not satisfied, but this can be fixed
                 val intentSender = exception.resolution.intentSender
                 requestSettingLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+            } else {
+                // else, fails silently, there is no way to fix the location settings
+                println("Exception: $exception can not be resolved")
             }
-            // else, fails silently, there is no way to fix the location settings
-            println("Exception: $exception can not be resolved")
         }
     }
 
@@ -178,8 +182,7 @@ class MapActivity : ComponentActivity() {
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
                 checkLocationSetting()
-            }
-            else {
+            } else {
                 //TODO put address as default location
             }
         }
@@ -187,11 +190,12 @@ class MapActivity : ComponentActivity() {
     /**
      * Performs the location retrieval. This function is always called with granted permissions
      * and the device location settings enabled. This safely allows the recursive call needed in the
-     * case the device location service takes time to be deployed.
+     * case the device location service takes time to be deployed. A max iteration "timeout" has
+     * been set to ensure termination.
      *
-     * Notice that the fusedLocationProviderClient.lastLocation task is null if the location is disabled on the
-     * device (also even if the last location was previously retrieved because disabling the device
-     * location clears the cache).
+     * Notice that the fusedLocationProviderClient.lastLocation task is null if the location is
+     * disabled on the device (also even if the last location was previously retrieved because
+     * disabling the device location clears the cache).
      */
     @SuppressLint("MissingPermission") //permission is checked before the call
     private fun getDeviceLocation(delay: Int) {
