@@ -35,21 +35,26 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import com.maxkeppeker.sheets.core.models.base.Header
 import com.maxkeppeker.sheets.core.models.base.SheetState
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
@@ -80,6 +85,9 @@ class CreateEventActivity : ComponentActivity() {
                 val END_DATE_TEXT = text("endDate")
                 val END_TIME_TEXT = text("endTime")
                 val COLOR_TEXT = text("color")
+
+                val START_DATE_DIALOG_TITLE = text("startDateDialogTitle")
+                val END_DATE_DIALOG_TITLE = text("endDateDialogTitle")
             }
         }
 
@@ -282,6 +290,7 @@ fun NewEvent(database: Database) {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun StartDateRow(
     startDateSheet: SheetState,
@@ -303,13 +312,28 @@ fun StartDateRow(
         )
         CalendarDialog(
             state = startDateSheet,
+            header = Header.Custom {
+                Text(
+                    text = "Start Date",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.h5,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(CreateEventActivity.TestTags.Texts.START_DATE_DIALOG_TITLE)
+                )
+            },
             config = CalendarConfig(
                 monthSelection = true,
                 yearSelection = true,
                 style = CalendarStyle.MONTH),
             selection = CalendarSelection.Date {
                 onDateChange(it.atStartOfDay())
-            }
+            },
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = true,
+                usePlatformDefaultWidth = true,
+            )
         )
         ClickableText(
             text = AnnotatedString(start.format(formatter)),
@@ -345,6 +369,7 @@ fun StartTimeRow(
         ClockDialog(
             state = startTimeSheet,
             config = ClockConfig(
+                defaultTime = start.toLocalTime(),
                 is24HourFormat = true
             ),
             selection = ClockSelection.HoursMinutes { hours, minutes ->
@@ -362,6 +387,7 @@ fun StartTimeRow(
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun EndDateRow(
     endDateSheet: SheetState,
@@ -382,6 +408,16 @@ fun EndDateRow(
                 .testTag(CreateEventActivity.TestTags.Texts.END_DATE_TEXT)
         )
         CalendarDialog(
+            header = Header.Custom {
+                Text(
+                    text = "End Date",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.h5,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(CreateEventActivity.TestTags.Texts.END_DATE_DIALOG_TITLE)
+                )
+            },
             state = endDateSheet,
             config = CalendarConfig(
                 monthSelection = true,
@@ -390,7 +426,12 @@ fun EndDateRow(
             ),
             selection = CalendarSelection.Date {
                 onDateChange(it.atStartOfDay().plusHours(1))
-            }
+            },
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = true,
+                usePlatformDefaultWidth = true,
+            )
         )
         ClickableText(
             text = AnnotatedString(end.format(formatter)),

@@ -1,14 +1,17 @@
 package com.github.sdpcoachme.schedule
 
 import android.content.Intent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotFocused
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
@@ -36,6 +39,7 @@ import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Compani
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.COLOR_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.END_DATE_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.END_TIME_TEXT
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_DATE_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_DATE_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_TIME_TEXT
 import org.hamcrest.MatcherAssert.assertThat
@@ -164,6 +168,21 @@ class CreateEventActivityTest {
                 assertThat(actualEvents.size, `is`(1))
                 assertThat(actualEvents[0], `is`(expectedEvent))
             }
+        }
+    }
+
+    @Test
+    fun clickingOnDateOpensDateDialog() {
+        ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(START_DATE)
+                .performClick()
+
+            composeTestRule.onNodeWithTag(START_DATE_DIALOG_TITLE, useUnmergedTree = true)
+                .assertExists()
+
+            val pointOutsideDialog = Offset(-20f, -20f)
+            composeTestRule.onNodeWithTag(START_DATE_DIALOG_TITLE, useUnmergedTree = true)
+                .performTouchInput { click(position = pointOutsideDialog) }
         }
     }
 
