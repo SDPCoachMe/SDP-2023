@@ -188,8 +188,8 @@ class MapActivity : ComponentActivity() {
                 val intentSender = exception.resolution.intentSender
                 requestSettingLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
             } else {
-                // else, fails silently, there is no way to fix the location settings
-                println("Exception: $exception can not be resolved")
+                // else, there is no way to fix the location settings
+                setLocationToAddress()
             }
         }
     }
