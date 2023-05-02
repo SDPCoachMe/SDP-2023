@@ -3,8 +3,12 @@ package com.github.sdpcoachme.location
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.pm.PackageManager
+import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
+import android.widget.Toast.LENGTH_LONG
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.IntentSenderRequest
@@ -43,6 +47,8 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeoutException
 
 /**
  * Main map activity, launched after login. This activity contains the map view and holds
@@ -64,15 +70,45 @@ class MapActivity : ComponentActivity() {
 
     companion object {
         val CAMPUS = LatLng(46.520536,6.568318)
-        const val MAX_LOCATION_DELAY = 5000
+        const val DELAY = 5000L
     }
 
     private lateinit var database: Database
     private lateinit var email: String
-
+    private lateinit var user: CompletableFuture<UserInfo>
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     // the user location is communicated via CoachMeApplication to avoid storing it in the database
     private lateinit var lastUserLocation: MutableState<LatLng?>
+
+    /**
+     * Create an activity for result to display a window to request location setting.
+     * The contract is a predefined "function" which takes an IntentSenderRequest as input and
+     * outputs if the user has enabled the setting or not.
+     */
+    private val requestSettingLauncher =
+        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
+            if (it.resultCode == RESULT_OK) {
+                // User enabled device location, we can now retrieve it
+                getDeviceLocation(0)
+            } else {
+                // User did not enable device location
+                setLocationToAddress()
+            }
+        }
+
+    /**
+     * Create an activity for result to display window to request location permission.
+     * The contract is a predefined "function" which takes a permission as input and
+     * outputs if the user has granted it or not.
+     */
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                checkLocationSetting()
+            } else {
+                setLocationToAddress()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,16 +120,18 @@ class MapActivity : ComponentActivity() {
         // gets user location at map creation
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
 
-        if (locationIsPermitted()) {
-            checkLocationSetting()
-        } else {
-            requestPermissionLauncher.launch(ACCESS_FINE_LOCATION)
-        }
-
         if (email.isEmpty()) {
             val errorMsg = "The map did not receive an email address.\nPlease return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
+            user = database.getUser(email)
+
+            // Performs the whole location retrieval process
+            if (locationIsPermitted()) {
+                checkLocationSetting()
+            } else {
+                requestPermissionLauncher.launch(ACCESS_FINE_LOCATION)
+            }
             // For now, simply retrieve all users. We can decide later whether we want to have
             // a dynamic list of markers that only displays nearby users (based on camera position
             // for example). Since we have no way to download only the users that are nearby, we
@@ -123,7 +161,7 @@ class MapActivity : ComponentActivity() {
      */
     private fun locationIsPermitted(): Boolean {
         val locationPermission = ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION)
-        return locationPermission == PackageManager.PERMISSION_GRANTED
+        return locationPermission == PERMISSION_GRANTED
     }
 
     /**
@@ -157,37 +195,6 @@ class MapActivity : ComponentActivity() {
     }
 
     /**
-     * Create an activity for result to display a window to request location setting.
-     * The contract is a predefined "function" which takes an IntentSenderRequest as input and
-     * outputs if the user has enabled the setting or not.
-     */
-    private val requestSettingLauncher =
-        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
-            if (it.resultCode == RESULT_OK) {
-                // User enabled device location, we can now retrieve it
-                getDeviceLocation(0)
-            } else {
-                //User did not enable device location
-                //TODO put address as default location
-                // MAY also be a IntentSender.SendIntentException
-            }
-        }
-
-    /**
-     * Create an activity for result to display window to request location permission.
-     * The contract is a predefined "function" which takes a permission as input and
-     * outputs if the user has granted it or not.
-     */
-    private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) {
-                checkLocationSetting()
-            } else {
-                //TODO put address as default location
-            }
-        }
-
-    /**
      * Performs the location retrieval. This function is always called with granted permissions
      * and the device location settings enabled. This safely allows the recursive call needed in the
      * case the device location service takes time to be deployed. A max iteration "timeout" has
@@ -198,9 +205,9 @@ class MapActivity : ComponentActivity() {
      * disabling the device location clears the cache).
      */
     @SuppressLint("MissingPermission") //permission is checked before the call
-    private fun getDeviceLocation(delay: Int) {
+    private fun getDeviceLocation(delay: Long) {
         // getDeviceLocation should not be called more than MAX_LOCATION_DELAY time
-        if (delay >= MAX_LOCATION_DELAY) {
+        if (delay >= DELAY) {
             error("getDeviceLocation has reached its max recursive delay")
         }
         try {
@@ -219,6 +226,24 @@ class MapActivity : ComponentActivity() {
             }
         } catch (e: SecurityException) {
             error("getDeviceLocation was called without correct permissions : ${e.message}")
+        }
+    }
+
+    /**
+     * Called when user refuses location permission or service requests. The address of the user
+     * is then set to be the default location.
+     */
+    private fun setLocationToAddress() {
+        val msg = "Current location was set to your address."
+        val popup = Toast.makeText(this, msg, LENGTH_LONG)
+        popup.show()
+
+        Handler(Looper.getMainLooper()).postDelayed({popup.cancel()}, DELAY)
+        try {
+            val address = user.get(DELAY, MILLISECONDS).address
+            lastUserLocation.value = LatLng(address.latitude, address.longitude)
+        } catch (e: TimeoutException) {
+            error("setLocationToAddress: could not retrieve user address in time - ${e.message}")
         }
     }
 
