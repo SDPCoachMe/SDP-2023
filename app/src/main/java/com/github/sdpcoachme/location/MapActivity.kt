@@ -1,18 +1,9 @@
 package com.github.sdpcoachme.location
 
-import android.Manifest.permission.ACCESS_FINE_LOCATION
-import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.widget.Toast
-import android.widget.Toast.LENGTH_LONG
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
@@ -27,7 +18,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.database.Database
@@ -35,20 +25,17 @@ import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MARKER
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MARKER_INFO_WINDOW
+import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.CAMPUS
+import com.github.sdpcoachme.location.provider.LocationProvider
 import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import com.google.android.gms.common.api.*
-import com.google.android.gms.location.*
-import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit.MILLISECONDS
-import java.util.concurrent.TimeoutException
 
 /**
  * Main map activity, launched after login. This activity contains the map view and holds
@@ -68,69 +55,28 @@ class MapActivity : ComponentActivity() {
 
     }
 
-    companion object {
-        val CAMPUS = LatLng(46.520536,6.568318)
-        const val DELAY = 5000L
-    }
-
     private lateinit var database: Database
     private lateinit var email: String
-    private lateinit var user: CompletableFuture<UserInfo>
-    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
-    // the user location is communicated via CoachMeApplication to avoid storing it in the database
-    private lateinit var lastUserLocation: MutableState<LatLng?>
-
-    /**
-     * Create an activity for result to display a window to request location setting.
-     * The contract is a predefined "function" which takes an IntentSenderRequest as input and
-     * outputs if the user has enabled the setting or not.
-     */
-    private val requestSettingLauncher =
-        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
-            if (it.resultCode == RESULT_OK) {
-                // User enabled device location, we can now retrieve it
-                getDeviceLocation(0)
-            } else {
-                // User did not enable device location
-                setLocationToAddress()
-            }
-        }
-
-    /**
-     * Create an activity for result to display window to request location permission.
-     * The contract is a predefined "function" which takes a permission as input and
-     * outputs if the user has granted it or not.
-     */
-    private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) {
-                checkLocationSetting()
-            } else {
-                setLocationToAddress()
-            }
-        }
+    private lateinit var locationProvider: LocationProvider
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         database = (application as CoachMeApplication).database
+        locationProvider = (application as CoachMeApplication).locationProvider
         email = database.getCurrentEmail()
-        // lastUserLocation state contains null on first application launch
-        lastUserLocation = (application as CoachMeApplication).userLocation
-        // gets user location at map creation
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
 
         if (email.isEmpty()) {
             val errorMsg = "The map did not receive an email address.\nPlease return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
-            user = database.getUser(email)
+            locationProvider.init(this, database.getUser(email))
 
             // Performs the whole location retrieval process
-            if (locationIsPermitted()) {
-                checkLocationSetting()
+            if (locationProvider.locationIsPermitted()) {
+                locationProvider.checkLocationSetting()
             } else {
-                requestPermissionLauncher.launch(ACCESS_FINE_LOCATION)
+                locationProvider.requestPermission()
             }
             // For now, simply retrieve all users. We can decide later whether we want to have
             // a dynamic list of markers that only displays nearby users (based on camera position
@@ -145,105 +91,13 @@ class MapActivity : ComponentActivity() {
                     Dashboard {
                         Map(
                             modifier = it,
-                            lastUserLocation = lastUserLocation,
+                            lastUserLocation = locationProvider.getLastLocation(),
                             futureCoachesToDisplay = futureUsers,
                             markerLoading = markerLoading,
                             mapLoading = mapLoading)
                     }
                 }
             }
-        }
-    }
-
-    /**
-     * Checks if the user has granted the needed permission to the application. Useful especially
-     * after application installation.
-     */
-    private fun locationIsPermitted(): Boolean {
-        val locationPermission = ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION)
-        return locationPermission == PERMISSION_GRANTED
-    }
-
-    /**
-     * Checks the current location settings of the device.
-     * If location service is enabled on the device, launches the location retrieval.
-     * Else, requests the user to enable the location service of the device.
-     */
-    private fun checkLocationSetting() {
-        // A location request is needed to check the location settings although we don't need
-        // this request to perform a one-time location retrieval.
-        // Interval is set to 0 but it doesn't matter since we don't really use this request.
-        val locationRequest = LocationRequest.Builder(PRIORITY_HIGH_ACCURACY, 0)
-        val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest.build())
-        val client: SettingsClient = LocationServices.getSettingsClient(this)
-        val locationSettingsResponse = client.checkLocationSettings(builder.build())
-
-        locationSettingsResponse.addOnSuccessListener {
-            // Location settings are satisfied, get the last known location
-            getDeviceLocation(0)
-        }
-        locationSettingsResponse.addOnFailureListener { exception ->
-            if (exception is ResolvableApiException) {
-                // Location settings are not satisfied, but this can be fixed
-                val intentSender = exception.resolution.intentSender
-                requestSettingLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
-            } else {
-                // else, there is no way to fix the location settings
-                setLocationToAddress()
-            }
-        }
-    }
-
-    /**
-     * Performs the location retrieval. This function is always called with granted permissions
-     * and the device location settings enabled. This safely allows the recursive call needed in the
-     * case the device location service takes time to be deployed. A max iteration "timeout" has
-     * been set to ensure termination.
-     *
-     * Notice that the fusedLocationProviderClient.lastLocation task is null if the location is
-     * disabled on the device (also even if the last location was previously retrieved because
-     * disabling the device location clears the cache).
-     */
-    @SuppressLint("MissingPermission") //permission is checked before the call
-    private fun getDeviceLocation(delay: Long) {
-        // getDeviceLocation should not be called more than MAX_LOCATION_DELAY time
-        if (delay >= DELAY) {
-            error("getDeviceLocation has reached its max recursive delay")
-        }
-        try {
-            fusedLocationProviderClient.lastLocation.addOnCompleteListener {
-                if (it.isSuccessful) {
-                    if (it.result != null) {
-                        lastUserLocation.value = LatLng(it.result.latitude,it.result.longitude)
-                    } else {
-                        // Yann: I haven't found any better way to handle this so I'm open to
-                        // suggestions ! Futures and proper TimeOuts were tested but the
-                        // lastLocation task would not complete successfully nor could I find any
-                        // suitable implementation.
-                        getDeviceLocation(delay + 1)
-                    }
-                }
-            }
-        } catch (e: SecurityException) {
-            error("getDeviceLocation was called without correct permissions : ${e.message}")
-        }
-    }
-
-    /**
-     * Called when user refuses location permission or service requests. The address of the user
-     * is then set to be the default location.
-     */
-    private fun setLocationToAddress() {
-        val msg = "Current location was set to your address."
-        val popup = Toast.makeText(this, msg, LENGTH_LONG)
-        popup.show()
-
-        Handler(Looper.getMainLooper()).postDelayed({popup.cancel()}, DELAY)
-        try {
-            val address = user.get(DELAY, MILLISECONDS).address
-            lastUserLocation.value = LatLng(address.latitude, address.longitude)
-        } catch (e: TimeoutException) {
-            error("setLocationToAddress: could not retrieve user address in time - ${e.message}")
         }
     }
 
@@ -267,7 +121,7 @@ fun Map(
     val context = LocalContext.current
 
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(MapActivity.CAMPUS, 15f)
+        position = CameraPosition.fromLatLngZoom(CAMPUS, 15f)
     }
 
     var coachesToDisplay by remember { mutableStateOf(listOf<UserInfo>()) }
