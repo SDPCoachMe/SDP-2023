@@ -2,7 +2,9 @@ package com.github.sdpcoachme.database
 
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.Chat.Companion.markOtherUsersMessagesAsRead
 import com.github.sdpcoachme.data.messaging.Message
+import com.github.sdpcoachme.data.messaging.Message.*
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.google.firebase.database.DataSnapshot
@@ -21,6 +23,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
     private var currEmail = ""
     private val chats: DatabaseReference = rootDatabase.child("coachme").child("messages")
+    private val fcmTokens: DatabaseReference = rootDatabase.child("coachme").child("fcmTokens")
     private val schedule: DatabaseReference = rootDatabase.child("coachme").child("schedule")
     var valueEventListener: ValueEventListener? = null
 
@@ -107,17 +110,14 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
         val id = chatId.replace('.', ',')
         return getChat(id).thenCompose { chat ->
-            val readBys = chat.messages.filter { it.sender != email }.map { it.readByRecipient }
+            val readStates = chat.messages.filter { it.sender != email }.map { it.readState }
 
-            if (readBys.isNotEmpty() && readBys.contains(false)) { // check if update is needed
-                val updatedMessages = chat.messages.map { message ->
-                    if (message.sender != email) {
-                        message.copy(readByRecipient = true)
-                    } else {
-                        message
-                    }
-                }
-                setChild(chats, id, chat.copy(messages = updatedMessages))
+            if (!readStates.all { it == ReadState.READ }) { // check if update is needed
+                setChild(chats, id, markOtherUsersMessagesAsRead(
+                        chat,
+                        email
+                    )
+                )
             } else {
                 CompletableFuture.completedFuture(null)
             }
@@ -150,6 +150,15 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         }
     }
 
+    override fun getFCMToken(email: String): CompletableFuture<String> {
+        val userID = email.replace('.', ',')
+        return getChild(fcmTokens, userID).thenApply { it.getValue(String::class.java)!! }
+    }
+
+    override fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
+        val userID = email.replace('.', ',')
+        return setChild(fcmTokens, userID, token)
+    }
 
     /**
      * Gets all children of a given database reference

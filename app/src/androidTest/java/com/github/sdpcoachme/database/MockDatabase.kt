@@ -45,16 +45,20 @@ open class MockDatabase: Database {
     private var chat = Chat(participants = listOf(defaultEmail, toEmail))
     private var chatId = ""
     private var onChange: (Chat) -> Unit = {}
+    private var numberOfAddChatListenerCalls = 0
+    private var numberOfRemovedChatListenerCalls = 0
 
     // TODO: type any is not ideal, needs refactoring
     private var accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
-
+    private val fcmTokens = hashMapOf<String, String>()
     private var schedules = hashMapOf<String, Schedule>()
 
     fun restoreDefaultChatSetup() {
         chat = Chat(participants = listOf(defaultEmail, toEmail))
         chatId = ""
         onChange = {}
+        numberOfRemovedChatListenerCalls = 0
+        numberOfAddChatListenerCalls = 0
     }
 
     fun restoreDefaultAccountsSetup() {
@@ -64,6 +68,7 @@ open class MockDatabase: Database {
     fun restoreDefaultSchedulesSetup() {
         schedules = hashMapOf()
     }
+
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         if (user.email == "throw@Exception.com") {
@@ -137,6 +142,7 @@ open class MockDatabase: Database {
             this.chatId = chatId
             chat = chat.copy(id = chatId)
             this.onChange = onChange
+            numberOfAddChatListenerCalls++
         }
         this.onChange(chat)
     }
@@ -147,19 +153,33 @@ open class MockDatabase: Database {
 
 
     override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
-        chat = chat.copy(messages = chat.messages.map { message ->
-            if (message.sender == email) {
-                message.copy(readByRecipient = true)
-            } else {
-                message
-            }
-        })
+        chat = Chat.markOtherUsersMessagesAsRead(chat, email)
 
         return CompletableFuture.completedFuture(null)
     }
 
     override fun removeChatListener(chatId: String) {
-        // no need to do anything
+        numberOfRemovedChatListenerCalls++
+    }
+
+    fun numberOfRemovedChatListenerCalls(): Int {
+        return numberOfRemovedChatListenerCalls
+    }
+
+    fun numberOfAddChatListenerCalls(): Int {
+        return numberOfAddChatListenerCalls
+    }
+
+    override fun getFCMToken(email: String): CompletableFuture<String> {
+        fcmTokens[email]?.let {
+            return CompletableFuture.completedFuture(it)
+        }
+        return CompletableFuture.completedFuture(null)
+    }
+
+    override fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
+        fcmTokens[email] = token
+        return CompletableFuture.completedFuture(null)
     }
 
     private fun setMap(map: MutableMap<String, Any>, key: String, value: Any): CompletableFuture<Void> {

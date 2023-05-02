@@ -1,10 +1,15 @@
 package com.github.sdpcoachme.auth
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,11 +28,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.core.content.ContextCompat
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.location.MapActivity
+import com.github.sdpcoachme.messaging.ChatActivity
+import com.github.sdpcoachme.messaging.InAppNotificationService.Companion.addFCMTokenToDatabase
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 
 
@@ -46,6 +54,7 @@ class LoginActivity : ComponentActivity() {
         }
     }
 
+    private lateinit var userExistsIntent: Intent
     private lateinit var database : Database
     private var signInInfo: String by mutableStateOf("Not signed in")
     private lateinit var authenticator: Authenticator
@@ -74,6 +83,28 @@ class LoginActivity : ComponentActivity() {
         authenticator = (application as CoachMeApplication).authenticator
         database =  (application as CoachMeApplication).database
 
+        // Check if a notification was clicked
+        val pushNotificationIntent = intent
+        val action = pushNotificationIntent.action
+
+        // By default, if the user exists, we open the map activity after login
+        userExistsIntent = Intent(this, MapActivity::class.java)
+        // If the user clicked on a chat notification, then the action is OPEN_CHAT_ACTIVITY
+        // to open the chat, the sender of the message must not be null
+        if (action.equals("OPEN_CHAT_ACTIVITY") && pushNotificationIntent.getStringExtra("sender") != null) {
+
+            // prepare the intent to open the chat activity
+            userExistsIntent = Intent(this, ChatActivity::class.java)
+                .putExtra("toUserEmail", pushNotificationIntent.getStringExtra("sender"))
+
+            // If the user is logged in, then we can open the chat activity directly without letting the user log in,
+            // otherwise we wait for the login process to complete and then open the chat activity
+            if (database.getCurrentEmail().isNotEmpty()) {
+                startActivity(userExistsIntent)
+            }
+        }
+
+
         setContent {
             CoachMeTheme {
                 Scaffold(
@@ -94,20 +125,53 @@ class LoginActivity : ComponentActivity() {
         }
     }
 
+    // Declare the launcher at the top of your Activity/Fragment:
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Toast.makeText(this, "Notifications enabled", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Notifications disabled", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * Asks the user for permission to post notifications.
+     */
+    private fun askNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            // As discussed on discord with Léo and Kamilla,
+            // for API level < 33, notifications cannot be enabled / disabled in the app
+            // and the user needs to disable them in the settings.
+            return
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            == PackageManager.PERMISSION_GRANTED) {
+            // Notifications have already been enabled, no need to ask again.
+            return
+        }
+
+        // Request permission to post notifications.
+        requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
     private fun launchPostLoginActivity(email: String) {
         database.userExists(email).thenAccept { exists ->
             if (exists) {
-                launchActivity(MapActivity::class.java)
+                startActivity(userExistsIntent)
             } else {
-                launchActivity(SignupActivity::class.java)
+                startActivity(Intent(this, SignupActivity::class.java))
             }
+
+            askNotificationPermission()
+            // only the newest device on which the user logged in will have the FCM token
+            // and receive notifications. This is done for simplicity as otherwise, we would need to
+            // remove notifications on one device when they are read on another.
+            // This could be added/handled in a future sprint.
+            addFCMTokenToDatabase(database)
         }
-
-    }
-
-    private fun launchActivity(activity: Class<*>) {
-        val intent = Intent(this, activity)
-        startActivity(intent)
     }
 
     /**
