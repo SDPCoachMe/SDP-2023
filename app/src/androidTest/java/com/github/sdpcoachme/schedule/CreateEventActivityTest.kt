@@ -30,13 +30,14 @@ import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Co
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.SAVE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.START_DATE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.START_TIME
-import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Companion.COLOR_BOX
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.COLOR_BOX
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Companion.SCAFFOLD
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Icons.Companion.CANCEL_ICON
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Icons.Companion.SAVE_ICON
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.TextFields.Companion.DESCRIPTION
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.TextFields.Companion.EVENT_NAME
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.ACTIVITY_TITLE
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.COLOR_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.COLOR_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.END_DATE_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.END_DATE_TEXT
@@ -312,6 +313,27 @@ class CreateEventActivityTest {
     fun cancelAndConfirmEndTimeWorks() {
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
             cancelAndSavePickedTime(END_TIME, END_TIME_DIALOG_TITLE)
+        }
+    }
+
+    // TODO: Check this test
+    @Test
+    fun cancelAndConfirmColorWorks() {
+        ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
+            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+
+            // Open color picker
+            composeTestRule.onNodeWithTag(COLOR_BOX)
+                .performClick()
+            composeTestRule.onNodeWithTag(COLOR_DIALOG_TITLE, useUnmergedTree = true)
+                .assertExists()
+
+            // Press cancel
+            device.findObject(By.text("Cancel")).click()
+            device.wait(Until.gone(By.text("Cancel")), 500)
+
+            composeTestRule.onNodeWithTag(COLOR_DIALOG_TITLE)
+                .assertDoesNotExist()
         }
     }
 

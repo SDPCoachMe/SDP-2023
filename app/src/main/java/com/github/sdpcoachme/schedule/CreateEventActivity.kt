@@ -66,6 +66,7 @@ import com.maxkeppeler.sheets.clock.models.ClockSelection
 import com.maxkeppeler.sheets.color.ColorDialog
 import com.maxkeppeler.sheets.color.models.ColorConfig
 import com.maxkeppeler.sheets.color.models.ColorSelection
+import com.maxkeppeler.sheets.color.models.ColorSelectionMode
 import com.maxkeppeler.sheets.color.models.MultipleColors
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -89,6 +90,7 @@ class CreateEventActivity : ComponentActivity() {
                 val END_DATE_DIALOG_TITLE = text("endDateDialogTitle")
                 val START_TIME_DIALOG_TITLE = text("startTimeDialogTitle")
                 val END_TIME_DIALOG_TITLE = text("endTimeDialogTitle")
+                val COLOR_DIALOG_TITLE = text("colorDialogTitle")
             }
         }
 
@@ -102,12 +104,17 @@ class CreateEventActivity : ComponentActivity() {
                     return "${tag}Button"
                 }
 
+                private fun box(tag: String): String {
+                    return "${tag}Box"
+                }
+
                 val START_DATE = clickableText("startDate")
                 val START_TIME = clickableText("startTime")
                 val END_DATE = clickableText("endDate")
                 val END_TIME = clickableText("endTime")
                 val SAVE = button("save")
                 val CANCEL = button("cancel")
+                val COLOR_BOX = box("color")
             }
         }
 
@@ -136,7 +143,6 @@ class CreateEventActivity : ComponentActivity() {
 
         companion object {
             const val SCAFFOLD = "scaffold"
-            const val COLOR_BOX = "colorBox"
         }
     }
 
@@ -538,12 +544,26 @@ fun ColorRow(
 
         ColorDialog(
             state = colorSheet,
+            header = Header.Custom {
+                Text(
+                    text = "Select color",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.h5,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(CreateEventActivity.TestTags.Texts.COLOR_DIALOG_TITLE)
+                )
+            },
             selection = ColorSelection(
                 onSelectColor = {
                     onColorChange(colorMap[it] ?: EventColors.DEFAULT.color)
                 }
             ),
-            config = ColorConfig(templateColors = MultipleColors.ColorsInt(colorMap.keys.toList().dropLast(1))) //all except default
+            config = ColorConfig(
+                displayMode = ColorSelectionMode.TEMPLATE,
+                templateColors = MultipleColors.ColorsInt(colorMap.keys.toList().dropLast(1)), //all except default
+                allowCustomColorAlphaValues = false,
+            )
         )
         Box (
             modifier = Modifier
@@ -553,7 +573,7 @@ fun ColorRow(
                 .size(5.dp)
                 .clickable { colorSheet.show() }
                 .background(selectedColor)
-                .testTag(CreateEventActivity.TestTags.COLOR_BOX)
+                .testTag(CreateEventActivity.TestTags.Clickables.COLOR_BOX)
         )
     }
 }
