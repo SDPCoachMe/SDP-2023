@@ -23,6 +23,9 @@ class EventOps {
         private val DayFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
         private val startMonday: LocalDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
+        private val defaultEventStart: LocalDateTime = LocalDateTime.now().plusDays(1).withHour(8).withMinute(0)
+        private val defaultEventEnd: LocalDateTime = defaultEventStart.plusHours(2)
+
         fun getMultiDayEventMap() = multiDayEventMap
 
         fun getEventDateFormatter() = EventDateFormatter
@@ -32,6 +35,10 @@ class EventOps {
         fun getDayFormatter() = DayFormatter
 
         fun getStartMonday() = startMonday
+
+        fun getDefaultEventStart() = defaultEventStart
+
+        fun getDefaultEventEnd() = defaultEventEnd
 
         /**
          * Function to wrap an event that spans multiple days into multiple events of type ShownEvent, one for each day.

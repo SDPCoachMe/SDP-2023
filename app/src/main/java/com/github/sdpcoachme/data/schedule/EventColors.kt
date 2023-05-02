@@ -11,5 +11,6 @@ enum class EventColors(val color: Color) {
     DARK_GREEN(Color(0xFF83AF83)),
     BLUE(Color(0xFF6290D5)),
     LIGHT_BLUE(Color(0xFF7AC2DC)),
-    PURPLE(Color(0xFFBF92E2))
+    PURPLE(Color(0xFFBF92E2)),
+    DEFAULT(RED.color)
 }

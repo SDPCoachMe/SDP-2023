@@ -207,7 +207,6 @@ fun Schedule(
         FloatingActionButton(
             onClick = {
                 val intent = Intent(context, CreateEventActivity::class.java)
-                intent.putExtra("email", database.getCurrentEmail())
                 context.startActivity(intent) },
             modifier = Modifier
                 .align(Alignment.BottomEnd)

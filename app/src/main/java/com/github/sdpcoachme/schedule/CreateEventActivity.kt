@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -66,14 +67,76 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class CreateEventActivity : ComponentActivity() {
+    class TestTags {
+        class Texts {
+            companion object {
+                fun text(tag: String): String {
+                    return "${tag}Text"
+                }
+
+                val ACTIVITY_TITLE = text("activityTitle")
+                val START_DATE_TEXT = text("startDate")
+                val START_TIME_TEXT = text("startTime")
+                val END_DATE_TEXT = text("endDate")
+                val END_TIME_TEXT = text("endTime")
+                val COLOR_TEXT = text("color")
+            }
+        }
+
+        class Clickables {
+            companion object {
+                private fun clickableText(tag: String): String {
+                    return "${tag}ClickableText"
+                }
+
+                private fun button(tag: String): String {
+                    return "${tag}Button"
+                }
+
+                val START_DATE = clickableText("startDate")
+                val START_TIME = clickableText("startTime")
+                val END_DATE = clickableText("endDate")
+                val END_TIME = clickableText("endTime")
+                val SAVE = button("save")
+                val CANCEL = button("cancel")
+            }
+        }
+
+        class TextFields {
+            companion object {
+                fun textField(tag: String): String {
+                    return "${tag}TextField"
+                }
+
+                val EVENT_NAME = textField("eventName")
+                val DESCRIPTION = textField("description")
+            }
+        }
+
+        class Icons {
+            companion object {
+                fun icon(tag: String): String {
+                    return "${tag}Icon"
+                }
+
+                val SAVE_ICON = icon("save")
+                val CANCEL_ICON = icon("cancel")
+            }
+        }
+
+
+        companion object {
+            const val SCAFFOLD = "scaffold"
+            const val COLOR_BOX = "colorBox"
+        }
+    }
 
     private lateinit var database: Database
     private lateinit var email: String
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         database = (application as CoachMeApplication).database
-        email = intent.getStringExtra("email") ?: ""
-
+        email = database.getCurrentEmail()
         if (email.isEmpty()) {
             val errorMsg = "New event did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
@@ -103,12 +166,13 @@ fun NewEvent(database: Database) {
     val formatterUserTime = EventOps.getTimeFormatter()
 
     var eventName by remember { mutableStateOf("") }
-    var start by remember { mutableStateOf(LocalDateTime.now().plusDays(1).withHour(8).withMinute(0)) }
-    var end by remember { mutableStateOf(LocalDateTime.now().plusDays(1).withHour(10).withMinute(0)) }
+    var start by remember { mutableStateOf(EventOps.getDefaultEventStart()) }
+    var end by remember { mutableStateOf(EventOps.getDefaultEventEnd()) }
     var description by remember { mutableStateOf("") }
-    var selectedColor by remember { mutableStateOf(EventColors.RED.color) }
+    var selectedColor by remember { mutableStateOf(EventColors.DEFAULT.color) }
 
     Scaffold(
+        modifier = Modifier.testTag(CreateEventActivity.TestTags.SCAFFOLD),
         topBar = {
             fun goBackToScheduleActivity() {
                 val intent = Intent(context, ScheduleActivity::class.java)
@@ -117,11 +181,22 @@ fun NewEvent(database: Database) {
             val event = Event(eventName, selectedColor.value.toString(), start.format(formatterEventDate), end.format(formatterEventDate), description)
             TopAppBar(
                 title = {
-                    Text("New Event")
+                    Text(
+                        text = "New Event",
+                        modifier = Modifier.testTag(CreateEventActivity.TestTags.Texts.ACTIVITY_TITLE)
+                    )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { goBackToScheduleActivity() }) {
-                        Icon(Icons.Filled.Cancel, "Cancel")
+                    IconButton(
+                        onClick = { goBackToScheduleActivity() },
+                        modifier = Modifier.testTag(CreateEventActivity.TestTags.Clickables.CANCEL),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Cancel,
+                            contentDescription = "Cancel",
+                            tint = MaterialTheme.colors.onPrimary,
+                            modifier = Modifier.testTag(CreateEventActivity.TestTags.Icons.CANCEL_ICON),
+                        )
                     }
                 },
                 actions = {
@@ -131,9 +206,14 @@ fun NewEvent(database: Database) {
                                 goBackToScheduleActivity()
                             }
                         },
+                        modifier = Modifier.testTag(CreateEventActivity.TestTags.Clickables.SAVE),
                     ) {
-                        Icon(Icons.Filled.Done, "Done",
-                            tint = MaterialTheme.colors.onPrimary)
+                        Icon(
+                            imageVector = Icons.Filled.Done,
+                            contentDescription = "Done",
+                            tint = MaterialTheme.colors.onPrimary,
+                            modifier = Modifier.testTag(CreateEventActivity.TestTags.Icons.SAVE_ICON),
+                        )
                     }
                 })
         }
@@ -155,6 +235,7 @@ fun NewEvent(database: Database) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 10.dp)
+                    .testTag(CreateEventActivity.TestTags.TextFields.EVENT_NAME)
             )
 
             // Start date
@@ -218,6 +299,7 @@ fun StartDateRow(
             text = "Start Date: ",
             modifier = Modifier
                 .weight(1f)
+                .testTag(CreateEventActivity.TestTags.Texts.START_DATE_TEXT)
         )
         CalendarDialog(
             state = startDateSheet,
@@ -235,6 +317,7 @@ fun StartDateRow(
             style = MaterialTheme.typography.body1,
             modifier = Modifier
                 .weight(.8f)
+                .testTag(CreateEventActivity.TestTags.Clickables.START_DATE)
         )
     }
 }
@@ -257,6 +340,7 @@ fun StartTimeRow(
             modifier = Modifier
                 .weight(1f)
                 .padding(start = 20.dp)
+                .testTag(CreateEventActivity.TestTags.Texts.START_TIME_TEXT)
         )
         ClockDialog(
             state = startTimeSheet,
@@ -273,6 +357,7 @@ fun StartTimeRow(
             style = MaterialTheme.typography.body1,
             modifier = Modifier
                 .weight(.8f)
+                .testTag(CreateEventActivity.TestTags.Clickables.START_TIME)
         )
     }
 }
@@ -294,6 +379,7 @@ fun EndDateRow(
             text = "End Date: ",
             modifier = Modifier
                 .weight(1f)
+                .testTag(CreateEventActivity.TestTags.Texts.END_DATE_TEXT)
         )
         CalendarDialog(
             state = endDateSheet,
@@ -312,6 +398,7 @@ fun EndDateRow(
             style = MaterialTheme.typography.body1,
             modifier = Modifier
                 .weight(.8f)
+                .testTag(CreateEventActivity.TestTags.Clickables.END_DATE)
         )
     }
 }
@@ -334,6 +421,7 @@ fun EndTimeRow(
             modifier = Modifier
                 .weight(1f)
                 .padding(start = 20.dp)
+                .testTag(CreateEventActivity.TestTags.Texts.END_TIME_TEXT)
         )
         ClockDialog(
             state = endTimeSheet,
@@ -350,6 +438,7 @@ fun EndTimeRow(
             style = MaterialTheme.typography.body1,
             modifier = Modifier
                 .weight(.8f)
+                .testTag(CreateEventActivity.TestTags.Clickables.END_TIME)
         )
     }
 }
@@ -370,6 +459,7 @@ fun ColorRow(
             text = "Color: ",
             modifier = Modifier
                 .weight(1f)
+                .testTag(CreateEventActivity.TestTags.Texts.COLOR_TEXT)
         )
 
         val colorMap = mapOf(
@@ -388,10 +478,10 @@ fun ColorRow(
             state = colorSheet,
             selection = ColorSelection(
                 onSelectColor = {
-                    onColorChange(colorMap[it] ?: EventColors.RED.color)
+                    onColorChange(colorMap[it] ?: EventColors.DEFAULT.color)
                 }
             ),
-            config = ColorConfig(templateColors = MultipleColors.ColorsInt(colorMap.keys.toList()))
+            config = ColorConfig(templateColors = MultipleColors.ColorsInt(colorMap.keys.toList().dropLast(1))) //all except default
         )
         Box (
             modifier = Modifier
@@ -401,6 +491,7 @@ fun ColorRow(
                 .size(5.dp)
                 .clickable { colorSheet.show() }
                 .background(selectedColor)
+                .testTag(CreateEventActivity.TestTags.COLOR_BOX)
         )
     }
 }
@@ -416,14 +507,20 @@ fun DescriptionRow(
             .padding(top = 10.dp),
         verticalAlignment = Alignment.Bottom
     ){
+        val focusManager = LocalFocusManager.current
         TextField(
             value = description,
             onValueChange = { onDescriptionChange(it) },
             label = { Text("Description") },
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.clearFocus() }
+            ),
             modifier = Modifier
                 .fillMaxHeight()
                 .fillMaxWidth()
                 .padding(top = 10.dp)
+                .testTag(CreateEventActivity.TestTags.TextFields.DESCRIPTION)
         )
     }
 }
