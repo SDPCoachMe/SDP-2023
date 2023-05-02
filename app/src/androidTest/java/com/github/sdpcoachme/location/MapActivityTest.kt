@@ -159,7 +159,6 @@ class MapActivityTest {
                 .targetContext.applicationContext as CoachMeApplication)
             composeTestRule.waitUntil { context.userLocation.value != null }
             val mapTag = MAP + context.userLocation.value.toString()
-            composeTestRule.waitUntil { context.userLocation.value != null }
             composeTestRule.onNodeWithTag(mapTag).assertExists().assertIsDisplayed()
         }
     }
