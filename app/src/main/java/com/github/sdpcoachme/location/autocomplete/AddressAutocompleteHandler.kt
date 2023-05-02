@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * This interface is used to launch the activity or process that allows the user to select an address.
  * The implementation should also handle the result of the activity or process and return a
- * UserLocation object.
+ * UserAddress object.
  */
 interface AddressAutocompleteHandler {
 
