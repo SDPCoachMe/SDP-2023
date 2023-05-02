@@ -39,7 +39,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
@@ -88,6 +87,8 @@ class CreateEventActivity : ComponentActivity() {
 
                 val START_DATE_DIALOG_TITLE = text("startDateDialogTitle")
                 val END_DATE_DIALOG_TITLE = text("endDateDialogTitle")
+                val START_TIME_DIALOG_TITLE = text("startTimeDialogTitle")
+                val END_TIME_DIALOG_TITLE = text("endTimeDialogTitle")
             }
         }
 
@@ -368,6 +369,16 @@ fun StartTimeRow(
         )
         ClockDialog(
             state = startTimeSheet,
+            header = Header.Custom {
+                Text(
+                    text = "Start Time",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.h5,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(CreateEventActivity.TestTags.Texts.START_TIME_DIALOG_TITLE)
+                )
+            },
             config = ClockConfig(
                 defaultTime = start.toLocalTime(),
                 is24HourFormat = true
@@ -466,6 +477,16 @@ fun EndTimeRow(
         )
         ClockDialog(
             state = endTimeSheet,
+            header = Header.Custom {
+                Text(
+                    text = "End Time",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.h5,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(CreateEventActivity.TestTags.Texts.END_TIME_DIALOG_TITLE)
+                )
+            },
             config = ClockConfig(
                 is24HourFormat = true
             ),

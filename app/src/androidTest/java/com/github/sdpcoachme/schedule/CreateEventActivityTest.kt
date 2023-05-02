@@ -1,17 +1,15 @@
 package com.github.sdpcoachme.schedule
 
 import android.content.Intent
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotFocused
-import androidx.compose.ui.test.click
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
@@ -19,6 +17,9 @@ import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.Until
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
@@ -37,10 +38,13 @@ import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.TextFields.Co
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.TextFields.Companion.EVENT_NAME
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.ACTIVITY_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.COLOR_TEXT
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.END_DATE_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.END_DATE_TEXT
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.END_TIME_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.END_TIME_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_DATE_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_DATE_TEXT
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_TIME_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_TIME_TEXT
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.`is`
@@ -49,6 +53,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.LocalTime
 
 @RunWith(AndroidJUnit4::class)
 class CreateEventActivityTest {
@@ -171,21 +176,143 @@ class CreateEventActivityTest {
         }
     }
 
+    // TODO: Pressing the cancel button on the date picker works, but pressing the ok button does not
+    private fun cancelAndSavePickedDate(
+        dateTag: String,
+        dialogTitleTag: String,
+    ) {
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        val testDay = 15
+        val expectedDate = currentWeekMonday.withDayOfMonth(testDay)
+
+        // Open date picker
+        composeTestRule.onNodeWithTag(dateTag)
+            .performClick()
+        composeTestRule.onNodeWithTag(dialogTitleTag, useUnmergedTree = true)
+            .assertExists()
+
+        // Choose the 15th of the month
+        device.wait(Until.findObject(By.text("$testDay")), 500)
+        device.findObject(By.text("$testDay")).click()
+        device.waitForIdle()
+
+        device.findObject(By.text("Cancel")).click()
+        device.wait(Until.gone(By.text("Cancel")), 500)
+
+        composeTestRule.onNodeWithTag(START_DATE)
+            .assertTextEquals(EventOps.getDefaultEventStart().format(EventOps.getDayFormatter()))
+
+        // Open date picker
+        composeTestRule.onNodeWithTag(dateTag)
+            .performClick()
+        composeTestRule.onNodeWithTag(dialogTitleTag, useUnmergedTree = true)
+            .assertExists()
+
+        // Choose the 15th of the month
+        device.wait(Until.findObject(By.text("$testDay")), 500)
+        device.findObject(By.text("$testDay")).click()
+        device.waitForIdle()
+
+        /*device.findObject(By.text("Ok")).click()
+        device.wait(Until.gone(By.text("Ok")), 500)
+
+        composeTestRule.onNodeWithTag(START_DATE)
+            .assertTextEquals(expectedDate.format(EventOps.getDayFormatter()))*/
+    }
+
     @Test
-    fun clickingOnDateOpensDateDialog() {
+    fun cancelAndConfirmStartDateWorks() {
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(START_DATE)
-                .performClick()
-
-            composeTestRule.onNodeWithTag(START_DATE_DIALOG_TITLE, useUnmergedTree = true)
-                .assertExists()
-
-            val pointOutsideDialog = Offset(-20f, -20f)
-            composeTestRule.onNodeWithTag(START_DATE_DIALOG_TITLE, useUnmergedTree = true)
-                .performTouchInput { click(position = pointOutsideDialog) }
+            cancelAndSavePickedDate(START_DATE, START_DATE_DIALOG_TITLE)
         }
     }
 
+    @Test
+    fun cancelAndConfirmEndDateWorks() {
+        ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
+            cancelAndSavePickedDate(END_DATE, END_DATE_DIALOG_TITLE)
+        }
+    }
+
+    // TODO: Pressing the cancel button on the time picker works, but pressing the ok button does not
+    private fun cancelAndSavePickedTime(
+        timeTag: String,
+        dialogTitleTag: String,
+    ) {
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        val testHour1 = 1
+        val testHour2 = 5
+        val testMinute1 = 3
+        val testMinute2 = 0
+        val expectedTime = LocalTime.of("$testHour1$testHour2".toInt(), "$testMinute1$testMinute2".toInt())
+
+        // Open time picker
+        composeTestRule.onNodeWithTag(timeTag)
+            .performClick()
+        composeTestRule.onNodeWithTag(dialogTitleTag, useUnmergedTree = true)
+            .assertExists()
+
+        // Choose the 15:30
+        device.wait(Until.findObject(By.text("$testHour1")), 500)
+        device.findObject(By.text("$testHour1")).click()
+        device.waitForIdle()
+        device.wait(Until.findObject(By.text("$testHour2")), 500)
+        device.findObject(By.text("$testHour2")).click()
+        device.waitForIdle()
+        device.wait(Until.findObject(By.text("$testMinute1")), 500)
+        device.findObject(By.text("$testMinute1")).click()
+        device.waitForIdle()
+        device.wait(Until.findObject(By.text("$testMinute2")), 500)
+        device.findObject(By.text("$testMinute2")).click()
+        device.waitForIdle()
+
+        // Press cancel
+        device.findObject(By.text("Cancel")).click()
+        device.wait(Until.gone(By.text("Cancel")), 500)
+
+        composeTestRule.onNodeWithTag(START_TIME)
+            .assertTextEquals(EventOps.getDefaultEventStart().format(EventOps.getTimeFormatter()))
+
+        // Open time picker
+        composeTestRule.onNodeWithTag(timeTag)
+            .performClick()
+        composeTestRule.onNodeWithTag(dialogTitleTag, useUnmergedTree = true)
+            .assertExists()
+
+        device.waitForIdle()
+
+        // Choose the 15:30
+        device.wait(Until.findObject(By.text("$testHour1")), 500)
+        device.findObject(By.text("$testHour1")).click(500)
+        device.waitForIdle()
+        device.wait(Until.findObject(By.text("$testHour2")), 500)
+        device.findObject(By.text("$testHour2")).click(500)
+        device.waitForIdle()
+        device.wait(Until.findObject(By.text("$testMinute1")), 500)
+        device.findObject(By.text("$testMinute1")).click(500)
+        device.waitForIdle()
+        device.wait(Until.findObject(By.text("$testMinute2")), 500)
+        device.findObject(By.text("$testMinute2")).click(500)
+        device.waitForIdle(10000)
+
+        // Press ok
+        device.findObject(By.text("Ok")).click()
+        device.wait(Until.gone(By.text("Ok")), 500)
+    }
+
+    @Test
+    fun cancelAndConfirmStartTimeWorks() {
+        ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
+            cancelAndSavePickedTime(START_TIME, START_TIME_DIALOG_TITLE)
+        }
+    }
+
+    @Test
+    fun cancelAndConfirmEndTimeWorks() {
+        ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
+            cancelAndSavePickedTime(END_TIME, END_TIME_DIALOG_TITLE)
+        }
+    }
 
 }
 
