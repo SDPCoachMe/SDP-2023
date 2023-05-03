@@ -24,6 +24,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserLocation
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity
@@ -52,15 +53,15 @@ class SignupActivity : ComponentActivity() {
         }
     }
 
-    private lateinit var database : Database
+    private lateinit var store : CachingStore
     private lateinit var email: String
     private lateinit var locationAutocompleteHandler: LocationAutocompleteHandler
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        database = (application as CoachMeApplication).store
-        email = database.getCurrentEmail()
+        store = (application as CoachMeApplication).store
+        email = store.getCurrentEmail()
 
         if (email.isEmpty()) {
             val errorMsg = "The signup page did not receive an email address.\n Please return to the login page and try again."
@@ -163,7 +164,7 @@ class SignupActivity : ComponentActivity() {
                         // activity to launch the map activity in the tests. This means that we have
                         // to test that the database is updated correctly here, instead of after the
                         // map activity is launched.
-                        database.updateUser(newUser)
+                        store.updateUser(newUser)
                     }.thenCompose {
                         // Notify test framework that the activity has finished sending data to the database
                         databaseStateSending.complete(null)
@@ -178,7 +179,7 @@ class SignupActivity : ComponentActivity() {
                     }.thenCompose { sports ->
                         newUser = newUser.copy(sports = sports)
                         // Update database with sports (this one is not tested)
-                        database.updateUser(newUser)
+                        store.updateUser(newUser)
                     }.thenAccept {
                         // Go to main activity
                         startActivity(Intent(context, MapActivity::class.java))

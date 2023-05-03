@@ -22,6 +22,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+// todo finir de faire la documentation
+
 /**
  * A caching database that wraps another database
  */
@@ -63,7 +65,17 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
-    fun retrieveLocalData(): CompletableFuture<Void> {
+    /**
+     * Check whether the user is logged in
+     * @return a boolean indiacting wether the user is logged in
+     */
+    fun isLoggedIn(): CompletableFuture<Boolean> {
+        return retrieveData.thenApply {
+            currentEmail != null
+        }
+    }
+
+    private fun retrieveLocalData(): CompletableFuture<Void> {
         val localFuture = CompletableFuture<Void>()
         GlobalScope.launch {
             val values = datastore.data.first()
@@ -100,12 +112,10 @@ class CachingStore(private val wrappedDatabase: Database,
         cache.putAll(gson.fromJson(jsonString, type))
     }
 
-    fun retrieveRemoteData(): CompletableFuture<Void> {
-        val remoteFuture = CompletableFuture.allOf(
-            getAllUsers(),
-            getChatContacts(currentEmail!!),
+    private fun retrieveRemoteData(): CompletableFuture<Void> {
+        return CompletableFuture.allOf(
+            getAllUsers()
         )
-        return remoteFuture
     }
 
     fun storeLocalData(): CompletableFuture<Void> {
@@ -132,6 +142,7 @@ class CachingStore(private val wrappedDatabase: Database,
         }
         return writeDatastoreFuture
     }
+
 
 
 
@@ -282,6 +293,7 @@ class CachingStore(private val wrappedDatabase: Database,
     fun getCurrentEmail(): CompletableFuture<String> {
         return retrieveData.thenApply {
             if (currentEmail.isNullOrEmpty()) {
+                // todo launch the appropriate activity
                 throw IllegalStateException("Current email is null or empty")
             }
             currentEmail
@@ -290,7 +302,6 @@ class CachingStore(private val wrappedDatabase: Database,
 
     fun setCurrentEmail(email: String): CompletableFuture<Void> {
         currentEmail = email
-        // todo change listeners etc here
         return CompletableFuture.completedFuture(null)
     }
 
@@ -328,4 +339,5 @@ class CachingStore(private val wrappedDatabase: Database,
         val actNw = connectivityManager.getNetworkCapabilities(networkCapabilities) ?: return false
         return actNw.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
+
 }

@@ -37,7 +37,7 @@ open class CoachMeApplication : Application() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
 
-        store = CachingStore(FireDatabase(Firebase.database.reference), dataStore)
+        store = CachingStore(FireDatabase(Firebase.database.reference), dataStore, this)
         store.retrieveLocalData()
         userLocation = mutableStateOf(null)
 
