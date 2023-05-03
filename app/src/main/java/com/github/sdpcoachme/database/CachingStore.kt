@@ -3,7 +3,6 @@ package com.github.sdpcoachme.database
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.os.Build
 import androidx.datastore.core.DataStore
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
@@ -17,7 +16,6 @@ import java.util.concurrent.CompletableFuture
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.github.sdpcoachme.CoachMeApplication
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.GlobalScope
@@ -28,64 +26,44 @@ import kotlinx.coroutines.launch
  * A caching database that wraps another database
  */
 class CachingStore(private val wrappedDatabase: Database,
-                   private val datastore: DataStore<Preferences>, context: Context) : Database {
+                   private val datastore: DataStore<Preferences>,
+                   context: Context) : Database {
 
 
     val USER_EMAIL_KEY = stringPreferencesKey("user_email")
     val CACHED_USERS_KEY = stringPreferencesKey("cached_users")
-    val CACHED_TOKENS_KEY = stringPreferencesKey("cached_tokens")
     val CONTACTS_KEY = stringPreferencesKey("contacts")
     val CHATS_KEY = stringPreferencesKey("chats")
     val CACHED_SCHEDULES_KEY = stringPreferencesKey("cached_schedules")
 
-
     private val CACHED_SCHEDULE_WEEKS_AHEAD = 4L
     private val CACHED_SCHEDULE_WEEKS_BEHIND = 4L
+
     private val cachedUsers = mutableMapOf<String, UserInfo>()
-    private val contacts = mutableMapOf<String, UserInfo>()
+    private val contacts = mutableMapOf<String, List<UserInfo>>()
     private val chats = mutableMapOf<String, Chat>()
-    private val cachedSchedules = mutableMapOf<String, Schedule>()
+    private val cachedSchedules = mutableMapOf<String, List<Event>>()
+
     private var currentShownMonday = getStartMonday()
     private var minCachedMonday = currentShownMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
     private var maxCachedMonday = currentShownMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
 
     private var currentEmail: String? = null
 
-    lateinit var retrieveData: CompletableFuture<Void>
-
-    lateinit var retrieveFromDataStoreFuture: CompletableFuture<Void>
-    lateinit var retrieveFromDatabaseFuture: CompletableFuture<Void>
-
-    init {
-        val retrieveLocalData = retrieveLocalData()
-
-        // Retrieve remote data if there is a network connection
-        if (isInternetAvailable(context)) {
-            retrieveData = retrieveLocalData.thenCompose {
+    private var retrieveData = if (isInternetAvailable(context)) {
+            retrieveLocalData().thenCompose {
                 retrieveRemoteData()
             }
-        }
-        // If there is no network connection, just use the local data
-        else {
-            retrieveData = retrieveLocalData
-        }
-
-
-
-
-
-
-    }
+        } else retrieveLocalData()
 
     fun retrieveLocalData(): CompletableFuture<Void> {
-        val f = CompletableFuture<Void>()
+        val localFuture = CompletableFuture<Void>()
         GlobalScope.launch {
             val values = datastore.data.first()
             currentEmail = values[USER_EMAIL_KEY]
 
             // Retrieve the Json strings from the datastore
             val serializedUsers = values[CACHED_USERS_KEY]
-            val serializedTokens = values[CACHED_TOKENS_KEY]
             val serializedContacts = values[CONTACTS_KEY]
             val serializedChats = values[CHATS_KEY]
             val serializedSchedules = values[CACHED_SCHEDULES_KEY]
@@ -96,9 +74,9 @@ class CachingStore(private val wrappedDatabase: Database,
             processRetrievedCache(serializedChats, chats)
             processRetrievedCache(serializedSchedules, cachedSchedules)
 
-            f.complete(null)
+            localFuture.complete(null)
         }
-        return f
+        return localFuture
     }
 
     private fun <T> processRetrievedCache(jsonString: String?, cache: MutableMap<String, T>) {
@@ -110,19 +88,13 @@ class CachingStore(private val wrappedDatabase: Database,
         cache.putAll(gson.fromJson(jsonString, type))
     }
 
-    // todo : a bit lost on what to do here
     fun retrieveRemoteData(): CompletableFuture<Void> {
-        retrieveLocalData().thenApply {
-
-        }
-        retrieveFromDatabaseFuture = CompletableFuture.allOf(
-            // todo do nothing if no internet connection
+        val remoteFuture = CompletableFuture.allOf(
             getAllUsers(),
             getChatContacts(currentEmail!!)
-            // update other caches
+            // todo update other caches
         )
-
-        return retrieveFromDatabaseFuture
+        return remoteFuture
     }
 
     fun storeLocalData(): CompletableFuture<Void> {
@@ -182,61 +154,63 @@ class CachingStore(private val wrappedDatabase: Database,
 
     // Note: to efficiently use caching, we do not use the wrappedDatabase's addEventsToUser method
     override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        val email: String = getCurrentEmail()
-
-        return wrappedDatabase.addEvents(events, currentWeekMonday).thenApply {
-            // Update the cached schedule
-            cachedSchedules[email] = cachedSchedules[email]?.plus(events) ?: events.filter {
-                val start = LocalDateTime.parse(it.start).toLocalDate()
-                val end = LocalDateTime.parse(it.end).toLocalDate()
-                start >= currentWeekMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
-                        && end < currentWeekMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
+        return getCurrentEmail().thenCompose { email ->
+            wrappedDatabase.addEvents(events, currentWeekMonday).thenApply {
+                // Update the cached schedule
+                cachedSchedules[email] = cachedSchedules[email]?.plus(events) ?: events.filter {
+                    val start = LocalDateTime.parse(it.start).toLocalDate()
+                    val end = LocalDateTime.parse(it.end).toLocalDate()
+                    start >= currentWeekMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
+                            && end < currentWeekMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
+                }
+                Schedule(cachedSchedules[email] ?: listOf())
             }
-            Schedule(cachedSchedules[email] ?: listOf())
         }
     }
 
     // Note: checks if it is time to prefetch
     override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        val email = wrappedDatabase.getCurrentEmail()
+        val futureEmail = wrappedDatabase.getCurrentEmail()
         currentShownMonday = currentWeekMonday
 
-        if (!cachedSchedules.containsKey(email)) {  // If no cached schedule for that account, we fetch the schedule from the db
-            return wrappedDatabase.getSchedule(currentWeekMonday).thenApply { schedule ->
-                val events = schedule.events.filter {   // We only cache the events that are in the current week or close to it
-                    val start = LocalDateTime.parse(it.start).toLocalDate()
-                    val end = LocalDateTime.parse(it.end).toLocalDate()
-                    start >= minCachedMonday && end <= maxCachedMonday
-                }
-                schedule.copy(events = events).also {   // Update the cache
-                    cachedSchedules[email] = it.events
-                }
-            }
-        }
-        else {
-            // If it is time to prefetch (because displayed week is too close to the edge of the cached schedule), we fetch the schedule from the db
-            if (currentWeekMonday <= minCachedMonday || currentWeekMonday >= maxCachedMonday) {
-                cachedSchedules.remove(email)
-
-                // Update the cached schedule's prefetch boundaries
-                minCachedMonday = currentWeekMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
-                maxCachedMonday = currentWeekMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
-
-                return wrappedDatabase.getSchedule(currentWeekMonday).thenApply { schedule ->
-                    val events = schedule.events.filter {
+        return futureEmail.thenCompose { email ->
+            if (!cachedSchedules.containsKey(email)) {  // If no cached schedule for that account, we fetch the schedule from the db
+                wrappedDatabase.getSchedule(currentWeekMonday).thenApply { schedule ->
+                    val events = schedule.events.filter {   // We only cache the events that are in the current week or close to it
                         val start = LocalDateTime.parse(it.start).toLocalDate()
                         val end = LocalDateTime.parse(it.end).toLocalDate()
                         start >= minCachedMonday && end <= maxCachedMonday
                     }
-                    schedule.copy(events = events).also {
-                        cachedSchedules[email] = it.events  // Update the cache
+                    schedule.copy(events = events).also {   // Update the cache
+                        cachedSchedules[email] = it.events
                     }
                 }
             }
             else {
-                // If no need to prefetch, we return the cached schedule
-                currentShownMonday = currentWeekMonday
-                return CompletableFuture.completedFuture(Schedule(cachedSchedules[email] ?: listOf()))
+                // If it is time to prefetch (because displayed week is too close to the edge of the cached schedule), we fetch the schedule from the db
+                if (currentWeekMonday <= minCachedMonday || currentWeekMonday >= maxCachedMonday) {
+                    cachedSchedules.remove(email)
+
+                    // Update the cached schedule's prefetch boundaries
+                    minCachedMonday = currentWeekMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
+                    maxCachedMonday = currentWeekMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
+
+                    wrappedDatabase.getSchedule(currentWeekMonday).thenApply { schedule ->
+                        val events = schedule.events.filter {
+                            val start = LocalDateTime.parse(it.start).toLocalDate()
+                            val end = LocalDateTime.parse(it.end).toLocalDate()
+                            start >= minCachedMonday && end <= maxCachedMonday
+                        }
+                        schedule.copy(events = events).also {
+                            cachedSchedules[email] = it.events  // Update the cache
+                        }
+                    }
+                }
+                else {
+                    // If no need to prefetch, we return the cached schedule
+                    currentShownMonday = currentWeekMonday
+                    CompletableFuture.completedFuture(Schedule(cachedSchedules[email] ?: listOf()))
+                }
             }
         }
     }
@@ -295,7 +269,7 @@ class CachingStore(private val wrappedDatabase: Database,
         return wrappedDatabase.setFCMToken(email, token)
     }
     override fun getCurrentEmail(): CompletableFuture<String> {
-        return retrieveFromDataStoreFuture.thenApply {
+        return retrieveData.thenApply {
             if (currentEmail.isNullOrEmpty()) {
                 throw IllegalStateException("Current email is null or empty")
             }
@@ -303,9 +277,10 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
-    fun setCurrentEmail(email: String) {
+    override fun setCurrentEmail(email: String): CompletableFuture<Void> {
         currentEmail = email
         // todo change listeners etc here
+        return CompletableFuture.completedFuture(null)
     }
 
 
@@ -327,7 +302,8 @@ class CachingStore(private val wrappedDatabase: Database,
     fun clearCache() {
         cachedUsers.clear()
         cachedSchedules.clear()
-        cachedTokens.clear()
+        contacts.clear()
+        chats.clear()
     }
 
 

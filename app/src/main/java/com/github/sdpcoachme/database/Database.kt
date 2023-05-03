@@ -91,7 +91,7 @@ interface Database {
      * Set the current user's email
      * @param email The email to set
      */
-    fun setCurrentEmail(email: String): CompletableFuture<Unit>
+    fun setCurrentEmail(email: String): CompletableFuture<Void>
 
     // Used to handle database errors
     class NoSuchKeyException(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {
