@@ -65,10 +65,10 @@ interface Database {
     fun userExists(email: String): CompletableFuture<Boolean>
 
     /**
-     * Add events to the database
-     * @param events The events to add
+     * Add event to the database
+     * @param event The event to add
      * @param currentWeekMonday The monday of the current week
-     * @return A future with currently stored schedule that will complete when the events have been added.
+     * @return A future with currently stored schedule that will complete when the event has been added.
      */
     fun addEvent(event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule>
 

@@ -74,7 +74,6 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         val email = wrappedDatabase.getCurrentEmail()
         currentShownMonday = currentWeekMonday
-        println("current week monday: $currentWeekMonday")
 
         if (!cachedSchedules.containsKey(email)) {  // If no cached schedule for that account, we fetch the schedule from the db
             return wrappedDatabase.getSchedule(currentWeekMonday).thenApply { schedule ->

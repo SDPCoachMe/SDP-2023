@@ -2,6 +2,7 @@ package com.github.sdpcoachme.schedule
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -217,9 +218,15 @@ fun NewEvent(database: Database) {
                 actions = {
                     IconButton(
                         onClick = {
-                            EventOps.addEvent(event, database).thenAccept {
-                                goBackToScheduleActivity()
+                            if (start.isAfter(end)) {
+                                val toast = Toast.makeText(context, "Start date must be before end date", Toast.LENGTH_SHORT)
+                                toast.show()
+                            } else {
+                                EventOps.addEvent(event, database).thenAccept {
+                                    goBackToScheduleActivity()
+                                }
                             }
+
                         },
                         modifier = Modifier.testTag(CreateEventActivity.TestTags.Clickables.SAVE),
                     ) {
