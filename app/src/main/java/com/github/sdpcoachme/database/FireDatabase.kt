@@ -21,7 +21,6 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
 
     private val rootDatabase: DatabaseReference = databaseReference
     private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
-    private var currEmail = ""
     private val chats: DatabaseReference = rootDatabase.child("coachme").child("messages")
     private val fcmTokens: DatabaseReference = rootDatabase.child("coachme").child("fcmTokens")
     private val schedule: DatabaseReference = rootDatabase.child("coachme").child("schedule")
@@ -37,48 +36,27 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         return getChild(accounts, userID).thenApply { it.getValue(UserInfo::class.java) }
     }
 
-    override fun getAllUsers(): CompletableFuture<List<UserInfo>> {
-        return getAllChildren(accounts).thenApply { users ->
-            users.values.map {
-                try { // done to ensure that erroneous users in the
-                    // db do not inhibit the other users to be retrieved
-                    it.getValue(UserInfo::class.java)!!
-                } catch (e: Exception) {
-                    UserInfo()
-                }
-            }.filter { it != UserInfo() }
-        }
-    }
-
     override fun userExists(email: String): CompletableFuture<Boolean> {
         val userID = email.replace('.', ',')
         return childExists(accounts, userID)
     }
 
-    override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        val id = currEmail.replace('.', ',')
-        return getSchedule(currentWeekMonday).thenCompose {
+    override fun addEvents(email: String, events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        val id = email.replace('.', ',')
+        return getSchedule(email, currentWeekMonday).thenCompose {
             val updatedSchedule = it.copy(events = it.events + events)  // Add new events to the schedule
             setChild(schedule, id, updatedSchedule).thenApply { updatedSchedule }// Update DB
         }
     }
 
-    override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        val id = currEmail.replace('.', ',')
+    override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        val id = email.replace('.', ',')
         return getChild(schedule, id).thenApply { it.getValue(Schedule::class.java)!! }
             .exceptionally { Schedule() }
     }
 
-    override fun getCurrentEmail(): String {
-        return currEmail
-    }
-
-    override fun setCurrentEmail(email: String) {
-        currEmail = email
-    }
-
     override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
-        return getUser(currEmail).thenApply {
+        return getUser(email).thenApply {
             it.chatContacts
         }.thenCompose { list ->
             val mappedF = list.map { email ->
@@ -142,6 +120,22 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         chatRef.addValueEventListener(valueEventListener)
     }
 
+    override fun addUsersListeners(onChange: (List<UserInfo>) -> Unit) {
+        val usersRef = accounts
+        val valueEventListener = object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                val usersSnapShots = getAllChildren(dataSnapshot)
+                val users = mapDStoList(usersSnapShots.values, UserInfo::class.java)
+                onChange(users)
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Handle errors here
+            }
+        }
+        usersRef.addValueEventListener(valueEventListener)
+    }
+
     override fun removeChatListener(chatId: String) {
         val id = chatId.replace('.', ',')
         val chatRef = chats.child(id)
@@ -160,17 +154,31 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         return setChild(fcmTokens, userID, token)
     }
 
-    /**
-     * Gets all children of a given database reference
-     * @param databaseRef the database reference whose children to get
-     * @return a completable future that completes when the children are retrieved. The future
-     * contains a map of the children, with the key being the key of the child and the value being
-     * the child itself
-     */
-    private fun getAllChildren(databaseRef: DatabaseReference): CompletableFuture<Map<String, DataSnapshot>> {
-        return getRef(databaseRef).thenApply {
-            it.children.associateBy { child -> child.key!! /* can't be null */ }
+    override fun getAllUsers(): CompletableFuture<List<UserInfo>> {
+        return getRef(accounts)
+            .thenApply { getAllChildren(it) }
+            .thenApply { users -> mapDStoList(users.values, UserInfo::class.java)
         }
+    }
+
+    private fun <T> mapDStoList(ds: Collection<DataSnapshot>, clazz: Class<T>): List<T> {
+        return ds.mapNotNull {
+            try { // done to ensure that erroneous users in the
+                // db do not inhibit the other users to be retrieved
+                it.getValue(clazz)!!
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    /**
+     * Gets all children of a Datasnapshot
+     * @param dataSnapshot the Datasnapshot from which to get the children
+     * @return a map of the children, with the key being the key of the child
+     */
+    private fun getAllChildren(dataSnapshot: DataSnapshot): Map<String, DataSnapshot> {
+        return dataSnapshot.children.associateBy { child -> child.key!! } /* can't be null */
     }
 
     /**

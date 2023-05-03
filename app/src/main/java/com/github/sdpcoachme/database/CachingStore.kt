@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
  */
 class CachingStore(private val wrappedDatabase: Database,
                    private val datastore: DataStore<Preferences>,
-                   context: Context) : Database {
+                   context: Context) {
 
 
     val USER_EMAIL_KEY = stringPreferencesKey("user_email")
@@ -56,6 +56,13 @@ class CachingStore(private val wrappedDatabase: Database,
             }
         } else retrieveLocalData()
 
+    init {
+        wrappedDatabase.addUsersListeners { users ->
+            cachedUsers.clear()
+            cachedUsers.putAll(users.associateBy { it.email })
+        }
+    }
+
     fun retrieveLocalData(): CompletableFuture<Void> {
         val localFuture = CompletableFuture<Void>()
         GlobalScope.launch {
@@ -79,6 +86,11 @@ class CachingStore(private val wrappedDatabase: Database,
         return localFuture
     }
 
+    /**
+     * Processes a retrieved cache from Json
+     * @param jsonString the Json string to process
+     * @param cache the cache to put the processed Json into
+     */
     private fun <T> processRetrievedCache(jsonString: String?, cache: MutableMap<String, T>) {
         if (jsonString.isNullOrEmpty()) {
             return
@@ -91,8 +103,7 @@ class CachingStore(private val wrappedDatabase: Database,
     fun retrieveRemoteData(): CompletableFuture<Void> {
         val remoteFuture = CompletableFuture.allOf(
             getAllUsers(),
-            getChatContacts(currentEmail!!)
-            // todo update other caches
+            getChatContacts(currentEmail!!),
         )
         return remoteFuture
     }
@@ -124,11 +135,11 @@ class CachingStore(private val wrappedDatabase: Database,
 
 
 
-    override fun updateUser(user: UserInfo): CompletableFuture<Void> {
+    fun updateUser(user: UserInfo): CompletableFuture<Void> {
         return wrappedDatabase.updateUser(user).thenAccept { cachedUsers[user.email] = user }
     }
 
-    override fun getUser(email: String): CompletableFuture<UserInfo> {
+    fun getUser(email: String): CompletableFuture<UserInfo> {
         if (isCached(email)) {
             return CompletableFuture.completedFuture(cachedUsers[email])
         }
@@ -137,7 +148,7 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
-    override fun getAllUsers(): CompletableFuture<List<UserInfo>> {
+    fun getAllUsers(): CompletableFuture<List<UserInfo>> {
         return wrappedDatabase.getAllUsers().thenApply {
             it.also {
                 cachedUsers.clear()
@@ -145,7 +156,7 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
-    override fun userExists(email: String): CompletableFuture<Boolean> {
+    fun userExists(email: String): CompletableFuture<Boolean> {
         if (isCached(email)) {
             return CompletableFuture.completedFuture(true)
         }
@@ -153,9 +164,9 @@ class CachingStore(private val wrappedDatabase: Database,
     }
 
     // Note: to efficiently use caching, we do not use the wrappedDatabase's addEventsToUser method
-    override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+    fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         return getCurrentEmail().thenCompose { email ->
-            wrappedDatabase.addEvents(events, currentWeekMonday).thenApply {
+            wrappedDatabase.addEvents(email, events, currentWeekMonday).thenApply {
                 // Update the cached schedule
                 cachedSchedules[email] = cachedSchedules[email]?.plus(events) ?: events.filter {
                     val start = LocalDateTime.parse(it.start).toLocalDate()
@@ -169,13 +180,13 @@ class CachingStore(private val wrappedDatabase: Database,
     }
 
     // Note: checks if it is time to prefetch
-    override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        val futureEmail = wrappedDatabase.getCurrentEmail()
+    fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        val futureEmail = getCurrentEmail()
         currentShownMonday = currentWeekMonday
 
         return futureEmail.thenCompose { email ->
             if (!cachedSchedules.containsKey(email)) {  // If no cached schedule for that account, we fetch the schedule from the db
-                wrappedDatabase.getSchedule(currentWeekMonday).thenApply { schedule ->
+                wrappedDatabase.getSchedule(email, currentWeekMonday).thenApply { schedule ->
                     val events = schedule.events.filter {   // We only cache the events that are in the current week or close to it
                         val start = LocalDateTime.parse(it.start).toLocalDate()
                         val end = LocalDateTime.parse(it.end).toLocalDate()
@@ -195,7 +206,7 @@ class CachingStore(private val wrappedDatabase: Database,
                     minCachedMonday = currentWeekMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
                     maxCachedMonday = currentWeekMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
 
-                    wrappedDatabase.getSchedule(currentWeekMonday).thenApply { schedule ->
+                    wrappedDatabase.getSchedule(email, currentWeekMonday).thenApply { schedule ->
                         val events = schedule.events.filter {
                             val start = LocalDateTime.parse(it.start).toLocalDate()
                             val end = LocalDateTime.parse(it.end).toLocalDate()
@@ -215,21 +226,21 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
-    override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
+    fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
         if (contacts.containsKey(email)) {
             return CompletableFuture.completedFuture(contacts[email])
         }
         return wrappedDatabase.getChatContacts(email).thenApply { it.also { contacts[email] = it } }
     }
 
-    override fun getChat(chatId: String): CompletableFuture<Chat> {
+    fun getChat(chatId: String): CompletableFuture<Chat> {
         if (chats.containsKey(chatId)) {
             return CompletableFuture.completedFuture(chats[chatId]!!)
         }
         return wrappedDatabase.getChat(chatId).thenApply { it.also { chats[chatId] = it } }
     }
 
-    override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
+    fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
         // if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat from the db)
         if (chats.containsKey(chatId)) {
             chats[chatId] = chats[chatId]!!.copy(messages = chats[chatId]!!.messages + message)
@@ -237,7 +248,7 @@ class CachingStore(private val wrappedDatabase: Database,
         return wrappedDatabase.sendMessage(chatId, message) // we only the chat with the new message if the chat is already cached
     }
 
-    override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
+    fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
         // Also here, if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat from the db)
         if (chats.containsKey(chatId)) {
             chats[chatId] = Chat.markOtherUsersMessagesAsRead(
@@ -248,7 +259,7 @@ class CachingStore(private val wrappedDatabase: Database,
         return wrappedDatabase.markMessagesAsRead(chatId, email)
     }
 
-    override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
+    fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
         val cachingOnChange = { chat: Chat ->
             chats[chatId] = chat
             onChange(chat)
@@ -256,19 +267,19 @@ class CachingStore(private val wrappedDatabase: Database,
         wrappedDatabase.addChatListener(chatId, cachingOnChange)
     }
 
-    override fun removeChatListener(chatId: String) {
+    fun removeChatListener(chatId: String) {
         wrappedDatabase.removeChatListener(chatId)
     }
 
     // No cache here, method just used for testing to fetch from database
-    override fun getFCMToken(email: String): CompletableFuture<String> {
+    fun getFCMToken(email: String): CompletableFuture<String> {
         return wrappedDatabase.getFCMToken(email)
     }
 
-    override fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
+    fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
         return wrappedDatabase.setFCMToken(email, token)
     }
-    override fun getCurrentEmail(): CompletableFuture<String> {
+    fun getCurrentEmail(): CompletableFuture<String> {
         return retrieveData.thenApply {
             if (currentEmail.isNullOrEmpty()) {
                 throw IllegalStateException("Current email is null or empty")
@@ -277,7 +288,7 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
-    override fun setCurrentEmail(email: String): CompletableFuture<Void> {
+    fun setCurrentEmail(email: String): CompletableFuture<Void> {
         currentEmail = email
         // todo change listeners etc here
         return CompletableFuture.completedFuture(null)
@@ -306,8 +317,12 @@ class CachingStore(private val wrappedDatabase: Database,
         chats.clear()
     }
 
-
-    fun isInternetAvailable(context: Context): Boolean {
+    /**
+     * Check if the device is connected to the internet
+     * @param context The context of the application
+     * @return True if the device is connected to the internet, false otherwise
+     */
+    private fun isInternetAvailable(context: Context): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val networkCapabilities = connectivityManager.activeNetwork ?: return false
         val actNw = connectivityManager.getNetworkCapabilities(networkCapabilities) ?: return false
