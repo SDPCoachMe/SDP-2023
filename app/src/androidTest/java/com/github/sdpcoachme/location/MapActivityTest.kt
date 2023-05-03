@@ -53,7 +53,7 @@ class MapActivityTest {
     )
 
     private val database = (InstrumentationRegistry.getInstrumentation()
-        .targetContext.applicationContext as CoachMeApplication).database
+        .targetContext.applicationContext as CoachMeApplication).store
     private val defaultIntent =
         Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
     private val EXISTING_EMAIL = "example@email.com"

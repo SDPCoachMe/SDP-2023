@@ -121,7 +121,7 @@ class ChatActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val database = (application as CoachMeApplication).database
+        val database = (application as CoachMeApplication).store
         val currentUserEmail = database.getCurrentEmail()
         val toUserEmail = intent.getStringExtra("toUserEmail")
 

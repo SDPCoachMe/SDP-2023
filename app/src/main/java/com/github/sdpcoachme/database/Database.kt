@@ -85,13 +85,13 @@ interface Database {
      * Get the current user's email
      * @return The current user's email
      */
-    fun getCurrentEmail(): String
+    fun getCurrentEmail(): CompletableFuture<String>
 
     /**
      * Set the current user's email
      * @param email The email to set
      */
-    fun setCurrentEmail(email: String)
+    fun setCurrentEmail(email: String): CompletableFuture<Unit>
 
     // Used to handle database errors
     class NoSuchKeyException(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {

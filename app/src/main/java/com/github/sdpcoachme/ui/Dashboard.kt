@@ -193,7 +193,7 @@ fun AppBar(title: String, onNavigationIconClick: () -> Unit) {
 
 @Composable
 fun DrawerHeader(context: Context) {
-    val email = (context.applicationContext as CoachMeApplication).database.getCurrentEmail()
+    val email = (context.applicationContext as CoachMeApplication).store.getCurrentEmail()
 
     if (email.isEmpty()) {
         val errorMsg = "Dashboard did not receive an email address.\n Please return to the login page and try again."

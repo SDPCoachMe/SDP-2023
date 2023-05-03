@@ -45,7 +45,7 @@ class CoachesListActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
-        val database = (application as CoachMeApplication).database
+        val database = (application as CoachMeApplication).store
         val userLatLng = (application as CoachMeApplication).userLocation.value?: CAMPUS
         val email = database.getCurrentEmail()
 

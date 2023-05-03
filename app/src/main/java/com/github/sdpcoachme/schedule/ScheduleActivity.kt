@@ -105,7 +105,7 @@ class ScheduleActivity : ComponentActivity() {
     private lateinit var email: String
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        database = (application as CoachMeApplication).database
+        database = (application as CoachMeApplication).store
         email = database.getCurrentEmail()
 
         if (email.isEmpty()) {

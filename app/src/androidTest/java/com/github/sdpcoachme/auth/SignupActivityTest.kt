@@ -39,7 +39,7 @@ open class SignupActivityTest {
 
     private lateinit var scenario: ActivityScenario<SignupActivity>
 
-    private val database = (getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
+    private val database = (getInstrumentation().targetContext.applicationContext as CoachMeApplication).store
     private val defaultUser = UserInfo(
         firstName = "Jean",
         lastName = "Dupont",

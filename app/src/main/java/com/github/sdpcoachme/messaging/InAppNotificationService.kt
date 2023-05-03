@@ -40,7 +40,7 @@ class InAppNotificationService : FirebaseMessagingService() {
 
             // Since it does not seem to be possible to create RemoteMessages containing a notification,
             // the in-app push notification part has been moved to the InAppNotifier class to enable testing.
-            InAppNotifier(this, (application as CoachMeApplication).database)
+            InAppNotifier(this, (application as CoachMeApplication).store)
                 .sendNotification(
                     title = notificationTitle!!.title,
                     body = notificationBody!!.body,

@@ -50,7 +50,7 @@ class DashboardTest {
     private val EXISTING_EMAIL = "example@email.com"
 
     private val database = (InstrumentationRegistry.getInstrumentation()
-        .targetContext.applicationContext as CoachMeApplication).database
+        .targetContext.applicationContext as CoachMeApplication).store
 
     @get:Rule
     val composeTestRule = createComposeRule()

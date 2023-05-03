@@ -37,7 +37,7 @@ open class SelectSportsActivityTest {
         coach = false
     )
     private val database = (InstrumentationRegistry.getInstrumentation()
-        .targetContext.applicationContext as CoachMeApplication).database
+        .targetContext.applicationContext as CoachMeApplication).store
 
 
     private val launchSelectSports = SelectSportsActivity.getIntent(

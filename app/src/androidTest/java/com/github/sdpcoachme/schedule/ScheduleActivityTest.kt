@@ -82,7 +82,7 @@ class ScheduleActivityTest {
 
     @Before
     fun setup() {
-        database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
+        database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).store
         database.setCurrentEmail(defaultEmail)
     }
 

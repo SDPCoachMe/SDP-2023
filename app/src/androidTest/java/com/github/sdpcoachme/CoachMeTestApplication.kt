@@ -13,7 +13,7 @@ class CoachMeTestApplication : CoachMeApplication() {
     // For DI in testing, add reference to mocks here
     // todo for emulator testing
     //override var database: Database = FireDatabase(Firebase.database.reference)
-    override var database: Database = MockDatabase()
+    override var store: Database = MockDatabase()
     override fun onCreate() {
         super.onCreate()
         // 10.0.2.2 is the special IP address to connect to the 'localhost' of
@@ -28,7 +28,7 @@ class CoachMeTestApplication : CoachMeApplication() {
             // Ignore
         }
          */
-        database = MockDatabase()
+        store = MockDatabase()
 
         // Might be necessary to initialize Places SDK, but for now, we don't need it.
     }

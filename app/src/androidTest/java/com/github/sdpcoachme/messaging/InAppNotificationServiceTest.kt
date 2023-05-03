@@ -48,7 +48,7 @@ class InAppNotificationServiceTest {
     @Test
     fun onMessageReceivedWithNullArgumentDoesNothing() {
         val context: Context = ApplicationProvider.getApplicationContext()
-        val database = (context as CoachMeApplication).database
+        val database = (context as CoachMeApplication).store
         database.setCurrentEmail(currentUser.email)
         database.updateUser(currentUser)
 
@@ -69,7 +69,7 @@ class InAppNotificationServiceTest {
     // This test does not work in the ci pipeline,
 //    @Test
     fun addFcmTokenToDatabasePlacesTokenIntoTheDb() {
-        val database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
+        val database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).store
         database.setCurrentEmail(currentUser.email)
         database.updateUser(currentUser)
 

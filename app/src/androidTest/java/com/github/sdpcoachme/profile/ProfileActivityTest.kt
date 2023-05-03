@@ -56,7 +56,7 @@ class ProfileActivityTest {
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
     private fun getDatabase(): Database {
         return (InstrumentationRegistry.getInstrumentation()
-            .targetContext.applicationContext as CoachMeApplication).database
+            .targetContext.applicationContext as CoachMeApplication).store
     }
 
     @Before

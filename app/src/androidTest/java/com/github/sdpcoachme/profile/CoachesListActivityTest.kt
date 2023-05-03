@@ -40,7 +40,7 @@ open class CoachesListActivityTest {
     val composeTestRule = createEmptyComposeRule()
 
     private val database = (InstrumentationRegistry.getInstrumentation()
-        .targetContext.applicationContext as CoachMeApplication).database as MockDatabase
+        .targetContext.applicationContext as CoachMeApplication).store as MockDatabase
 
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
 

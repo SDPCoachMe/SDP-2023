@@ -61,7 +61,7 @@ class InAppNotifierTest {
 
     @Before
     fun setup() {
-        database = (getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
+        database = (getInstrumentation().targetContext.applicationContext as CoachMeApplication).store
         database.setCurrentEmail(currentUser.email)
         database.updateUser(toUser)
         database.updateUser(currentUser)

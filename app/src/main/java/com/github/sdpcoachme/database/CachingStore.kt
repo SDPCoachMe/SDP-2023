@@ -1,5 +1,10 @@
 package com.github.sdpcoachme.database
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.Build
+import androidx.datastore.core.DataStore
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
@@ -9,22 +14,143 @@ import com.github.sdpcoachme.schedule.EventOps.Companion.getStartMonday
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.github.sdpcoachme.CoachMeApplication
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /**
  * A caching database that wraps another database
  */
-class CachingDatabase(private val wrappedDatabase: Database) : Database {
+class CachingStore(private val wrappedDatabase: Database,
+                   private val datastore: DataStore<Preferences>, context: Context) : Database {
+
+
+    val USER_EMAIL_KEY = stringPreferencesKey("user_email")
+    val CACHED_USERS_KEY = stringPreferencesKey("cached_users")
+    val CACHED_TOKENS_KEY = stringPreferencesKey("cached_tokens")
+    val CONTACTS_KEY = stringPreferencesKey("contacts")
+    val CHATS_KEY = stringPreferencesKey("chats")
+    val CACHED_SCHEDULES_KEY = stringPreferencesKey("cached_schedules")
+
+
     private val CACHED_SCHEDULE_WEEKS_AHEAD = 4L
     private val CACHED_SCHEDULE_WEEKS_BEHIND = 4L
     private val cachedUsers = mutableMapOf<String, UserInfo>()
-    private val cachedTokens = mutableMapOf<String, String>()
-    private val contacts = mutableMapOf<String, List<UserInfo>>()
+    private val contacts = mutableMapOf<String, UserInfo>()
     private val chats = mutableMapOf<String, Chat>()
-
-    private val cachedSchedules = mutableMapOf<String, List<Event>>()
+    private val cachedSchedules = mutableMapOf<String, Schedule>()
     private var currentShownMonday = getStartMonday()
     private var minCachedMonday = currentShownMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
     private var maxCachedMonday = currentShownMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
+
+    private var currentEmail: String? = null
+
+    lateinit var retrieveData: CompletableFuture<Void>
+
+    lateinit var retrieveFromDataStoreFuture: CompletableFuture<Void>
+    lateinit var retrieveFromDatabaseFuture: CompletableFuture<Void>
+
+    init {
+        val retrieveLocalData = retrieveLocalData()
+
+        // Retrieve remote data if there is a network connection
+        if (isInternetAvailable(context)) {
+            retrieveData = retrieveLocalData.thenCompose {
+                retrieveRemoteData()
+            }
+        }
+        // If there is no network connection, just use the local data
+        else {
+            retrieveData = retrieveLocalData
+        }
+
+
+
+
+
+
+    }
+
+    fun retrieveLocalData(): CompletableFuture<Void> {
+        val f = CompletableFuture<Void>()
+        GlobalScope.launch {
+            val values = datastore.data.first()
+            currentEmail = values[USER_EMAIL_KEY]
+
+            // Retrieve the Json strings from the datastore
+            val serializedUsers = values[CACHED_USERS_KEY]
+            val serializedTokens = values[CACHED_TOKENS_KEY]
+            val serializedContacts = values[CONTACTS_KEY]
+            val serializedChats = values[CHATS_KEY]
+            val serializedSchedules = values[CACHED_SCHEDULES_KEY]
+
+            // Deserialize the caching maps from Json and put them in the caching maps
+            processRetrievedCache(serializedUsers, cachedUsers)
+            processRetrievedCache(serializedContacts, contacts)
+            processRetrievedCache(serializedChats, chats)
+            processRetrievedCache(serializedSchedules, cachedSchedules)
+
+            f.complete(null)
+        }
+        return f
+    }
+
+    private fun <T> processRetrievedCache(jsonString: String?, cache: MutableMap<String, T>) {
+        if (jsonString.isNullOrEmpty()) {
+            return
+        }
+        val gson = Gson()
+        val type = object : TypeToken<Map<String, T>>() {}.type
+        cache.putAll(gson.fromJson(jsonString, type))
+    }
+
+    // todo : a bit lost on what to do here
+    fun retrieveRemoteData(): CompletableFuture<Void> {
+        retrieveLocalData().thenApply {
+
+        }
+        retrieveFromDatabaseFuture = CompletableFuture.allOf(
+            // todo do nothing if no internet connection
+            getAllUsers(),
+            getChatContacts(currentEmail!!)
+            // update other caches
+        )
+
+        return retrieveFromDatabaseFuture
+    }
+
+    fun storeLocalData(): CompletableFuture<Void> {
+        val writeDatastoreFuture = CompletableFuture<Void>()
+        GlobalScope.launch {
+            datastore.edit { preferences ->
+                val gson = Gson()
+
+                // Serialze the caching maps to Json
+                val serializedUsers = gson.toJson(cachedUsers)
+                val serializedContacts = gson.toJson(contacts)
+                val serializedChats = gson.toJson(chats)
+                val serializedSchedules = gson.toJson(cachedSchedules)
+
+                // Write to datastore
+                preferences[USER_EMAIL_KEY] = currentEmail ?: ""
+                preferences[CACHED_USERS_KEY] = serializedUsers
+                preferences[CONTACTS_KEY] = serializedContacts
+                preferences[CHATS_KEY] = serializedChats
+                preferences[CACHED_SCHEDULES_KEY] = serializedSchedules
+
+                writeDatastoreFuture.complete(null)
+            }
+        }
+        return writeDatastoreFuture
+    }
+
+
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         return wrappedDatabase.updateUser(user).thenAccept { cachedUsers[user.email] = user }
@@ -56,7 +182,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
 
     // Note: to efficiently use caching, we do not use the wrappedDatabase's addEventsToUser method
     override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        val email = wrappedDatabase.getCurrentEmail()
+        val email: String = getCurrentEmail()
 
         return wrappedDatabase.addEvents(events, currentWeekMonday).thenApply {
             // Update the cached schedule
@@ -160,27 +286,29 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         wrappedDatabase.removeChatListener(chatId)
     }
 
+    // No cache here, method just used for testing to fetch from database
     override fun getFCMToken(email: String): CompletableFuture<String> {
-        if (cachedTokens.containsKey(email)) {
-            return CompletableFuture.completedFuture(cachedTokens[email])
-        }
-        return wrappedDatabase.getFCMToken(email).thenApply {
-            it.also { cachedTokens[email] = it }
-        }
+        return wrappedDatabase.getFCMToken(email)
     }
 
     override fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
-        cachedTokens[email] = token
         return wrappedDatabase.setFCMToken(email, token)
     }
-
-    override fun getCurrentEmail(): String {
-        return wrappedDatabase.getCurrentEmail()
+    override fun getCurrentEmail(): CompletableFuture<String> {
+        return retrieveFromDataStoreFuture.thenApply {
+            if (currentEmail.isNullOrEmpty()) {
+                throw IllegalStateException("Current email is null or empty")
+            }
+            currentEmail
+        }
     }
 
-    override fun setCurrentEmail(email: String) {
-        wrappedDatabase.setCurrentEmail(email)
+    fun setCurrentEmail(email: String) {
+        currentEmail = email
+        // todo change listeners etc here
     }
+
+
 
     /**
      * Check if a user is cached
@@ -200,5 +328,13 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         cachedUsers.clear()
         cachedSchedules.clear()
         cachedTokens.clear()
+    }
+
+
+    fun isInternetAvailable(context: Context): Boolean {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val networkCapabilities = connectivityManager.activeNetwork ?: return false
+        val actNw = connectivityManager.getNetworkCapabilities(networkCapabilities) ?: return false
+        return actNw.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 }

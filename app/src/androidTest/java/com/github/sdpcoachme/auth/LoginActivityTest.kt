@@ -150,7 +150,7 @@ open class LoginActivityTest {
         )
         @Before // done to enable testing without android ui
         override fun startLoginActivityFromHomeScreen() {
-            database = (ApplicationProvider.getApplicationContext() as CoachMeApplication).database
+            database = (ApplicationProvider.getApplicationContext() as CoachMeApplication).store
             database.updateUser(currentUser)
             database.updateUser(toUser)
         }

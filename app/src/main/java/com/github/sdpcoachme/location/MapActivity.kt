@@ -73,7 +73,7 @@ class MapActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        database = (application as CoachMeApplication).database
+        database = (application as CoachMeApplication).store
         email = database.getCurrentEmail()
         lastUserLocation = (application as CoachMeApplication).userLocation
 

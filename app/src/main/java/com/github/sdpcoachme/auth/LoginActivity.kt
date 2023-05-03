@@ -81,7 +81,7 @@ class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         authenticator = (application as CoachMeApplication).authenticator
-        database =  (application as CoachMeApplication).database
+        database =  (application as CoachMeApplication).store
 
         // Check if a notification was clicked
         val pushNotificationIntent = intent

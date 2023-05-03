@@ -84,7 +84,7 @@ class ProfileActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         stateUpdated = CompletableFuture()
-        database = (application as CoachMeApplication).database
+        database = (application as CoachMeApplication).store
         val isViewingCoach = intent.getBooleanExtra("isViewingCoach", false)
         email =
             if (isViewingCoach) intent.getStringExtra("email").toString()
@@ -134,7 +134,7 @@ class ProfileActivity : ComponentActivity() {
     fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewingCoach: Boolean) {
 
         val context = LocalContext.current
-        val database = (LocalContext.current.applicationContext as CoachMeApplication).database
+        val database = (LocalContext.current.applicationContext as CoachMeApplication).store
 
         var userInfo by remember { mutableStateOf(UserInfo()) }
 
