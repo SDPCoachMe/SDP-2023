@@ -111,18 +111,23 @@ class CachingDatabaseTest {
     fun addEventsAddsThemToWrappedDatabase() {
         var timesCalled = 0
         class ScheduleDB: MockDatabase() {
-            override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+            override fun addEvent(event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
                 timesCalled++
-                return CompletableFuture.completedFuture(Schedule(events))
+                return CompletableFuture.completedFuture(Schedule(listOf(event)))
             }
         }
 
         val wrappedDatabase = ScheduleDB()
         val cachingDatabase = CachingDatabase(wrappedDatabase)
         cachingDatabase.setCurrentEmail(exampleEmail)
-        val isCorrect = cachingDatabase.addEvents(eventList, currentMonday)
+        val isCorrect = cachingDatabase.addEvent(eventList[0], currentMonday)
+            .thenCompose { cachingDatabase.addEvent(eventList[1], currentMonday) }
+            .thenCompose { cachingDatabase.addEvent(eventList[2], currentMonday) }
+            .thenCompose { cachingDatabase.addEvent(eventList[3], currentMonday) }
+            .thenCompose { cachingDatabase.addEvent(eventList[4], currentMonday) }
+            .thenCompose { cachingDatabase.addEvent(eventList[5], currentMonday) }
             .thenApply {
-                assertThat(timesCalled, `is`(1))
+                assertThat(timesCalled, `is`(6))
                 true
             }.exceptionally {
                 false

@@ -74,6 +74,11 @@
             android:label="@string/title_activity_schedule"
             android:theme="@style/Theme.CoachMe" />
         <activity
+            android:name=".schedule.CreateEventActivity"
+            android:exported="false"
+            android:label="@string/title_activity_create_event"
+            android:theme="@style/Theme.CoachMe" />
+        <activity
             android:name=".profile.ProfileActivity"
             android:exported="false"
             android:label="@string/title_activity_edit_profile"

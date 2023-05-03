@@ -99,14 +99,14 @@ open class MockDatabase: Database {
         return getMap(accounts, email).thenApply { it != null }
     }
 
-    override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+    override fun addEvent(event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         if (currEmail == "throw@Exception.com") {
             val error = CompletableFuture<Schedule>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
         }
         return getSchedule(currentWeekMonday).thenCompose { schedule ->
-            val newSchedule = schedule.copy(events = schedule.events + events)
+            val newSchedule = schedule.copy(events = schedule.events + event)
             schedules[currEmail] = newSchedule
             val future = CompletableFuture<Schedule>()
             future.complete(null)
