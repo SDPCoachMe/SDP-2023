@@ -55,12 +55,12 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     }
 
     // Note: to efficiently use caching, we do not use the wrappedDatabase's addEventsToUser method
-    override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+    override fun addEvent(event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         val email = wrappedDatabase.getCurrentEmail()
 
-        return wrappedDatabase.addEvents(events, currentWeekMonday).thenApply {
+        return wrappedDatabase.addEvent(event, currentWeekMonday).thenApply {
             // Update the cached schedule
-            cachedSchedules[email] = cachedSchedules[email]?.plus(events) ?: events.filter {
+            cachedSchedules[email] = cachedSchedules[email]?.plus(event) ?: listOf(event).filter {
                 val start = LocalDateTime.parse(it.start).toLocalDate()
                 val end = LocalDateTime.parse(it.end).toLocalDate()
                 start >= currentWeekMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
