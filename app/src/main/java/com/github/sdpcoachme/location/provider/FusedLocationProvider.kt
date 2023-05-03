@@ -24,6 +24,10 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeoutException
 
+/**
+ * Implementation of a LocationProvider using a FusedLocationProviderClient, ie using the location
+ * service of the Google API. See LocationProvider for further documentation.
+ */
 class FusedLocationProvider : LocationProvider {
 
     companion object {
@@ -39,14 +43,14 @@ class FusedLocationProvider : LocationProvider {
     /**
      * Create an activity for result to display window to request location permission.
      * The contract is a predefined "function" which takes a permission as input and
-     * outputs if the user has granted it or not.
+     * outputs if the user has granted it or not. See init(...).
      */
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
 
     /**
      * Create an activity for result to display a window to request location setting.
      * The contract is a predefined "function" which takes an IntentSenderRequest as input and
-     * outputs if the user has enabled the setting or not.
+     * outputs if the user has enabled the setting or not. See init(...).
      */
     private lateinit var requestSettingLauncher:  ActivityResultLauncher<IntentSenderRequest>
 
@@ -84,8 +88,7 @@ class FusedLocationProvider : LocationProvider {
     }
 
     /**
-     * Checks if the user has granted the needed permission to the application. Useful especially
-     * after application installation.
+     * Especially useful after application installation.
      */
     override fun locationIsPermitted(): Boolean {
         val locationPermission = ContextCompat.checkSelfPermission(appContext, ACCESS_FINE_LOCATION)
@@ -93,7 +96,7 @@ class FusedLocationProvider : LocationProvider {
     }
 
     /**
-     * Performs the location retrieval. This function is always called with granted permissions
+     * This function is always called with granted permissions
      * and the device location settings enabled. This safely allows the recursive call needed in the
      * case the device location service takes time to be deployed. A max iteration "timeout" has
      * been set to ensure termination.
@@ -128,7 +131,6 @@ class FusedLocationProvider : LocationProvider {
     }
 
     /**
-     * Checks the current location settings of the device.
      * If location service is enabled on the device, launches the location retrieval.
      * Else, requests the user to enable the location service of the device.
      */

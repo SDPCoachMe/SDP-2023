@@ -38,8 +38,8 @@ import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
 /**
- * Main map activity, launched after login. This activity contains the map view and holds
- * the current last known user location.
+ * Main map activity, launched after login. This activity contains the map view and makes use of
+ * the application LocationProvider.
  */
 class MapActivity : ComponentActivity() {
     // Allows to notice testing framework that the markers are displayed on the map
