@@ -3,13 +3,13 @@ package com.github.sdpcoachme.location.provider
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.DELAY
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeoutException
 
 /**
@@ -89,7 +89,7 @@ class MockLocationProvider: LocationProvider {
     }
 
     private fun setLocationToAddress() {
-        val address = user.get(DELAY, MILLISECONDS).address
+        val address = if (user.isCompletedExceptionally) LAUSANNE else user.get().address
         try {
             mockLocation.value = LatLng(address.latitude, address.longitude)
         } catch (e: TimeoutException) {

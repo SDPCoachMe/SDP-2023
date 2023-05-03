@@ -70,7 +70,10 @@ class MapActivity : ComponentActivity() {
             val errorMsg = "The map did not receive an email address.\nPlease return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
-            locationProvider.init(this, database.getUser(email))
+            val user = database.getUser(email).exceptionally {
+                error("MapActivity: user could not have been retrieved from the database.")
+            }
+            locationProvider.init(this, user)
 
             // Performs the whole location retrieval process
             if (locationProvider.locationIsPermitted()) {

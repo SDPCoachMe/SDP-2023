@@ -115,7 +115,7 @@ open class MockDatabase: Database {
     }
 
     override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        if (currEmail == "throwGet@Exception.com") {
+        if (currEmail == "throwGetSchedule@Exception.com") {
             val error = CompletableFuture<Schedule>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
