@@ -107,7 +107,7 @@ class FusedLocationProvider : LocationProvider {
      */
     @SuppressLint("MissingPermission") //permission is checked before the call
     private fun getDeviceLocation(delay: Long) {
-        // getDeviceLocation should not be called more than MAX_LOCATION_DELAY time
+        // getDeviceLocation should not be called more than DELAY time
         if (delay >= DELAY) {
             error("getDeviceLocation has reached its max recursive delay")
         }
