@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.util.Log
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.CachingStore
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -55,7 +55,7 @@ class InAppNotificationService : FirebaseMessagingService() {
         /**
          * Adds the FCM token of the current user to the database.
          */
-        fun addFCMTokenToDatabase(database: Database) {
+        fun addFCMTokenToDatabase(store: CachingStore) {
             FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
                 if (!task.isSuccessful) {
                     Log.w(ContentValues.TAG, "Fetching FCM registration token failed", task.exception)
@@ -64,7 +64,9 @@ class InAppNotificationService : FirebaseMessagingService() {
 
                 // Get new FCM registration token
                 val token = task.result
-                database.setFCMToken(database.getCurrentEmail(), token)
+                store.getCurrentEmail().thenCompose {
+                    store.setFCMToken(it, token)
+                }
             })
         }
     }

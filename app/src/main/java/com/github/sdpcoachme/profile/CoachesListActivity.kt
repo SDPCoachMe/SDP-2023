@@ -31,7 +31,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.MapActivity.Companion.CAMPUS
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
@@ -40,58 +40,57 @@ import java.util.concurrent.CompletableFuture
 
 class CoachesListActivity : ComponentActivity() {
     // Allows to notice testing framework that the activity is ready
+
+    private lateinit var store: CachingStore
+    private lateinit var emailFuture: CompletableFuture<String>
+
+
     var stateLoading = CompletableFuture<Void>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
-        val database = (application as CoachMeApplication).store
+        store = (application as CoachMeApplication).store
         val userLatLng = (application as CoachMeApplication).userLocation.value?: CAMPUS
-        val email = database.getCurrentEmail()
+        emailFuture = store.getCurrentEmail()
 
-        if (email.isEmpty()) {
-            val errorMsg = "The coach list did not receive an email address.\nPlease return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
-        } else {
-            val futureListOfCoaches =
-                if (isViewingContacts) {
-                    database.getChatContacts(email = email)
-                } else {
-                    database
-                        .getAllUsersByNearest(
-                            latitude = userLatLng.latitude,
-                            longitude = userLatLng.longitude
-                        ).thenApply {
-                            it.filter { user -> user.coach }
-                        }
+        val futureListOfCoaches = emailFuture.thenCompose { email ->
+            if (isViewingContacts) {
+                store.getChatContacts(email = email)
+            } else {
+                store.getAllUsersByNearest(
+                    latitude = userLatLng.latitude,
+                    longitude = userLatLng.longitude
+                ).thenApply {
+                    it.filter { user -> user.coach }
                 }
+            }
+        }
+        setContent {
+            var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
 
-            setContent {
-                var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
+            // Proper way to handle result of a future in a Composable.
+            // This makes sure the listOfCoaches state is updated only ONCE, when the future is complete
+            // This is because the code in LaunchedEffect(true) will only be executed once, when the
+            // Composable is first created (given that the parameter key1 never changes). The code won't
+            // be executed on every recomposition.
+            // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
+            LaunchedEffect(true) {
+                listOfCoaches = futureListOfCoaches.await()
 
-                // Proper way to handle result of a future in a Composable.
-                // This makes sure the listOfCoaches state is updated only ONCE, when the future is complete
-                // This is because the code in LaunchedEffect(true) will only be executed once, when the
-                // Composable is first created (given that the parameter key1 never changes). The code won't
-                // be executed on every recomposition.
-                // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
-                LaunchedEffect(true) {
-                    listOfCoaches = futureListOfCoaches.await()
+                // Activity is now ready for testing
+                stateLoading.complete(null)
+            }
 
-                    // Activity is now ready for testing
-                    stateLoading.complete(null)
-                }
+            val title = if (isViewingContacts) stringResource(R.string.contacts)
+            else stringResource(R.string.title_activity_coaches_list)
 
-                val title = if (isViewingContacts) stringResource(R.string.contacts)
-                else stringResource(R.string.title_activity_coaches_list)
-
-                CoachMeTheme {
-                    Dashboard(title) {
-                        Column(modifier = it.fillMaxSize()) {
-                            LazyColumn {
-                                items(listOfCoaches) {user ->
-                                    UserInfoListItem(user, isViewingContacts)
-                                }
+            CoachMeTheme {
+                Dashboard(title) {
+                    Column(modifier = it.fillMaxSize()) {
+                        LazyColumn {
+                            items(listOfCoaches) {user ->
+                                UserInfoListItem(user, isViewingContacts)
                             }
                         }
                     }

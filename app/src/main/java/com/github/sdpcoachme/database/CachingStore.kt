@@ -75,6 +75,10 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
+    /**
+     * Retrieves local data from the datastore
+     * @return a completable future that completes when the local data has been retrieved
+     */
     private fun retrieveLocalData(): CompletableFuture<Void> {
         val localFuture = CompletableFuture<Void>()
         GlobalScope.launch {
@@ -112,6 +116,10 @@ class CachingStore(private val wrappedDatabase: Database,
         cache.putAll(gson.fromJson(jsonString, type))
     }
 
+    /**
+     * Retrieve remote data from the database
+     * @return a completable future that completes when the remote data has been retrieved
+     */
     private fun retrieveRemoteData(): CompletableFuture<Void> {
         return CompletableFuture.allOf(
             getAllUsers()
@@ -144,8 +152,6 @@ class CachingStore(private val wrappedDatabase: Database,
     }
 
 
-
-
     fun updateUser(user: UserInfo): CompletableFuture<Void> {
         return wrappedDatabase.updateUser(user).thenAccept { cachedUsers[user.email] = user }
     }
@@ -164,6 +170,16 @@ class CachingStore(private val wrappedDatabase: Database,
             it.also {
                 cachedUsers.clear()
                 cachedUsers.putAll(it.associateBy { it.email }) }
+        }
+    }
+
+    // todo refactore with userLocation inside CachingStore
+    fun getAllUsersByNearest(latitude: Double, longitude: Double): CompletableFuture<List<UserInfo>> {
+        return wrappedDatabase.getAllUsersByNearest(latitude, longitude).thenApply {
+            it.also {
+                cachedUsers.clear()
+                cachedUsers.putAll(it.associateBy { it.email })
+            }
         }
     }
 
@@ -293,7 +309,6 @@ class CachingStore(private val wrappedDatabase: Database,
     fun getCurrentEmail(): CompletableFuture<String> {
         return retrieveData.thenApply {
             if (currentEmail.isNullOrEmpty()) {
-                // todo launch the appropriate activity
                 throw IllegalStateException("Current email is null or empty")
             }
             currentEmail

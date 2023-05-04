@@ -25,12 +25,12 @@ import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserLocation
 import com.github.sdpcoachme.database.CachingStore
-import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.location.autocomplete.LocationAutocompleteHandler
 import com.github.sdpcoachme.profile.SelectSportsActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
 class SignupActivity : ComponentActivity() {
@@ -53,30 +53,35 @@ class SignupActivity : ComponentActivity() {
         }
     }
 
+    var stateLoading = CompletableFuture<Void>()
+
     private lateinit var store : CachingStore
-    private lateinit var email: String
+    private lateinit var emailFuture: CompletableFuture<String>
     private lateinit var locationAutocompleteHandler: LocationAutocompleteHandler
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         store = (application as CoachMeApplication).store
-        email = store.getCurrentEmail()
+        emailFuture = store.getCurrentEmail()
 
-        if (email.isEmpty()) {
-            val errorMsg = "The signup page did not receive an email address.\n Please return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
-        } else {
-            // Set up handler for calls to location autocomplete
-            locationAutocompleteHandler = (application as CoachMeApplication).locationAutocompleteHandler(this, this)
+        // Set up handler for calls to location autocomplete
+        locationAutocompleteHandler = (application as CoachMeApplication).locationAutocompleteHandler(this, this)
 
-            // Set up handler for calls to select sports
-            selectSportsHandler = SelectSportsActivity.getHandler(this)
+        // Set up handler for calls to select sports
+        selectSportsHandler = SelectSportsActivity.getHandler(this)
 
-            setContent {
-                CoachMeTheme {
-                    AccountForm(email)
-                }
+        setContent {
+            var email by remember { mutableStateOf("") }
+
+            LaunchedEffect(true) {
+                email = emailFuture.await()
+                // Activity is now ready for testing
+                stateLoading.complete(null)
+            }
+
+            CoachMeTheme {
+                AccountForm(email)
             }
         }
     }
