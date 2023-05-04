@@ -102,9 +102,12 @@ class LoginActivity : ComponentActivity() {
             if (loggedIn) {
                 store.getCurrentEmail().thenAccept {
                     launchNextActivity(it)
+                    // Notify tests
+                    stateLoading.complete(null)
                 }
             } else {
                 // If the user is not logged in, we can start loading the activity
+                // Also notify tests
                 stateLoading.complete(null)
             }
         }
