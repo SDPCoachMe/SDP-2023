@@ -2,8 +2,12 @@ package com.github.sdpcoachme
 
 import android.content.Context
 import androidx.activity.result.ActivityResultCaller
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import com.github.sdpcoachme.auth.Authenticator
 import com.github.sdpcoachme.auth.MockAuthenticator
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.location.autocomplete.LocationAutocompleteHandler
@@ -13,7 +17,12 @@ class CoachMeTestApplication : CoachMeApplication() {
     // For DI in testing, add reference to mocks here
     // todo for emulator testing
     //override var database: Database = FireDatabase(Firebase.database.reference)
-    override var store: Database = MockDatabase()
+
+    private val TEST_PREFERENCES_NAME = "coachme_test_preferences"
+
+
+
+    private val Context.dataStoreTest: DataStore<Preferences> by preferencesDataStore(name = TEST_PREFERENCES_NAME)
     override fun onCreate() {
         super.onCreate()
         // 10.0.2.2 is the special IP address to connect to the 'localhost' of
@@ -28,11 +37,22 @@ class CoachMeTestApplication : CoachMeApplication() {
             // Ignore
         }
          */
-        store = MockDatabase()
+        store = CachingStore(MockDatabase(), dataStoreTest, this)
 
         // Might be necessary to initialize Places SDK, but for now, we don't need it.
     }
     override val authenticator: Authenticator = MockAuthenticator()
+
+    override fun onTerminate() {
+        super.superOnTerminate()
+    }
+
+    /**
+     * Clear the data store and reset the caching store.
+     */
+    fun clearDataStoreAndResetCachingStore() {
+        store = CachingStore(MockDatabase(), dataStoreTest, this)
+    }
 
     override fun locationAutocompleteHandler(
         context: Context,

@@ -99,13 +99,13 @@ open class MockDatabase: Database {
         return getMap(accounts, email).thenApply { it != null }
     }
 
-    override fun addEvents(events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+    override fun addEvents(email: String, events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         if (currEmail == "throw@Exception.com") {
             val error = CompletableFuture<Schedule>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
         }
-        return getSchedule(currentWeekMonday).thenCompose { schedule ->
+        return getSchedule(email, currentWeekMonday).thenCompose { schedule ->
             val newSchedule = schedule.copy(events = schedule.events + events)
             schedules[currEmail] = newSchedule
             val future = CompletableFuture<Schedule>()
@@ -114,7 +114,7 @@ open class MockDatabase: Database {
         }
     }
 
-    override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+    override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         if (currEmail == "throwGet@Exception.com") {
             val error = CompletableFuture<Schedule>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
@@ -162,6 +162,10 @@ open class MockDatabase: Database {
         numberOfRemovedChatListenerCalls++
     }
 
+    override fun addUsersListeners(onChange: (List<UserInfo>) -> Unit) {
+        TODO("Not yet implemented")
+    }
+
     fun numberOfRemovedChatListenerCalls(): Int {
         return numberOfRemovedChatListenerCalls
     }
@@ -197,13 +201,5 @@ open class MockDatabase: Database {
         } else
             future.complete(value)
         return future
-    }
-
-    override fun getCurrentEmail(): String {
-        return currEmail
-    }
-
-    override fun setCurrentEmail(email: String) {
-        currEmail = email
     }
 }

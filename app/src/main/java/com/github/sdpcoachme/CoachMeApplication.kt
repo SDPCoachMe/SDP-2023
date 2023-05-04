@@ -2,6 +2,7 @@ package com.github.sdpcoachme
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import androidx.activity.result.ActivityResultCaller
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -24,7 +25,7 @@ open class CoachMeApplication : Application() {
 
     private val USER_PREFERENCES_NAME = "coachme_preferences"
 
-    val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = USER_PREFERENCES_NAME)
+    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = USER_PREFERENCES_NAME)
 
     // For DI in testing, add reference to dependencies here
     open lateinit var store: CachingStore
@@ -38,7 +39,6 @@ open class CoachMeApplication : Application() {
         FirebaseApp.initializeApp(this)
 
         store = CachingStore(FireDatabase(Firebase.database.reference), dataStore, this)
-        store.retrieveLocalData()
         userLocation = mutableStateOf(null)
 
         // Initialize Places SDK
@@ -48,6 +48,10 @@ open class CoachMeApplication : Application() {
     override fun onTerminate() {
         super.onTerminate()
         store.storeLocalData()
+    }
+
+    fun superOnTerminate() {
+        super.onTerminate()
     }
 
     open val authenticator: Authenticator = GoogleAuthenticator()

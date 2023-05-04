@@ -13,14 +13,13 @@ import com.github.sdpcoachme.schedule.EventOps.Companion.getStartMonday
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.preferencesDataStore
 
 // todo finir de faire la documentation
 
@@ -28,9 +27,8 @@ import kotlinx.coroutines.launch
  * A caching database that wraps another database
  */
 class CachingStore(private val wrappedDatabase: Database,
-                   private val datastore: DataStore<Preferences>,
+                   private val dataStore: DataStore<Preferences>,
                    context: Context) {
-
 
     val USER_EMAIL_KEY = stringPreferencesKey("user_email")
     val CACHED_USERS_KEY = stringPreferencesKey("cached_users")
@@ -82,7 +80,7 @@ class CachingStore(private val wrappedDatabase: Database,
     private fun retrieveLocalData(): CompletableFuture<Void> {
         val localFuture = CompletableFuture<Void>()
         GlobalScope.launch {
-            val values = datastore.data.first()
+            val values = dataStore.data.first()
             currentEmail = values[USER_EMAIL_KEY]
 
             // Retrieve the Json strings from the datastore
@@ -129,7 +127,7 @@ class CachingStore(private val wrappedDatabase: Database,
     fun storeLocalData(): CompletableFuture<Void> {
         val writeDatastoreFuture = CompletableFuture<Void>()
         GlobalScope.launch {
-            datastore.edit { preferences ->
+            dataStore.edit { preferences ->
                 val gson = Gson()
 
                 // Serialze the caching maps to Json

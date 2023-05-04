@@ -1,6 +1,7 @@
 package com.github.sdpcoachme.profile
 
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -44,6 +45,7 @@ import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PHONE
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.SPORTS
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import com.google.firebase.firestore.remote.Datastore
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 

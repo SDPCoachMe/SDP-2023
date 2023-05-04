@@ -20,7 +20,7 @@ import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_2
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACH_2
-import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.autocomplete.MockLocationAutocompleteHandler.Companion.DEFAULT_LOCATION
@@ -54,7 +54,7 @@ class ProfileActivityTest {
     val composeTestRule = createEmptyComposeRule()
 
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), ProfileActivity::class.java)
-    private fun getDatabase(): Database {
+    private fun getStore(): CachingStore {
         return (InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as CoachMeApplication).store
     }
@@ -62,7 +62,7 @@ class ProfileActivityTest {
     @Before
     fun setup() {
         for (user in COACHES + NON_COACHES) {
-            getDatabase().updateUser(user).join()
+            getStore().updateUser(user).join()
         }
         Intents.init()
     }
@@ -74,7 +74,7 @@ class ProfileActivityTest {
 
     @Test
     fun errorPageIsShownWhenEditProfileIsLaunchedWithEmptyCurrentEmail() {
-        getDatabase().setCurrentEmail("")
+        getStore().setCurrentEmail("").get(1000, TimeUnit.MILLISECONDS)
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             // not possible to use Intents.init()... to check if the correct intent
             // is launched as the intents are launched from within the onCreate function
@@ -85,7 +85,7 @@ class ProfileActivityTest {
 
     @Test
     fun correctInfoDisplayedForCoachInEditMode() {
-        getDatabase().setCurrentEmail(COACH_2.email)
+        getStore().setCurrentEmail(COACH_2.email).get(1000, TimeUnit.MILLISECONDS)
 
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             waitForUpdate(it)
@@ -107,7 +107,7 @@ class ProfileActivityTest {
 
     @Test
     fun correctInfoDisplayedForNonCoachInEditMode() {
-        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        getStore().setCurrentEmail(NON_COACH_2.email).get(1000, TimeUnit.MILLISECONDS)
 
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             waitForUpdate(it)
@@ -129,7 +129,7 @@ class ProfileActivityTest {
 
     @Test
     fun changingToCoachAndBackToClientWorks() {
-        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        getStore().setCurrentEmail(NON_COACH_2.email).get(1000, TimeUnit.MILLISECONDS)
 
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             waitForUpdate(it)
@@ -145,7 +145,7 @@ class ProfileActivityTest {
 
     @Test
     fun correctInfoDisplayedForIsViewingCoach() {
-        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        getStore().setCurrentEmail(NON_COACH_2.email).get(1000, TimeUnit.MILLISECONDS)
 
         val profileIntent = defaultIntent
         val email = COACH_1.email
@@ -171,7 +171,7 @@ class ProfileActivityTest {
 
     @Test
     fun messageCoachButtonClickHasCorrectFunctionality() {
-        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        getStore().setCurrentEmail(NON_COACH_2.email).get(1000, TimeUnit.MILLISECONDS)
 
         val profileIntent = defaultIntent
         val email = COACH_1.email
@@ -196,7 +196,7 @@ class ProfileActivityTest {
     fun dashboardHasRightTitleForMyProfile() {
         val title = (InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as CoachMeApplication).getString(R.string.my_profile)
-        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        getStore().setCurrentEmail(NON_COACH_2.email).get(1000, TimeUnit.MILLISECONDS)
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText(title))
@@ -207,7 +207,7 @@ class ProfileActivityTest {
     fun dashboardHasRightTitleForIsViewingCoach() {
         val title = (InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as CoachMeApplication).getString(R.string.coach_profile)
-        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        getStore().setCurrentEmail(NON_COACH_2.email)
         val profileIntent = defaultIntent
         val email = COACH_1.email
         profileIntent.putExtra("email", email)
@@ -220,7 +220,7 @@ class ProfileActivityTest {
 
     @Test
     fun dashboardIsAccessibleAndDisplayableFromProfile() {
-        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        getStore().setCurrentEmail(NON_COACH_2.email)
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
@@ -244,7 +244,7 @@ class ProfileActivityTest {
     }
 
     private fun editField(tag: String, email: String) {
-        getDatabase().setCurrentEmail(email)
+        getStore().setCurrentEmail(email).get(1000, TimeUnit.MILLISECONDS)
         val newFieldValue = "new"
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             waitForUpdate(it)
@@ -259,7 +259,7 @@ class ProfileActivityTest {
 
     @Test
     fun editFirstNameThenCancelDoesNothing() {
-        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        getStore().setCurrentEmail(NON_COACH_2.email).get(1000, TimeUnit.MILLISECONDS)
         val newFieldValue = "new"
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             waitForUpdate(it)
@@ -273,7 +273,7 @@ class ProfileActivityTest {
 
     @Test
     fun editEmailNotPossible() {
-        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        getStore().setCurrentEmail(NON_COACH_2.email).get(1000, TimeUnit.MILLISECONDS)
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             waitForUpdate(it)
             composeTestRule.onNodeWithTag(EMAIL, useUnmergedTree = true).performClick()
@@ -284,7 +284,7 @@ class ProfileActivityTest {
 
     @Test
     fun editLocation() {
-        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        getStore().setCurrentEmail(NON_COACH_2.email).get(1000, TimeUnit.MILLISECONDS)
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             waitForUpdate(it)
             composeTestRule.onNodeWithTag(LOCATION, useUnmergedTree = true).performClick()
@@ -295,7 +295,7 @@ class ProfileActivityTest {
 
     @Test
     fun editSportsClickOnAllSportsResultsInComplementChosen() {
-        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        getStore().setCurrentEmail(NON_COACH_2.email).get(1000, TimeUnit.MILLISECONDS)
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             waitForUpdate(it)
 
@@ -318,7 +318,7 @@ class ProfileActivityTest {
 
     @Test
     fun editSportsThenCancelDoesNothing() {
-        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        getStore().setCurrentEmail(NON_COACH_2.email).get(1000, TimeUnit.MILLISECONDS)
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             waitForUpdate(it)
             composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).performClick()
@@ -352,7 +352,7 @@ class ProfileActivityTest {
     }
 
     private fun checkIntentSent(tag: String, action: String) {
-        getDatabase().setCurrentEmail(NON_COACH_2.email)
+        getStore().setCurrentEmail(NON_COACH_2.email)
         val profileIntent = defaultIntent
         val email = COACH_1.email
         profileIntent.putExtra("email", email)
