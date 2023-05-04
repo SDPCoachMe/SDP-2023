@@ -8,25 +8,25 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.DELETE_ACCOUNT
-import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.SIGN_IN
-import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.SIGN_OUT
-import com.github.sdpcoachme.auth.LoginActivity.TestTags.Companion.INFO_TEXT
+import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.LOG_IN
+import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserLocationSamples
-import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.google.firebase.auth.FirebaseAuth
 import org.hamcrest.CoreMatchers
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
+import org.hamcrest.Matchers.allOf
+import org.junit.*
 import org.junit.runner.RunWith
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 // Since those tests use UI Automator, we need to enable testTagsAsResourceId in the corresponding activity
 // in order to be able to find the UI elements by their tags.
@@ -34,11 +34,10 @@ import org.junit.runner.RunWith
 open class LoginActivityTest {
     private val launchTimeout = 5000L
     private lateinit var device: UiDevice
-    private lateinit var signedOutInfoText: String
-    private lateinit var deleteInfoText: String
 
-    @Before
-    open fun startLoginActivityFromHomeScreen() {
+
+    @Test
+    fun startFromHomeScreenLaunchesLoginActivity() {
         FirebaseAuth.getInstance().signOut()
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val targetContext = instrumentation.targetContext
@@ -64,70 +63,20 @@ open class LoginActivityTest {
             launchTimeout
         )
 
-        // Get the strings from the resources
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-
-        deleteInfoText = context.resources.getString(
-            context.resources.getIdentifier(
-                "account_deleted",
-                "string",
-                context.packageName
-            )
-        )
-
-        signedOutInfoText = context.resources.getString(
-            context.resources.getIdentifier(
-                "signed_out",
-                "string",
-                context.packageName
-            )
-        )
+        // Easiest way to verify that the login activity is launched: check if the login button is displayed
+        Assert.assertNotNull(device.wait(
+            Until.hasObject(By.res(LOG_IN)),
+            2000
+        ))
     }
 
-    @Test
-    fun signOutOfGoogleAccountResultsInCorrectMessage() {
-        val signOutButton = device.findObject(By.res(SIGN_OUT))
-        signOutButton.click()
-
-        device.wait(
-            Until.hasObject(By.text(signedOutInfoText)),
-            1000
-        )
-
-        ViewMatchers.assertThat(device.findObject(By.res(INFO_TEXT)).text, CoreMatchers.`is`(signedOutInfoText))
-    }
-
-    @Test
-    fun deleteGoogleAccountResultsInCorrectMessage() {
-        val deleteButton = device.findObject(By.res(DELETE_ACCOUNT))
-        deleteButton.click()
-
-
-        device.wait(
-            Until.hasObject(By.text(deleteInfoText)),
-            1000
-        )
-
-        ViewMatchers.assertThat(device.findObject(By.res(INFO_TEXT)).text, CoreMatchers.`is`(deleteInfoText))
-    }
-
-    //TODO implement this test
-    // @Test
-    fun signInLaunchesMapOnSuccess() {
-        Intents.init()
-        //val email = "patrick.sebastien@gmail.com"
-        // perform here a successful login with the email
-        intended(hasComponent(MapActivity::class.java.name))
-        Intents.release()
-    }
-
-    class OpenChatTest: LoginActivityTest() {
+    class NextActivityTest: LoginActivityTest() {
 
         @get:Rule
         val composeTestRule = createEmptyComposeRule()
 
-        lateinit var database: Database
-        private val toUser = com.github.sdpcoachme.data.UserInfo(
+        lateinit var store: CachingStore
+        private val toUser = UserInfo(
             "Jane",
             "Doe",
             "to@email.com",
@@ -138,7 +87,7 @@ open class LoginActivityTest {
             emptyList()
         )
 
-        private val currentUser = com.github.sdpcoachme.data.UserInfo(
+        private val currentUser = UserInfo(
             "John",
             "Doe",
             "example@email.com",
@@ -149,58 +98,86 @@ open class LoginActivityTest {
             emptyList()
         )
         @Before // done to enable testing without android ui
-        override fun startLoginActivityFromHomeScreen() {
-            database = (ApplicationProvider.getApplicationContext() as CoachMeApplication).store
-            database.updateUser(currentUser)
-            database.updateUser(toUser)
+        fun setup() {
+            store = (ApplicationProvider.getApplicationContext() as CoachMeApplication).store
+            Intents.init()
+        }
+
+        @After
+        fun cleanup() {
+            Intents.release()
         }
         
         @Test
-        fun whenOpenChatActivityActionAndSenderAndCurrentEmailIsSetTheChatActivityIsLaunched() {
-            database.setCurrentEmail(currentUser.email)
+        fun whenNotLoggedInNoRedirection() {
+            store.setCurrentEmail("").get(1000, TimeUnit.MILLISECONDS)
+            val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
+
+            ActivityScenario.launch<LoginActivity>(intent).use {
+                waitForLoading(it)
+
+                // Assert that we are still in the login activity
+                composeTestRule.onNodeWithTag(LOG_IN, useUnmergedTree = true).assertIsDisplayed()
+            }
+        }
+
+        @Test
+        fun whenExistingUserLoggedInWithNoActionSetRedirectToMapActivity() {
+            store.updateUser(currentUser).get(1000, TimeUnit.MILLISECONDS)
+            store.setCurrentEmail(currentUser.email).get(1000, TimeUnit.MILLISECONDS)
+            val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
+
+            ActivityScenario.launch<LoginActivity>(intent).use {
+                waitForLoading(it)
+
+                // Assert that we launched the map activity
+                intended(hasComponent(MapActivity::class.java.name))
+            }
+        }
+
+        @Test
+        fun whenExistingUserLoggedInWithOpenChatActivityActionSetRedirectToChatActivity() {
+            store.updateUser(currentUser).get(1000, TimeUnit.MILLISECONDS)
+            store.updateUser(toUser).get(1000, TimeUnit.MILLISECONDS)
+            store.setCurrentEmail(currentUser.email).get(1000, TimeUnit.MILLISECONDS)
             val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
                 .putExtra("sender", toUser.email)
             intent.action = "OPEN_CHAT_ACTIVITY"
 
             ActivityScenario.launch<LoginActivity>(intent).use {
+                waitForLoading(it)
 
-                // As the intent to open the chat activity is launched from within the onCreate
-                // method, we cannot use Intents.intended(...) to check if the chat activity is launched
-                composeTestRule.onNodeWithTag(ChatActivity.TestTags.CONTACT_FIELD.LABEL, useUnmergedTree = true).assertIsDisplayed()
-                composeTestRule.onNodeWithTag(ChatActivity.TestTags.CHAT_FIELD.LABEL, useUnmergedTree = true).assertIsDisplayed()
-                composeTestRule.onNodeWithText(toUser.firstName + " " + toUser.lastName).assertIsDisplayed()
+                // Assert that we launched the chat activity
+                intended(allOf(
+                    hasComponent(ChatActivity::class.java.name),
+                    hasExtra("toUserEmail", toUser.email)
+                ))
             }
         }
 
         @Test
-        fun whenOpenChatActivityActionAndSenderSetButCurrentEmailIsNotSetWeStayInLoginActivity() {
-            database.setCurrentEmail("")
+        fun whenNonExistingUserLoggedInRedirectToSignupActivity() {
+            // Make sure the database is empty before starting the test
+            // TODO: re-instantiate the database
+            store.setCurrentEmail(currentUser.email).get(1000, TimeUnit.MILLISECONDS)
             val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
-                .putExtra("sender", toUser.email)
-            intent.action = "OPEN_CHAT_ACTIVITY"
 
             ActivityScenario.launch<LoginActivity>(intent).use {
+                waitForLoading(it)
 
-                // As the intent to open the chat activity is launched from within the onCreate
-                // method, we cannot use Intents.intended(...) to check if the chat activity is launched
-                composeTestRule.onNodeWithTag(SIGN_IN, useUnmergedTree = true).assertIsDisplayed()
-                composeTestRule.onNodeWithTag(INFO_TEXT, useUnmergedTree = true).assertIsDisplayed()
+                // Assert that we launched the signup activity
+                intended(hasComponent(SignupActivity::class.java.name))
             }
         }
 
-        @Test
-        fun whenOpenChatActivityActionSetButSenderNotSetWeStayInLoginActivity() {
-            database.setCurrentEmail("")
-            val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
-            intent.action = "OPEN_CHAT_ACTIVITY"
-
-            ActivityScenario.launch<LoginActivity>(intent).use {
-
-                // As the intent to open the chat activity is launched from within the onCreate
-                // method, we cannot use Intents.intended(...) to check if the chat activity is launched
-                composeTestRule.onNodeWithTag(SIGN_IN, useUnmergedTree = true).assertIsDisplayed()
-                composeTestRule.onNodeWithTag(INFO_TEXT, useUnmergedTree = true).assertIsDisplayed()
+        // Waits for the activity to finish loading any async state
+        private fun waitForLoading(scenario: ActivityScenario<LoginActivity>) {
+            // Instead, make the test wait for the future to finish, and crash after a certain time
+            lateinit var stateLoading: CompletableFuture<Void>
+            scenario.onActivity {
+                stateLoading = it.stateLoading
             }
+            stateLoading.get(1000, TimeUnit.MILLISECONDS)
         }
     }
 }

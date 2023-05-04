@@ -11,7 +11,7 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.SIGN_IN
+import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.LOG_IN
 import com.github.sdpcoachme.auth.LoginActivity.TestTags.Companion.INFO_TEXT
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserLocationSamples
@@ -105,7 +105,7 @@ class InAppNotifierTest {
             // Check if LoginActivity is opened
             // Intents.intended does not seem to work when clicking on a notification
             composeTestRule.onNodeWithTag(INFO_TEXT, useUnmergedTree = true).assertExists()
-            composeTestRule.onNodeWithTag(SIGN_IN, useUnmergedTree = true).assertExists()
+            composeTestRule.onNodeWithTag(LOG_IN, useUnmergedTree = true).assertExists()
         }
     }
 
