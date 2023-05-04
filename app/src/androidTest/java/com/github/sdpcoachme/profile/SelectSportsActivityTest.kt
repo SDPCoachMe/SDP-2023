@@ -10,7 +10,7 @@ import androidx.test.uiautomator.*
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.UserLocationSamples.Companion.PARIS
+import com.github.sdpcoachme.data.UserAddressSamples.Companion.PARIS
 import com.github.sdpcoachme.profile.SelectSportsActivity.*
 import com.github.sdpcoachme.profile.SelectSportsActivity.Companion.DEFAULT_TITLE
 import com.github.sdpcoachme.profile.SelectSportsActivity.TestTags.Buttons.*
@@ -32,7 +32,7 @@ open class SelectSportsActivityTest {
         firstName = "John",
         lastName = "Doe",
         email = email,
-        location = PARIS,
+        address = PARIS,
         phone = "0123456789",
         coach = false
     )

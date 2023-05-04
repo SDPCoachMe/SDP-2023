@@ -1,13 +1,9 @@
 package com.github.sdpcoachme.location
 
-import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
@@ -22,19 +18,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MARKER
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MARKER_INFO_WINDOW
+import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.CAMPUS
+import com.github.sdpcoachme.location.provider.LocationProvider
 import com.github.sdpcoachme.profile.ProfileActivity
+import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -43,13 +38,13 @@ import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
 /**
- * Main map activity, launched after login. This activity contains the map view and holds
- * the current last known user location.
+ * Main map activity, launched after login. This activity contains the map view and makes use of
+ * the application LocationProvider.
  */
 class MapActivity : ComponentActivity() {
     // Allows to notice testing framework that the markers are displayed on the map
-    var markerLoading = CompletableFuture<Void>()
-    var mapLoading = CompletableFuture<Void>()
+    private var markerLoading = CompletableFuture<Void>()
+    private var mapLoading = CompletableFuture<Void>()
 
     class TestTags {
         companion object {
@@ -57,34 +52,35 @@ class MapActivity : ComponentActivity() {
             fun MARKER(user: UserInfo) = "marker-${user.email}"
             fun MARKER_INFO_WINDOW(user: UserInfo) = "infoWindow-${user.email}"
         }
-    }
 
-    companion object {
-        val CAMPUS = LatLng(46.520536,6.568318)
     }
 
     private lateinit var database: Database
     private lateinit var email: String
-
-    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
-    // the user location is communicated via CoachMeApplication to avoid storing it in the database
-    private lateinit var lastUserLocation: MutableState<LatLng?>
+    private lateinit var locationProvider: LocationProvider
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         database = (application as CoachMeApplication).database
+        locationProvider = (application as CoachMeApplication).locationProvider
         email = database.getCurrentEmail()
-        lastUserLocation = (application as CoachMeApplication).userLocation
-
-        // gets user location at map creation
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
-        getLocation()
 
         if (email.isEmpty()) {
             val errorMsg = "The map did not receive an email address.\nPlease return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
+            val user = database.getUser(email).exceptionally {
+                error("MapActivity: user could not have been retrieved from the database.")
+            }
+            locationProvider.init(this, user)
+
+            // Performs the whole location retrieval process
+            if (locationProvider.locationIsPermitted()) {
+                locationProvider.checkLocationSetting()
+            } else {
+                locationProvider.requestPermission()
+            }
             // For now, simply retrieve all users. We can decide later whether we want to have
             // a dynamic list of markers that only displays nearby users (based on camera position
             // for example). Since we have no way to download only the users that are nearby, we
@@ -98,7 +94,7 @@ class MapActivity : ComponentActivity() {
                     Dashboard {
                         Map(
                             modifier = it,
-                            lastUserLocation = lastUserLocation,
+                            lastUserLocation = locationProvider.getLastLocation(),
                             futureCoachesToDisplay = futureUsers,
                             markerLoading = markerLoading,
                             mapLoading = mapLoading)
@@ -108,64 +104,12 @@ class MapActivity : ComponentActivity() {
         }
     }
 
-    /**
-     * Create an activity for result : display window to request asked permission.
-     * If granted, launches the callback (here getDeviceLocation(...) which retrieves the user's
-     * location). The contract is a predefined "function" which takes a permission as input and
-     * outputs if the user has granted it or not.
-     */
-    private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-            if (isGranted) {
-                getDeviceLocation(fusedLocationProviderClient)
-            } else {
-            // TODO Permission denied or only COARSE given
-            }
-        }
-
-    /**
-     * This function updates the state of lastUserLocation if the permission is granted.
-     * If the permission is denied, it requests it.
-     */
-    private fun getLocation() =
-        when (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-            PackageManager.PERMISSION_GRANTED -> {
-                getDeviceLocation(fusedLocationProviderClient)
-            }
-            else -> requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
-
-    /**
-     * Performs the location retrieval. Permission are checked before this function call
-     */
-    @SuppressLint("MissingPermission") //permission is checked before the call
-    private fun getDeviceLocation(fusedLocationProviderClient: FusedLocationProviderClient) {
-        try {
-            fusedLocationProviderClient.lastLocation.addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    if (task.result != null) {
-                        println("Last location has been successfully retrieved")
-                        lastUserLocation.value = LatLng(
-                            task.result.latitude,
-                            task.result.longitude
-                        )
-                    } else {
-                        println("Location is disabled on the device")
-                        // TODO handle this case
-                    }
-                }
-            }
-        } catch (e: SecurityException) {
-            error("getDeviceLocation was called without correct permissions : ${e.message}")
-        }
-    }
 }
 
 /**
  * Displays the map with the last known user location on creation.
  * The map API displays the current location but does not explicitly give the location data.
- * This is done by given a MapState via its lastKnownLocation attribute that retrieves the
- * location data. The MapState is updated by the MapViewModel in the DashboardActivity.
+ * Nearby coaches addresses are also marked on the map.
  */
 @Composable
 fun Map(
@@ -180,7 +124,7 @@ fun Map(
     val context = LocalContext.current
 
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(MapActivity.CAMPUS, 15f)
+        position = CameraPosition.fromLatLngZoom(CAMPUS, 15f)
     }
 
     var coachesToDisplay by remember { mutableStateOf(listOf<UserInfo>()) }
@@ -192,7 +136,9 @@ fun Map(
 
     GoogleMap(
         // test tag contains lastUserLocation info to allow simple recomposition tracking
-        modifier = modifier.fillMaxSize().testTag(MAP + lastUserLocation.value.toString()),
+        modifier = modifier
+            .fillMaxSize()
+            .testTag(MAP + lastUserLocation.value.toString()),
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
             isMyLocationEnabled = lastUserLocation.value != null,
@@ -216,7 +162,7 @@ fun Map(
         coachesToDisplay.map { user ->
             val state by remember {
                 mutableStateOf(
-                    MarkerState(LatLng(user.location.latitude, user.location.longitude))
+                    MarkerState(LatLng(user.address.latitude, user.address.longitude))
                 )
             }
 
@@ -241,6 +187,7 @@ fun Map(
                 ) {
                     Text(
                         text = "${user.firstName} ${user.lastName}",
+                        color = Color.Black,
                         style = MaterialTheme.typography.h6,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -257,7 +204,7 @@ fun Map(
                         )
                         Spacer(modifier = Modifier.width(2.dp))
                         Text(
-                            text = user.location.address,
+                            text = user.address.name,
                             color = Color.Gray,
                             style = MaterialTheme.typography.body2,
                             maxLines = 1,

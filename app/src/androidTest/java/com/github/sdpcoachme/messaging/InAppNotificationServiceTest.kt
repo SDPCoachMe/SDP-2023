@@ -11,13 +11,13 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.UserLocationSamples
+import com.github.sdpcoachme.data.UserAddressSamples
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.LAST_NAME
-import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.LOCATION
+import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.ADDRESS
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PHONE
 import com.google.firebase.messaging.RemoteMessage
 import junit.framework.TestCase.assertTrue
@@ -39,7 +39,7 @@ class InAppNotificationServiceTest {
         "Doe",
         "example@email.com",
         "0123456789",
-        UserLocationSamples.NEW_YORK,
+        UserAddressSamples.NEW_YORK,
         false,
         emptyList(),
         emptyList()
@@ -61,7 +61,7 @@ class InAppNotificationServiceTest {
             // Check that we're still in the ProfileActivity (done by checking that the tags are present)
             composeTestRule.onNodeWithTag(FIRST_NAME, useUnmergedTree = true).assertIsDisplayed()
             composeTestRule.onNodeWithTag(LAST_NAME, useUnmergedTree = true).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(LOCATION, useUnmergedTree = true).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(ADDRESS, useUnmergedTree = true).assertIsDisplayed()
             composeTestRule.onNodeWithTag(PHONE, useUnmergedTree = true).assertIsDisplayed()
         }
     }

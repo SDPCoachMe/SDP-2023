@@ -45,8 +45,8 @@ interface Database {
     fun getAllUsersByNearest(latitude: Double, longitude: Double): CompletableFuture<List<UserInfo>> {
         return getAllUsers().thenApply { users ->
             users.sortedBy { user ->
-                val userLatitude = user.location.latitude
-                val userLongitude = user.location.longitude
+                val userLatitude = user.address.latitude
+                val userLongitude = user.address.longitude
                 val distance = SphericalUtil.computeDistanceBetween(
                     LatLng(latitude, longitude),
                     LatLng(userLatitude, userLongitude)

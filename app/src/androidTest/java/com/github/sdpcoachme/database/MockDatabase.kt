@@ -1,7 +1,7 @@
 package com.github.sdpcoachme.database
 
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Event
@@ -115,7 +115,7 @@ open class MockDatabase: Database {
     }
 
     override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        if (currEmail == "throwGet@Exception.com") {
+        if (currEmail == "throwGetSchedule@Exception.com") {
             val error = CompletableFuture<Schedule>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error

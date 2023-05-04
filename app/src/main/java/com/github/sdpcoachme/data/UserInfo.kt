@@ -8,11 +8,11 @@ data class UserInfo(
     val lastName: String,
     val email: String,
     val phone: String,
-    val location: UserLocation,
+    val address: UserAddress,
     val coach: Boolean,
     val sports: List<Sports> = emptyList(),
     val chatContacts: List<String> = listOf(),
 ) {
     // Constructor needed to make the data class serializable
-    constructor() : this("", "", "", "", UserLocation(), false, emptyList(), emptyList())
+    constructor() : this("", "", "", "", UserAddress(), false, emptyList(), emptyList())
 }

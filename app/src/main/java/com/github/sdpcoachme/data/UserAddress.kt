@@ -1,8 +1,8 @@
 package com.github.sdpcoachme.data
 
-data class UserLocation (
+data class UserAddress (
     val placeId: String,
-    val address: String,
+    val name: String,
     val latitude: Double,
     val longitude: Double
     // Latitude, longitude and address should not be cached for more than 30 days according to Google,

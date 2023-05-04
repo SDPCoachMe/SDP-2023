@@ -19,7 +19,7 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
-import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
@@ -87,7 +87,7 @@ open class CoachesListActivityTest {
     fun allCoachesExists() {
         COACHES.forEach { coach ->
             composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}").assertIsDisplayed()
-            composeTestRule.onNodeWithText(coach.location.address).assertIsDisplayed()
+            composeTestRule.onNodeWithText(coach.address.name).assertIsDisplayed()
         }
     }
 
@@ -95,7 +95,7 @@ open class CoachesListActivityTest {
     fun allNonCoachesDoNotExist() {
         NON_COACHES.forEach { coach ->
             composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}").assertDoesNotExist()
-            composeTestRule.onNodeWithText(coach.location.address).assertDoesNotExist()
+            composeTestRule.onNodeWithText(coach.address.name).assertDoesNotExist()
         }
     }
 
@@ -109,7 +109,7 @@ open class CoachesListActivityTest {
 
             // Click on the first coach
             val coach = COACH_1
-            composeTestRule.onNodeWithText(coach.location.address).assertIsDisplayed()
+            composeTestRule.onNodeWithText(coach.address.name).assertIsDisplayed()
             composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
                 .assertIsDisplayed()
                 .performClick()
@@ -184,7 +184,7 @@ open class CoachesListActivityTest {
                 emptyList(),
                 emptyList()
             )
-            composeTestRule.onNodeWithText(coach.location.address).assertIsDisplayed()
+            composeTestRule.onNodeWithText(coach.address.name).assertIsDisplayed()
             composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
                 .assertIsDisplayed()
                 .performClick()

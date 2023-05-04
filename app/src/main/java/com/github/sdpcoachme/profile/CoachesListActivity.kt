@@ -28,12 +28,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
-import com.github.sdpcoachme.location.MapActivity.Companion.CAMPUS
+import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.CAMPUS
 import com.github.sdpcoachme.messaging.ChatActivity
+import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
@@ -46,7 +46,8 @@ class CoachesListActivity : ComponentActivity() {
 
         val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
         val database = (application as CoachMeApplication).database
-        val userLatLng = (application as CoachMeApplication).userLocation.value?: CAMPUS
+        val lastLocation = (application as CoachMeApplication).locationProvider.getLastLocation()
+        val userLatLng = lastLocation.value?: CAMPUS
         val email = database.getCurrentEmail()
 
         if (email.isEmpty()) {
@@ -155,7 +156,7 @@ fun UserInfoListItem(user: UserInfo, isViewingContacts: Boolean) {
                 Spacer(modifier = Modifier.width(4.dp))
                 // Temporary, until we implement proper location handling
                 Text(
-                    text = user.location.address,
+                    text = user.address.name,
                     color = Color.Gray,
                     style = MaterialTheme.typography.body2,
                     maxLines = 1,

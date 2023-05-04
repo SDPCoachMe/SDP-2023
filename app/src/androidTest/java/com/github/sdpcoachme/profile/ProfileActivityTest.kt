@@ -23,7 +23,7 @@ import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACH_2
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
-import com.github.sdpcoachme.location.autocomplete.MockLocationAutocompleteHandler.Companion.DEFAULT_LOCATION
+import com.github.sdpcoachme.location.autocomplete.MockAddressAutocompleteHandler.Companion.DEFAULT_ADDRESS
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.Buttons.Companion.CANCEL
 import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.TextFields.Companion.MAIN
@@ -32,7 +32,7 @@ import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.COACH_SW
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.LAST_NAME
-import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.LOCATION
+import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.ADDRESS
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PHONE
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.SPORTS
@@ -92,7 +92,7 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(EMAIL, useUnmergedTree = true).assertTextEquals(COACH_2.email)
             composeTestRule.onNodeWithTag(FIRST_NAME, useUnmergedTree = true).assertTextEquals(COACH_2.firstName)
             composeTestRule.onNodeWithTag(LAST_NAME, useUnmergedTree = true).assertTextEquals(COACH_2.lastName)
-            composeTestRule.onNodeWithTag(LOCATION, useUnmergedTree = true).assertTextEquals(COACH_2.location.address)
+            composeTestRule.onNodeWithTag(ADDRESS, useUnmergedTree = true).assertTextEquals(COACH_2.address.name)
             composeTestRule.onNodeWithTag(PHONE, useUnmergedTree = true).assertTextEquals(COACH_2.phone)
             composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).onChildren().assertCountEquals(COACH_2.sports.size)
             for (sport in COACH_2.sports) {
@@ -114,7 +114,7 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(EMAIL, useUnmergedTree = true).assertTextEquals(NON_COACH_2.email)
             composeTestRule.onNodeWithTag(FIRST_NAME, useUnmergedTree = true).assertTextEquals(NON_COACH_2.firstName)
             composeTestRule.onNodeWithTag(LAST_NAME, useUnmergedTree = true).assertTextEquals(NON_COACH_2.lastName)
-            composeTestRule.onNodeWithTag(LOCATION, useUnmergedTree = true).assertTextEquals(NON_COACH_2.location.address)
+            composeTestRule.onNodeWithTag(ADDRESS, useUnmergedTree = true).assertTextEquals(NON_COACH_2.address.name)
             composeTestRule.onNodeWithTag(PHONE, useUnmergedTree = true).assertTextEquals(NON_COACH_2.phone)
             composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).onChildren().assertCountEquals(NON_COACH_2.sports.size)
             for (sport in NON_COACH_2.sports) {
@@ -157,7 +157,7 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(EMAIL, useUnmergedTree = true).assertTextEquals(COACH_1.email)
             composeTestRule.onNodeWithTag(FIRST_NAME, useUnmergedTree = true).assertDoesNotExist()
             composeTestRule.onNodeWithTag(LAST_NAME, useUnmergedTree = true).assertDoesNotExist()
-            composeTestRule.onNodeWithTag(LOCATION, useUnmergedTree = true).assertTextEquals(COACH_1.location.address)
+            composeTestRule.onNodeWithTag(ADDRESS, useUnmergedTree = true).assertTextEquals(COACH_1.address.name)
             composeTestRule.onNodeWithTag(PHONE, useUnmergedTree = true).assertTextEquals(COACH_1.phone)
             composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).onChildren().assertCountEquals(COACH_1.sports.size)
             for (sport in COACH_1.sports) {
@@ -283,13 +283,13 @@ class ProfileActivityTest {
     }
 
     @Test
-    fun editLocation() {
+    fun editAddress() {
         getDatabase().setCurrentEmail(NON_COACH_2.email)
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             waitForUpdate(it)
-            composeTestRule.onNodeWithTag(LOCATION, useUnmergedTree = true).performClick()
+            composeTestRule.onNodeWithTag(ADDRESS, useUnmergedTree = true).performClick()
             waitForUpdate(it)
-            composeTestRule.onNodeWithTag(LOCATION, useUnmergedTree = true).assertTextEquals(DEFAULT_LOCATION.address)
+            composeTestRule.onNodeWithTag(ADDRESS, useUnmergedTree = true).assertTextEquals(DEFAULT_ADDRESS.name)
         }
     }
 
@@ -342,8 +342,8 @@ class ProfileActivityTest {
     }
 
     @Test
-    fun locationClickLaunchesMapsAppForIsViewingCoach() {
-        checkIntentSent(LOCATION, Intent.ACTION_VIEW)
+    fun addressClickLaunchesMapsAppForIsViewingCoach() {
+        checkIntentSent(ADDRESS, Intent.ACTION_VIEW)
     }
 
     @Test

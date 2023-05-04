@@ -13,8 +13,8 @@ import androidx.test.uiautomator.Until
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.SIGN_IN
 import com.github.sdpcoachme.auth.LoginActivity.TestTags.Companion.INFO_TEXT
+import com.github.sdpcoachme.data.UserAddressSamples
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.UserLocationSamples
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.location.MapActivity
@@ -42,7 +42,7 @@ class InAppNotifierTest {
         "Doe",
         "to@email.com",
         "0987654321",
-        UserLocationSamples.LAUSANNE,
+        UserAddressSamples.LAUSANNE,
         true,
         emptyList(),
         emptyList()
@@ -53,7 +53,7 @@ class InAppNotifierTest {
         "Doe",
         "example@email.com",
         "0123456789",
-        UserLocationSamples.NEW_YORK,
+        UserAddressSamples.NEW_YORK,
         false,
         emptyList(),
         emptyList()
@@ -123,7 +123,7 @@ class InAppNotifierTest {
             composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assert(hasText("Contacts"))
 
-            composeTestRule.onNodeWithText(toUser.location.address).assertIsDisplayed()
+            composeTestRule.onNodeWithText(toUser.address.name).assertIsDisplayed()
             composeTestRule.onNodeWithText("${toUser.firstName} ${toUser.lastName}")
                 .assertIsDisplayed()
         }
@@ -165,7 +165,7 @@ class InAppNotifierTest {
             composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assert(hasText("Contacts"))
 
-            composeTestRule.onNodeWithText(toUser.location.address).assertIsDisplayed()
+            composeTestRule.onNodeWithText(toUser.address.name).assertIsDisplayed()
             composeTestRule.onNodeWithText("${toUser.firstName} ${toUser.lastName}")
                 .assertIsDisplayed()
         }

@@ -16,7 +16,7 @@ Coach Me is built using the following technologies:
 - Jetpack Compose
 - Firebase Realtime Database
 - Firebase Authentication
-- Firebaes Cloud Functions
+- Firebase Cloud Functions
 - Google Maps API
 
 ## Getting Started
