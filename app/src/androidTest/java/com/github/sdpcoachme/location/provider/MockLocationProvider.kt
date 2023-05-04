@@ -38,10 +38,6 @@ class MockLocationProvider: LocationProvider {
         withPermission = false
     }
 
-    fun setMockLocation(location: LatLng) {
-        mockLocation.value = location
-    }
-
     override fun init(context: ComponentActivity, userInfo: CompletableFuture<UserInfo>) {
         appContext = context
         user = userInfo

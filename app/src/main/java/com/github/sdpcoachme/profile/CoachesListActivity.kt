@@ -63,9 +63,12 @@ class CoachesListActivity : ComponentActivity() {
 
         val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
         val database = (application as CoachMeApplication).database
-        val lastLocation = (application as CoachMeApplication).locationProvider.getLastLocation()
-        val userLatLng = lastLocation.value?: CAMPUS
         val email = database.getCurrentEmail()
+
+        val locationProvider = (application as CoachMeApplication).locationProvider
+        // Here we don't need the UserInfo
+        locationProvider.init(this, CompletableFuture.completedFuture(null))
+        val userLatLng = locationProvider.getLastLocation().value?: CAMPUS
 
         // initially all sports are selected
         sportsFilter = mutableStateOf(Sports.values().toList())

@@ -16,6 +16,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.location.MapActivity
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
@@ -57,7 +58,13 @@ class FusedLocationProvider : LocationProvider {
     override fun init(context: ComponentActivity, userInfo: CompletableFuture<UserInfo>) {
         appContext = context
         user = userInfo
-        lastUserLocation = mutableStateOf(null)
+        // Only the MapActivity initializes the location as it is guaranteed to be set in its
+        // context. For other activities, we launch init on the LocationProvider of the app while
+        // maintaining the lastUserLocation state.
+        // This allows single activity launch tests, ie without launching the MapActivity first.
+        if (context is MapActivity) {
+            lastUserLocation = mutableStateOf(null)
+        }
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(appContext)
 
         requestPermissionLauncher = appContext.registerForActivityResult(
