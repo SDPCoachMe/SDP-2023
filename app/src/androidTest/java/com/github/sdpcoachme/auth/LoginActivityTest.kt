@@ -14,6 +14,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.LOG_IN
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserLocationSamples
@@ -158,7 +159,8 @@ open class LoginActivityTest {
         @Test
         fun whenNonExistingUserLoggedInRedirectToSignupActivity() {
             // Make sure the database is empty before starting the test
-            // TODO: re-instantiate the database
+            (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
+
             store.setCurrentEmail(currentUser.email).get(1000, TimeUnit.MILLISECONDS)
             val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
 
