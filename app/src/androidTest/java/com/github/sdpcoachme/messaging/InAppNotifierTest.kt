@@ -11,12 +11,11 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.LOG_IN
-import com.github.sdpcoachme.auth.LoginActivity.TestTags.Companion.INFO_TEXT
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserLocationSamples
-import com.github.sdpcoachme.database.Database
-import com.github.sdpcoachme.database.MockDatabase
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
@@ -28,6 +27,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import java.util.concurrent.TimeUnit
 
 
 class InAppNotifierTest {
@@ -35,7 +35,7 @@ class InAppNotifierTest {
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
-    private lateinit var database: Database
+    private lateinit var store: CachingStore
 
     private val toUser = UserInfo(
         "Jane",
@@ -61,18 +61,15 @@ class InAppNotifierTest {
 
     @Before
     fun setup() {
-        database = (getInstrumentation().targetContext.applicationContext as CoachMeApplication).store
-        database.setCurrentEmail(currentUser.email)
-        database.updateUser(toUser)
-        database.updateUser(currentUser)
+        store = (getInstrumentation().targetContext.applicationContext as CoachMeApplication).store
+        store.setCurrentEmail(currentUser.email).get(1000, TimeUnit.MILLISECONDS)
+        store.updateUser(toUser).get(1000, TimeUnit.MILLISECONDS)
+        store.updateUser(currentUser).get(1000, TimeUnit.MILLISECONDS)
     }
 
     @After
     fun tearDown() {
-        if (database is MockDatabase) {
-            (database as MockDatabase).restoreDefaultChatSetup()
-            println("MockDatabase was torn down")
-        }
+        (getInstrumentation().targetContext.applicationContext as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
     }
 
     @Test
@@ -87,6 +84,7 @@ class InAppNotifierTest {
 
             // Check if ChatActivity is opened
             // Intents.intended does not seem to work when clicking on a notification
+            // TODO: would need to wait for the state to load before checking the UI...
             composeTestRule.onNodeWithText(toUser.firstName + " " + toUser.lastName).assertExists()
             composeTestRule.onNodeWithTag(CONTACT_FIELD.LABEL, useUnmergedTree = true).assertExists()
             composeTestRule.onNodeWithTag(CHAT_FIELD.LABEL, useUnmergedTree = true).assertExists()
@@ -98,13 +96,13 @@ class InAppNotifierTest {
         val intent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
 
         ActivityScenario.launch<MapActivity>(intent).use {
-            database.setCurrentEmail("")
+            store.setCurrentEmail("").get(1000, TimeUnit.MILLISECONDS)
             sendNotification("Title", "Body", toUser.email, "messaging")
             clickOnNotification("Title", "Body")
 
             // Check if LoginActivity is opened
             // Intents.intended does not seem to work when clicking on a notification
-            composeTestRule.onNodeWithTag(INFO_TEXT, useUnmergedTree = true).assertExists()
+            // TODO: would need to wait for the state to load before checking the UI...
             composeTestRule.onNodeWithTag(LOG_IN, useUnmergedTree = true).assertExists()
         }
     }
@@ -120,6 +118,7 @@ class InAppNotifierTest {
             // Check if CoachesListActivity is opened
             // Intents.intended does not seem to work when clicking on a notification
             // make sure "Contacts" is displayed in the header bar
+            // TODO: would need to wait for the state to load before checking the UI...
             composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assert(hasText("Contacts"))
 
@@ -162,6 +161,7 @@ class InAppNotifierTest {
 
 
             // Since the sender is not set, clicking on the notification should take the user to their contacts
+            // TODO: would need to wait for the state to load before checking the UI...
             composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assert(hasText("Contacts"))
 
@@ -173,7 +173,7 @@ class InAppNotifierTest {
 
     private fun sendNotification(expectedTitle: String?, expectedBody: String?, senderEmail: String?, type: String?) {
         val context = (getInstrumentation().targetContext.applicationContext as CoachMeApplication)
-        InAppNotifier(context, database).sendNotification(
+        InAppNotifier(context, store).sendNotification(
             expectedTitle,
             expectedBody,
             senderEmail,

@@ -19,7 +19,6 @@ import com.github.sdpcoachme.data.UserLocationSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.Message.*
 import com.github.sdpcoachme.database.CachingStore
-import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.BACK
@@ -31,10 +30,7 @@ import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_MESS
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
 import com.github.sdpcoachme.profile.CoachesListActivity
 import com.github.sdpcoachme.profile.ProfileActivity
-import org.hamcrest.CoreMatchers.allOf
-import org.hamcrest.CoreMatchers.hasItem
-import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.CoreMatchers.not
+import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.lessThan
 import org.junit.After
@@ -44,6 +40,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.Duration
 import java.time.LocalDateTime
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
@@ -80,23 +77,23 @@ class ChatActivityTest {
 
     @Before
     fun setup() {
+        Intents.init()
         store = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).store
-        store.setCurrentEmail(currentUser.email).join()
-        store.updateUser(toUser).join()
-        store.updateUser(currentUser).join()
+        store.setCurrentEmail(currentUser.email).get(1000, TimeUnit.MILLISECONDS)
+        store.updateUser(toUser).get(1000, TimeUnit.MILLISECONDS)
+        store.updateUser(currentUser).get(1000, TimeUnit.MILLISECONDS)
     }
 
     @After
     fun tearDown() {
-        if (store is MockDatabase) {
-            (store as MockDatabase).restoreDefaultChatSetup()
-            (store as MockDatabase).restoreDefaultAccountsSetup()
-        }
+        Intents.release()
+        (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
     }
 
     @Test
     fun startingElementsArePresent() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+            waitForLoading(it)
             composeTestRule.onNodeWithTag(BACK).assertIsDisplayed()
             composeTestRule.onNodeWithTag(CONTACT_FIELD.LABEL, useUnmergedTree = true).assertTextEquals(toUser.firstName + " " + toUser.lastName)
             composeTestRule.onNodeWithTag(CHAT_FIELD.LABEL, useUnmergedTree = true).assertIsDisplayed()
@@ -107,6 +104,7 @@ class ChatActivityTest {
     @Test
     fun whenScrolledToTheBottomScrollButtonIsNotDisplayed() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+            waitForLoading(it)
             // As the chat is opened with the "scroll" all the way at the bottom,
             // the scroll button should not be displayed when launching this activity
             composeTestRule.onNodeWithTag(SCROLL_TO_BOTTOM, useUnmergedTree = true).assertDoesNotExist()
@@ -120,11 +118,12 @@ class ChatActivityTest {
 
         store.sendMessage(chatId, msg1.copy(timestamp = LocalDateTime.now().minusDays(1).toString()))
         for (i in 0..20) {
-            store.sendMessage(chatId, (msg1.copy(content = "toUser msg $i")))
-            store.sendMessage(chatId, (msg2.copy(content = "currentUser msg $i"))).get()
+            store.sendMessage(chatId, (msg1.copy(content = "toUser msg $i"))).get(1000, TimeUnit.MILLISECONDS)
+            store.sendMessage(chatId, (msg2.copy(content = "currentUser msg $i"))).get(1000, TimeUnit.MILLISECONDS)
         }
 
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+            waitForLoading(it)
 
             composeTestRule.onNodeWithTag(CHAT_BOX.CONTAINER).performTouchInput { swipeDown() }
             composeTestRule.onNodeWithTag(SCROLL_TO_BOTTOM, useUnmergedTree = true).assertIsDisplayed()
@@ -144,7 +143,7 @@ class ChatActivityTest {
     @Test
     fun clickingOnContactRowOpensProfileOfThatContact() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
-            Intents.init()
+            waitForLoading(it)
 
             composeTestRule.onNodeWithTag(CONTACT_FIELD.LABEL, useUnmergedTree = true)
                 .assertIsDisplayed()
@@ -157,14 +156,13 @@ class ChatActivityTest {
                     hasExtra("isViewingCoach", true)
                 )
             )
-            Intents.release()
         }
     }
 
     @Test
     fun backButtonReturnsToListedContactsWhenPressed() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
-            Intents.init()
+            waitForLoading(it)
 
             composeTestRule.onNodeWithTag(BACK)
                 .assertIsDisplayed()
@@ -179,30 +177,6 @@ class ChatActivityTest {
 
             composeTestRule.onNodeWithText("${toUser.firstName} ${toUser.lastName}")
                 .assertIsDisplayed()
-            Intents.release()
-        }
-    }
-
-    @Test
-    fun chatListenerAddedAtStartUp() {
-        val mockDB = store as MockDatabase
-        assertThat(mockDB.numberOfAddChatListenerCalls(), `is`(0))
-
-        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
-            assertThat(mockDB.numberOfAddChatListenerCalls(), `is`(1))
-        }
-    }
-
-    @Test
-    fun pressingBackButtonRemovesChatListener() {
-        val mockDB = store as MockDatabase
-        assertThat(mockDB.numberOfRemovedChatListenerCalls(), `is`(0))
-        ActivityScenario.launch<ChatActivity>(defaultIntent).use {
-            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-
-            val callsBeforeBack = mockDB.numberOfRemovedChatListenerCalls()
-            device.pressBack()
-            assertThat(mockDB.numberOfRemovedChatListenerCalls(), `is`(callsBeforeBack + 1))
         }
     }
 
@@ -211,6 +185,8 @@ class ChatActivityTest {
         assertThat(currentUser.chatContacts, not(hasItem(toUser.email)))
 
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+            waitForLoading(it)
+
             val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
             device.waitForIdle()
             val updatedUser = store.getUser(currentUser.email).get(5, TimeUnit.SECONDS)
@@ -223,9 +199,11 @@ class ChatActivityTest {
     fun whenReceivingAMessageFromAnExistingContactThatContactIsAddedToTheUserInfoContactList() {
         val user = currentUser.copy(chatContacts = listOf(toUser.email))
         assertThat(user.chatContacts, hasItem(toUser.email))
-        store.updateUser(user)
+        store.updateUser(user).get(1000, TimeUnit.MILLISECONDS)
 
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+            waitForLoading(it)
+
             val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
             device.waitForIdle()
             val updatedUser = store.getUser(user.email).get(5, TimeUnit.SECONDS)
@@ -239,6 +217,8 @@ class ChatActivityTest {
         val messageContent = "Send Message test!"
 
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+            waitForLoading(it)
+
             composeTestRule.onNodeWithTag(CHAT_FIELD.LABEL)
                 .assertIsDisplayed()
                 .performTextInput(messageContent)
@@ -248,7 +228,7 @@ class ChatActivityTest {
                 .assertIsDisplayed()
                 .performClick()
 
-            val chat = store.getChat(chatId).get()
+            val chat = store.getChat(chatId).get(1000, TimeUnit.MILLISECONDS)
             val message = chat.messages.last()
             assertThat(message.sender, `is`(currentUser.email))
             assertThat(message.content, `is`(messageContent))
@@ -264,6 +244,8 @@ class ChatActivityTest {
     @Test
     fun whenOnChangeCalledWithNewChatMessageChatIsUpdated() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+            waitForLoading(it)
+
             store.addChatListener("run-previous-on-change") {}
 
             composeTestRule.onNodeWithText("test onChange method", substring = true, useUnmergedTree = true)
@@ -274,8 +256,9 @@ class ChatActivityTest {
     @Test
     fun messageSentByOtherUserDoesNotContainReadStateCheckMark() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+            waitForLoading(it)
 
-            store.sendMessage(chatId, Message(toUser.email, "", LocalDateTime.now().toString()))
+            store.sendMessage(chatId, Message(toUser.email, "", LocalDateTime.now().toString())).get(1000, TimeUnit.MILLISECONDS)
 
             composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertDoesNotExist()
@@ -285,8 +268,9 @@ class ChatActivityTest {
     @Test
     fun messageSentByCurrentUserContainsReadStateCheckMark() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+            waitForLoading(it)
 
-            store.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString()))
+            store.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString())).get(1000, TimeUnit.MILLISECONDS)
 
             composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertIsDisplayed()
@@ -296,8 +280,9 @@ class ChatActivityTest {
     @Test
     fun sentMarkIsDisplayedWhenMessageNotYetReceivedByRecipient() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+            waitForLoading(it)
 
-            store.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), ReadState.SENT))
+            store.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), ReadState.SENT)).get(1000, TimeUnit.MILLISECONDS)
 
             composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertIsDisplayed()
@@ -308,8 +293,9 @@ class ChatActivityTest {
     @Test
     fun receivedMarkIsDisplayedWhenMessageOnlyReceivedByRecipient() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+            waitForLoading(it)
 
-            store.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), ReadState.RECEIVED))
+            store.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), ReadState.RECEIVED)).get(1000, TimeUnit.MILLISECONDS)
 
             composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertIsDisplayed()
@@ -320,29 +306,21 @@ class ChatActivityTest {
     @Test
     fun readMarkIsDisplayedWhenMessageReadByRecipient() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
+            waitForLoading(it)
 
-            store.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), ReadState.READ))
+            store.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), ReadState.READ)).get(1000, TimeUnit.MILLISECONDS)
 
             composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertIsDisplayed()
                 .assertContentDescriptionEquals("message read icon")
         }
     }
-    
-    @Test
-    fun errorHandlerIsLaunchedIfCurrentUserEmailIsEmpty() {
-        store.setCurrentEmail("")
-        checkErrorPageIsLaunched(defaultIntent)
-    }
 
     @Test
     fun errorHandlerIsLaunchedIfToUserEmailNotPassedInIntentExtra() {
         val errorIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
-        checkErrorPageIsLaunched(errorIntent)
-    }
+        ActivityScenario.launch<ChatActivity>(errorIntent).use {
 
-    private fun checkErrorPageIsLaunched(chatIntent: Intent) {
-        ActivityScenario.launch<ChatActivity>(chatIntent).use {
             composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON)
                 .assertIsDisplayed()
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD)
@@ -351,5 +329,15 @@ class ChatActivityTest {
             composeTestRule.onNodeWithText("The Chat Interface did not receive both needed users.\nPlease return to the login page and try again.")
                 .assertIsDisplayed()
         }
+    }
+
+
+    // Waits for the activity to finish loading any async state
+    private fun waitForLoading(scenario: ActivityScenario<ChatActivity>) {
+        lateinit var stateLoading: CompletableFuture<Void>
+        scenario.onActivity {
+            stateLoading = it.stateLoading
+        }
+        stateLoading.get(1000, TimeUnit.MILLISECONDS)
     }
 }

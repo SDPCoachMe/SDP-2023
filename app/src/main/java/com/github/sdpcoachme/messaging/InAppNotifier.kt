@@ -59,18 +59,17 @@ class InAppNotifier(val context: Context, val store: CachingStore) {
     private fun sendMessagingNotification(notificationTitle: String, notificationBody: String, sender: String) {
 
         // The more info we receive, the more we can customize the notification's behaviour (up until the chat itself)
-
-        store.getCurrentEmail().thenApply { currentEmail ->
-            val intent: Intent
-            when {
-                currentEmail.isEmpty() -> {
-                    intent = Intent(context, LoginActivity::class.java)
-                        .putExtra("sender", sender)
-                    intent.action = "OPEN_CHAT_ACTIVITY"
-                }
-                sender.isEmpty() -> intent = Intent(context, CoachesListActivity::class.java)
+        store.isLoggedIn().thenAccept { isLoggedIn ->
+            val intent = when {
+                !isLoggedIn ->
+                    Intent(context, LoginActivity::class.java)
+                    .putExtra("sender", sender)
+                    .setAction("OPEN_CHAT_ACTIVITY")
+                sender.isEmpty() ->
+                    Intent(context, CoachesListActivity::class.java)
                     .putExtra("isViewingContacts", true)
-                else -> intent = Intent(context, ChatActivity::class.java)
+                else ->
+                    Intent(context, ChatActivity::class.java)
                     .putExtra("toUserEmail", sender)
             }
 
