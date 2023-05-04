@@ -23,7 +23,10 @@ import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
+import com.github.sdpcoachme.location.provider.MockLocationProvider
 import com.github.sdpcoachme.messaging.ChatActivity
+import com.github.sdpcoachme.profile.CoachesListActivity.TestTags.Buttons.Companion.FILTER
+import com.google.android.gms.maps.model.LatLng
 import org.hamcrest.CoreMatchers.allOf
 import org.junit.After
 import org.junit.Before
@@ -46,6 +49,12 @@ open class CoachesListActivityTest {
 
     lateinit var scenario: ActivityScenario<CoachesListActivity>
 
+    private val mockLocationProvider = (InstrumentationRegistry.getInstrumentation()
+            .targetContext.applicationContext as CoachMeApplication)
+        .locationProvider as MockLocationProvider
+
+    val LAUS = LatLng(LAUSANNE.latitude, LAUSANNE.longitude)
+
     // With this, tests will wait until activity has finished loading state
     @Before
     open fun setup() {
@@ -53,6 +62,8 @@ open class CoachesListActivityTest {
         // TODO: this is temporary, we should find a better way to guarantee the database is refreshed
         //  before each test
         database.restoreDefaultAccountsSetup()
+        mockLocationProvider.setMockLocation(LAUS)
+
         // Populate the database, and wait for it to finish
         populateDatabase().join()
         scenario = ActivityScenario.launch(defaultIntent)
@@ -159,6 +170,10 @@ open class CoachesListActivityTest {
         override fun setup() {
             // Launch the activity
             populateDatabase().join()
+            ((InstrumentationRegistry.getInstrumentation()
+                .targetContext.applicationContext as CoachMeApplication)
+                .locationProvider as MockLocationProvider).setMockLocation(LAUS)
+
             val contactIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
             contactIntent.putExtra("isViewingContacts", true)
             scenario = ActivityScenario.launch(contactIntent)
@@ -212,6 +227,10 @@ open class CoachesListActivityTest {
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertExists().assertIsDisplayed()
         }
 
+        @Test
+        fun filteringButtonIsNotShownInContactsList() {
+            composeTestRule.onNodeWithTag(FILTER).assertDoesNotExist()
+        }
 
     }
 
