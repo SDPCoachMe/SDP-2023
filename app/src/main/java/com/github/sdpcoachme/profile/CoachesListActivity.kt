@@ -54,6 +54,7 @@ class CoachesListActivity : ComponentActivity() {
     // Allows to notice testing framework that the activity is ready
     var stateLoading = CompletableFuture<Void>()
 
+    // Observable state of the current sports used to filter the coaches list
     private lateinit var sportsFilter: MutableState<List<Sports>>
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
 
@@ -116,6 +117,9 @@ class CoachesListActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Displays a list of nearby coaches or messaging contacts.
+     */
     @Composable()
     fun CoachesList(
         modifier: Modifier,
@@ -128,31 +132,36 @@ class CoachesListActivity : ComponentActivity() {
         Box(modifier = modifier.fillMaxSize()) {
             LazyColumn {
                 items(listOfCoaches) {user ->
+                    // Filtering should not influence the coaches list in contacts view
                     if (!Collections.disjoint(user.sports, sportsFilter.value)) {
                         UserInfoListItem(user, isViewingContacts)
                     }
                 }
             }
-            FloatingActionButton(
-                onClick = {
-//                    this@CoachesListActivity.sportsFilter.value =
-                    selectSportsHandler(
+            if (!isViewingContacts) {
+                // Button to add a sport filter for the shown coaches list.
+                FloatingActionButton(
+                    onClick = {
+                        // Updates the sportsFilter state with the result of the SelectSportsActivity
+                        // which relaunches the CoachesList composable on state change.
+                        selectSportsHandler(
                             SelectSportsActivity.getIntent(
                                 context = context,
                                 title = "Filter coaches by sport",
                                 initialValue = sportsFilter.value
                             )).thenApply {sportsFilter.value = it }
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-                    .testTag(FILTER),
-                backgroundColor = Purple200
-            ) {
-                Icon(
-                    imageVector = Default.Tune,
-                    contentDescription = "Filter nearby coaches by sport"
-                )
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                        .testTag(FILTER),
+                    backgroundColor = Purple200
+                ) {
+                    Icon(
+                        imageVector = Default.Tune,
+                        contentDescription = "Filter nearby coaches by sports"
+                    )
+                }
             }
         }
     }
