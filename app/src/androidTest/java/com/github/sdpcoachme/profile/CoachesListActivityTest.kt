@@ -12,6 +12,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
+import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
@@ -77,12 +78,14 @@ open class CoachesListActivityTest {
             stateLoading = it.stateLoading
         }
         stateLoading.get(1000, MILLISECONDS)
+        Intents.init()
     }
 
     // Necessary since we don't do scenario.use { ... } in each test, which closes automatically
     @After
-    fun cleanup() {
+    open fun cleanup() {
         scenario.close()
+        Intents.release()
     }
 
     @Test
@@ -107,8 +110,6 @@ open class CoachesListActivityTest {
 
     @Test
     fun whenClickingOnACoachProfileActivityShowsCoachToClient() {
-            Intents.init()
-
             // Click on the first coach
             val coach = COACH_1
             composeTestRule.onNodeWithText(coach.address.name).assertIsDisplayed()
@@ -122,8 +123,6 @@ open class CoachesListActivityTest {
                 hasExtra("email", coach.email),
                 hasExtra("isViewingCoach", true)
             ))
-
-            Intents.release()
     }
 
     @Test
@@ -134,6 +133,7 @@ open class CoachesListActivityTest {
             composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText(title))
         }
+        println(database.getAllUsers().join())
     }
     @Test
     fun dashboardIsAccessibleAndDisplayableFromNearbyCoachesList() {
@@ -171,11 +171,11 @@ open class CoachesListActivityTest {
                 stateLoading = it.stateLoading
             }
             stateLoading.get(1000, MILLISECONDS)
+            Intents.init()
         }
 
         @Test
         fun whenViewingContactsAndClickingOnClientChatActivityIsLaunched() {
-            Intents.init()
             val toEmail = "to@email.com"
             val coach = UserInfo(
                 "Jane",
@@ -184,7 +184,7 @@ open class CoachesListActivityTest {
                 "0987654321",
                 LAUSANNE,
                 false,
-                emptyList(),
+                Sports.values().toList(),
                 emptyList()
             )
             composeTestRule.onNodeWithText(coach.address.name).assertIsDisplayed()
@@ -197,7 +197,6 @@ open class CoachesListActivityTest {
                 hasComponent(ChatActivity::class.java.name),
                 hasExtra("toUserEmail", coach.email),
             ))
-            Intents.release()
         }
 
         @Test
