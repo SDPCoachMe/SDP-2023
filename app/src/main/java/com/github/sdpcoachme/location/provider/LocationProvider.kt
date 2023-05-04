@@ -18,6 +18,8 @@ interface LocationProvider {
 
     /**
      * Checks correct permission are granted for location retrieval.
+     *
+     * @return true if ACCESS_FINE_LOCATION has been granted to the current application.
      */
     fun locationIsPermitted(): Boolean
 
@@ -27,12 +29,17 @@ interface LocationProvider {
     fun requestPermission()
 
     /**
-     * Retrieves last application-wide known location.
+     * Retrieves last application-wide known location. MutableState to provide observability.
+     *
+     * @return a mutable state containing the last known device location.
      */
     fun getLastLocation(): MutableState<LatLng?>
 
     /**
      * Initializes the location provider with an activity context and a user info future.
+     *
+     * @param context the activity context where the LocationProvider is used
+     * @param userInfo a future to retrieve user info.
      */
     fun init(context: ComponentActivity, userInfo: CompletableFuture<UserInfo>)
 }
