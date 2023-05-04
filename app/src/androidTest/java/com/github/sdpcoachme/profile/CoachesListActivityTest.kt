@@ -11,6 +11,7 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
@@ -20,7 +21,7 @@ import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
 import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
-import com.github.sdpcoachme.database.MockDatabase
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity
@@ -39,8 +40,8 @@ open class CoachesListActivityTest {
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
-    private val database = (InstrumentationRegistry.getInstrumentation()
-        .targetContext.applicationContext as CoachMeApplication).store as MockDatabase
+    private val store: CachingStore = (InstrumentationRegistry.getInstrumentation()
+        .targetContext.applicationContext as CoachMeApplication).store
 
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
 
@@ -49,10 +50,14 @@ open class CoachesListActivityTest {
     // With this, tests will wait until activity has finished loading state
     @Before
     open fun setup() {
+        // Refresh the CachingStore before each test
+        ApplicationProvider.getApplicationContext<CoachMeTestApplication>().clearDataStoreAndResetCachingStore()
+
+
         // Given nondeterministic behavior depending on order of tests, we reset the database here
         // TODO: this is temporary, we should find a better way to guarantee the database is refreshed
         //  before each test
-        database.restoreDefaultAccountsSetup()
+
         // Populate the database, and wait for it to finish
         populateDatabase().join()
         scenario = ActivityScenario.launch(defaultIntent)
@@ -144,7 +149,7 @@ open class CoachesListActivityTest {
 
     @Test
     fun errorPageIsShownWhenCoachesListIsLaunchedWithEmptyCurrentEmail() {
-        database.setCurrentEmail("")
+        store.setCurrentEmail("")
         ActivityScenario.launch<CoachesListActivity>(defaultIntent).use {
             // not possible to use Intents.init()... to check if the correct intent
             // is launched as the intents are launched from within the onCreate function
@@ -217,12 +222,12 @@ open class CoachesListActivityTest {
 
     fun populateDatabase(): CompletableFuture<Void> {
 
-        database.setCurrentEmail("example@email.com")
+        store.setCurrentEmail("example@email.com")
         // Add a few coaches to the database
-        val futures1 = COACHES.map { database.updateUser(it) }
+        val futures1 = COACHES.map { store.updateUser(it) }
 
         // Add non-coach user to the database
-        val futures2 = NON_COACHES.map { database.updateUser(it) }
+        val futures2 = NON_COACHES.map { store.updateUser(it) }
 
         return CompletableFuture.allOf(*futures1.toTypedArray(), *futures2.toTypedArray())
     }
