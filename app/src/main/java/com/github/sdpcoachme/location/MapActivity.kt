@@ -26,8 +26,7 @@ import androidx.core.content.ContextCompat
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.database.Database
-import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MARKER
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MARKER_INFO_WINDOW
@@ -63,8 +62,7 @@ class MapActivity : ComponentActivity() {
         val CAMPUS = LatLng(46.520536,6.568318)
     }
 
-    private lateinit var database: Database
-    private lateinit var email: String
+    private lateinit var store: CachingStore
 
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     // the user location is communicated via CoachMeApplication to avoid storing it in the database
@@ -73,36 +71,30 @@ class MapActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        database = (application as CoachMeApplication).store
-        email = database.getCurrentEmail()
+        store = (application as CoachMeApplication).store
         lastUserLocation = (application as CoachMeApplication).userLocation
 
         // gets user location at map creation
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         getLocation()
 
-        if (email.isEmpty()) {
-            val errorMsg = "The map did not receive an email address.\nPlease return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
-        } else {
-            // For now, simply retrieve all users. We can decide later whether we want to have
-            // a dynamic list of markers that only displays nearby users (based on camera position
-            // for example). Since we have no way to download only the users that are nearby, we
-            // have to download all users anyways and filter them locally. This means that either
-            // way, we already have available all users locations, so we might as well display them
-            // all.
-            // Note: this is absolutely not scalable, but we can change this later on.
-            val futureUsers = database.getAllUsers().thenApply { users -> users.filter { it.coach } }
-            setContent {
-                CoachMeTheme {
-                    Dashboard {
-                        Map(
-                            modifier = it,
-                            lastUserLocation = lastUserLocation,
-                            futureCoachesToDisplay = futureUsers,
-                            markerLoading = markerLoading,
-                            mapLoading = mapLoading)
-                    }
+        // For now, simply retrieve all users. We can decide later whether we want to have
+        // a dynamic list of markers that only displays nearby users (based on camera position
+        // for example). Since we have no way to download only the users that are nearby, we
+        // have to download all users anyways and filter them locally. This means that either
+        // way, we already have available all users locations, so we might as well display them
+        // all.
+        // Note: this is absolutely not scalable, but we can change this later on.
+        val futureUsers = store.getAllUsers().thenApply { users -> users.filter { it.coach } }
+        setContent {
+            CoachMeTheme {
+                Dashboard {
+                    Map(
+                        modifier = it,
+                        lastUserLocation = lastUserLocation,
+                        futureCoachesToDisplay = futureUsers,
+                        markerLoading = markerLoading,
+                        mapLoading = mapLoading)
                 }
             }
         }

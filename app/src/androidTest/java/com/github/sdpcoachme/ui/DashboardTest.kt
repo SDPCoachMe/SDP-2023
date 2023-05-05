@@ -2,6 +2,7 @@ package com.github.sdpcoachme.ui
 
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Intent
+import android.provider.Contacts.Intents.UI
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -39,6 +40,8 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 /**
  * Test class for the Dashboard. But the tests of this class should only
@@ -49,7 +52,7 @@ class DashboardTest {
 
     private val EXISTING_EMAIL = "example@email.com"
 
-    private val database = (InstrumentationRegistry.getInstrumentation()
+    private val store = (InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as CoachMeApplication).store
 
     @get:Rule
@@ -64,7 +67,7 @@ class DashboardTest {
 
     @Before
     fun initIntents() {
-        database.setCurrentEmail(EXISTING_EMAIL)
+        store.setCurrentEmail(EXISTING_EMAIL).get(1000, TimeUnit.MILLISECONDS)
         Intents.init()
     }
 
@@ -78,11 +81,13 @@ class DashboardTest {
      */
     private fun setUpDashboard(withoutEmail: Boolean = false) {
         if (withoutEmail) {
-            database.setCurrentEmail("")
+            store.setCurrentEmail("")
         }
+        val UIDisplayed = CompletableFuture<Void>()
         composeTestRule.setContent {
-            Dashboard {}
+            Dashboard(UIDisplayed = UIDisplayed) {}
         }
+        UIDisplayed.get(1000, TimeUnit.MILLISECONDS)
     }
 
     /**
@@ -92,7 +97,7 @@ class DashboardTest {
     private fun setUpDashboardWithActivityContext(): ActivityScenario<MapActivity>? {
         val mockActivity = MapActivity::class.java
         val mockIntent = Intent(ApplicationProvider.getApplicationContext(), mockActivity)
-        return ActivityScenario.launch<MapActivity>(mockIntent)
+        return ActivityScenario.launch(mockIntent)
     }
 
     @Test

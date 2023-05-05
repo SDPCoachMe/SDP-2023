@@ -10,11 +10,12 @@ import androidx.test.espresso.intent.Intents
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.ShownEvent
-import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
@@ -36,11 +37,12 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
 
 @RunWith(AndroidJUnit4::class)
 class ScheduleActivityTest {
-    private lateinit var database: Database
+    private lateinit var store: CachingStore
     private val defaultEmail = "example@email.com"
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
 
@@ -82,17 +84,15 @@ class ScheduleActivityTest {
 
     @Before
     fun setup() {
-        database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).store
-        database.setCurrentEmail(defaultEmail)
+        store = (ApplicationProvider.getApplicationContext() as CoachMeApplication).store
+        store.setCurrentEmail(defaultEmail).get(1000, MILLISECONDS)
     }
 
     @After
     fun teardown() {
-        database.setCurrentEmail("")
-        if (database is MockDatabase) {
-            (database as MockDatabase).restoreDefaultSchedulesSetup()
-            println("MockDatabase was torn down")
-        }
+        store.setCurrentEmail("")
+        // get application
+        (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
     }
 
     @Test
@@ -111,7 +111,7 @@ class ScheduleActivityTest {
 
     @Test
     fun errorPageIsShownWhenScheduleIsLaunchedWithEmptyCurrentEmail() {
-        database.setCurrentEmail("")
+        store.setCurrentEmail("")
         ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
@@ -120,7 +120,7 @@ class ScheduleActivityTest {
 
     @Test
     fun getExceptionIsThrownCorrectly() {
-        database.setCurrentEmail("throwGet@Exception.com")
+        store.setCurrentEmail("throwGet@Exception.com")
         Intents.init()
 
         val mapIntent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
@@ -135,11 +135,11 @@ class ScheduleActivityTest {
 
     @Test
     fun eventsOfCurrentWeekAreDisplayedCorrectly() {
-        database.setCurrentEmail(defaultEmail)
-        database.addEvents(eventList, currentMonday).thenRun {
+        store.setCurrentEmail(defaultEmail)
+        store.addEvents(eventList, currentMonday).thenRun {
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
-                val schedule = database.getSchedule(currentMonday)
+                val schedule = store.getSchedule(currentMonday)
                 val nonnull = schedule.thenAccept {
                     it.events.forEach { event ->
                         composeTestRule.onNodeWithText(event.name).assertExists()
@@ -159,11 +159,11 @@ class ScheduleActivityTest {
             end = currentMonday.plusDays(2).atTime(15, 0, 0).toString(),
             description = "This is a multi day event.",
         )
-        database.addEvents(listOf(multiDayEvent), currentMonday).thenRun {
+        store.addEvents(listOf(multiDayEvent), currentMonday).thenRun {
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
 
-                val schedule = database.getSchedule(currentMonday)
+                val schedule = store.getSchedule(currentMonday)
                 val nonnull = schedule.thenAccept {
                     val expectedShownEvents = listOf(
                         ShownEvent(
@@ -211,11 +211,11 @@ class ScheduleActivityTest {
             end = nextMonday.plusDays(1).atTime(15, 0, 0).toString(),
             description = "This is a multi week event.",
         )
-        database.addEvents(listOf(multiWeekEvent), currentMonday).thenRun {
+        store.addEvents(listOf(multiWeekEvent), currentMonday).thenRun {
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
 
-                val schedule = database.getSchedule(currentMonday)
+                val schedule = store.getSchedule(currentMonday)
                 val nonnull = schedule.thenAccept {
                     val expectedShownEvents = listOf(
                         ShownEvent(
@@ -278,12 +278,12 @@ class ScheduleActivityTest {
             end = nextMonday.atTime(15, 0, 0).toString(),
             description = "This is an event of the next week.",
         )
-        database.addEvents(listOf(nextWeekEvent), currentMonday).thenRun {
-            database.setCurrentEmail(defaultEmail)
+        store.addEvents(listOf(nextWeekEvent), currentMonday).thenRun {
+            store.setCurrentEmail(defaultEmail)
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
 
-                val schedule = database.getSchedule(currentMonday)
+                val schedule = store.getSchedule(currentMonday)
                 val nonnull = schedule.thenAccept {
                     val expectedShownEvents = listOf(
                         ShownEvent(
@@ -314,12 +314,12 @@ class ScheduleActivityTest {
             end = previousMonday.atTime(15, 0, 0).toString(),
             description = "This is an event of the previous week.",
         )
-        database.addEvents(listOf(previousWeekEvent), currentMonday).thenRun {
-            database.setCurrentEmail(defaultEmail)
+        store.addEvents(listOf(previousWeekEvent), currentMonday).thenRun {
+            store.setCurrentEmail(defaultEmail)
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
 
-                val schedule = database.getSchedule(currentMonday)
+                val schedule = store.getSchedule(currentMonday)
                 val nonnull = schedule.thenAccept {
                     val expectedShownEvents = listOf(
                         ShownEvent(
