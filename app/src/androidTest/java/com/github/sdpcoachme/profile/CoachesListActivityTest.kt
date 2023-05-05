@@ -154,6 +154,19 @@ open class CoachesListActivityTest {
         }
     }
 
+    @Test
+    fun filteringButtonIsShownInNearbyCoaches() {
+        composeTestRule.onNodeWithTag(FILTER).assertExists().assertIsDisplayed()
+    }
+
+    @Test
+    fun filteringButtonLaunchesSelectSportsActivity() {
+        composeTestRule.onNodeWithTag(FILTER).assertExists().assertIsDisplayed()
+        composeTestRule.onNodeWithTag(FILTER).performClick()
+        Intents.intended(allOf(hasComponent(SelectSportsActivity::class.java.name),
+            hasExtra("title", "Filter coaches by sport")))
+    }
+
     // Subclass added to be able to run a different setup method (to simulate viewing contacts)
     class ContactsListTest: CoachesListActivityTest() {
         @Before
