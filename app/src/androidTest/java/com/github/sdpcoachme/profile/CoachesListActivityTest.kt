@@ -132,7 +132,6 @@ open class CoachesListActivityTest {
             composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText(title))
         }
-        println(database.getAllUsers().join())
     }
     @Test
     fun dashboardIsAccessibleAndDisplayableFromNearbyCoachesList() {

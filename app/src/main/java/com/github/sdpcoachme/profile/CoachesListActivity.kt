@@ -55,7 +55,6 @@ class CoachesListActivity : ComponentActivity() {
     var stateLoading = CompletableFuture<Void>()
 
     // Observable state of the current sports used to filter the coaches list
-    private lateinit var sportsFilter: MutableState<List<Sports>>
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,10 +67,11 @@ class CoachesListActivity : ComponentActivity() {
         val locationProvider = (application as CoachMeApplication).locationProvider
         // Here we don't need the UserInfo
         locationProvider.init(this, CompletableFuture.completedFuture(null))
+        // the lastLocation return a null containing state if no location retrieval has been
+        // performed yet. In production, this should for now never be the case as this code is
+        // necessarily run after MapActivity. We keep it for robustness against tests.
         val userLatLng = locationProvider.getLastLocation().value?: CAMPUS
 
-        // initially all sports are selected
-        sportsFilter = mutableStateOf(Sports.values().toList())
         selectSportsHandler = SelectSportsActivity.getHandler(this)
 
         if (email.isEmpty()) {
@@ -113,7 +113,7 @@ class CoachesListActivity : ComponentActivity() {
 
                 CoachMeTheme {
                     Dashboard(title) {
-                        CoachesList(it, listOfCoaches, isViewingContacts, sportsFilter)
+                        CoachesList(it, listOfCoaches, isViewingContacts)
                     }
                 }
             }
@@ -123,21 +123,22 @@ class CoachesListActivity : ComponentActivity() {
     /**
      * Displays a list of nearby coaches or messaging contacts.
      */
-    @Composable()
+    @Composable
     fun CoachesList(
         modifier: Modifier,
         listOfCoaches: List<UserInfo>,
-        isViewingContacts: Boolean,
-        sportsFilter: MutableState<List<Sports>>
+        isViewingContacts: Boolean
     ) {
         val context = LocalContext.current
+        // initially all sports are selected
+        var sportsFilter by remember { mutableStateOf(Sports.values().toList()) }
 
         Box(modifier = modifier.fillMaxSize()) {
             LazyColumn {
                 items(listOfCoaches) {user ->
                     // Filtering should not influence the coaches list in contacts view
                     // We still show user with no favourite sports, especially for testing purposes
-                    if (user.sports.isEmpty() || !Collections.disjoint(user.sports, sportsFilter.value)) {
+                    if (user.sports.isEmpty() || !Collections.disjoint(user.sports, sportsFilter)) {
                         UserInfoListItem(user, isViewingContacts)
                     }
                 }
@@ -152,8 +153,8 @@ class CoachesListActivity : ComponentActivity() {
                             SelectSportsActivity.getIntent(
                                 context = context,
                                 title = "Filter coaches by sport",
-                                initialValue = sportsFilter.value
-                            )).thenApply {sportsFilter.value = it }
+                                initialValue = sportsFilter
+                            )).thenApply {sportsFilter = it }
                     },
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
