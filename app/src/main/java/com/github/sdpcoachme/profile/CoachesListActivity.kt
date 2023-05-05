@@ -136,7 +136,8 @@ class CoachesListActivity : ComponentActivity() {
             LazyColumn {
                 items(listOfCoaches) {user ->
                     // Filtering should not influence the coaches list in contacts view
-                    if (!Collections.disjoint(user.sports, sportsFilter.value)) {
+                    // We still show user with no favourite sports, especially for testing purposes
+                    if (user.sports.isEmpty() || !Collections.disjoint(user.sports, sportsFilter.value)) {
                         UserInfoListItem(user, isViewingContacts)
                     }
                 }

@@ -12,7 +12,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
-import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
@@ -184,7 +183,7 @@ open class CoachesListActivityTest {
                 "0987654321",
                 LAUSANNE,
                 false,
-                Sports.values().toList(),
+                emptyList(),
                 emptyList()
             )
             composeTestRule.onNodeWithText(coach.address.name).assertIsDisplayed()
