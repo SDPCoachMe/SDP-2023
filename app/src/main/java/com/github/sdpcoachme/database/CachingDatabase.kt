@@ -4,6 +4,7 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.schedule.EventOps.Companion.getStartMonday
 import java.time.LocalDate
@@ -70,6 +71,14 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         }
     }
 
+    override fun addGroupEvent(groupEvent: GroupEvent, currentWeekMonday: LocalDate): CompletableFuture<Void> {
+        return wrappedDatabase.addGroupEvent(groupEvent, currentWeekMonday)
+    }
+
+    override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
+        return wrappedDatabase.registerForGroupEvent(groupEventId)
+    }
+
     // Note: checks if it is time to prefetch
     override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         val email = wrappedDatabase.getCurrentEmail()
@@ -113,6 +122,10 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
                 return CompletableFuture.completedFuture(Schedule(cachedSchedules[email] ?: listOf()))
             }
         }
+    }
+
+    override fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
+        return wrappedDatabase.getGroupEvent(groupEventId)
     }
 
     override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
