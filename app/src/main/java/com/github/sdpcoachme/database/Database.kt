@@ -3,6 +3,7 @@ package com.github.sdpcoachme.database
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.google.android.gms.maps.model.LatLng
@@ -97,7 +98,18 @@ interface Database {
     class NoSuchKeyException(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {
         constructor(cause: Throwable) : this(null, cause)
     }
-    fun getChatContacts(email: String): CompletableFuture<List<UserInfo>>
+
+    /**
+     * Get the contact row info for the given user
+     * This will be used to display the user's contacts in the UI
+     * similar to other messaging services such as WhatsApp
+     *
+     * @param email The email of the user whose contacts should be retrieved
+     * @return A future that will complete with the contact row info
+     */
+    fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>>
+
+
     /**
      * Get chat with the given id from the database
      *
@@ -105,6 +117,17 @@ interface Database {
      * @return A future that will complete with the chat
      */
     fun getChat(chatId: String): CompletableFuture<Chat>
+
+    /**
+     * Update / create chat with the following participants
+     * If the chat already exists, it will be updated with the new participants
+     * If the chat does not exist, it will be created with the given participants
+     *
+     * @param chatId The id of the chat
+     * @param participants The participants of the chat
+     * @return A future that will complete when the user has been added
+     */
+    fun updateChatParticipants(chatId: String, participants: List<String>): CompletableFuture<Void>
 
     /**
      * Place the new message into the database

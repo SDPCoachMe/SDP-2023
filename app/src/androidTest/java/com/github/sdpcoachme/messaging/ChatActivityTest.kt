@@ -16,8 +16,10 @@ import com.github.sdpcoachme.*
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserAddressSamples.Companion.NEW_YORK
+import com.github.sdpcoachme.data.UserInfoSamples
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.Message.*
+import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON

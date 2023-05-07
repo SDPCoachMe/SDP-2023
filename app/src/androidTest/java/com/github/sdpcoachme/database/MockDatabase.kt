@@ -3,6 +3,7 @@ package com.github.sdpcoachme.database
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
@@ -147,10 +148,18 @@ open class MockDatabase: Database {
         this.onChange(chat)
     }
 
-    override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
-        return CompletableFuture.completedFuture(listOf(toUser))
+    override fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
+        // TODO: adapt this!!!
+        return CompletableFuture.completedFuture(listOf(ContactRowInfo("chatId", toUser.firstName + " " + toUser.lastName, Message())))
     }
 
+    override fun updateChatParticipants(
+        chatId: String,
+        participants: List<String>
+    ): CompletableFuture<Void> {
+        // TODO: implement this
+        return CompletableFuture.completedFuture(null)
+    }
 
     override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
         chat = Chat.markOtherUsersMessagesAsRead(chat, email)

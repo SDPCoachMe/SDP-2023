@@ -30,6 +30,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.CAMPUS
 import com.github.sdpcoachme.messaging.ChatActivity
@@ -78,21 +79,22 @@ class CoachesListActivity : ComponentActivity() {
             val errorMsg = "The coach list did not receive an email address.\nPlease return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
-            val futureListOfCoaches =
-                if (isViewingContacts) {
-                    database.getChatContacts(email = email)
-                } else {
-                    database
-                        .getAllUsersByNearest(
-                            latitude = userLatLng.latitude,
-                            longitude = userLatLng.longitude
-                        ).thenApply {
-                            it.filter { user -> user.coach }
-                        }
-                }
+//            val futureListOfCoaches = // TODO: Store in a map?
+//                if (isViewingContacts) {
+//                    database.getChatContacts(email = email)
+//                } else {
+//                    database
+//                        .getAllUsersByNearest(
+//                            latitude = userLatLng.latitude,
+//                            longitude = userLatLng.longitude
+//                        ).thenApply {
+//                            it.filter { user -> user.coach }
+//                        }
+//                }
 
             setContent {
                 var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
+                var contactRowInfos by remember { mutableStateOf(listOf<ContactRowInfo>()) }
 
 
                 // Proper way to handle result of a future in a Composable.
@@ -102,8 +104,19 @@ class CoachesListActivity : ComponentActivity() {
                 // be executed on every recomposition.
                 // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
                 LaunchedEffect(true) {
-                    listOfCoaches = futureListOfCoaches.await()
-
+                    if (isViewingContacts) {
+                        contactRowInfos = database
+                            .getContactRowInfo(email = email)
+                            .await()
+                    } else {
+                        listOfCoaches = database
+                            .getAllUsersByNearest(
+                                latitude = userLatLng.latitude,
+                                longitude = userLatLng.longitude
+                            ).thenApply {
+                                it.filter { user -> user.coach }
+                            }.await()
+                    }
                     // Activity is now ready for testing
                     stateLoading.complete(null)
                 }
@@ -113,7 +126,7 @@ class CoachesListActivity : ComponentActivity() {
 
                 CoachMeTheme {
                     Dashboard(title) {
-                        CoachesList(it, listOfCoaches, isViewingContacts)
+                        CoachesList(it, listOfCoaches, isViewingContacts, contactRowInfos)
                     }
                 }
             }
@@ -127,7 +140,8 @@ class CoachesListActivity : ComponentActivity() {
     fun CoachesList(
         modifier: Modifier,
         listOfCoaches: List<UserInfo>,
-        isViewingContacts: Boolean
+        isViewingContacts: Boolean,
+        contactRowInfos: List<ContactRowInfo> = listOf(),
     ) {
         val context = LocalContext.current
         // initially all sports are selected
@@ -135,11 +149,18 @@ class CoachesListActivity : ComponentActivity() {
 
         Box(modifier = modifier.fillMaxSize()) {
             LazyColumn {
-                items(listOfCoaches) {user ->
-                    // Filtering should not influence the coaches list in contacts view
-                    // We still show user with no favourite sports, especially for testing purposes
-                    if (user.sports.isEmpty() || !Collections.disjoint(user.sports, sportsFilter)) {
-                        UserInfoListItem(user, isViewingContacts)
+                if (isViewingContacts) {
+                    items(contactRowInfos) { contactRowInfo ->
+                        UserInfoListItem(isViewingContacts = true, contactRowInfo = contactRowInfo)
+                    }
+                } else {
+                    items(listOfCoaches) { user ->
+                        // Filtering should not influence the coaches list in contacts view
+                        // We still show user with no favourite sports, especially for testing purposes
+                        if (user.sports.isEmpty()
+                            || !Collections.disjoint(user.sports, sportsFilter)) {
+                            UserInfoListItem(user = user, isViewingContacts = false)
+                        }
                     }
                 }
             }
@@ -172,7 +193,7 @@ class CoachesListActivity : ComponentActivity() {
     }
 
     @Composable
-    fun UserInfoListItem(user: UserInfo, isViewingContacts: Boolean) {
+    fun UserInfoListItem(user: UserInfo = UserInfo(), isViewingContacts: Boolean = false, contactRowInfo: ContactRowInfo = ContactRowInfo()) {
         val context = LocalContext.current
         Row(
             modifier = Modifier
@@ -180,7 +201,7 @@ class CoachesListActivity : ComponentActivity() {
                 .clickable {
                     if (isViewingContacts) {
                         val displayChatIntent = Intent(context, ChatActivity::class.java)
-                        displayChatIntent.putExtra("toUserEmail", user.email)
+                        displayChatIntent.putExtra("chatId", contactRowInfo.chatId)
                         context.startActivity(displayChatIntent)
                     } else {
                         val displayCoachIntent = Intent(context, ProfileActivity::class.java)
@@ -208,46 +229,65 @@ class CoachesListActivity : ComponentActivity() {
                 verticalArrangement = Arrangement.SpaceEvenly
             ) {
                 Text(
-                    text = "${user.firstName} ${user.lastName}",
+                    text = if (isViewingContacts) contactRowInfo.chatTitle else "${user.firstName} ${user.lastName}",
                     style = MaterialTheme.typography.h6,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Default.Place,
-                        tint = Color.Gray,
-                        contentDescription = "${user.firstName} ${user.lastName}'s location",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    // Temporary, until we implement proper location handling
+
+                if (isViewingContacts) {
                     Text(
-                        text = user.address.name,
+                        text = contactRowInfo.lastMessage.content,
                         color = Color.Gray,
                         style = MaterialTheme.typography.body2,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                } else {
+                    UserViewBody(user)
                 }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    user.sports.map {
-                        Icon(
-                            imageVector = it.sportIcon,
-                            tint = Color.Gray,
-                            contentDescription = it.sportName,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                    }
-                }
+
             }
         }
         Divider()
     }
+
+    @Composable
+    fun UserViewBody(user: UserInfo) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Default.Place,
+                tint = Color.Gray,
+                contentDescription = "${user.firstName} ${user.lastName}'s location",
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            // Temporary, until we implement proper location handling
+            Text(
+                text = user.address.name,
+                color = Color.Gray,
+                style = MaterialTheme.typography.body2,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            user.sports.map {
+                Icon(
+                    imageVector = it.sportIcon,
+                    tint = Color.Gray,
+                    contentDescription = it.sportName,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+            }
+        }
+    }
 }
+
+
 

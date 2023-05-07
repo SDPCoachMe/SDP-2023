@@ -349,12 +349,16 @@ class ProfileActivity : ComponentActivity() {
                         //TODO: get own email!!!
                         val userEmail = database.getCurrentEmail()
                         val intent = Intent(context, ChatActivity::class.java)
-                        intent.putExtra("currentUserEmail", userEmail)
-                        intent.putExtra("toUserEmail", email)
+                        val chatId = if (userEmail < email) "$userEmail$email" else "$email$userEmail"
+
+                        // Add the user to the chat participants and instantiate the chat if not already done
+                        database.updateChatParticipants(chatId, listOf(userEmail, email))
+
+                        intent.putExtra("chatId", chatId)
                         context.startActivity(intent)
                     }
                 ) {
-                    Text(text = "MESSAGE COACH")
+                    Text(text = "Message Coach")
                 }
             } else {
                 Divider(startIndent = 20.dp)

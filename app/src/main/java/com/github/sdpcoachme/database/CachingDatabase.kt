@@ -2,6 +2,7 @@ package com.github.sdpcoachme.database
 
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
@@ -18,7 +19,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     private val CACHED_SCHEDULE_WEEKS_BEHIND = 4L
     private val cachedUsers = mutableMapOf<String, UserInfo>()
     private val cachedTokens = mutableMapOf<String, String>()
-    private val contacts = mutableMapOf<String, List<UserInfo>>()
+    private val contacts = mutableMapOf<String, List<ContactRowInfo>>()
     private val chats = mutableMapOf<String, Chat>()
 
     private val cachedSchedules = mutableMapOf<String, List<Event>>()
@@ -115,11 +116,12 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         }
     }
 
-    override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
+    //TODO: adapt to the actual thing!!!
+    override fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
         if (contacts.containsKey(email)) {
             return CompletableFuture.completedFuture(contacts[email])
         }
-        return wrappedDatabase.getChatContacts(email).thenApply { it.also { contacts[email] = it } }
+        return wrappedDatabase.getContactRowInfo(email).thenApply { it.also { contacts[email] = it } }
     }
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {
@@ -129,12 +131,20 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         return wrappedDatabase.getChat(chatId).thenApply { it.also { chats[chatId] = it } }
     }
 
+    override fun updateChatParticipants(chatId: String, participants: List<String>): CompletableFuture<Void> {
+        // if not already cached, we don't cache the chat
+        if (chats.containsKey(chatId)) {
+            chats[chatId] = chats[chatId]!!.copy(participants = participants)
+        }
+        return wrappedDatabase.updateChatParticipants(chatId, participants)
+    }
+
     override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
         // if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat from the db)
         if (chats.containsKey(chatId)) {
-            chats[chatId] = chats[chatId]!!.copy(messages = chats[chatId]!!.messages + message)
+            chats[chatId] = chats[chatId]!!.copy(id = chatId, messages = chats[chatId]!!.messages + message)
         }
-        return wrappedDatabase.sendMessage(chatId, message) // we only the chat with the new message if the chat is already cached
+        return wrappedDatabase.sendMessage(chatId, message)
     }
 
     override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {

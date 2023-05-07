@@ -218,23 +218,24 @@ class CachingDatabaseTest {
     }
 
     @Test
-    fun getChatContactsCachesContacts() {
+    fun getChatContactsCachesContacts() { // TODO: Fix this test now that we have changed certain things
         var timesCalled = 0
-        class ContactsDB: MockDatabase() {
-            override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
-                timesCalled++
-                return CompletableFuture.completedFuture(userList)
-            }
-        }
-
-        val wrappedDatabase = ContactsDB()
+//        class ContactsDB: MockDatabase() {
+//            override fun getContactRowInfo(email: String): CompletableFuture<List<UserInfo>> {
+//                timesCalled++
+//                return CompletableFuture.completedFuture(userList)
+//            }
+//        }
+//
+//        val wrappedDatabase = ContactsDB()
+        val wrappedDatabase = MockDatabase()
         val cachingDatabase = CachingDatabase(wrappedDatabase)
-        val isCorrect = cachingDatabase.getChatContacts(exampleEmail)
+        val isCorrect = cachingDatabase.getContactRowInfo(exampleEmail)
             .thenCompose {
                 assertThat(timesCalled, `is`(1))
                 assertThat(it, `is`(userList))
 
-                cachingDatabase.getChatContacts(exampleEmail)
+                cachingDatabase.getContactRowInfo(exampleEmail)
             }.thenApply {
                 assertThat(timesCalled, `is`(1))
                 assertThat(it, `is`(userList))

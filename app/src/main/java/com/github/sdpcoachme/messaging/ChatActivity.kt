@@ -2,6 +2,7 @@ package com.github.sdpcoachme.messaging
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -123,21 +124,27 @@ class ChatActivity : ComponentActivity() {
 
         val database = (application as CoachMeApplication).database
         val currentUserEmail = database.getCurrentEmail()
-        val toUserEmail = intent.getStringExtra("toUserEmail")
 
-        if (currentUserEmail == "" || toUserEmail == null) {
-            val errorMsg = "The Chat Interface did not receive both needed users.\nPlease return to the login page and try again."
+        // TODO: consider refactoring to always pass the chatId
+        val chatId = intent.getStringExtra("chatId")
+        val isGroupChat: Boolean
+        var contact = ""
+
+        if (currentUserEmail == "" || (chatId == null)) {
+            val errorMsg = "The Chat Interface did not receive the needed information for the chat.\nPlease return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
-            val chatId = if (currentUserEmail < toUserEmail) "$currentUserEmail$toUserEmail" else "$toUserEmail$currentUserEmail"
+            isGroupChat = chatId.startsWith("@@event")
 
             database.getUser(currentUserEmail).thenAccept() { user ->
+
+                contact = if (chatId.startsWith("@@event")) chatId else chatId.replace(currentUserEmail, "")
                 // Add the other user to the current user's chat contacts
-                if (!user.chatContacts.contains(toUserEmail)) {
-                    val newUser = user.copy(chatContacts = user.chatContacts + toUserEmail)
+                if (!user.chatContacts.contains(contact)) {
+                    val newUser = user.copy(chatContacts = user.chatContacts + contact)
                     database.updateUser(newUser)
                 }
-            }
+            }.exceptionally { println("error in getUser..."); null }
 
             // needed to remove the chat listener from the db so that
             // messages are only marked as read when ins the chat
@@ -153,8 +160,9 @@ class ChatActivity : ComponentActivity() {
                     currentUserEmail,
                     chatId,
                     database,
-                    toUserEmail,
-                    stateLoading
+                    contact,
+                    stateLoading,
+                    isGroupChat,
                 )
             }
         }
@@ -170,13 +178,22 @@ fun ChatView(
     chatId: String,
     database: Database,
     toUserEmail: String,
-    stateLoading: CompletableFuture<Void>
+    stateLoading: CompletableFuture<Void>,
+    isGroupChat: Boolean = false
 ) {
     var chat by remember { mutableStateOf(Chat()) }
     var toUser by remember { mutableStateOf(UserInfo()) }
 
+    // TODO: adapt to contain the group event!!!
+    var groupEvent by remember { mutableStateOf("") }
+
     LaunchedEffect(true) {
-        toUser = database.getUser(toUserEmail).await()
+        if (isGroupChat) {
+            // TODO: get the group event
+            groupEvent = "Group Event"
+        } else {
+            toUser = database.getUser(toUserEmail).await()
+        }
         chat = database.getChat(chatId).await()
         database.addChatListener(chatId) { newChat ->
             chat = newChat
@@ -194,7 +211,7 @@ fun ChatView(
         .fillMaxHeight()
     ) {
 
-        ContactField(toUser, chatId, database)
+        ContactField(toUser, chatId, database, isGroupChat, groupEvent)
 
         ChatBoxContainer(
             chat = chat,
@@ -208,11 +225,13 @@ fun ChatView(
         ChatField(
             currentUserEmail = currentUserEmail,
             database = database,
-            chatId = chatId,
+            chat = chat,
             onSend = {
                 database.getChat(chatId).thenAccept { chat = it }
             },
-            toUser = toUser
+            toUser = toUser,
+            isGroupChat,
+            groupEvent,
         )
     }
 }
@@ -221,7 +240,7 @@ fun ChatView(
  * Composable responsible for displaying the Contact Field
  */
 @Composable
-fun ContactField(toUser: UserInfo, chatId: String, database: Database) {
+fun ContactField(toUser: UserInfo, chatId: String, database: Database, isGroupChat: Boolean, groupEvent: String) {
     val context = LocalContext.current
     Row(
         modifier = Modifier
@@ -229,15 +248,25 @@ fun ContactField(toUser: UserInfo, chatId: String, database: Database) {
             .fillMaxWidth()
             .height(56.dp) // matches the built-in app bar height
             .background(color = Purple500)
-            .clickable {
+            .clickable { // go to the profile of the other user or show the event
                 database.removeChatListener(chatId)
-                // go to the profile of the other user
-                val coachProfileIntent = Intent(context, ProfileActivity::class.java)
-                coachProfileIntent.putExtra("email", toUser.email)
-                // once users can also message other users and not just coaches,
-                // this should be adapted to also work for users
-                coachProfileIntent.putExtra("isViewingCoach", true)
-                context.startActivity(coachProfileIntent)
+
+                // if it is a group chat, chatId is the event id
+                if (isGroupChat) {
+                    // TODO: show the event
+                    Toast
+                        .makeText(context, "Show the event: $chatId", Toast.LENGTH_LONG)
+                        .show()
+                } else {
+                    // go to the profile of the other user
+                    val coachProfileIntent = Intent(context, ProfileActivity::class.java)
+                    coachProfileIntent.putExtra("email", toUser.email)
+                    // TODO:
+                    //  once users can also message other users and not just coaches,
+                    //  this should be adapted to also work for users
+                    coachProfileIntent.putExtra("isViewingCoach", true)
+                    context.startActivity(coachProfileIntent)
+                }
             },
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.Center
@@ -265,7 +294,7 @@ fun ContactField(toUser: UserInfo, chatId: String, database: Database) {
         }
 
         Text(
-            text = toUser.firstName + " " + toUser.lastName,
+            text = if (isGroupChat) groupEvent else toUser.firstName + " " + toUser.lastName,
             fontSize = 20.sp,
             modifier = Modifier
                 .testTag(CONTACT_FIELD.LABEL)
@@ -486,9 +515,12 @@ fun MessageRow(message: Message,
 @Composable
 fun ChatField(currentUserEmail: String,
               database: Database,
-              chatId: String,
+              chat: Chat,
               onSend: () -> Unit = {},
-              toUser: UserInfo) {
+              toUser: UserInfo,
+              isGroupChat: Boolean,
+              groupEvent: String,
+) {
     var message by remember { mutableStateOf("") }
 
     Row(
@@ -523,20 +555,29 @@ fun ChatField(currentUserEmail: String,
             IconButton(
                 onClick = {
                     database.sendMessage(
-                        chatId,
+                        chat.id,
                         Message(currentUserEmail, message.trim(), LocalDateTime.now().toString(), ReadState.SENT)
                     ).thenAccept {
                         onSend()
                     }
                     message = ""
-                    // place this chat at the top of the users chat list whenever they send a message
-                    database.getUser(database.getCurrentEmail()).thenCompose {
-                        database.updateUser(it.copy(chatContacts = listOf(toUser.email) + it.chatContacts.filter { e -> e != toUser.email }))
+
+                    // Place this chat at the top of the users' chat list whenever a message is sent
+                    for (participantMail in chat.participants) {
+                        database.getUser(participantMail).thenCompose {
+                            val contact = if (isGroupChat) groupEvent else chat.id.replace(participantMail, "")
+
+                            database.updateUser(it.copy(chatContacts = listOf(contact) + it.chatContacts.filter { e -> e != contact }))
+                        }
                     }
-                    //same for the toUser
-                    database.getUser(toUser.email).thenCompose {
-                        database.updateUser(it.copy(chatContacts = listOf(database.getCurrentEmail()) + it.chatContacts.filter { e -> e != database.getCurrentEmail() }))
-                    }
+//                    // place this chat at the top of the users chat list whenever they send a message
+//                    database.getUser(database.getCurrentEmail()).thenCompose {
+//                        database.updateUser(it.copy(chatContacts = listOf(toUser.email) + it.chatContacts.filter { e -> e != toUser.email }))
+//                    }
+//                    //same for the toUser
+//                    database.getUser(toUser.email).thenCompose {
+//                        database.updateUser(it.copy(chatContacts = listOf(database.getCurrentEmail()) + it.chatContacts.filter { e -> e != database.getCurrentEmail() }))
+//                    }
                 },
                 modifier = Modifier
                     .padding(start = 8.dp)
