@@ -68,20 +68,19 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     }
 
     override fun addGroupEvent(groupEvent: GroupEvent, currentWeekMonday: LocalDate): CompletableFuture<Void> {
-        val errorPreventionFuture = CompletableFuture<Void>()
-        return errorPreventionFuture.thenAccept {
-            if (groupEvent.participants.size > groupEvent.maxParticipants) {
-                errorPreventionFuture.completeExceptionally(Exception("Group event should not be full, initially"))
-            } else if (groupEvent.participants.size < 2) {
-                errorPreventionFuture.completeExceptionally(Exception("Group event must have at least 2 participants"))
-            } else if (LocalDateTime.parse(groupEvent.event.start).isBefore(LocalDateTime.now())) {
-                errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
-            } else {
-                errorPreventionFuture.complete(null)
-            }
-        }.thenCompose {
-            setChild(groupEvents, groupEvent.groupEventId, groupEvent)
+        var errorPreventionFuture = CompletableFuture<Void>()
+
+        if (groupEvent.participants.size > groupEvent.maxParticipants) {
+            errorPreventionFuture.completeExceptionally(Exception("Group event should not be full, initially"))
+        } else if (groupEvent.participants.isEmpty()) {
+            errorPreventionFuture.completeExceptionally(Exception("Group event must have at least 2 participants"))
+        } else if (LocalDateTime.parse(groupEvent.event.start).isBefore(LocalDateTime.now())) {
+            errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
+        } else {
+            errorPreventionFuture = setChild(groupEvents, groupEvent.groupEventId, groupEvent)
         }
+
+        return errorPreventionFuture
     }
 
     override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {

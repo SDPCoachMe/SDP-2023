@@ -51,6 +51,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
+import com.github.sdpcoachme.data.schedule.GroupEvent
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
@@ -222,11 +223,24 @@ fun NewEvent(database: Database) {
                                 val toast = Toast.makeText(context, "Start date must be before end date", Toast.LENGTH_SHORT)
                                 toast.show()
                             } else {
-                                EventOps.addEvent(event, database).thenAccept {
+                                EventOps.addEvent(event, database).thenCompose {
+                                    val organiser = database.getCurrentEmail().replace('.', ',')
+                                    val testGroupEvent = GroupEvent(
+                                        groupEventId = organiser.replace("@", "@@"),
+                                        event = event.copy(
+                                            name = "Test Group Event",
+                                            start = LocalDateTime.now().plusHours(1).format(formatterEventDate),
+                                            end = LocalDateTime.now().plusHours(3).format(formatterEventDate),
+                                        ),
+                                        organiser = organiser,
+                                        maxParticipants = 5,
+                                        participants = listOf(organiser)
+                                    )
+                                    database.addGroupEvent(testGroupEvent, EventOps.getStartMonday())
+                                }.thenAccept {
                                     goBackToScheduleActivity()
                                 }
                             }
-
                         },
                         modifier = Modifier.testTag(CreateEventActivity.TestTags.Clickables.SAVE),
                     ) {
