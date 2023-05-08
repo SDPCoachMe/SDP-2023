@@ -126,7 +126,7 @@ class CoachesListActivity : ComponentActivity() {
 
                 CoachMeTheme {
                     Dashboard(title) {
-                        CoachesList(it, listOfCoaches, isViewingContacts, contactRowInfos)
+                        CoachesList(it, email, listOfCoaches, isViewingContacts, contactRowInfos)
                     }
                 }
             }
@@ -139,6 +139,7 @@ class CoachesListActivity : ComponentActivity() {
     @Composable
     fun CoachesList(
         modifier: Modifier,
+        currentUserEmail: String,
         listOfCoaches: List<UserInfo>,
         isViewingContacts: Boolean,
         contactRowInfos: List<ContactRowInfo> = listOf(),
@@ -151,7 +152,7 @@ class CoachesListActivity : ComponentActivity() {
             LazyColumn {
                 if (isViewingContacts) {
                     items(contactRowInfos) { contactRowInfo ->
-                        UserInfoListItem(isViewingContacts = true, contactRowInfo = contactRowInfo)
+                        UserInfoListItem(currentUserEmail = currentUserEmail, isViewingContacts = true, contactRowInfo = contactRowInfo)
                     }
                 } else {
                     items(listOfCoaches) { user ->
@@ -159,7 +160,7 @@ class CoachesListActivity : ComponentActivity() {
                         // We still show user with no favourite sports, especially for testing purposes
                         if (user.sports.isEmpty()
                             || !Collections.disjoint(user.sports, sportsFilter)) {
-                            UserInfoListItem(user = user, isViewingContacts = false)
+                            UserInfoListItem(currentUserEmail = currentUserEmail, user = user, isViewingContacts = false)
                         }
                     }
                 }
@@ -193,7 +194,7 @@ class CoachesListActivity : ComponentActivity() {
     }
 
     @Composable
-    fun UserInfoListItem(user: UserInfo = UserInfo(), isViewingContacts: Boolean = false, contactRowInfo: ContactRowInfo = ContactRowInfo()) {
+    fun UserInfoListItem(currentUserEmail: String, user: UserInfo = UserInfo(), isViewingContacts: Boolean = false, contactRowInfo: ContactRowInfo = ContactRowInfo()) {
         val context = LocalContext.current
         Row(
             modifier = Modifier
@@ -236,11 +237,12 @@ class CoachesListActivity : ComponentActivity() {
                 )
 
                 if (isViewingContacts) {
+                    val senderName = if (contactRowInfo.lastMessage.sender == currentUserEmail) "You" else contactRowInfo.lastMessage.senderName
                     Text(
-                        text = contactRowInfo.lastMessage.content,
+                        text = "$senderName: ${contactRowInfo.lastMessage.content}",
                         color = Color.Gray,
                         style = MaterialTheme.typography.body2,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                 } else {
