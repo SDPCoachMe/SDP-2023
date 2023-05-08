@@ -5,6 +5,7 @@ package com.github.sdpcoachme.data.messaging
  */
 data class Message(
     val sender: String = "",
+    val senderName: String = "",
     val content: String = "",
     val timestamp: String = "",
     val readState: ReadState = ReadState.SENT,
@@ -14,7 +15,7 @@ data class Message(
     val readByUsers: Map<String, Boolean> = mapOf(),
 ) {
     // Constructor needed to make the data class serializable
-    constructor() : this("", "", "", ReadState.SENT, mapOf())
+    constructor() : this("", "", "", "", ReadState.SENT, mapOf())
 
     /**
      * Enum class representing the read state of a message

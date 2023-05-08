@@ -44,8 +44,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
@@ -342,7 +345,8 @@ fun ChatBoxContainer(
             // Chat Messages
             ChatMessages(
                 messages = chat.messages,
-                currentUserEmail = currentUserEmail
+                currentUserEmail = currentUserEmail,
+                nbParticipants = chat.participants.size
             )
         }
 
@@ -370,7 +374,8 @@ fun ChatBoxContainer(
 @Composable
 fun ChatMessages(
     messages: List<Message>,
-    currentUserEmail: String
+    currentUserEmail: String,
+    nbParticipants: Int
 ) {
     val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy")
 
@@ -410,7 +415,8 @@ fun ChatMessages(
                 MessageRow(
                     message = message,
                     currentUserEmail = currentUserEmail,
-                    isFromCurrentUser = isFromCurrentUser
+                    isFromCurrentUser = isFromCurrentUser,
+                    nbParticipants = nbParticipants
                 )
             }
         }
@@ -423,7 +429,9 @@ fun ChatMessages(
 @Composable
 fun MessageRow(message: Message,
                currentUserEmail: String,
-               isFromCurrentUser: Boolean) {
+               isFromCurrentUser: Boolean,
+               nbParticipants: Int
+) {
     val timestampFormatter = DateTimeFormatter.ofPattern("HH:mm")
     val timeAndUnreadMarkColor = Color(0xFF6C6C6D)
     val readMarkColor = Color(0xFF0027FF)
@@ -439,9 +447,16 @@ fun MessageRow(message: Message,
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = if (isFromCurrentUser) Alignment.BottomEnd else Alignment.BottomStart
         ) {
-            // message content
+            // message content (if the sender is not clear from the context
+            // (i.e., if it is a group chat with > 2 participants), display the sender's name)
+            val msgContent = buildAnnotatedString {
+                withStyle(
+                    style = SpanStyle(fontWeight = FontWeight.Bold)
+                ) { if (!isFromCurrentUser && nbParticipants > 2) append(message.senderName + "\n") }
+                append(message.content.trim() + "\n")
+            }
             Text(
-                text = message.content.trim() + "\n",
+                text = msgContent,
                 modifier = Modifier
                     .testTag(CHAT_MESSAGE.LABEL)
                     .fillMaxWidth(0.7f)
@@ -555,11 +570,19 @@ fun ChatField(
         if (message.trim().isNotEmpty()) {
             IconButton(
                 onClick = {
-                    database.sendMessage(
-                        chat.id,
-                        Message(currentUserEmail, message.trim(), LocalDateTime.now().toString(), ReadState.SENT)
-                    ).thenAccept {
-                        onSend()
+                    database.getUser(currentUserEmail).thenCompose {
+                        database.sendMessage(
+                            chat.id,
+                            Message(
+                                currentUserEmail,
+                                "${it.firstName} ${it.lastName}",
+                                message.trim(),
+                                LocalDateTime.now().toString(),
+                                ReadState.SENT
+                            )
+                        ).thenAccept {
+                            onSend()
+                        }
                     }
                     message = ""
 
@@ -568,6 +591,7 @@ fun ChatField(
                         database.getUser(participantMail).thenCompose {
                             val contact = if (isGroupChat) groupEvent.groupEventId else chat.id.replace(participantMail, "")
                             println("contact to update: $contact")
+                            println("user whos contact list is being updated: ${it.email}")
                             database.updateUser(it.copy(chatContacts = listOf(contact) + it.chatContacts.filter { e -> e != contact }))
                         }
                     }
