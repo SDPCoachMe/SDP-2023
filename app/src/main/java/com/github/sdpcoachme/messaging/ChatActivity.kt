@@ -570,6 +570,7 @@ fun ChatField(currentUserEmail: String,
                             database.updateUser(it.copy(chatContacts = listOf(contact) + it.chatContacts.filter { e -> e != contact }))
                         }
                     }
+                    // TODO: remove this after testing
 //                    // place this chat at the top of the users chat list whenever they send a message
 //                    database.getUser(database.getCurrentEmail()).thenCompose {
 //                        database.updateUser(it.copy(chatContacts = listOf(toUser.email) + it.chatContacts.filter { e -> e != toUser.email }))
