@@ -14,8 +14,8 @@ data class GroupEvent(
     val event: Event,
     val organiser: String,
     val maxParticipants: Int,
-    val participants: Set<String>,
+    val participants: List<String>,
 ) {
     // Constructor needed to make the data class serializable
-    constructor() : this("", Event(), "", 0, HashSet<String>())
+    constructor() : this("", Event(), "", 0, listOf<String>())
 }

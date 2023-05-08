@@ -69,8 +69,8 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     }
 
     override fun addGroupEvent(groupEvent: GroupEvent, currentWeekMonday: LocalDate): CompletableFuture<Void> {
-        val errorPreventionFuture = CompletableFuture<Void>()
-        return errorPreventionFuture.thenAccept {
+        var errorPreventionFuture = CompletableFuture<Void>()
+//        return errorPreventionFuture.thenAccept {
             if (groupEvent.participants.size > groupEvent.maxParticipants) {
                 errorPreventionFuture.completeExceptionally(Exception("Group event should not be full, initially"))
             } else if (groupEvent.participants.size < 2) {
@@ -78,11 +78,12 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             } else if (LocalDateTime.parse(groupEvent.event.start).isBefore(LocalDateTime.now())) {
                 errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
             } else {
-                errorPreventionFuture.complete(null)
+//                errorPreventionFuture.complete(null)
+                errorPreventionFuture = setChild(groupEvents, groupEvent.groupEventId, groupEvent)
             }
-        }.thenCompose {
-            setChild(groupEvents, groupEvent.groupEventId, groupEvent)
-        }
+//        }.thenCompose {
+//        }
+        return errorPreventionFuture
     }
 
     override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
@@ -127,8 +128,11 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
 
     override fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
         return getUser(currEmail).thenApply {
-            it.chatContacts
+            println("user: $it")
+            it.chatContacts.filterNotNull()
+
         }.thenCompose { contactList ->
+            println("contactList: $contactList")
             val mappedF = contactList.map { contactId ->
                 val isGroupChat = contactId.startsWith("@@event")
                 val chatId = if (isGroupChat) contactId
@@ -143,14 +147,24 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
                     if (contactId.startsWith("@@event")) {
                         // TODO: get event info here!!!
                         //  getEventInfo(contactId)
-                        CompletableFuture.completedFuture(
-                            ContactRowInfo(
-                                chatId = chatId,
-                                chatTitle = "TEST EVENT",
-                                lastMessage = lastMessage,
-                                isGroupChat = true
-                            )
-                        )
+                        getGroupEvent(contactId, EventOps.getStartMonday().plusDays(7))
+                            .thenApply { groupEvent ->
+                                val row = ContactRowInfo(
+                                    chatId = chatId,
+                                    chatTitle = groupEvent.event.name,
+                                    lastMessage = lastMessage,
+                                    isGroupChat = true
+                                )
+                                row
+                            }.exceptionally { println("error in getgroup event") ; null}
+//                        CompletableFuture.completedFuture(
+//                            ContactRowInfo(
+//                                chatId = chatId,
+//                                chatTitle = "TEST EVENT",
+//                                lastMessage = lastMessage,
+//                                isGroupChat = true
+//                            )
+//                        )
                     } else {
                         getUser(contactId).thenApply {
                             val row = ContactRowInfo(

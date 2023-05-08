@@ -30,6 +30,8 @@ import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.GroupEvent
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
@@ -43,8 +45,12 @@ import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.ADDRESS
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PHONE
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.SPORTS
+import com.github.sdpcoachme.schedule.EventOps
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.future.await
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.temporal.TemporalAdjusters
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -85,6 +91,35 @@ class ProfileActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         stateUpdated = CompletableFuture()
         database = (application as CoachMeApplication).database
+
+
+
+        val groupEvent = GroupEvent(
+            "@@event group event",
+            Event(
+                name = "Google I/O Keynote",
+                color = Color(0xFFAFBBF2).value.toString(),
+                start = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(13, 0, 0).toString(),
+                end = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(15, 0, 0).toString(),
+                description = "Tune in to find out about how we're furthering our mission to organize the world’s information and make it universally accessible and useful.",
+            ),
+            "lucaengu@gmail.com",
+            5,
+            listOf("luca.aengu@gmail.com", "lucaengu@gmail.com", "luca.engel@epfl.ch")
+        )
+        println("groupEvent: $groupEvent")
+        database.addGroupEvent(groupEvent, EventOps.getStartMonday().plusDays(7))
+            .thenAccept { println("worked: $it") }
+            .exceptionally { println("didnt work: ${it.cause}"); null }
+        database.updateChatParticipants(groupEvent.groupEventId, listOf("luca.aengu@gmail.com", "lucaengu@gmail.com", "luca.engel@epfl.ch"))
+        val list = listOf("luca.aengu@gmail.com", "lucaengu@gmail.com", "luca.engel@epfl.ch")
+        list.forEach {
+            database.getUser(it).thenCompose { userInfo ->
+                database.updateUser(userInfo.copy(chatContacts = userInfo.chatContacts.filter { c -> c != groupEvent.groupEventId } + groupEvent.groupEventId)  ) }
+        }
+
+
+
         val isViewingCoach = intent.getBooleanExtra("isViewingCoach", false)
         email =
             if (isViewingCoach) intent.getStringExtra("email").toString()
@@ -526,13 +561,15 @@ fun SwitchClientCoachRow(value: Boolean, onValueChange: (Boolean) -> Unit) {
         Text(
             text = "I would like others to see me as a coach",
             style = MaterialTheme.typography.body1,
-            modifier = Modifier.fillMaxWidth(fraction = 0.8f)
+            modifier = Modifier
+                .fillMaxWidth(fraction = 0.8f)
                 .padding(20.dp, 0.dp, 0.dp, 0.dp)
         )
         Switch(
             checked = value,
             onCheckedChange = onValueChange,
-            modifier = Modifier.testTag(COACH_SWITCH)
+            modifier = Modifier
+                .testTag(COACH_SWITCH)
                 .padding(0.dp, 0.dp, 20.dp, 0.dp)
         )
     }

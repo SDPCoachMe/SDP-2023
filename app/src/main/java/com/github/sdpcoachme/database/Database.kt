@@ -152,6 +152,7 @@ interface Database {
      * @return A future that will complete when the user has been added
      */
     fun updateChatParticipants(chatId: String, participants: List<String>): CompletableFuture<Void>
+    // TODO maybe only add the current user to the chat!!!
 
     /**
      * Place the new message into the database
