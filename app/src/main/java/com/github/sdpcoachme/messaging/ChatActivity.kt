@@ -53,6 +53,7 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.Message.ReadState
+import com.github.sdpcoachme.data.schedule.GroupEvent
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.BACK
@@ -64,6 +65,7 @@ import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_MESS
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
 import com.github.sdpcoachme.profile.CoachesListActivity
 import com.github.sdpcoachme.profile.ProfileActivity
+import com.github.sdpcoachme.schedule.EventOps
 import com.github.sdpcoachme.ui.theme.Purple500
 import kotlinx.coroutines.future.await
 import java.time.LocalDateTime
@@ -185,12 +187,12 @@ fun ChatView(
     var toUser by remember { mutableStateOf(UserInfo()) }
 
     // TODO: adapt to contain the group event!!!
-    var groupEvent by remember { mutableStateOf("") }
+    var groupEvent by remember { mutableStateOf(GroupEvent()) }
 
     LaunchedEffect(true) {
         if (isGroupChat) {
             // TODO: get the group event
-            groupEvent = "Group Event"
+            groupEvent = database.getGroupEvent(chatId, EventOps.getStartMonday()).await()
         } else {
             toUser = database.getUser(toUserEmail).await()
         }
@@ -229,7 +231,6 @@ fun ChatView(
             onSend = {
                 database.getChat(chatId).thenAccept { chat = it }
             },
-            toUser = toUser,
             isGroupChat,
             groupEvent,
         )
@@ -240,7 +241,7 @@ fun ChatView(
  * Composable responsible for displaying the Contact Field
  */
 @Composable
-fun ContactField(toUser: UserInfo, chatId: String, database: Database, isGroupChat: Boolean, groupEvent: String) {
+fun ContactField(toUser: UserInfo, chatId: String, database: Database, isGroupChat: Boolean, groupEvent: GroupEvent) {
     val context = LocalContext.current
     Row(
         modifier = Modifier
@@ -294,7 +295,7 @@ fun ContactField(toUser: UserInfo, chatId: String, database: Database, isGroupCh
         }
 
         Text(
-            text = if (isGroupChat) groupEvent else toUser.firstName + " " + toUser.lastName,
+            text = if (isGroupChat) groupEvent.event.name else toUser.firstName + " " + toUser.lastName,
             fontSize = 20.sp,
             modifier = Modifier
                 .testTag(CONTACT_FIELD.LABEL)
@@ -513,13 +514,13 @@ fun MessageRow(message: Message,
  * Chat field where user can type and send messages
  */
 @Composable
-fun ChatField(currentUserEmail: String,
-              database: Database,
-              chat: Chat,
-              onSend: () -> Unit = {},
-              toUser: UserInfo,
-              isGroupChat: Boolean,
-              groupEvent: String,
+fun ChatField(
+    currentUserEmail: String,
+    database: Database,
+    chat: Chat,
+    onSend: () -> Unit = {},
+    isGroupChat: Boolean,
+    groupEvent: GroupEvent,
 ) {
     var message by remember { mutableStateOf("") }
 
@@ -565,8 +566,8 @@ fun ChatField(currentUserEmail: String,
                     // Place this chat at the top of the users' chat list whenever a message is sent
                     for (participantMail in chat.participants) {
                         database.getUser(participantMail).thenCompose {
-                            val contact = if (isGroupChat) groupEvent else chat.id.replace(participantMail, "")
-
+                            val contact = if (isGroupChat) groupEvent.groupEventId else chat.id.replace(participantMail, "")
+                            println("contact to update: $contact")
                             database.updateUser(it.copy(chatContacts = listOf(contact) + it.chatContacts.filter { e -> e != contact }))
                         }
                     }
