@@ -5,6 +5,7 @@ import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.schedule.EventOps.Companion.getStartMonday
 import java.time.LocalDate
@@ -23,6 +24,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     private val chats = mutableMapOf<String, Chat>()
 
     private val cachedSchedules = mutableMapOf<String, List<Event>>()
+    private val registeredGroupEvents = mutableListOf<String>()
     private var currentShownMonday = getStartMonday()
     private var minCachedMonday = currentShownMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
     private var maxCachedMonday = currentShownMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
@@ -71,6 +73,16 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         }
     }
 
+    override fun addGroupEvent(groupEvent: GroupEvent, currentWeekMonday: LocalDate): CompletableFuture<Void> {
+        return wrappedDatabase.addGroupEvent(groupEvent, currentWeekMonday)
+    }
+
+    override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
+        return wrappedDatabase.registerForGroupEvent(groupEventId)
+        // TODO: add the following line once it is clear how to handle the cache and deletion of group events
+            //.thenAccept { registeredGroupEvents.add(groupEventId) }
+    }
+
     // Note: checks if it is time to prefetch
     override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         val email = wrappedDatabase.getCurrentEmail()
@@ -114,6 +126,10 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
                 return CompletableFuture.completedFuture(Schedule(cachedSchedules[email] ?: listOf()))
             }
         }
+    }
+
+    override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
+        return wrappedDatabase.getGroupEvent(groupEventId, currentWeekMonday)
     }
 
     //TODO: adapt to the actual thing!!!

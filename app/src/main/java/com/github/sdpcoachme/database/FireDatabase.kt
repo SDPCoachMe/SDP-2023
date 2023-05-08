@@ -7,12 +7,15 @@ import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.Message.*
 import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
+import com.github.sdpcoachme.schedule.EventOps
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -26,6 +29,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private val chats: DatabaseReference = rootDatabase.child("coachme").child("messages")
     private val fcmTokens: DatabaseReference = rootDatabase.child("coachme").child("fcmTokens")
     private val schedule: DatabaseReference = rootDatabase.child("coachme").child("schedule")
+    private val groupEvents: DatabaseReference = schedule.child("groupEvents")
     var valueEventListener: ValueEventListener? = null
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
@@ -64,11 +68,53 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         }
     }
 
+    override fun addGroupEvent(groupEvent: GroupEvent, currentWeekMonday: LocalDate): CompletableFuture<Void> {
+        val errorPreventionFuture = CompletableFuture<Void>()
+        return errorPreventionFuture.thenAccept {
+            if (groupEvent.participants.size > groupEvent.maxParticipants) {
+                errorPreventionFuture.completeExceptionally(Exception("Group event should not be full, initially"))
+            } else if (groupEvent.participants.size < 2) {
+                errorPreventionFuture.completeExceptionally(Exception("Group event must have at least 2 participants"))
+            } else if (LocalDateTime.parse(groupEvent.event.start).isBefore(LocalDateTime.now())) {
+                errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
+            } else {
+                errorPreventionFuture.complete(null)
+            }
+        }.thenCompose {
+            setChild(groupEvents, groupEvent.groupEventId, groupEvent)
+        }
+    }
+
+    override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
+        val id = currEmail.replace('.', ',')
+        return getGroupEvent(groupEventId, EventOps.getStartMonday()).thenCompose { groupEvent ->
+            val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
+            if (!hasCapacity) {
+                val failingFuture = CompletableFuture<Void>()
+                failingFuture.completeExceptionally(Exception("Group event is full"))
+                failingFuture
+            } else {
+                val updatedGroupEvent = groupEvent.copy(participants = groupEvent.participants + currEmail)
+                setChild(groupEvents, groupEventId, updatedGroupEvent).thenCompose {
+                    getSchedule(EventOps.getStartMonday()).thenCompose { s ->
+                        val updatedSchedule = s.copy(groupEvents = s.groupEvents + groupEventId)
+                        setChild(schedule, id, updatedSchedule)
+                    }
+                }
+            }
+        }
+    }
+
     override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         val id = currEmail.replace('.', ',')
         return getChild(schedule, id).thenApply { it.getValue(Schedule::class.java)!! }
             .exceptionally {
                 Schedule() }
+    }
+
+    override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
+        return getChild(groupEvents, groupEventId).thenApply { it.getValue(GroupEvent::class.java)!! }
+            .exceptionally { GroupEvent() }
     }
 
     override fun getCurrentEmail(): String {
