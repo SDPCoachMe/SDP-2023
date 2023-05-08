@@ -14,6 +14,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -66,15 +67,26 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         }
     }
 
-    // TODO: add error prevention for impermissible events
     override fun addGroupEvent(groupEvent: GroupEvent, currentWeekMonday: LocalDate): CompletableFuture<Void> {
-        return setChild(groupEvents, groupEvent.groupEventId, groupEvent)
+        val errorPreventionFuture = CompletableFuture<Void>()
+        return errorPreventionFuture.thenAccept {
+            if (groupEvent.participants.size > groupEvent.maxParticipants) {
+                errorPreventionFuture.completeExceptionally(Exception("Group event should not be full, initially"))
+            } else if (groupEvent.participants.size < 2) {
+                errorPreventionFuture.completeExceptionally(Exception("Group event must have at least 2 participants"))
+            } else if (LocalDateTime.parse(groupEvent.event.start).isBefore(LocalDateTime.now())) {
+                errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
+            } else {
+                errorPreventionFuture.complete(null)
+            }
+        }.thenCompose {
+            setChild(groupEvents, groupEvent.groupEventId, groupEvent)
+        }
     }
 
-    // TODO: maybe add error prevention
     override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
         val id = currEmail.replace('.', ',')
-        return getGroupEvent(groupEventId).thenCompose { groupEvent ->
+        return getGroupEvent(groupEventId, EventOps.getStartMonday()).thenCompose { groupEvent ->
             val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
             if (!hasCapacity) {
                 val failingFuture = CompletableFuture<Void>()
@@ -99,7 +111,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
                 Schedule() }
     }
 
-    override fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
+    override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
         return getChild(groupEvents, groupEventId).thenApply { it.getValue(GroupEvent::class.java)!! }
             .exceptionally { GroupEvent() }
     }

@@ -99,10 +99,11 @@ interface Database {
     /**
      * Get the group event from the database
      * @param groupEventId The id of the group event to get
+     * @param currentWeekMonday The monday of the current week
      * @return A future that will complete with the group event. If the user does not exist,
      * the future will complete exceptionally with a NoSuchKeyException.
      */
-    fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent>
+    fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent>
 
     /**
      * Get the current user's email

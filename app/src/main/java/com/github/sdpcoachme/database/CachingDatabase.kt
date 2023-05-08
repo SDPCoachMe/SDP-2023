@@ -23,6 +23,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     private val chats = mutableMapOf<String, Chat>()
 
     private val cachedSchedules = mutableMapOf<String, List<Event>>()
+    private val registeredGroupEvents = mutableListOf<String>()
     private var currentShownMonday = getStartMonday()
     private var minCachedMonday = currentShownMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
     private var maxCachedMonday = currentShownMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
@@ -77,6 +78,8 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
 
     override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
         return wrappedDatabase.registerForGroupEvent(groupEventId)
+        // TODO: add the following line once it is clear how to handle the cache and deletion of group events
+            //.thenAccept { registeredGroupEvents.add(groupEventId) }
     }
 
     // Note: checks if it is time to prefetch
@@ -124,8 +127,8 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         }
     }
 
-    override fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
-        return wrappedDatabase.getGroupEvent(groupEventId)
+    override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
+        return wrappedDatabase.getGroupEvent(groupEventId, currentWeekMonday)
     }
 
     override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
