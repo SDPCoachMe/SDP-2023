@@ -1,6 +1,7 @@
 package com.github.sdpcoachme.schedule
 
 import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.database.Database
@@ -140,9 +141,8 @@ class EventOps {
         }
 
         /**
-         * Function to add an event to the database.
+         * Function to add an event to the database and update multiDayEventMap accordingly.
          * If the event spans multiple days, it will be split into multiple events of type ShownEvent, one for each day.
-         * The multiDayEventMap will be updated accordingly.
          *
          * @param event The event to add
          * @param database The database to add the event to
@@ -154,6 +154,24 @@ class EventOps {
                 multiDayEventMap[event] = shownEvents
             }
             return database.addEvent(event, startMonday)
+        }
+
+        fun groupEventsToEvents(groupEvents: List<GroupEvent>): List<Event> {
+            val events = mutableListOf<Event>()
+            groupEvents.forEach {
+                val internalEvent = it.event
+                val event = Event(
+                    name = "${internalEvent.name} (group event)",
+                    color = internalEvent.color,
+                    start = internalEvent.start,
+                    end = internalEvent.end,
+                    description = "Organiser: ${it.organiser}\n" +
+                            "Max participants: ${it.maxParticipants}\n" +
+                            internalEvent.description,
+                )
+                events.add(event)
+            }
+            return events
         }
     }
 }

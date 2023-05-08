@@ -6,6 +6,7 @@ import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
+import com.github.sdpcoachme.schedule.EventOps
 import com.github.sdpcoachme.schedule.EventOps.Companion.getStartMonday
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -114,7 +115,17 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
                         val end = LocalDateTime.parse(it.end).toLocalDate()
                         start >= minCachedMonday && end <= maxCachedMonday
                     }
-                    schedule.copy(events = events).also {
+                    val groupEvents = listOf<GroupEvent>()
+                    schedule.groupEvents.map { id ->
+                        getGroupEvent(id, currentWeekMonday).thenApply { groupEvent ->
+                            groupEvents.plus(groupEvent)
+                        }
+                    }
+
+                    // Transform of groupEvents to a list of Events
+                    val transformed = EventOps.groupEventsToEvents(groupEvents)
+
+                    schedule.copy(events = events + transformed).also {
                         cachedSchedules[email] = it.events  // Update the cache
                     }
                 }
@@ -128,6 +139,11 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     }
 
     override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
+
+
+        if (registeredGroupEvents.contains(groupEventId)) {
+            return wrappedDatabase.getGroupEvent(groupEventId, currentWeekMonday)
+        }
         return wrappedDatabase.getGroupEvent(groupEventId, currentWeekMonday)
     }
 

@@ -106,8 +106,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         val id = currEmail.replace('.', ',')
         return getChild(schedule, id).thenApply { it.getValue(Schedule::class.java)!! }
-            .exceptionally {
-                Schedule() }
+            .exceptionally { Schedule() }
     }
 
     override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
