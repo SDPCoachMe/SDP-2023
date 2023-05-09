@@ -226,16 +226,15 @@ fun NewEvent(database: Database) {
                                 EventOps.addEvent(event, database).thenCompose {
                                     val organiser = database.getCurrentEmail().replace('.', ',')
                                     val testGroupEvent = GroupEvent(
-                                        groupEventId = organiser.replace("@", "@@"),
                                         event = event.copy(
                                             name = "Test Group Event",
-                                            start = LocalDateTime.now().plusHours(1).format(formatterEventDate),
-                                            end = LocalDateTime.now().plusHours(3).format(formatterEventDate),
+                                            start = LocalDateTime.parse(event.start, formatterEventDate).plusDays(1).format(formatterEventDate), //LocalDateTime.now().plusHours(1).format(formatterEventDate),
+                                            end = LocalDateTime.parse(event.end, formatterEventDate).plusDays(1).format(formatterEventDate), //LocalDateTime.now().plusHours(3).format(formatterEventDate),
                                         ),
                                         organiser = organiser,
                                         maxParticipants = 5,
-                                        participants = listOf(organiser)
                                     )
+                                    // TODO: remove this once the "add group event" button is added to the UI
                                     database.addGroupEvent(testGroupEvent, EventOps.getStartMonday())
                                 }.thenAccept {
                                     goBackToScheduleActivity()

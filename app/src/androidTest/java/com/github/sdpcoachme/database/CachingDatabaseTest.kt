@@ -13,7 +13,9 @@ import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.Message.*
 import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
+import com.github.sdpcoachme.schedule.EventOps
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
@@ -126,6 +128,35 @@ class CachingDatabaseTest {
             .thenCompose { cachingDatabase.addEvent(eventList[3], currentMonday) }
             .thenCompose { cachingDatabase.addEvent(eventList[4], currentMonday) }
             .thenCompose { cachingDatabase.addEvent(eventList[5], currentMonday) }
+            .thenApply {
+                assertThat(timesCalled, `is`(6))
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(isCorrect)
+    }
+
+    @Test
+    fun addGroupEventsAddsThemToWrappedDatabase() {
+        var timesCalled = 0
+        class ScheduleDB: MockDatabase() {
+            override fun addGroupEvent(groupEvent: GroupEvent, currentWeekMonday: LocalDate): CompletableFuture<Void> {
+                timesCalled++
+                return CompletableFuture.completedFuture(null)
+            }
+        }
+
+        val wrappedDatabase = ScheduleDB()
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+        cachingDatabase.setCurrentEmail(exampleEmail)
+        val isCorrect = cachingDatabase.addGroupEvent(groupEvents[0], currentMonday)
+            .thenCompose { cachingDatabase.addGroupEvent(groupEvents[1], currentMonday) }
+            .thenCompose { cachingDatabase.addGroupEvent(groupEvents[2], currentMonday) }
+            .thenCompose { cachingDatabase.addGroupEvent(groupEvents[3], currentMonday) }
+            .thenCompose { cachingDatabase.addGroupEvent(groupEvents[4], currentMonday) }
+            .thenCompose { cachingDatabase.addGroupEvent(groupEvents[5], currentMonday) }
             .thenApply {
                 assertThat(timesCalled, `is`(6))
                 true
@@ -671,6 +702,15 @@ class CachingDatabaseTest {
         )
     )
 
+
     private val eventList = cachedEvents + nonCachedEvents
+
+    private val groupEvents = eventList.map {event ->
+        GroupEvent(
+            event.copy(start = event.end, end = LocalDateTime.parse(event.end).plusHours(1).format(EventOps.getEventDateFormatter())),
+            MockDatabase.getDefaultEmail(),
+            3,
+        )
+    }
 
 }

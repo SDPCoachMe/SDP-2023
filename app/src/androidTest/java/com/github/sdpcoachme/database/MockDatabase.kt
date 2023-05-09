@@ -5,7 +5,9 @@ import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
+import com.github.sdpcoachme.schedule.EventOps
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
@@ -17,17 +19,7 @@ open class MockDatabase: Database {
 
     // TODO: database should be empty by default, and tests should add data to it.
     //  This way, we can make sure each test is independent from the others
-    private val defaultEmail = "example@email.com"
-    private val defaultUserInfo = UserInfo(
-        "John",
-        "Doe",
-        defaultEmail,
-        "1234567890",
-        LAUSANNE,
-        false,
-        emptyList(),
-        emptyList()
-    )
+
     private var currEmail = ""
 
     private val toEmail = "to@email.com"
@@ -52,6 +44,29 @@ open class MockDatabase: Database {
     private var accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
     private val fcmTokens = hashMapOf<String, String>()
     private var schedules = hashMapOf<String, Schedule>()
+    private var groupEvents = hashMapOf<String, GroupEvent>()
+
+    companion object {
+        private val defaultEmail = "example@email.com"
+        private val defaultUserInfo = UserInfo(
+            "John",
+            "Doe",
+            defaultEmail,
+            "1234567890",
+            LAUSANNE,
+            false,
+            emptyList(),
+            emptyList()
+        )
+
+        fun getDefaultEmail(): String {
+            return defaultEmail
+        }
+
+        fun getDefaultUser(): UserInfo {
+            return defaultUserInfo
+        }
+    }
 
     fun restoreDefaultChatSetup() {
         chat = Chat(participants = listOf(defaultEmail, toEmail))
@@ -114,6 +129,50 @@ open class MockDatabase: Database {
         }
     }
 
+    override fun addGroupEvent(groupEvent: GroupEvent, currentWeekMonday: LocalDate): CompletableFuture<Void> {
+        val errorPreventionFuture = CompletableFuture<Void>()
+
+        if (groupEvent.participants.size > groupEvent.maxParticipants) {
+            errorPreventionFuture.completeExceptionally(Exception("Group event should not be full, initially"))
+        } else if (groupEvent.participants.isEmpty()) {
+            errorPreventionFuture.completeExceptionally(Exception("Group event must have at least 2 participants"))
+        } else if (LocalDateTime.parse(groupEvent.event.start).isBefore(LocalDateTime.now())) {
+            errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
+        } else {
+            groupEvents[groupEvent.groupEventId] = groupEvent
+            registerForGroupEvent(groupEvent.groupEventId).thenCompose {
+                errorPreventionFuture.complete(null)
+                errorPreventionFuture
+            }
+            /*errorPreventionFuture
+                setChild(groupEvents, groupEvent.groupEventId, groupEvent).thenCompose {
+                registerForGroupEvent(groupEvent.groupEventId)
+            }*/
+        }
+
+        return errorPreventionFuture
+    }
+
+    override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
+        return getGroupEvent(groupEventId, EventOps.getStartMonday()).thenCompose { groupEvent ->
+            val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
+            if (!hasCapacity) {
+                val failingFuture = CompletableFuture<Void>()
+                failingFuture.completeExceptionally(Exception("Group event is full"))
+                failingFuture
+            } else {
+                val updatedGroupEvent = groupEvent.copy(participants = groupEvent.participants + currEmail)
+                groupEvents[groupEventId] = updatedGroupEvent
+
+                getSchedule(EventOps.getStartMonday()).thenCompose { s ->
+                    val updatedSchedule = s.copy(groupEvents = s.groupEvents + groupEventId)
+                    schedules[currEmail] = updatedSchedule
+                    CompletableFuture.completedFuture(null)
+                }
+            }
+        }
+    }
+
     override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         if (currEmail == "throwGetSchedule@Exception.com") {
             val error = CompletableFuture<Schedule>()
@@ -122,6 +181,12 @@ open class MockDatabase: Database {
         }
         return schedules[currEmail]?.let { CompletableFuture.completedFuture(it) }
             ?: CompletableFuture.completedFuture(Schedule(emptyList()))
+    }
+
+    override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
+        val future = CompletableFuture<GroupEvent>()
+        future.complete(groupEvents[groupEventId] ?: GroupEvent())
+        return future
     }
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {

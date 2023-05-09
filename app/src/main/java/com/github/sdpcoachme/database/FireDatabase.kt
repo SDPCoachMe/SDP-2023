@@ -77,7 +77,9 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         } else if (LocalDateTime.parse(groupEvent.event.start).isBefore(LocalDateTime.now())) {
             errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
         } else {
-            errorPreventionFuture = setChild(groupEvents, groupEvent.groupEventId, groupEvent)
+            errorPreventionFuture = setChild(groupEvents, groupEvent.groupEventId, groupEvent).thenCompose {
+                registerForGroupEvent(groupEvent.groupEventId)
+            }
         }
 
         return errorPreventionFuture
@@ -110,6 +112,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     }
 
     override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
+
         return getChild(groupEvents, groupEventId).thenApply { it.getValue(GroupEvent::class.java)!! }
             .exceptionally { GroupEvent() }
     }
