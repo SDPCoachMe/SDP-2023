@@ -239,7 +239,7 @@ class CoachesListActivity : ComponentActivity() {
                 if (isViewingContacts) {
                     val senderName = if (contactRowInfo.lastMessage.sender == currentUserEmail) "You" else contactRowInfo.lastMessage.senderName
                     Text(
-                        text = "$senderName: ${contactRowInfo.lastMessage.content}",
+                        text = if (senderName.isNotEmpty()) "$senderName: ${contactRowInfo.lastMessage.content}" else "Tap to write a message",
                         color = Color.Gray,
                         style = MaterialTheme.typography.body2,
                         maxLines = 2,
