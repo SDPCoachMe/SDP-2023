@@ -8,7 +8,6 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.ui.Dashboard
@@ -16,7 +15,6 @@ import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_M
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.database.CachingStore
-import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.MapActivity

@@ -2,7 +2,6 @@ package com.github.sdpcoachme.ui
 
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Intent
-import android.provider.Contacts.Intents.UI
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule

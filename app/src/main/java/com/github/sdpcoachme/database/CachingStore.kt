@@ -3,7 +3,6 @@ package com.github.sdpcoachme.database
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import androidx.datastore.core.DataStore
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
@@ -15,26 +14,29 @@ import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import androidx.datastore.preferences.core.*
-import androidx.datastore.preferences.preferencesDataStore
+import java.util.concurrent.TimeUnit
 
-// todo finir de faire la documentation
+// todo finish documentation
 
 /**
  * A caching database that wraps another database
  */
 class CachingStore(private val wrappedDatabase: Database,
-                   private val dataStore: DataStore<Preferences>,
+                   //private val dataStore: DataStore<Preferences>,
                    context: Context) {
 
+    // todo all commented code is for caching data locally and have persistence when closing the app
+
+    /*
     val USER_EMAIL_KEY = stringPreferencesKey("user_email")
     val CACHED_USERS_KEY = stringPreferencesKey("cached_users")
     val CONTACTS_KEY = stringPreferencesKey("contacts")
     val CHATS_KEY = stringPreferencesKey("chats")
     val CACHED_SCHEDULES_KEY = stringPreferencesKey("cached_schedules")
+
+     */
 
     private val CACHED_SCHEDULE_WEEKS_AHEAD = 4L
     private val CACHED_SCHEDULE_WEEKS_BEHIND = 4L
@@ -48,7 +50,11 @@ class CachingStore(private val wrappedDatabase: Database,
     private var minCachedMonday = currentShownMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
     private var maxCachedMonday = currentShownMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
 
+    //private val workManager = WorkManager.getInstance(context)
+
     private var currentEmail: String? = null
+
+    /*
 
     private var retrieveData = if (isInternetAvailable(context)) {
             retrieveLocalData().thenCompose {
@@ -56,11 +62,40 @@ class CachingStore(private val wrappedDatabase: Database,
             }
         } else retrieveLocalData()
 
+
+
+
+    inner class StoreWorker(appContext: Context, workerParams: WorkerParameters):
+        Worker(appContext, workerParams) {
+        override fun doWork(): Result {
+            println("Storing data")
+            storeLocalData()
+            // Indicate whether the work finished successfully with the Result
+            return Result.success()
+        }
+    }
+
+     */
+
     init {
         wrappedDatabase.addUsersListeners { users ->
             cachedUsers.clear()
             cachedUsers.putAll(users.associateBy { it.email })
         }
+        /*
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.UNMETERED)
+            .setRequiresCharging(true)
+            .build()
+
+        val saveRequest =
+            OneTimeWorkRequestBuilder<StoreWorker>()
+                .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                .setConstraints(constraints)
+                .build()
+        workManager.enqueue(saveRequest)
+
+         */
     }
 
     /**
@@ -68,10 +103,16 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return a boolean indiacting wether the user is logged in
      */
     fun isLoggedIn(): CompletableFuture<Boolean> {
+        return CompletableFuture.completedFuture(!currentEmail.isNullOrEmpty())
+        /*
         return retrieveData.thenApply {
-            currentEmail != null
+            !currentEmail.isNullOrEmpty()
         }
+
+         */
     }
+
+    /*
 
     /**
      * Retrieves local data from the datastore
@@ -148,6 +189,8 @@ class CachingStore(private val wrappedDatabase: Database,
         }
         return writeDatastoreFuture
     }
+
+     */
 
 
     fun updateUser(user: UserInfo): CompletableFuture<Void> {
@@ -305,12 +348,21 @@ class CachingStore(private val wrappedDatabase: Database,
         return wrappedDatabase.setFCMToken(email, token)
     }
     fun getCurrentEmail(): CompletableFuture<String> {
+        if (currentEmail.isNullOrEmpty()) {
+            throw IllegalStateException("Current email is null or empty")
+        }
+        return CompletableFuture.completedFuture(currentEmail)
+
+        /*
+
         return retrieveData.thenApply {
             if (currentEmail.isNullOrEmpty()) {
                 throw IllegalStateException("Current email is null or empty")
             }
             currentEmail
         }
+
+         */
     }
 
     fun setCurrentEmail(email: String): CompletableFuture<Void> {
@@ -341,6 +393,8 @@ class CachingStore(private val wrappedDatabase: Database,
         chats.clear()
     }
 
+    /*
+
     /**
      * Check if the device is connected to the internet
      * @param context The context of the application
@@ -352,5 +406,7 @@ class CachingStore(private val wrappedDatabase: Database,
         val actNw = connectivityManager.getNetworkCapabilities(networkCapabilities) ?: return false
         return actNw.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
+
+     */
 
 }
