@@ -126,13 +126,13 @@ interface Database {
     /**
      * Get the contact row info for the given user
      * This will be used to display the user's contacts in the UI
-     * similar to other messaging services such as WhatsApp
+     * similar to other messaging services such as WhatsApp:
+     * The name of the chat / recipient and the last message will be displayed
      *
      * @param email The email of the user whose contacts should be retrieved
      * @return A future that will complete with the contact row info
      */
     fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>>
-
 
     /**
      * Get chat with the given id from the database
@@ -152,7 +152,6 @@ interface Database {
      * @return A future that will complete when the user has been added
      */
     fun updateChatParticipants(chatId: String, participants: List<String>): CompletableFuture<Void>
-    // TODO maybe only add the current user to the chat!!!
 
     /**
      * Place the new message into the database

@@ -379,9 +379,6 @@ class ProfileActivity : ComponentActivity() {
                         .align(Alignment.CenterHorizontally)
                         .testTag(MESSAGE_COACH),
                     onClick = {
-                        // For the moment, nothing happens
-                        // but in the future this could open the in app messenger with the coach
-                        //TODO: get own email!!!
                         val userEmail = database.getCurrentEmail()
                         val intent = Intent(context, ChatActivity::class.java)
                         val chatId = if (userEmail < email) "$userEmail$email" else "$email$userEmail"

@@ -132,7 +132,6 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         return wrappedDatabase.getGroupEvent(groupEventId, currentWeekMonday)
     }
 
-    //TODO: adapt to the actual thing!!!
     override fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
         if (contacts.containsKey(email)) {
             return CompletableFuture.completedFuture(contacts[email])
