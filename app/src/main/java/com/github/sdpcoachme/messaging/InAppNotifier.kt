@@ -30,20 +30,20 @@ class InAppNotifier(val context: Context, val database: Database) {
      *
      * @param title Title of the notification
      * @param body Body of the notification
-     * @param senderEmail Email of the sender
+     * @param chatId Id of the chat
      * @param notificationType Type of the notification
      */
-    fun sendNotification(title: String?, body: String?, senderEmail: String?, notificationType: String?) {
+    fun sendNotification(title: String?, body: String?, chatId: String?, notificationType: String?) {
         val notificationTitle = title?: "New message"
         val notificationBody = body?: "You have a new message"
-        val sender = senderEmail ?: ""
+        val id = chatId ?: ""
 
         // to enable multiple notification types, we check the notificationType field
         val type = notificationType ?: ""
 
         // Create and send a customized notification.
         if (type == "messaging") {
-            sendMessagingNotification(notificationTitle, notificationBody, sender)
+            sendMessagingNotification(notificationTitle, notificationBody, id)
         }
     }
 
@@ -54,22 +54,24 @@ class InAppNotifier(val context: Context, val database: Database) {
      *
      * @param notificationTitle Title of the notification
      * @param notificationBody Body of the notification
-     * @param sender Email of the sender
+     * @param chatId Id of the chat
      */
-    private fun sendMessagingNotification(notificationTitle: String, notificationBody: String, sender: String) {
+    private fun sendMessagingNotification(notificationTitle: String, notificationBody: String, chatId: String) {
 
         // The more info we receive, the more we can customize the notification's behaviour (up until the chat itself)
         val intent: Intent
         when {
             database.getCurrentEmail().isEmpty() -> {
                 intent = Intent(context, LoginActivity::class.java)
-                    .putExtra("sender", sender)
+                    .putExtra("chatId", chatId)
                 intent.action = "OPEN_CHAT_ACTIVITY"
             }
-            sender.isEmpty() -> intent = Intent(context, CoachesListActivity::class.java)
+            chatId.isEmpty() -> intent = Intent(context, CoachesListActivity::class.java)
                 .putExtra("isViewingContacts", true)
-            else -> intent = Intent(context, ChatActivity::class.java)
-                .putExtra("toUserEmail", sender)
+            else -> {
+                intent = Intent(context, ChatActivity::class.java)
+                    .putExtra("chatId", chatId)
+            }
         }
 
         // Create the pending intent to be used when the notification is clicked

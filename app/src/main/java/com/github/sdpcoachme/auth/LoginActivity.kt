@@ -95,7 +95,7 @@ class LoginActivity : ComponentActivity() {
 
             // prepare the intent to open the chat activity
             userExistsIntent = Intent(this, ChatActivity::class.java)
-                .putExtra("toUserEmail", pushNotificationIntent.getStringExtra("sender"))
+                .putExtra("chatId", pushNotificationIntent.getStringExtra("chatId"))
 
             // If the user is logged in, then we can open the chat activity directly without letting the user log in,
             // otherwise we wait for the login process to complete and then open the chat activity
