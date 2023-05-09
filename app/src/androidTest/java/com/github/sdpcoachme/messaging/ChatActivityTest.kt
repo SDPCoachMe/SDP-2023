@@ -13,13 +13,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.github.sdpcoachme.*
-import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
-import com.github.sdpcoachme.data.UserAddressSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.UserInfoSamples
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.Message.*
-import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
@@ -44,6 +40,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.lang.Thread.sleep
 import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
@@ -54,30 +51,13 @@ class ChatActivityTest {
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
-    private val toUser = UserInfo(
-        "Jane",
-        "Doe",
-        "to@email.com",
-        "0987654321",
-        LAUSANNE,
-        true,
-        emptyList()
-    )
+    private val toUser = UserInfoSamples.COACH_1
+    private lateinit var database: Database
+    private val currentUser = UserInfoSamples.NON_COACH_1.copy(firstName = "Current_FirstName", lastName = "Current_LastName")
+    private val chatId = (currentUser.email + toUser.email)
     private val defaultIntent = Intent(
         ApplicationProvider.getApplicationContext(), ChatActivity::class.java
-    ).putExtra("toUserEmail", toUser.email)
-
-    private lateinit var database: Database
-    private val currentUser = UserInfo(
-        "John",
-        "Doe",
-        "example@email.com",
-        "0123456789",
-        NEW_YORK,
-        false,
-        emptyList()
-    )
-    private val chatId = (currentUser.email + toUser.email)
+    ).putExtra("chatId", chatId)
 
 
     @Before
@@ -117,13 +97,13 @@ class ChatActivityTest {
 
     @Test
     fun whenClickingScrollButtonScreenScrollsDown() {
-        val msg1 = Message(toUser.email, "", LocalDateTime.now().toString())
-        val msg2 = Message(currentUser.email, "", LocalDateTime.now().toString())
+        val msg1 = Message(toUser.email, "ToUser Name", "", LocalDateTime.now().toString())
+        val msg2 = Message(currentUser.email, "CurrentUser Name", "", LocalDateTime.now().toString())
 
         database.sendMessage(chatId, msg1.copy(timestamp = LocalDateTime.now().minusDays(1).toString()))
         for (i in 0..20) {
             database.sendMessage(chatId, (msg1.copy(content = "toUser msg $i")))
-            database.sendMessage(chatId, (msg2.copy(content = "currentUser msg $i"))).get()
+            database.sendMessage(chatId, (msg2.copy(content = "currentUser msg $i")))
         }
 
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
@@ -144,7 +124,7 @@ class ChatActivityTest {
     }
 
     @Test
-    fun clickingOnContactRowOpensProfileOfThatContact() {
+    fun clickingOnContactRowInNormalChatOpensProfileOfThatContact() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
             Intents.init()
 
@@ -163,8 +143,11 @@ class ChatActivityTest {
         }
     }
 
+    // TODO: add test for contact row click when chat is a group event chat (should display the event)
+
     @Test
     fun backButtonReturnsToListedContactsWhenPressed() {
+        println("current user: $currentUser")
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
             Intents.init()
 
@@ -178,8 +161,9 @@ class ChatActivityTest {
                     hasExtra("isViewingContacts", true)
                 )
             )
+            sleep(5000)
 
-            composeTestRule.onNodeWithText("${toUser.firstName} ${toUser.lastName}")
+            composeTestRule.onNodeWithText("${UserInfoSamples.COACH_1.firstName} ${UserInfoSamples.COACH_1.lastName}")
                 .assertIsDisplayed()
             Intents.release()
         }
@@ -277,7 +261,7 @@ class ChatActivityTest {
     fun messageSentByOtherUserDoesNotContainReadStateCheckMark() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
 
-            database.sendMessage(chatId, Message(toUser.email, "", LocalDateTime.now().toString()))
+            database.sendMessage(chatId, Message(toUser.email, "Sender Name","Does not contain checkmark", LocalDateTime.now().toString()))
 
             composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertDoesNotExist()
@@ -288,7 +272,7 @@ class ChatActivityTest {
     fun messageSentByCurrentUserContainsReadStateCheckMark() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
 
-            database.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString()))
+            database.sendMessage(chatId, Message(currentUser.email, "Sender Name","message", LocalDateTime.now().toString()))
 
             composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertIsDisplayed()
@@ -299,7 +283,7 @@ class ChatActivityTest {
     fun sentMarkIsDisplayedWhenMessageNotYetReceivedByRecipient() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
 
-            database.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), ReadState.SENT))
+            database.sendMessage(chatId, Message(currentUser.email, "Sender Name", "message", LocalDateTime.now().toString(), ReadState.SENT))
 
             composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertIsDisplayed()
@@ -311,7 +295,7 @@ class ChatActivityTest {
     fun receivedMarkIsDisplayedWhenMessageOnlyReceivedByRecipient() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
 
-            database.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), ReadState.RECEIVED))
+            database.sendMessage(chatId, Message(currentUser.email, "Sender Name","message", LocalDateTime.now().toString(), ReadState.RECEIVED))
 
             composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertIsDisplayed()
@@ -323,13 +307,15 @@ class ChatActivityTest {
     fun readMarkIsDisplayedWhenMessageReadByRecipient() {
         ActivityScenario.launch<ChatActivity>(defaultIntent).use {
 
-            database.sendMessage(chatId, Message(currentUser.email, "message", LocalDateTime.now().toString(), ReadState.READ))
+            database.sendMessage(chatId, Message(currentUser.email, "Sender Name","message", LocalDateTime.now().toString(), ReadState.READ))
 
             composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertIsDisplayed()
                 .assertContentDescriptionEquals("message read icon")
         }
     }
+
+
     
     @Test
     fun errorHandlerIsLaunchedIfCurrentUserEmailIsEmpty() {
@@ -350,7 +336,8 @@ class ChatActivityTest {
             composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD)
                 .assertIsDisplayed()
 
-            composeTestRule.onNodeWithText("The Chat Interface did not receive both needed users.\nPlease return to the login page and try again.")
+            composeTestRule.onNodeWithText("The Chat Interface did not receive the needed information for the chat.\n" +
+                    "Please return to the login page and try again.")
                 .assertIsDisplayed()
         }
     }

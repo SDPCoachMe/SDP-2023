@@ -10,6 +10,7 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserAddressSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.Message.*
 import com.github.sdpcoachme.data.schedule.Event
@@ -220,15 +221,21 @@ class CachingDatabaseTest {
     @Test
     fun getChatContactsCachesContacts() { // TODO: Fix this test now that we have changed certain things
         var timesCalled = 0
-//        class ContactsDB: MockDatabase() {
-//            override fun getContactRowInfo(email: String): CompletableFuture<List<UserInfo>> {
-//                timesCalled++
-//                return CompletableFuture.completedFuture(userList)
-//            }
-//        }
-//
-//        val wrappedDatabase = ContactsDB()
-        val wrappedDatabase = MockDatabase()
+
+        val rowInfo = ContactRowInfo(
+            "chatiId",
+            "chatiName",
+            Message("sender@email.com", "Sender Name", "Test Message", LocalDateTime.now().toString(), ReadState.SENT, mapOf()),
+            false,
+        )
+        class ContactsDB: MockDatabase() {
+            override fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
+                timesCalled++
+                return CompletableFuture.completedFuture(listOf(rowInfo))
+            }
+        }
+
+        val wrappedDatabase = ContactsDB()
         val cachingDatabase = CachingDatabase(wrappedDatabase)
         val isCorrect = cachingDatabase.getContactRowInfo(exampleEmail)
             .thenCompose {
@@ -294,8 +301,9 @@ class CachingDatabaseTest {
     @Test
     fun sendingMessageForCachedChatUpdatesThatChatInsideTheCache() {
         val newMessage = Message(
-            "New Message!",
             defaultUser.email,
+            "Sender Name",
+            "New Message!",
             LocalDateTime.now().toString(),
             ReadState.SENT
         )
@@ -329,8 +337,9 @@ class CachingDatabaseTest {
     @Test
     fun sendingMessageForNotCachedChatDoesNotCacheTheChat() {
         val newMessage = Message(
-            "New Message!",
             defaultUser.email,
+            "Sender Name",
+            "New Message!",
             LocalDateTime.now().toString(),
             ReadState.SENT
         )

@@ -79,18 +79,6 @@ class CoachesListActivity : ComponentActivity() {
             val errorMsg = "The coach list did not receive an email address.\nPlease return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
-//            val futureListOfCoaches = // TODO: Store in a map?
-//                if (isViewingContacts) {
-//                    database.getChatContacts(email = email)
-//                } else {
-//                    database
-//                        .getAllUsersByNearest(
-//                            latitude = userLatLng.latitude,
-//                            longitude = userLatLng.longitude
-//                        ).thenApply {
-//                            it.filter { user -> user.coach }
-//                        }
-//                }
 
             setContent {
                 var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
