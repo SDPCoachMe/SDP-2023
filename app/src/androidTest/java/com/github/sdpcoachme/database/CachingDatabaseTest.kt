@@ -167,50 +167,55 @@ class CachingDatabaseTest {
         assertTrue(isCorrect)
     }
 
-    @Test
-    fun getScheduleWithCorrectCacheReturnsCachedSchedule() {
-        var timesCalled = 0
-        class ScheduleDB: MockDatabase() {
-            override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-                timesCalled++
-                return CompletableFuture.completedFuture(Schedule(eventList))
-            }
+    private class GetScheduleDB(val eventList: List<Event>, val groupEvents: List<GroupEvent>): MockDatabase() {
+        private var timesCalled = 0
+
+        fun getTimesCalled(): Int {
+            return timesCalled
         }
 
-        val wrappedDatabase = ScheduleDB()
+        fun getGroupEventIds(): List<String> {
+            return groupEvents.map { it.groupEventId }
+        }
+
+        override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+            timesCalled++
+            return CompletableFuture.completedFuture(Schedule(eventList, getGroupEventIds()))
+        }
+    }
+    @Test
+    fun getScheduleWithCorrectCacheReturnsCachedSchedule() {
+        val wrappedDatabase = GetScheduleDB(eventList, groupEvents) //ScheduleDB()
         val cachingDatabase = CachingDatabase(wrappedDatabase)
         cachingDatabase.setCurrentEmail(exampleEmail)
+
         val isCorrect = cachingDatabase.getSchedule(currentMonday)
             .thenCompose {
-                assertThat(timesCalled, `is`(1))
+                assertThat(wrappedDatabase.getTimesCalled(), `is`(1))
                 cachingDatabase.getSchedule(currentMonday)
             }.thenApply {
-                assertThat(timesCalled, `is`(1))
+                assertThat(wrappedDatabase.getTimesCalled(), `is`(1))
                 assertThat(it.events, `is`(cachedEvents))
+                assertThat(it.groupEvents, `is`(wrappedDatabase.getGroupEventIds()))
                 true
             }.exceptionally {
                 false
             }.get(5, SECONDS)
+
         assertTrue(isCorrect)
     }
 
     @Test
     fun getScheduleWithEmptyCacheCachesCorrectSchedule() {
-        var timesCalled = 0
-        class ScheduleDB: MockDatabase() {
-            override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-                timesCalled++
-                return CompletableFuture.completedFuture(Schedule(eventList))
-            }
-        }
-
-        val wrappedDatabase = ScheduleDB()
+        val wrappedDatabase = GetScheduleDB(eventList, groupEvents)
         val cachingDatabase = CachingDatabase(wrappedDatabase)
         cachingDatabase.setCurrentEmail(exampleEmail)
+
         val isCorrect = cachingDatabase.getSchedule(currentMonday)
             .thenApply {
-                assertThat(timesCalled, `is`(1))
+                assertThat(wrappedDatabase.getTimesCalled(), `is`(1))
                 assertThat(it.events, `is`(cachedEvents))
+                assertThat(it.groupEvents, `is`(wrappedDatabase.getGroupEventIds()))
                 true
             }.exceptionally {
                 false
@@ -221,25 +226,19 @@ class CachingDatabaseTest {
 
     @Test
     fun getScheduleWithNewCurrentMondayCachesCorrectSchedule() {
-        var timesCalled = 0
-        class ScheduleDB: MockDatabase() {
-            override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-                timesCalled++
-                return CompletableFuture.completedFuture(Schedule(eventList))
-            }
-        }
-
-        val wrappedDatabase = ScheduleDB()
+        val wrappedDatabase = GetScheduleDB(eventList, groupEvents)
         val cachingDatabase = CachingDatabase(wrappedDatabase)
         cachingDatabase.setCurrentEmail(exampleEmail)
+
         val isCorrect = cachingDatabase.getSchedule(currentMonday)
             .thenCompose {
-                assertThat(timesCalled, `is`(1))
+                assertThat(wrappedDatabase.getTimesCalled(), `is`(1))
                 assertThat(it.events, `is`(cachedEvents))
                 cachingDatabase.getSchedule(currentMonday.plusWeeks(6))
             }.thenApply {
-                assertThat(timesCalled, `is`(2))
+                assertThat(wrappedDatabase.getTimesCalled(), `is`(2))
                 assertThat(it.events, `is`(nonCachedEvents))
+                assertThat(it.groupEvents, `is`(wrappedDatabase.getGroupEventIds()))
                 true
             }.exceptionally {
                 false
@@ -707,7 +706,7 @@ class CachingDatabaseTest {
 
     private val groupEvents = eventList.map {event ->
         GroupEvent(
-            event.copy(start = event.end, end = LocalDateTime.parse(event.end).plusHours(1).format(EventOps.getEventDateFormatter())),
+            event.copy(name = "${event.name} (group event)", start = event.end, end = LocalDateTime.parse(event.end).plusHours(1).format(EventOps.getEventDateFormatter())),
             MockDatabase.getDefaultEmail(),
             3,
         )

@@ -102,11 +102,11 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
 
     // Note: checks if it is time to prefetch, for now, group events are fetched from the db every time (because low number assumed)
     override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        val email = wrappedDatabase.getCurrentEmail()
         currentShownMonday = currentWeekMonday
 
         if (cachedSchedule.events.isEmpty() && cachedSchedule.groupEvents.isEmpty()) {  // If no cached schedule for that account, we fetch the schedule from the db
             return wrappedDatabase.getSchedule(currentWeekMonday).thenApply { schedule ->
+                println("get schedule in wrapped db succeeded")
                 val events = schedule.events.filter {   // We only cache the events that are in the current week or close to it
                     val start = LocalDateTime.parse(it.start).toLocalDate()
                     val end = LocalDateTime.parse(it.end).toLocalDate()
@@ -121,7 +121,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
                     cachedSchedule = it
 /*                    cachedSchedules[email] = it.events*/
                 }
-            }
+            }.exceptionally { println("get schedule in wrapped db failed"); null }
         }
         else {
             // If it is time to prefetch (because displayed week is too close to the edge of the cached schedule), we fetch the schedule from the db

@@ -144,10 +144,6 @@ open class MockDatabase: Database {
                 errorPreventionFuture.complete(null)
                 errorPreventionFuture
             }
-            /*errorPreventionFuture
-                setChild(groupEvents, groupEvent.groupEventId, groupEvent).thenCompose {
-                registerForGroupEvent(groupEvent.groupEventId)
-            }*/
         }
 
         return errorPreventionFuture
@@ -180,7 +176,7 @@ open class MockDatabase: Database {
             return error
         }
         return schedules[currEmail]?.let { CompletableFuture.completedFuture(it) }
-            ?: CompletableFuture.completedFuture(Schedule(emptyList()))
+            ?: CompletableFuture.completedFuture(Schedule())
     }
 
     override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
