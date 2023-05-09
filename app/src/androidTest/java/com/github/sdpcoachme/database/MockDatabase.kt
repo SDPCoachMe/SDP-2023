@@ -163,7 +163,7 @@ open class MockDatabase: Database {
     }
 
     override fun addUsersListeners(onChange: (List<UserInfo>) -> Unit) {
-        TODO("Not yet implemented")
+        // Not necessary
     }
 
     fun numberOfRemovedChatListenerCalls(): Int {

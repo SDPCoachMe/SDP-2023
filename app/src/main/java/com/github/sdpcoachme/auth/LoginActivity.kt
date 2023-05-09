@@ -99,7 +99,6 @@ class LoginActivity : ComponentActivity() {
         store =  (application as CoachMeApplication).store
 
         store.isLoggedIn().thenAccept { loggedIn ->
-            println("User is already logged in"+ loggedIn)
             if (loggedIn) {
                 store.getCurrentEmail().thenAccept {
                     launchNextActivity(it)

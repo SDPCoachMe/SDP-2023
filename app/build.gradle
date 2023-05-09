@@ -62,10 +62,10 @@ android {
 
 dependencies {
     // Preferences DataStore
-    //implementation("androidx.datastore:datastore-preferences:1.1.0-alpha04")
+    implementation("androidx.datastore:datastore-preferences:1.1.0-alpha04")
 
     implementation 'androidx.core:core-ktx:1.9.0'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.0'
+    //implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.0'
     implementation 'com.google.maps.android:maps-compose:2.8.0'
     implementation 'com.google.maps.android:maps-ktx:3.2.1'
     implementation 'com.google.maps.android:maps-utils-ktx:3.4.0'
@@ -132,20 +132,21 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
 
     // Coroutine Lifecycle Scopes
-    //implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
-    //implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
 
     // Preferences DataStore
-    //implementation("androidx.datastore:datastore-preferences:1.1.0-alpha04")
+    implementation("androidx.datastore:datastore-preferences:1.1.0-alpha04")
 
 
     // (Java only)
-    //implementation("androidx.work:work-runtime:2.8.1")
+    implementation("androidx.work:work-runtime:2.8.1")
 
     // Kotlin + coroutines
-    //implementation("androidx.work:work-runtime-ktx:2.8.1")
-    //implementation("androidx.work:work-runtime:2.8.1")
+    implementation("androidx.work:work-runtime-ktx:2.8.1")
+    implementation("androidx.work:work-runtime:2.8.1")
 
+    //implementation("koin-androidx-workmanager:3.4.0")
 }
 
 tasks.withType(Test) {

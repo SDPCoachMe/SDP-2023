@@ -3,6 +3,8 @@ package com.github.sdpcoachme.database
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.util.Log
+import androidx.datastore.core.DataStore
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
@@ -14,29 +16,28 @@ import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.preferencesDataStore
+import androidx.work.*
 import java.util.concurrent.TimeUnit
 
-// todo finish documentation
+// todo finir de faire la documentation
 
 /**
  * A caching database that wraps another database
  */
 class CachingStore(private val wrappedDatabase: Database,
-                   //private val dataStore: DataStore<Preferences>,
+                   private val dataStore: DataStore<Preferences>,
                    context: Context) {
 
-    // todo all commented code is for caching data locally and have persistence when closing the app
-
-    /*
     val USER_EMAIL_KEY = stringPreferencesKey("user_email")
     val CACHED_USERS_KEY = stringPreferencesKey("cached_users")
     val CONTACTS_KEY = stringPreferencesKey("contacts")
     val CHATS_KEY = stringPreferencesKey("chats")
     val CACHED_SCHEDULES_KEY = stringPreferencesKey("cached_schedules")
-
-     */
 
     private val CACHED_SCHEDULE_WEEKS_AHEAD = 4L
     private val CACHED_SCHEDULE_WEEKS_BEHIND = 4L
@@ -50,52 +51,25 @@ class CachingStore(private val wrappedDatabase: Database,
     private var minCachedMonday = currentShownMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
     private var maxCachedMonday = currentShownMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
 
-    //private val workManager = WorkManager.getInstance(context)
-
     private var currentEmail: String? = null
 
-    /*
-
-    private var retrieveData = if (isInternetAvailable(context)) {
+    private var retrieveData =
+        if (isOnline(context)) {
             retrieveLocalData().thenCompose {
+                Log.d("CachingStore", "Internet available but should not beeeeeeeee")
                 retrieveRemoteData()
             }
-        } else retrieveLocalData()
-
-
-
-
-    inner class StoreWorker(appContext: Context, workerParams: WorkerParameters):
-        Worker(appContext, workerParams) {
-        override fun doWork(): Result {
-            println("Storing data")
-            storeLocalData()
-            // Indicate whether the work finished successfully with the Result
-            return Result.success()
+        } else {
+            retrieveLocalData().thenAccept {
+                Log.d("CachingStore", "Internet not available aaaaaa")
+            }
         }
-    }
-
-     */
 
     init {
         wrappedDatabase.addUsersListeners { users ->
             cachedUsers.clear()
             cachedUsers.putAll(users.associateBy { it.email })
         }
-        /*
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.UNMETERED)
-            .setRequiresCharging(true)
-            .build()
-
-        val saveRequest =
-            OneTimeWorkRequestBuilder<StoreWorker>()
-                .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-                .setConstraints(constraints)
-                .build()
-        workManager.enqueue(saveRequest)
-
-         */
     }
 
     /**
@@ -103,16 +77,10 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return a boolean indiacting wether the user is logged in
      */
     fun isLoggedIn(): CompletableFuture<Boolean> {
-        return CompletableFuture.completedFuture(!currentEmail.isNullOrEmpty())
-        /*
         return retrieveData.thenApply {
             !currentEmail.isNullOrEmpty()
         }
-
-         */
     }
-
-    /*
 
     /**
      * Retrieves local data from the datastore
@@ -137,6 +105,7 @@ class CachingStore(private val wrappedDatabase: Database,
             processRetrievedCache(serializedSchedules, cachedSchedules)
 
             localFuture.complete(null)
+            println("Data was stored")
         }
         return localFuture
     }
@@ -185,16 +154,18 @@ class CachingStore(private val wrappedDatabase: Database,
                 preferences[CACHED_SCHEDULES_KEY] = serializedSchedules
 
                 writeDatastoreFuture.complete(null)
+                println("Data was stored")
             }
         }
         return writeDatastoreFuture
     }
 
-     */
-
 
     fun updateUser(user: UserInfo): CompletableFuture<Void> {
-        return wrappedDatabase.updateUser(user).thenAccept { cachedUsers[user.email] = user }
+        return wrappedDatabase.updateUser(user).thenAccept {
+            cachedUsers[user.email] = user
+            storeLocalData()
+        }
     }
 
     fun getUser(email: String): CompletableFuture<UserInfo> {
@@ -202,7 +173,9 @@ class CachingStore(private val wrappedDatabase: Database,
             return CompletableFuture.completedFuture(cachedUsers[email])
         }
         return wrappedDatabase.getUser(email).thenApply {
-            it.also { cachedUsers[email] = it }
+            it.also { cachedUsers[email] = it
+            storeLocalData()
+            }
         }
     }
 
@@ -220,6 +193,7 @@ class CachingStore(private val wrappedDatabase: Database,
             it.also {
                 cachedUsers.clear()
                 cachedUsers.putAll(it.associateBy { it.email })
+                storeLocalData()
             }
         }
     }
@@ -262,6 +236,7 @@ class CachingStore(private val wrappedDatabase: Database,
                     }
                     schedule.copy(events = events).also {   // Update the cache
                         cachedSchedules[email] = it.events
+                        storeLocalData()
                     }
                 }
             }
@@ -282,6 +257,7 @@ class CachingStore(private val wrappedDatabase: Database,
                         }
                         schedule.copy(events = events).also {
                             cachedSchedules[email] = it.events  // Update the cache
+                            storeLocalData()
                         }
                     }
                 }
@@ -348,21 +324,12 @@ class CachingStore(private val wrappedDatabase: Database,
         return wrappedDatabase.setFCMToken(email, token)
     }
     fun getCurrentEmail(): CompletableFuture<String> {
-        if (currentEmail.isNullOrEmpty()) {
-            throw IllegalStateException("Current email is null or empty")
-        }
-        return CompletableFuture.completedFuture(currentEmail)
-
-        /*
-
         return retrieveData.thenApply {
             if (currentEmail.isNullOrEmpty()) {
                 throw IllegalStateException("Current email is null or empty")
             }
             currentEmail
         }
-
-         */
     }
 
     fun setCurrentEmail(email: String): CompletableFuture<Void> {
@@ -393,8 +360,6 @@ class CachingStore(private val wrappedDatabase: Database,
         chats.clear()
     }
 
-    /*
-
     /**
      * Check if the device is connected to the internet
      * @param context The context of the application
@@ -407,6 +372,26 @@ class CachingStore(private val wrappedDatabase: Database,
         return actNw.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
-     */
+    fun isOnline(context: Context): Boolean {
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        if (connectivityManager != null) {
+            val capabilities =
+                connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+            if (capabilities != null) {
+                if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                    Log.i("Internet", "NetworkCapabilities.TRANSPORT_CELLULAR")
+                    //return true
+                } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                    Log.i("Internet", "NetworkCapabilities.TRANSPORT_WIFI")
+                    return true
+                } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+                    Log.i("Internet", "NetworkCapabilities.TRANSPORT_ETHERNET")
+                    return true
+                }
+            }
+        }
+        return false
+    }
 
 }

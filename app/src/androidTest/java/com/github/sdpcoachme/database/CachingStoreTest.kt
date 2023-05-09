@@ -1,5 +1,3 @@
-/*
-
 package com.github.sdpcoachme.database
 
 // This test class is in the androidTest directory instead of Test directory because it uses
@@ -28,6 +26,7 @@ import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
+import org.junit.After
 import org.junit.AfterClass
 import org.junit.Before
 import org.junit.Test
@@ -38,7 +37,7 @@ import java.time.temporal.TemporalAdjusters
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit.SECONDS
 
-class CachingStoreT {
+class CachingStoreTest {
 
     // IMPORTANT:
     // Note that here MockDatabase needs to be re-instantiated for each test as we
@@ -58,13 +57,13 @@ class CachingStoreT {
         }
         wrappedDatabase = MockDatabase()
         cachingStore = CachingStore(wrappedDatabase,
-            //ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
+            ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
     }
 
     // After all tests are run, clear the datastore
-    @AfterClass
+    @After
     fun tearDown() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         runBlocking {
@@ -698,7 +697,4 @@ class CachingStoreT {
 
     private val eventList = cachedEvents + nonCachedEvents
 
- */
-
-//}
-
+}
