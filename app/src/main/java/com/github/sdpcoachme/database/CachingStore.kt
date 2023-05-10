@@ -89,6 +89,8 @@ class CachingStore(private val wrappedDatabase: Database,
     private fun retrieveLocalData(): CompletableFuture<Void> {
         val localFuture = CompletableFuture<Void>()
         GlobalScope.launch {
+
+            /*
             val values = dataStore.data.first()
             currentEmail = values[USER_EMAIL_KEY]
 
@@ -104,8 +106,9 @@ class CachingStore(private val wrappedDatabase: Database,
             processRetrievedCache(serializedChats, chats)
             processRetrievedCache(serializedSchedules, cachedSchedules)
 
+             */
+
             localFuture.complete(null)
-            println("Data was stored")
         }
         return localFuture
     }
@@ -130,13 +133,15 @@ class CachingStore(private val wrappedDatabase: Database,
      */
     private fun retrieveRemoteData(): CompletableFuture<Void> {
         return CompletableFuture.allOf(
-            getAllUsers()
+            // todo if we could get by nearest here it would probably work to retrieve nearby coaches in offline mode
+            //getAllUsers()
         )
     }
 
     fun storeLocalData(): CompletableFuture<Void> {
         val writeDatastoreFuture = CompletableFuture<Void>()
         GlobalScope.launch {
+            /*
             dataStore.edit { preferences ->
                 val gson = Gson()
 
@@ -153,9 +158,11 @@ class CachingStore(private val wrappedDatabase: Database,
                 preferences[CHATS_KEY] = serializedChats
                 preferences[CACHED_SCHEDULES_KEY] = serializedSchedules
 
+             */
+
                 writeDatastoreFuture.complete(null)
                 println("Data was stored")
-            }
+            //}
         }
         return writeDatastoreFuture
     }

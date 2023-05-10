@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.activity.result.ActivityResultCaller
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import com.github.sdpcoachme.auth.Authenticator
 import com.github.sdpcoachme.auth.MockAuthenticator
@@ -11,6 +12,7 @@ import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.location.autocomplete.LocationAutocompleteHandler
 import com.github.sdpcoachme.location.autocomplete.MockLocationAutocompleteHandler
+import kotlinx.coroutines.runBlocking
 
 class CoachMeTestApplication : CoachMeApplication() {
     // For DI in testing, add reference to mocks here
@@ -50,6 +52,9 @@ class CoachMeTestApplication : CoachMeApplication() {
      * Clear the data store and reset the caching store.
      */
     fun clearDataStoreAndResetCachingStore() {
+        runBlocking {
+            dataStore.edit { it.clear() }
+        }
         store = CachingStore(MockDatabase(), dataStore, this)
     }
 

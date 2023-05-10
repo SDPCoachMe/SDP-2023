@@ -28,7 +28,7 @@ open class MockDatabase: Database {
         emptyList(),
         emptyList()
     )
-    private var currEmail = ""
+    //private var currEmail = ""
 
     private val toEmail = "to@email.com"
     val toUser = UserInfo(
@@ -100,14 +100,14 @@ open class MockDatabase: Database {
     }
 
     override fun addEvents(email: String, events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        if (currEmail == "throw@Exception.com") {
+        if (email == "throw@Exception.com") {
             val error = CompletableFuture<Schedule>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
         }
         return getSchedule(email, currentWeekMonday).thenCompose { schedule ->
             val newSchedule = schedule.copy(events = schedule.events + events)
-            schedules[currEmail] = newSchedule
+            schedules[email] = newSchedule
             val future = CompletableFuture<Schedule>()
             future.complete(null)
             future
@@ -115,12 +115,12 @@ open class MockDatabase: Database {
     }
 
     override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        if (currEmail == "throwGet@Exception.com") {
+        if (email == "throwGet@Exception.com") {
             val error = CompletableFuture<Schedule>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
         }
-        return schedules[currEmail]?.let { CompletableFuture.completedFuture(it) }
+        return schedules[email]?.let { CompletableFuture.completedFuture(it) }
             ?: CompletableFuture.completedFuture(Schedule(emptyList()))
     }
 

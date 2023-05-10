@@ -37,11 +37,12 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 @RunWith(AndroidJUnit4::class)
 open class CoachesListActivityTest {
 
+    private val defaultEmail = "example@email.com"
+
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
-    private val store: CachingStore = (InstrumentationRegistry.getInstrumentation()
-        .targetContext.applicationContext as CoachMeApplication).store
+    private lateinit var store: CachingStore
 
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
 
@@ -52,7 +53,8 @@ open class CoachesListActivityTest {
     open fun setup() {
         // Refresh the CachingStore before each test
         ApplicationProvider.getApplicationContext<CoachMeTestApplication>().clearDataStoreAndResetCachingStore()
-
+        store = (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).store
+        store.setCurrentEmail(defaultEmail).get(100, MILLISECONDS)
 
         // Given nondeterministic behavior depending on order of tests, we reset the database here
         // TODO: this is temporary, we should find a better way to guarantee the database is refreshed

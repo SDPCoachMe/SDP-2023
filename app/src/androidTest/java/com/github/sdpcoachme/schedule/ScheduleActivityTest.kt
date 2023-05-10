@@ -118,7 +118,7 @@ class ScheduleActivityTest {
 
     @Test
     fun getExceptionIsThrownCorrectly() {
-        store.setCurrentEmail("throwGet@Exception.com")
+        store.setCurrentEmail("throwGet@Exception.com").get(100, MILLISECONDS)
         Intents.init()
 
         val mapIntent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
