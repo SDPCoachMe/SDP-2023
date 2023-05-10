@@ -20,6 +20,7 @@ import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_2
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACH_2
+import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
@@ -186,7 +187,7 @@ class ProfileActivityTest {
             Intents.intended(
                 CoreMatchers.allOf(
                     IntentMatchers.hasComponent(ChatActivity::class.java.name),
-                    IntentMatchers.hasExtra("toUserEmail", COACH_1.email)
+                    IntentMatchers.hasExtra("chatId", Chat.chatIdForPersonalChats(email, NON_COACH_2.email))
                 )
             )
         }

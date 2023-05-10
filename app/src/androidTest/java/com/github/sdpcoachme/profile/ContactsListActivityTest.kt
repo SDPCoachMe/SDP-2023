@@ -92,6 +92,7 @@ class ContactsListTest {
     fun whenViewingContactsTheLastMessageAndTheSenderNameOrYouIsDisplayed() {
         database.sendMessage("chatId", othersMessage)
 
+
     }
 
     @Test

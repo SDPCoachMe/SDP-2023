@@ -228,10 +228,14 @@ class CachingDatabaseTest {
             Message("sender@email.com", "Sender Name", "Test Message", LocalDateTime.now().toString(), ReadState.SENT, mapOf()),
             false,
         )
+
+        val rowInfo2 = rowInfo.copy(chatId = "chatiId2", chatTitle = "chatiName2", isGroupChat = true)
+        val expectedRowInfo = listOf(rowInfo, rowInfo2)
         class ContactsDB: MockDatabase() {
             override fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
                 timesCalled++
-                return CompletableFuture.completedFuture(listOf(rowInfo))
+                assertThat(email, `is`(exampleEmail))
+                return CompletableFuture.completedFuture(expectedRowInfo)
             }
         }
 
@@ -240,12 +244,12 @@ class CachingDatabaseTest {
         val isCorrect = cachingDatabase.getContactRowInfo(exampleEmail)
             .thenCompose {
                 assertThat(timesCalled, `is`(1))
-                assertThat(it, `is`(userList))
+                assertThat(it, `is`(expectedRowInfo))
 
                 cachingDatabase.getContactRowInfo(exampleEmail)
             }.thenApply {
                 assertThat(timesCalled, `is`(1))
-                assertThat(it, `is`(userList))
+                assertThat(it, `is`(expectedRowInfo))
 
                 true
             }.exceptionally {
@@ -378,12 +382,8 @@ class CachingDatabaseTest {
 
     @Test
     fun markMessagesAsReadForCachedChatUpdatesCache() {
-        val expectedChat = defaultChat.copy(messages = defaultChat.messages.map {
-            if (it.sender != defaultUser.email)
-                it.copy(readState = ReadState.READ)
-            else
-                it
-        })
+        val expectedChat = Chat.markOtherUsersMessagesAsRead(defaultChat, defaultUser.email)
+
         val wrappedDatabase = MarkMessagesAsReadDB(defaultChat)
         val cachingDatabase = CachingDatabase(wrappedDatabase)
 
@@ -624,7 +624,6 @@ class CachingDatabaseTest {
         true
     )
 
-    private val userList = listOf(defaultUser, willSmithUser, rogerFedererUser)
     private val defaultMessages = ChatSample.MESSAGES
     private val defaultChat = Chat().copy(
         id = "defaultId",

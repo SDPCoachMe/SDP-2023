@@ -1,8 +1,12 @@
 package com.github.sdpcoachme.messaging
 
 import android.content.Intent
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
@@ -13,8 +17,8 @@ import androidx.test.uiautomator.Until
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.SIGN_IN
 import com.github.sdpcoachme.auth.LoginActivity.TestTags.Companion.INFO_TEXT
-import com.github.sdpcoachme.data.UserAddressSamples
-import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.UserInfoSamples
+import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.location.MapActivity
@@ -37,27 +41,11 @@ class InAppNotifierTest {
 
     private lateinit var database: Database
 
-    private val toUser = UserInfo(
-        "Jane",
-        "Doe",
-        "to@email.com",
-        "0987654321",
-        UserAddressSamples.LAUSANNE,
-        true,
-        emptyList(),
-        emptyList()
-    )
+    private val toUser = UserInfoSamples.COACH_1
 
-    private val currentUser = UserInfo(
-        "John",
-        "Doe",
-        "example@email.com",
-        "0123456789",
-        UserAddressSamples.NEW_YORK,
-        false,
-        emptyList(),
-        emptyList()
-    )
+    private val currentUser = UserInfoSamples.NON_COACH_1
+
+    private val personalChatId = Chat.chatIdForPersonalChats(toUser.email, currentUser.email)
 
     @Before
     fun setup() {
@@ -76,13 +64,13 @@ class InAppNotifierTest {
     }
 
     @Test
-    fun onMessageReceivedOpensChatActivityWhenTypeIsMessagingAndSenderIsKnown() {
+    fun onMessageReceivedOpensChatActivityWhenTypeIsMessagingAndChatIdIsKnown() {
         val intent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
 
         // The start screen can be anything, MapActivity is just used here
         ActivityScenario.launch<MapActivity>(intent).use {
 
-            sendNotification("Title", "Body", toUser.email, "messaging")
+            sendNotification("Title", "Body", personalChatId, "messaging")
             clickOnNotification("Title", "Body")
 
             // Check if ChatActivity is opened
@@ -99,7 +87,7 @@ class InAppNotifierTest {
 
         ActivityScenario.launch<MapActivity>(intent).use {
             database.setCurrentEmail("")
-            sendNotification("Title", "Body", toUser.email, "messaging")
+            sendNotification("Title", "Body", personalChatId, "messaging")
             clickOnNotification("Title", "Body")
 
             // Check if LoginActivity is opened
@@ -110,7 +98,7 @@ class InAppNotifierTest {
     }
 
     @Test
-    fun onMessageReceivedRedirectsToCoachesListActivityWhenSenderIsNotSet() {
+    fun onMessageReceivedRedirectsToCoachesListActivityWhenChatIdIsNotSet() {
         val intent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
 
         ActivityScenario.launch<MapActivity>(intent).use {
@@ -123,7 +111,6 @@ class InAppNotifierTest {
             composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assert(hasText("Contacts"))
 
-            composeTestRule.onNodeWithText(toUser.address.name).assertIsDisplayed()
             composeTestRule.onNodeWithText("${toUser.firstName} ${toUser.lastName}")
                 .assertIsDisplayed()
         }
@@ -161,22 +148,21 @@ class InAppNotifierTest {
             clickOnNotification("New message", "You have a new message")
 
 
-            // Since the sender is not set, clicking on the notification should take the user to their contacts
+            // Since the ChatId is not set, clicking on the notification should take the user to their contacts
             composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assert(hasText("Contacts"))
 
-            composeTestRule.onNodeWithText(toUser.address.name).assertIsDisplayed()
             composeTestRule.onNodeWithText("${toUser.firstName} ${toUser.lastName}")
                 .assertIsDisplayed()
         }
     }
 
-    private fun sendNotification(expectedTitle: String?, expectedBody: String?, senderEmail: String?, type: String?) {
+    private fun sendNotification(expectedTitle: String?, expectedBody: String?, chatId: String?, type: String?) {
         val context = (getInstrumentation().targetContext.applicationContext as CoachMeApplication)
         InAppNotifier(context, database).sendNotification(
             expectedTitle,
             expectedBody,
-            senderEmail,
+            chatId,
             type
         )
     }

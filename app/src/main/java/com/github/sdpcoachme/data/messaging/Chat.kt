@@ -37,5 +37,16 @@ data class Chat(
                 }
             })
         }
+
+        /**
+         * Get the chat id for a personal chat between two users
+         *
+         * @param email1 The email of the first user
+         * @param email2 The email of the second user
+         * @return The chat id
+         */
+        fun chatIdForPersonalChats(email1: String, email2: String): String {
+            return if (email1 < email2) "$email1$email2" else "$email2$email1"
+        }
     }
 }
