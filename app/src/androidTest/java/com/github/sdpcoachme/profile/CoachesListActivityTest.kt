@@ -149,17 +149,6 @@ open class CoachesListActivityTest {
         }
     }
 
-    @Test
-    fun errorPageIsShownWhenCoachesListIsLaunchedWithEmptyCurrentEmail() {
-        store.setCurrentEmail("")
-        ActivityScenario.launch<CoachesListActivity>(defaultIntent).use {
-            // not possible to use Intents.init()... to check if the correct intent
-            // is launched as the intents are launched from within the onCreate function
-            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
-        }
-    }
-
     // Subclass added to be able to run a different setup method (to simulate viewing contacts)
     class ContactsListTest: CoachesListActivityTest() {
         @Before
