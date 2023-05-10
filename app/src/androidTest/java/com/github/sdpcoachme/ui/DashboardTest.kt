@@ -219,6 +219,11 @@ class DashboardTest {
 
     // This test is not very crucial here, just verifies that for some activity, the dashboard
     // behaves correctly.
+
+    // TODO In accordance with the team, this test is failing for some reason because of a timeout on the CI
+    // It is passing locally though, so we are commenting it out for now
+
+    /*
     @Test
     fun currentAppActivityIsDashboardContent() {
         setUpDashboardWithActivityContext().use {
@@ -230,5 +235,7 @@ class DashboardTest {
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
         }
     }
+
+     */
 
 }
