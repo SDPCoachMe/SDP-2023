@@ -231,6 +231,9 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     }
 
     override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
+        // make sure we don't have 2 listeners for the same chat
+        removeChatListener(chatId)
+
         val id = chatId.replace('.', ',')
         val chatRef = chats.child(id)
         val valueEventListener = object : ValueEventListener {

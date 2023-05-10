@@ -198,6 +198,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
         val cachingOnChange = { chat: Chat ->
             chats[chatId] = chat
+            if (chat.messages.isNotEmpty()) updateCachedContactRowInfo(chatId, chat.messages.last())
             onChange(chat)
         }
         wrappedDatabase.addChatListener(chatId, cachingOnChange)
@@ -205,6 +206,14 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
 
     override fun removeChatListener(chatId: String) {
         wrappedDatabase.removeChatListener(chatId)
+        // still update the cache for the contact row info's and chat
+        wrappedDatabase.addChatListener(chatId) {newChat ->
+            chats[chatId] = newChat
+            if (newChat.messages.isNotEmpty()) updateCachedContactRowInfo(
+                chatId,
+                newChat.messages.last()
+            )
+        }
     }
 
     override fun getFCMToken(email: String): CompletableFuture<String> {
