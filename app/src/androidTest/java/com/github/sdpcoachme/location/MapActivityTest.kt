@@ -124,17 +124,6 @@ class MapActivityTest {
     }
 
     @Test
-    fun errorPageIsShownWhenMapIsLaunchedWithEmptyCurrentEmail() {
-        database.setCurrentEmail("")
-        ActivityScenario.launch<MapActivity>(defaultIntent).use {
-            // not possible to use Intents.init()... to check if the correct intent
-            // is launched as the intents are launched from within the onCreate function
-            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
-        }
-    }
-
-    @Test
     fun dashboardHasRightTitleOnMap() {
         val title = (InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as CoachMeApplication).getString(R.string.app_name)

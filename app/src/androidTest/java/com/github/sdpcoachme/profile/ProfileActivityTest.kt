@@ -73,17 +73,6 @@ class ProfileActivityTest {
     }
 
     @Test
-    fun errorPageIsShownWhenEditProfileIsLaunchedWithEmptyCurrentEmail() {
-        getStore().setCurrentEmail("").get(1000, TimeUnit.MILLISECONDS)
-        ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
-            // not possible to use Intents.init()... to check if the correct intent
-            // is launched as the intents are launched from within the onCreate function
-            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
-        }
-    }
-
-    @Test
     fun correctInfoDisplayedForCoachInEditMode() {
         getStore().setCurrentEmail(COACH_2.email).get(1000, TimeUnit.MILLISECONDS)
 

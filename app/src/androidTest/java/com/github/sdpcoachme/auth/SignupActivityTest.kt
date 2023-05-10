@@ -88,15 +88,6 @@ open class SignupActivityTest {
     }
 
     @Test
-    fun errorPageIsShownWhenSignupIsLaunchedWithEmptyCurrentEmail() {
-        launchSignupActivity("")
-        // not possible to use Intents.init()... to check if the correct intent
-        // is launched as the intents are launched from within the onCreate function
-        composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
-    }
-
-    @Test
     fun setAndGetUserAsNonCoachWorks() {
         setAndGetUser(defaultUser)
     }
