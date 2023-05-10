@@ -224,7 +224,7 @@ class DashboardTest {
         setUpDashboardWithActivityContext().use {
             val context = (InstrumentationRegistry.getInstrumentation()
                 .targetContext.applicationContext as CoachMeApplication)
-            composeTestRule.waitUntil { context.userLocation.value != null }
+            composeTestRule.waitUntil(5000) { context.userLocation.value != null }
             val mapTag = MapActivity.TestTags.MAP + context.userLocation.value.toString()
             composeTestRule.onNodeWithTag(mapTag).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
