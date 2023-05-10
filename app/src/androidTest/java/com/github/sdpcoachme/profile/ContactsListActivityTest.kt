@@ -17,6 +17,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserInfoSamples
+import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.messaging.ChatActivity
@@ -41,11 +42,9 @@ class ContactsListTest {
     private val database = (InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as CoachMeApplication).database as MockDatabase
 
-    private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
+    private lateinit var scenario: ActivityScenario<CoachesListActivity>
 
-    lateinit var scenario: ActivityScenario<CoachesListActivity>
-
-    val defaultEmail = "example@email.com"
+    private val defaultEmail = "example@email.com"
     private val othersMessage = Message(
         UserInfoSamples.COACH_1.email,
         "Other's Name",
@@ -54,8 +53,7 @@ class ContactsListTest {
     )
     private val ownMessage =
         Message(defaultEmail, "Current Name", "Test sent message", LocalDateTime.now().toString())
-    private val chatId =
-        if (defaultEmail < UserInfoSamples.COACH_1.email) "$defaultEmail${UserInfoSamples.COACH_1.email}" else "${UserInfoSamples.COACH_1.email}$defaultEmail"
+    private val chatId = Chat.chatIdForPersonalChats(defaultEmail, UserInfoSamples.COACH_1.email)
 
 
     @Before

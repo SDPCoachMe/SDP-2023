@@ -159,7 +159,28 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         if (chats.containsKey(chatId)) {
             chats[chatId] = chats[chatId]!!.copy(id = chatId, messages = chats[chatId]!!.messages + message)
         }
+
+        updateCachedContactRowInfo(chatId, message)
+
         return wrappedDatabase.sendMessage(chatId, message)
+    }
+
+    private fun updateCachedContactRowInfo(chatId: String, message: Message) {
+        // update the contact's last message
+        if (contacts.containsKey(message.sender)) {
+            var newContacts = listOf<ContactRowInfo>()
+            var wantedContact: ContactRowInfo? = null
+            for (contact in contacts[message.sender]!!) {
+                if (contact.chatId == chatId) {
+                    wantedContact = contact.copy(lastMessage = message)
+                } else {
+                    newContacts = newContacts + contact
+                }
+            }
+            if (wantedContact != null) {
+                contacts[message.sender] = listOf(wantedContact) + newContacts
+            }
+        }
     }
 
     override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
@@ -173,6 +194,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         return wrappedDatabase.markMessagesAsRead(chatId, email)
     }
 
+    // TODO: update the cache of contactRowInfo
     override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
         val cachingOnChange = { chat: Chat ->
             chats[chatId] = chat
