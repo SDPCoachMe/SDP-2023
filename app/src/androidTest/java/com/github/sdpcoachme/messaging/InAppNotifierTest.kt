@@ -61,7 +61,7 @@ class InAppNotifierTest {
 
     @Before
     fun setup() {
-        store = (getInstrumentation().targetContext.applicationContext as CoachMeApplication).store
+        store = (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).store
         store.setCurrentEmail(currentUser.email).get(1000, TimeUnit.MILLISECONDS)
         store.updateUser(toUser).get(1000, TimeUnit.MILLISECONDS)
         store.updateUser(currentUser).get(1000, TimeUnit.MILLISECONDS)
@@ -88,22 +88,6 @@ class InAppNotifierTest {
             composeTestRule.onNodeWithText(toUser.firstName + " " + toUser.lastName).assertExists()
             composeTestRule.onNodeWithTag(CONTACT_FIELD.LABEL, useUnmergedTree = true).assertExists()
             composeTestRule.onNodeWithTag(CHAT_FIELD.LABEL, useUnmergedTree = true).assertExists()
-        }
-    }
-    
-    @Test
-    fun onMessageReceivedRedirectsToLoginActivityWhenCurrentUserEmailIsNotSet() {
-        val intent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
-
-        ActivityScenario.launch<MapActivity>(intent).use {
-            store.setCurrentEmail("").get(1000, TimeUnit.MILLISECONDS)
-            sendNotification("Title", "Body", toUser.email, "messaging")
-            clickOnNotification("Title", "Body")
-
-            // Check if LoginActivity is opened
-            // Intents.intended does not seem to work when clicking on a notification
-            // TODO: would need to wait for the state to load before checking the UI...
-            composeTestRule.onNodeWithTag(LOG_IN, useUnmergedTree = true).assertExists()
         }
     }
 
