@@ -52,12 +52,12 @@ class CachingStore(private val wrappedDatabase: Database,
     private var retrieveData =
         if (isOnline(context)) {
             retrieveLocalData().thenCompose {
-                Log.d("CachingStore", "Internet available but should not beeeeeeeee")
+                Log.d("CachingStore", "Internet available")
                 retrieveRemoteData()
             }
         } else {
             retrieveLocalData().thenAccept {
-                Log.d("CachingStore", "Internet not available aaaaaa")
+                Log.d("CachingStore", "Internet not available")
             }
         }
 
@@ -70,7 +70,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Check whether the user is logged in
-     * @return a boolean indiacting wether the user is logged in
+     * @return a boolean indicating whether the user is logged in
      */
     fun isLoggedIn(): CompletableFuture<Boolean> {
         return retrieveData.thenApply {
@@ -190,7 +190,7 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
-    // todo refactore with userLocation inside CachingStore
+    // todo refactor with userLocation inside CachingStore
     fun getAllUsersByNearest(latitude: Double, longitude: Double): CompletableFuture<List<UserInfo>> {
         return wrappedDatabase.getAllUsersByNearest(latitude, longitude).thenApply {
             it.also {

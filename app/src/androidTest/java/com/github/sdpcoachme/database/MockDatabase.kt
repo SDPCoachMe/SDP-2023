@@ -96,7 +96,9 @@ open class MockDatabase: Database {
     }
 
     override fun userExists(email: String): CompletableFuture<Boolean> {
-        return getMap(accounts, email).thenApply { it != null }
+        return getMap(accounts, email)
+            .thenApply { it != null }
+            .exceptionally { false }
     }
 
     override fun addEvent(email: String, event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {

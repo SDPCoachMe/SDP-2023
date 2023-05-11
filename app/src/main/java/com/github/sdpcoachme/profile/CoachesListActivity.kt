@@ -72,7 +72,7 @@ class CoachesListActivity : ComponentActivity() {
 
         val locationProvider = (application as CoachMeApplication).locationProvider
         // Here we don't need the UserInfo
-        locationProvider.init(this, CompletableFuture.completedFuture(null))
+        locationProvider.updateContext(this, CompletableFuture.completedFuture(null))
         // the lastLocation return a null containing state if no location retrieval has been
         // performed yet. In production, this should for now never be the case as this code is
         // necessarily run after MapActivity. We keep it for robustness against tests.

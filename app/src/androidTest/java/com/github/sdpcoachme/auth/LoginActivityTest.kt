@@ -36,7 +36,6 @@ open class LoginActivityTest {
     private val launchTimeout = 5000L
     private lateinit var device: UiDevice
 
-
     @Test
     fun startFromHomeScreenLaunchesLoginActivity() {
         FirebaseAuth.getInstance().signOut()
@@ -93,6 +92,17 @@ open class LoginActivityTest {
             "Doe",
             "example@email.com",
             "0123456789",
+            UserAddressSamples.NEW_YORK,
+            false,
+            emptyList(),
+            emptyList()
+        )
+
+        private val nonExistingUser = UserInfo(
+            "",
+            "",
+            "nonexisting@email.com",
+            "",
             UserAddressSamples.NEW_YORK,
             false,
             emptyList(),
@@ -161,12 +171,12 @@ open class LoginActivityTest {
             // Make sure the database is empty before starting the test
             (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
 
-            store.setCurrentEmail(currentUser.email).get(1000, TimeUnit.MILLISECONDS)
+            (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).store
+                .setCurrentEmail(nonExistingUser.email).get(1000, TimeUnit.MILLISECONDS)
             val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
 
             ActivityScenario.launch<LoginActivity>(intent).use {
                 waitForLoading(it)
-
                 // Assert that we launched the signup activity
                 intended(hasComponent(SignupActivity::class.java.name))
             }

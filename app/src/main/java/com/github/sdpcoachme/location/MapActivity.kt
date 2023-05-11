@@ -71,7 +71,7 @@ class MapActivity : ComponentActivity() {
             }
         }
 
-        locationProvider.init(this, user)
+        locationProvider.updateContext(this, user)
 
         // Performs the whole location retrieval process
         if (locationProvider.locationIsPermitted()) {
@@ -79,13 +79,6 @@ class MapActivity : ComponentActivity() {
         } else {
             locationProvider.requestPermission()
         }
-        // For now, simply retrieve all users. We can decide later whether we want to have
-        // a dynamic list of markers that only displays nearby users (based on camera position
-        // for example). Since we have no way to download only the users that are nearby, we
-        // have to download all users anyways and filter them locally. This means that either
-        // way, we already have available all users locations, so we might as well display them
-        // all.
-        // Note: this is absolutely not scalable, but we can change this later on.
 
         // For now, simply retrieve all users. We can decide later whether we want to have
         // a dynamic list of markers that only displays nearby users (based on camera position

@@ -122,7 +122,7 @@ class CreateEventActivity : ComponentActivity() {
 
         class TextFields {
             companion object {
-                fun textField(tag: String): String {
+                private fun textField(tag: String): String {
                     return "${tag}TextField"
                 }
 
@@ -240,7 +240,7 @@ fun NewEvent(store: CachingStore) {
                     }
                 })
         }
-    ) {padding ->
+    ) { padding ->
         Column (
             modifier = Modifier
                 .padding(start = 10.dp, end = 10.dp)

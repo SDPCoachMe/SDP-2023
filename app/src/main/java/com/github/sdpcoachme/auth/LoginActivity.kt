@@ -182,7 +182,6 @@ class LoginActivity : ComponentActivity() {
                 Intent(this, SignupActivity::class.java)
             } else {
                 // Otherwise, decide where to redirect
-
                 // Check if a notification was clicked
                 val pushNotificationIntent = intent
                 val action = pushNotificationIntent.action

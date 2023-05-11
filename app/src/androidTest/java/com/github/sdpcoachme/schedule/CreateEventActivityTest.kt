@@ -72,7 +72,6 @@ class CreateEventActivityTest {
 
     private val eventDateFormatter = EventOps.getEventDateFormatter()
 
-
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 

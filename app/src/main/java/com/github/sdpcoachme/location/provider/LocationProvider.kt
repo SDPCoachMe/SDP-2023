@@ -36,10 +36,10 @@ interface LocationProvider {
     fun getLastLocation(): MutableState<LatLng?>
 
     /**
-     * Initializes the location provider with an activity context and a user info future.
+     * Updates the location provider's activity context and user info.
      *
      * @param context the activity context where the LocationProvider is used
      * @param userInfo a future to retrieve user info.
      */
-    fun init(context: ComponentActivity, userInfo: CompletableFuture<UserInfo>)
+    fun updateContext(context: ComponentActivity, userInfo: CompletableFuture<UserInfo>)
 }

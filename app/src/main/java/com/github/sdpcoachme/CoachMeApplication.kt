@@ -31,7 +31,6 @@ open class CoachMeApplication : Application() {
     // be stored here thanks to a locationProvider that will handle all location-related processes
     open lateinit var locationProvider: LocationProvider
 
-
     override fun onCreate() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
