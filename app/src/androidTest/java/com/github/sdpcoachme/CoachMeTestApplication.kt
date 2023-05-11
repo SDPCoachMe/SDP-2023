@@ -10,11 +10,10 @@ import com.github.sdpcoachme.auth.Authenticator
 import com.github.sdpcoachme.auth.MockAuthenticator
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.database.MockDatabase
-import kotlinx.coroutines.runBlocking
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
 import com.github.sdpcoachme.location.autocomplete.MockAddressAutocompleteHandler
-import com.github.sdpcoachme.location.provider.LocationProvider
 import com.github.sdpcoachme.location.provider.MockLocationProvider
+import kotlinx.coroutines.runBlocking
 
 class CoachMeTestApplication : CoachMeApplication() {
     // For DI in testing, add reference to mocks here
@@ -23,10 +22,7 @@ class CoachMeTestApplication : CoachMeApplication() {
 
     private val TEST_PREFERENCES_NAME = "coachme_test_preferences"
 
-
-
-    val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = TEST_PREFERENCES_NAME)
-    override var locationProvider: LocationProvider = MockLocationProvider()
+    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = TEST_PREFERENCES_NAME)
 
     override fun onCreate() {
         super.onCreate()
@@ -43,7 +39,7 @@ class CoachMeTestApplication : CoachMeApplication() {
         }
          */
         store = CachingStore(MockDatabase(), dataStore, this)
-
+        locationProvider = MockLocationProvider()
         // Might be necessary to initialize Places SDK, but for now, we don't need it.
     }
     override val authenticator: Authenticator = MockAuthenticator()
