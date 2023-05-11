@@ -180,8 +180,8 @@ open class MockDatabase: Database {
     override fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
         val id = if (email < toEmail) email+toUser.email else toEmail+email
         return CompletableFuture.completedFuture(listOf(
-            ContactRowInfo(id, toUser.firstName + " " + toUser.lastName, Message()),
-            ContactRowInfo(groupChatId, "Group Chat", Message(), true)
+            ContactRowInfo(id, toUser.firstName + " " + toUser.lastName, if (chat.messages.isEmpty()) Message() else chat.messages.last()),
+            ContactRowInfo(groupChatId, "Group Chat", if (groupChat.messages.isEmpty()) Message() else groupChat.messages.last(), true)
         ))
     }
 

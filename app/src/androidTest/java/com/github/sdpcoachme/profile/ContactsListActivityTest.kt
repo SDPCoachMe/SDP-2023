@@ -17,7 +17,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserInfoSamples
-import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.messaging.ChatActivity
@@ -51,16 +50,20 @@ class ContactsListTest {
         "Test received message",
         LocalDateTime.now().toString()
     )
-    private val ownMessage =
-        Message(defaultEmail, "Current Name", "Test sent message", LocalDateTime.now().toString())
-    private val chatId = Chat.chatIdForPersonalChats(defaultEmail, UserInfoSamples.COACH_1.email)
-
+    private val ownMessage = Message(defaultEmail,
+        "Current Name",
+        "Test sent message",
+        LocalDateTime.now().toString()
+    )
 
     @Before
     fun setup() {
         // Launch the activity
         populateDatabase(database, defaultEmail).join()
+    }
 
+    // Needed to allow populating the database with more elements before launching the activity
+    private fun startActivity() {
         val contactIntent =
             Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
         contactIntent.putExtra("isViewingContacts", true)
@@ -82,24 +85,44 @@ class ContactsListTest {
 
     @Test
     fun whenViewingContactsTheRecipientsNameIsDisplayed() {
+        startActivity()
         composeTestRule.onNodeWithText("${UserInfoSamples.COACH_1.firstName} ${UserInfoSamples.COACH_1.lastName}")
             .assertIsDisplayed()
     }
 
     @Test
-    fun whenViewingContactsTheLastMessageAndTheSenderNameOrYouIsDisplayed() {
+    fun whenViewingContactsTheLastMessageAndTheSenderNameIsDisplayedWhenNotSentByCurrentUser() {
+        database.sendMessage("chatId", othersMessage.copy(content = "Shouldn't be displayed"))
         database.sendMessage("chatId", othersMessage)
+        startActivity()
 
+        composeTestRule.onNodeWithText("${othersMessage.senderName}: ${othersMessage.content}")
+            .assertIsDisplayed()
+    }
 
+    @Test
+    fun whenViewingContactsTheLastMessageOfTheChatAndYouIsDisplayedWhenSentByCurrentUser() {
+        database.sendMessage("chatId", ownMessage.copy(content = "Shouldn't be displayed"))
+        database.sendMessage("chatId", ownMessage)
+        startActivity()
+
+        composeTestRule.onNodeWithText("You: ${ownMessage.content}")
+            .assertIsDisplayed()
     }
 
     @Test
     fun whenViewingContactWhereNoMessageHasBeenSentYetDefaultMessagePromptIsShown() {
-
+        // send a message to make sure only the other default message is displayed
+        // (i.e., so onNodeWithText only finds one instance)
+        database.sendMessage("chatId", othersMessage.copy(content = "Won't be accounted for by the test"))
+        startActivity()
+        composeTestRule.onNodeWithText("Tap to write a message")
+            .assertIsDisplayed()
     }
 
     @Test
     fun whenViewingContactsAndClickingOnClientChatActivityIsLaunched() {
+        startActivity()
         val coach = UserInfoSamples.COACH_1
 
         Thread.sleep(5000)
@@ -120,6 +143,7 @@ class ContactsListTest {
 
     @Test
     fun dashboardHasRightTitleOnContactsList() {
+        startActivity()
         val title = (InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as CoachMeApplication).getString(R.string.contacts)
         composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assertExists()
@@ -129,6 +153,7 @@ class ContactsListTest {
 
     @Test
     fun dashboardIsAccessibleAndDisplayableFromContactsList() {
+        startActivity()
         composeTestRule.onNodeWithTag(Dashboard.TestTags.Buttons.HAMBURGER_MENU).assertExists()
             .assertIsDisplayed()
         composeTestRule.onNodeWithTag(Dashboard.TestTags.Buttons.HAMBURGER_MENU).performClick()
@@ -138,6 +163,7 @@ class ContactsListTest {
 
     @Test
     fun filteringButtonIsNotShownInContactsList() {
+        startActivity()
         composeTestRule.onNodeWithTag(CoachesListActivity.TestTags.Buttons.FILTER)
             .assertDoesNotExist()
     }

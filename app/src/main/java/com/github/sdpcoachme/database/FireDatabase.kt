@@ -71,16 +71,16 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     override fun addGroupEvent(groupEvent: GroupEvent, currentWeekMonday: LocalDate): CompletableFuture<Void> {
         var errorPreventionFuture = CompletableFuture<Void>()
 //        return errorPreventionFuture.thenAccept {
-            if (groupEvent.participants.size > groupEvent.maxParticipants) {
-                errorPreventionFuture.completeExceptionally(Exception("Group event should not be full, initially"))
-            } else if (groupEvent.participants.size < 2) {
-                errorPreventionFuture.completeExceptionally(Exception("Group event must have at least 2 participants"))
-            } else if (LocalDateTime.parse(groupEvent.event.start).isBefore(LocalDateTime.now())) {
-                errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
-            } else {
+        if (groupEvent.participants.size > groupEvent.maxParticipants) {
+            errorPreventionFuture.completeExceptionally(Exception("Group event should not be full, initially"))
+        } else if (groupEvent.participants.size < 2) {
+            errorPreventionFuture.completeExceptionally(Exception("Group event must have at least 2 participants"))
+        } else if (LocalDateTime.parse(groupEvent.event.start).isBefore(LocalDateTime.now())) {
+            errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
+        } else {
 //                errorPreventionFuture.complete(null)
-                errorPreventionFuture = setChild(groupEvents, groupEvent.groupEventId, groupEvent)
-            }
+            errorPreventionFuture = setChild(groupEvents, groupEvent.groupEventId, groupEvent)
+        }
 //        }.thenCompose {
 //        }
         return errorPreventionFuture
@@ -128,11 +128,9 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
 
     override fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
         return getUser(currEmail).thenApply {
-            println("user: $it")
             it.chatContacts.filterNotNull()
 
         }.thenCompose { contactList ->
-            println("contactList: $contactList")
             val mappedF = contactList.map { contactId ->
                 val isGroupChat = contactId.startsWith("@@event")
                 val chatId = if (isGroupChat) contactId

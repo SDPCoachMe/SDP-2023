@@ -219,7 +219,7 @@ class CachingDatabaseTest {
     }
 
     @Test
-    fun getChatContactsCachesContacts() { // TODO: Fix this test now that we have changed certain things
+    fun getChatContactsCachesContacts() {
         var timesCalled = 0
 
         val rowInfo = ContactRowInfo(
@@ -302,6 +302,165 @@ class CachingDatabaseTest {
             return CompletableFuture.completedFuture(defaultChat)
         }
     }
+
+
+    class ParticipantsDb: MockDatabase() {
+        var chat = Chat()
+        var nbCallsToUpdateParticipants = 0
+        var nbCallsToGetChat = 0
+
+        override fun updateChatParticipants(chatId: String, participants: List<String>): CompletableFuture<Void> {
+            chat = chat.copy(id = chatId, participants = participants)
+            nbCallsToUpdateParticipants++
+            return CompletableFuture.completedFuture(null)
+        }
+
+        override fun getChat(chatId: String): CompletableFuture<Chat> {
+            nbCallsToGetChat++
+            if (chatId == chat.id) {
+                return CompletableFuture.completedFuture(chat)
+            }
+            return CompletableFuture.completedFuture(Chat())
+        }
+    }
+    @Test
+    fun updateChatParticipantsUpdatesTheWrappedDatabaseBothWhenCachedAndWhenNot() {
+        val wrappedDatabase = ParticipantsDb()
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+        val chatId = "chatId"
+        val participants = listOf("user1@email.com", "user2@email")
+
+        val isCorrect = cachingDatabase.updateChatParticipants(chatId, participants)
+            .thenCompose { // update when not cached
+                assertThat(wrappedDatabase.nbCallsToUpdateParticipants, `is`(1))
+                assertThat(wrappedDatabase.chat.id, `is`(chatId))
+                assertThat(wrappedDatabase.chat.participants, `is`(participants))
+
+                cachingDatabase.getChat(chatId)
+            }.thenCompose {
+
+                assertThat(wrappedDatabase.nbCallsToGetChat, `is`(1)) // sinced not cached before
+                assertThat(it.participants, `is`(participants))
+                assertThat(it.id, `is`(chatId))
+
+                cachingDatabase.updateChatParticipants(chatId, emptyList())
+            }.thenApply { // update when cached
+                assertThat(wrappedDatabase.nbCallsToUpdateParticipants, `is`(2))
+                assertThat(wrappedDatabase.chat.participants, `is`(emptyList()))
+
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(isCorrect)
+    }
+
+    class ContactRowDB(private val defaultUser: UserInfo, private val rowInfos: List<ContactRowInfo>): MockDatabase() {
+        var chat = Chat()
+        var nbCallsToUpdateParticipants = 0
+        var nbCallsToGetContactRowInfo = 0
+        var sentMessage = Message()
+
+        override fun updateChatParticipants(chatId: String, participants: List<String>): CompletableFuture<Void> {
+            chat = chat.copy(id = chatId, participants = participants)
+            nbCallsToUpdateParticipants++
+            return CompletableFuture.completedFuture(null)
+        }
+
+        override fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
+            nbCallsToGetContactRowInfo++
+            assertThat(email, `is`(defaultUser.email))
+            return CompletableFuture.completedFuture(rowInfos)
+        }
+
+        override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
+            sentMessage = message
+            return CompletableFuture.completedFuture(null)
+        }
+    }
+
+    @Test
+    fun sendingMessageInChatWhoseContactRowIsCachedUpdatesThatContactRowInCache() {
+
+        val rowInfo = ContactRowInfo(
+            "chatiId",
+            "chatiName",
+            Message("sender@email.com", "Sender Name", "Test Message", LocalDateTime.now().toString(), ReadState.SENT, mapOf()),
+            false,
+        )
+        val unusedRowInfo = rowInfo.copy(chatId = "chatiId2", chatTitle = "chatiName2", isGroupChat = true)
+
+        val wrappedDatabase = ContactRowDB(defaultUser, listOf(rowInfo, unusedRowInfo))
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+        cachingDatabase.setCurrentEmail(defaultUser.email)
+        val expectedMessage = Message(
+            "other@email.com",
+            "Sender Name",
+            "New Message!",
+            LocalDateTime.now().toString(),
+            ReadState.SENT
+        )
+
+        val isCorrect = cachingDatabase.getContactRowInfo(defaultUser.email) // place contact row into cache
+            .thenCompose {
+                assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
+                assertThat(it[0], `is`(rowInfo))
+                cachingDatabase.sendMessage(rowInfo.chatId, expectedMessage) // this is supposed to update the contact row in the cache
+            }.thenCompose {
+                assert(wrappedDatabase.sentMessage == expectedMessage)
+                cachingDatabase.getContactRowInfo(defaultUser.email)
+            }.thenApply {
+                // should not have called the wrapped database again as it is cached
+                assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
+                assertThat(it[0], `is`(rowInfo.copy(lastMessage = expectedMessage)))
+
+                true
+            }.exceptionally { println(it.cause); false }.get(5, SECONDS)
+
+        assertTrue(isCorrect)
+    }
+
+    @Test
+    fun sendingMessageForUncachedChatClearsStaleChat() {
+        val rowInfo = ContactRowInfo(
+            "chatiId",
+            "chatiName",
+            Message("sender@email.com", "Sender Name", "Test Message", LocalDateTime.now().toString(), ReadState.SENT, mapOf()),
+            false,
+        )
+        val uncachedRowInfo = rowInfo.copy(chatId = "chatiId2", chatTitle = "chatiName2", isGroupChat = true)
+
+        val wrappedDatabase = ContactRowDB(defaultUser, listOf(rowInfo))
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+        cachingDatabase.setCurrentEmail(defaultUser.email)
+        val nonCachedMessage = Message(
+            "other@email.com",
+            "Sender Name",
+            "New Message!",
+            LocalDateTime.now().toString(),
+            ReadState.SENT
+        )
+
+        val isCorrect = cachingDatabase.getContactRowInfo(defaultUser.email) // place contact row into cache
+            .thenCompose {
+                assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
+                assertThat(it[0], `is`(rowInfo))
+                cachingDatabase.sendMessage(uncachedRowInfo.chatId, nonCachedMessage) // this is supposed to update the contact row in the cache
+            }.thenCompose {
+                assert(wrappedDatabase.sentMessage == nonCachedMessage)
+                cachingDatabase.getContactRowInfo(defaultUser.email)
+            }.thenApply {
+                // should have called the wrapped database again since the stale cache should be cleared
+                assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(2))
+
+                true
+            }.exceptionally { println(it.cause); false }.get(5, SECONDS)
+
+        assertTrue(isCorrect)
+    }
+
+
     @Test
     fun sendingMessageForCachedChatUpdatesThatChatInsideTheCache() {
         val newMessage = Message(
