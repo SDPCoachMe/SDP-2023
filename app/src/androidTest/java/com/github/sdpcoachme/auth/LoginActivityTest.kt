@@ -14,10 +14,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.data.UserAddressSamples
 import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.LOG_IN
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.UserLocationSamples
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.messaging.ChatActivity
@@ -82,7 +82,7 @@ open class LoginActivityTest {
             "Doe",
             "to@email.com",
             "0987654321",
-            UserLocationSamples.LAUSANNE,
+            UserAddressSamples.LAUSANNE,
             true,
             emptyList(),
             emptyList()
@@ -93,7 +93,7 @@ open class LoginActivityTest {
             "Doe",
             "example@email.com",
             "0123456789",
-            UserLocationSamples.NEW_YORK,
+            UserAddressSamples.NEW_YORK,
             false,
             emptyList(),
             emptyList()

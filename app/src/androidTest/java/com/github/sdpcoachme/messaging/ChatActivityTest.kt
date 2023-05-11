@@ -14,8 +14,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.github.sdpcoachme.*
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
-import com.github.sdpcoachme.data.UserLocationSamples.Companion.NEW_YORK
+import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.data.UserAddressSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.Message.*
 import com.github.sdpcoachme.database.CachingStore

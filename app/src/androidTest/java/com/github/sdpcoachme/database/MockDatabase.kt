@@ -1,7 +1,7 @@
 package com.github.sdpcoachme.database
 
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Event
@@ -99,14 +99,14 @@ open class MockDatabase: Database {
         return getMap(accounts, email).thenApply { it != null }
     }
 
-    override fun addEvents(email: String, events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+    override fun addEvent(email: String, event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         if (email == "throw@Exception.com") {
             val error = CompletableFuture<Schedule>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
         }
         return getSchedule(email, currentWeekMonday).thenCompose { schedule ->
-            val newSchedule = schedule.copy(events = schedule.events + events)
+            val newSchedule = schedule.copy(events = schedule.events + event)
             schedules[email] = newSchedule
             val future = CompletableFuture<Schedule>()
             future.complete(null)
@@ -115,7 +115,7 @@ open class MockDatabase: Database {
     }
 
     override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        if (email == "throwGet@Exception.com") {
+        if (email == "throwGetSchedule@Exception.com") {
             val error = CompletableFuture<Schedule>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error

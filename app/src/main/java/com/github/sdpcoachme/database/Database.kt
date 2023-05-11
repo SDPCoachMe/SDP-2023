@@ -45,8 +45,8 @@ interface Database {
     fun getAllUsersByNearest(latitude: Double, longitude: Double): CompletableFuture<List<UserInfo>> {
         return getAllUsers().thenApply { users ->
             users.sortedBy { user ->
-                val userLatitude = user.location.latitude
-                val userLongitude = user.location.longitude
+                val userLatitude = user.address.latitude
+                val userLongitude = user.address.longitude
                 val distance = SphericalUtil.computeDistanceBetween(
                     LatLng(latitude, longitude),
                     LatLng(userLatitude, userLongitude)
@@ -65,13 +65,14 @@ interface Database {
     fun userExists(email: String): CompletableFuture<Boolean>
 
     /**
-     * Add events to the database
-     * @param events The events to add
+     * Add event to the database
+     * @param event The event to add
      * @param currentWeekMonday The monday of the current week
+     * @return A future with currently stored schedule that will complete when the event has been added.
      * @param email The email of the user to add the events for
      * @return A future with currently stored schedule that will complete when the events have been added.
      */
-    fun addEvents(email: String, events: List<Event>, currentWeekMonday: LocalDate): CompletableFuture<Schedule>
+    fun addEvent(email: String, event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule>
 
 
     /**

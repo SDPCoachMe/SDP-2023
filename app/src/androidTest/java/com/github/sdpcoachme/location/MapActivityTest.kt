@@ -17,21 +17,24 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
+import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MAP
+import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.DELAY
+import com.github.sdpcoachme.location.provider.MockLocationProvider
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
-import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
-import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
-import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.google.android.gms.maps.model.LatLng
+import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.TimeUnit.MILLISECONDS
 
 /**
  * Test class for the Composable MapView. Unfortunately, the GoogleMap api for Jetpack Compose
@@ -57,6 +60,9 @@ class MapActivityTest {
     private val defaultIntent =
         Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
     private val EXISTING_EMAIL = "example@email.com"
+    private val context = (InstrumentationRegistry.getInstrumentation()
+        .targetContext.applicationContext as CoachMeApplication)
+    private val mockLocationProvider = (context.locationProvider as MockLocationProvider)
 
     @Before
     fun setUp() {
@@ -144,12 +150,53 @@ class MapActivityTest {
     @Test
     fun mapActivityHasADisplayedMapView() {
         ActivityScenario.launch<MapActivity>(defaultIntent).use {
-            val context = (InstrumentationRegistry.getInstrumentation()
-                .targetContext.applicationContext as CoachMeApplication)
-            val mapTag = MAP + context.userLocation.value.toString()
+            val lastLocation = mockLocationProvider.getLastLocation()
+            val mapTag = MAP + lastLocation.value.toString()
             composeTestRule.onNodeWithTag(mapTag).assertExists().assertIsDisplayed()
         }
     }
+
+    @Test
+    fun mapActivityWorksWithoutLocationSetting() {
+        mockLocationProvider.withoutSetting()
+        ActivityScenario.launch<MapActivity>(defaultIntent).use {
+            val lastLocation = mockLocationProvider.getLastLocation()
+            val mapTag = MAP + lastLocation.value.toString()
+            composeTestRule.onNodeWithTag(mapTag).assertExists().assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun mapActivityWorksWithoutPermission() {
+        mockLocationProvider.withoutPermission()
+        ActivityScenario.launch<MapActivity>(defaultIntent).use {
+            val lastLocation = mockLocationProvider.getLastLocation()
+            val mapTag = MAP + lastLocation.value.toString()
+            composeTestRule.onNodeWithTag(mapTag).assertExists().assertIsDisplayed()
+        }
+    }
+
+    private fun mapLocationIsAddress() {
+        ActivityScenario.launch<MapActivity>(defaultIntent).use {
+            val lastLocation = mockLocationProvider.getLastLocation().value
+            val userAddress = database.getUser(EXISTING_EMAIL).get(DELAY, MILLISECONDS).address
+            val userLatLng = LatLng(userAddress.latitude, userAddress.longitude)
+            assertThat(lastLocation, `is`(userLatLng))
+        }
+    }
+
+    @Test
+    fun mapLocationWithoutPermissionIsAddress() {
+        mockLocationProvider.withoutPermission()
+        mapLocationIsAddress()
+    }
+
+    @Test
+    fun mapLocationWithoutSettingIsAddress() {
+        mockLocationProvider.withoutSetting()
+        mapLocationIsAddress()
+    }
+
 
     // TODO: for now, no tests are done on the markers in the map, since I could not find a way to
     //  detect them in the composeTestRule. The testing code is left here for future reference, if

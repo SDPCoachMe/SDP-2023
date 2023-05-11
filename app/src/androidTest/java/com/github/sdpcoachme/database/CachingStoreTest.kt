@@ -18,8 +18,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import androidx.test.core.app.ApplicationProvider
 import com.github.sdpcoachme.data.ChatSample
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
-import com.github.sdpcoachme.data.UserLocationSamples.Companion.NEW_YORK
+import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.data.UserAddressSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.Message.*
@@ -35,12 +35,12 @@ import org.junit.After
 import org.junit.AfterClass
 import org.junit.Before
 import org.junit.Test
+import java.util.concurrent.TimeUnit.SECONDS
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit.SECONDS
 
 class CachingStoreTest {
 
@@ -103,10 +103,7 @@ class CachingStoreTest {
     @Test
     fun userExistsForUncachedUserFetchesFromWrappedDB() {
         val wrappedDatabase = ExistsDB()
-        val cachingStore = CachingStore(wrappedDatabase,
-            ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
-            ApplicationProvider.getApplicationContext()
-        )
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
 
         assertFalse(cachingStore.isCached(willSmithUser.email))
         assertTrue(cachingStore.userExists(willSmithUser.email).get(1, SECONDS))
@@ -150,6 +147,12 @@ class CachingStoreTest {
             return CompletableFuture.completedFuture(Schedule(events))
         }
     }
+        class ScheduleDB: MockDatabase() {
+            override fun addEvent(event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+                timesCalled++
+                return CompletableFuture.completedFuture(Schedule(listOf(event)))
+            }
+        }
 
     @Test
     fun addEventsAddsThemToWrappedDatabase() {
@@ -160,8 +163,17 @@ class CachingStoreTest {
         )
         cachingStore.setCurrentEmail(exampleEmail)
         val isCorrect = cachingStore.addEvents(eventList, currentMonday)
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+        cachingDatabase.setCurrentEmail(exampleEmail)
+        val isCorrect = cachingDatabase.addEvent(eventList[0], currentMonday)
+            .thenCompose { cachingDatabase.addEvent(eventList[1], currentMonday) }
+            .thenCompose { cachingDatabase.addEvent(eventList[2], currentMonday) }
+            .thenCompose { cachingDatabase.addEvent(eventList[3], currentMonday) }
+            .thenCompose { cachingDatabase.addEvent(eventList[4], currentMonday) }
+            .thenCompose { cachingDatabase.addEvent(eventList[5], currentMonday) }
             .thenApply {
                 assertThat(wrappedDatabase.timesCalled, `is`(1))
+                assertThat(timesCalled, `is`(6))
                 true
             }.exceptionally {
                 false

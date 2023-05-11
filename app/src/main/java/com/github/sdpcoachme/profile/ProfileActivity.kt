@@ -1,7 +1,6 @@
 package com.github.sdpcoachme.profile
 
 import android.content.ActivityNotFoundException
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -33,19 +32,18 @@ import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
-import com.github.sdpcoachme.location.autocomplete.LocationAutocompleteHandler
+import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Buttons.Companion.MESSAGE_COACH
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.COACH_SWITCH
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.LAST_NAME
-import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.LOCATION
+import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.ADDRESS
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PHONE
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.SPORTS
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import com.google.firebase.firestore.remote.Datastore
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
@@ -68,7 +66,7 @@ class ProfileActivity : ComponentActivity() {
             const val FIRST_NAME = "firstName"
             const val LAST_NAME = "lastName"
             const val PHONE = "phone"
-            const val LOCATION = "location"
+            const val ADDRESS = "address"
             const val SPORTS = "sports"
             const val COACH_SWITCH = "coachSwitch"
         }
@@ -79,7 +77,7 @@ class ProfileActivity : ComponentActivity() {
 
     private lateinit var store: CachingStore
     private lateinit var emailFuture: CompletableFuture<String>
-    private lateinit var locationAutocompleteHandler: LocationAutocompleteHandler
+    private lateinit var addressAutocompleteHandler: AddressAutocompleteHandler
     private lateinit var editTextHandler: (Intent) -> CompletableFuture<String>
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
 
@@ -102,7 +100,7 @@ class ProfileActivity : ComponentActivity() {
         val futureUserInfo = emailFuture.thenCompose { store.getUser(it) }
 
         // Set up handler for calls to location autocomplete
-        locationAutocompleteHandler = (application as CoachMeApplication).locationAutocompleteHandler(this, this)
+        addressAutocompleteHandler = (application as CoachMeApplication).addressAutocompleteHandler(this, this)
 
         // Set up handler for calls to edit text activity
         editTextHandler = EditTextActivity.getHandler(this)
@@ -126,7 +124,6 @@ class ProfileActivity : ComponentActivity() {
                 }
             }
         }
-
     }
 
     /**
@@ -148,7 +145,7 @@ class ProfileActivity : ComponentActivity() {
         /**
          * Saves the user's profile information to the database, and then updates the local userInfo
          * state which refreshes the UI. Already handles exceptions due to cancelling of edit text
-         * activity or location autocomplete activity, and redirects to error handler when necessary.
+         * activity or address autocomplete activity, and redirects to error handler when necessary.
          */
         fun saveUserInfo(futureNewUserInfo: CompletableFuture<UserInfo>): CompletableFuture<Void> {
             return futureNewUserInfo
@@ -161,7 +158,7 @@ class ProfileActivity : ComponentActivity() {
                 }
                 .exceptionally {
                     when (it.cause) {
-                        is LocationAutocompleteHandler.AutocompleteCancelledException -> {
+                        is AddressAutocompleteHandler.AutocompleteCancelledException -> {
                             // The user cancelled the Places Autocomplete activity
                             // For now, do nothing, which allows the user to try again
                         }
@@ -290,19 +287,19 @@ class ProfileActivity : ComponentActivity() {
             )
             Divider(startIndent = 20.dp)
             TextRow(
-                label = "LOCATION",
-                tag = LOCATION,
-                value = userInfo.location.address,
+                label = "ADDRESS",
+                tag = ADDRESS,
+                value = userInfo.address.name,
                 onClick = {
                     if (!isViewingCoach) {
-                        val future = locationAutocompleteHandler.launch().thenApply { location ->
-                            userInfo.copy(location = location)
+                        val future = addressAutocompleteHandler.launch().thenApply { address ->
+                            userInfo.copy(address = address)
                         }
                         // Update database
                         saveUserInfo(future)
                     } else {
-                        // If the user is viewing a coach's profile, they can open the coach's location
-                        val uri = Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(userInfo.location.address)}&query_place_id=${userInfo.location.placeId}")
+                        // If the user is viewing a coach's profile, they can open the coach's address
+                        val uri = Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(userInfo.address.name)}&query_place_id=${userInfo.address.placeId}")
                         val intent = Intent(Intent.ACTION_VIEW, uri)
                         intent.setPackage("com.google.android.apps.maps")
                         try {

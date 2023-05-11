@@ -5,6 +5,7 @@
     <string name="title_activity_login">Log in</string>
     <string name="title_activity_multiselect_list">Choose sports</string>
     <string name="title_activity_schedule">Schedule</string>
+    <string name="title_activity_create_event">Create event</string>
     <string name="title_activity_chats_overview">Chats overview</string>
     <string name="title_activity_chat">Chat</string>
     <string name="title_activity_map">Map</string>

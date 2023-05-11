@@ -10,9 +10,11 @@ import com.github.sdpcoachme.auth.Authenticator
 import com.github.sdpcoachme.auth.MockAuthenticator
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.database.MockDatabase
-import com.github.sdpcoachme.location.autocomplete.LocationAutocompleteHandler
-import com.github.sdpcoachme.location.autocomplete.MockLocationAutocompleteHandler
 import kotlinx.coroutines.runBlocking
+import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
+import com.github.sdpcoachme.location.autocomplete.MockAddressAutocompleteHandler
+import com.github.sdpcoachme.location.provider.LocationProvider
+import com.github.sdpcoachme.location.provider.MockLocationProvider
 
 class CoachMeTestApplication : CoachMeApplication() {
     // For DI in testing, add reference to mocks here
@@ -24,6 +26,8 @@ class CoachMeTestApplication : CoachMeApplication() {
 
 
     val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = TEST_PREFERENCES_NAME)
+    override var locationProvider: LocationProvider = MockLocationProvider()
+
     override fun onCreate() {
         super.onCreate()
         // 10.0.2.2 is the special IP address to connect to the 'localhost' of
@@ -58,8 +62,8 @@ class CoachMeTestApplication : CoachMeApplication() {
         store = CachingStore(MockDatabase(), dataStore, this)
     }
 
-    override fun locationAutocompleteHandler(
+    override fun addressAutocompleteHandler(
         context: Context,
         caller: ActivityResultCaller
-    ): LocationAutocompleteHandler = MockLocationAutocompleteHandler()
+    ): AddressAutocompleteHandler = MockAddressAutocompleteHandler()
 }

@@ -13,18 +13,17 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.R
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
+import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
-import com.github.sdpcoachme.data.UserLocationSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.database.CachingStore
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity
+import com.github.sdpcoachme.profile.CoachesListActivity.TestTags.Buttons.Companion.FILTER
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import org.hamcrest.CoreMatchers.allOf
 import org.junit.After
 import org.junit.Before
@@ -59,6 +58,7 @@ open class CoachesListActivityTest {
         // Given nondeterministic behavior depending on order of tests, we reset the database here
         // TODO: this is temporary, we should find a better way to guarantee the database is refreshed
         //  before each test
+        //database.restoreDefaultAccountsSetup()
 
         // Populate the database, and wait for it to finish
         populateDatabase().join()
@@ -82,19 +82,21 @@ open class CoachesListActivityTest {
             stateLoading = it.stateLoading
         }
         stateLoading.get(1000, MILLISECONDS)
+        Intents.init()
     }
 
     // Necessary since we don't do scenario.use { ... } in each test, which closes automatically
     @After
-    fun cleanup() {
+    open fun cleanup() {
         scenario.close()
+        Intents.release()
     }
 
     @Test
     fun allCoachesExists() {
         COACHES.forEach { coach ->
             composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}").assertIsDisplayed()
-            composeTestRule.onNodeWithText(coach.location.address).assertIsDisplayed()
+            composeTestRule.onNodeWithText(coach.address.name).assertIsDisplayed()
         }
     }
 
@@ -102,7 +104,7 @@ open class CoachesListActivityTest {
     fun allNonCoachesDoNotExist() {
         NON_COACHES.forEach { coach ->
             composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}").assertDoesNotExist()
-            composeTestRule.onNodeWithText(coach.location.address).assertDoesNotExist()
+            composeTestRule.onNodeWithText(coach.address.name).assertDoesNotExist()
         }
     }
 
@@ -112,11 +114,9 @@ open class CoachesListActivityTest {
 
     @Test
     fun whenClickingOnACoachProfileActivityShowsCoachToClient() {
-            Intents.init()
-
             // Click on the first coach
             val coach = COACH_1
-            composeTestRule.onNodeWithText(coach.location.address).assertIsDisplayed()
+            composeTestRule.onNodeWithText(coach.address.name).assertIsDisplayed()
             composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
                 .assertIsDisplayed()
                 .performClick()
@@ -127,8 +127,6 @@ open class CoachesListActivityTest {
                 hasExtra("email", coach.email),
                 hasExtra("isViewingCoach", true)
             ))
-
-            Intents.release()
     }
 
     @Test
@@ -149,12 +147,26 @@ open class CoachesListActivityTest {
         }
     }
 
+    @Test
+    fun filteringButtonIsShownInNearbyCoaches() {
+        composeTestRule.onNodeWithTag(FILTER).assertExists().assertIsDisplayed()
+    }
+
+    @Test
+    fun filteringButtonLaunchesSelectSportsActivity() {
+        composeTestRule.onNodeWithTag(FILTER).assertExists().assertIsDisplayed()
+        composeTestRule.onNodeWithTag(FILTER).performClick()
+        Intents.intended(allOf(hasComponent(SelectSportsActivity::class.java.name),
+            hasExtra("title", "Filter coaches by sport")))
+    }
+
     // Subclass added to be able to run a different setup method (to simulate viewing contacts)
     class ContactsListTest: CoachesListActivityTest() {
         @Before
         override fun setup() {
             // Launch the activity
             populateDatabase().join()
+
             val contactIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
             contactIntent.putExtra("isViewingContacts", true)
             scenario = ActivityScenario.launch(contactIntent)
@@ -164,11 +176,11 @@ open class CoachesListActivityTest {
                 stateLoading = it.stateLoading
             }
             stateLoading.get(1000, MILLISECONDS)
+            Intents.init()
         }
 
         @Test
         fun whenViewingContactsAndClickingOnClientChatActivityIsLaunched() {
-            Intents.init()
             val toEmail = "to@email.com"
             val coach = UserInfo(
                 "Jane",
@@ -180,7 +192,7 @@ open class CoachesListActivityTest {
                 emptyList(),
                 emptyList()
             )
-            composeTestRule.onNodeWithText(coach.location.address).assertIsDisplayed()
+            composeTestRule.onNodeWithText(coach.address.name).assertIsDisplayed()
             composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
                 .assertIsDisplayed()
                 .performClick()
@@ -190,7 +202,6 @@ open class CoachesListActivityTest {
                 hasComponent(ChatActivity::class.java.name),
                 hasExtra("toUserEmail", coach.email),
             ))
-            Intents.release()
         }
 
         @Test
@@ -208,6 +219,10 @@ open class CoachesListActivityTest {
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertExists().assertIsDisplayed()
         }
 
+        @Test
+        fun filteringButtonIsNotShownInContactsList() {
+            composeTestRule.onNodeWithTag(FILTER).assertDoesNotExist()
+        }
 
     }
 

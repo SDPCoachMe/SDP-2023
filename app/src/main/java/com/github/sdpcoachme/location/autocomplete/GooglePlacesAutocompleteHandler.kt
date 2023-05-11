@@ -7,7 +7,7 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import com.github.sdpcoachme.data.UserLocation
+import com.github.sdpcoachme.data.UserAddress
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.model.PlaceTypes
 import com.google.android.libraries.places.widget.Autocomplete
@@ -21,9 +21,9 @@ import java.util.concurrent.CompletableFuture
  * @param caller The ActivityResultCaller that will be used to launch the Places Autocomplete activity.
  *
  */
-class GooglePlacesAutocompleteHandler(context: Context, caller: ActivityResultCaller) : LocationAutocompleteHandler {
+class GooglePlacesAutocompleteHandler(context: Context, caller: ActivityResultCaller) : AddressAutocompleteHandler {
 
-    private lateinit var autocompleteResult: CompletableFuture<UserLocation>
+    private lateinit var autocompleteResult: CompletableFuture<UserAddress>
     private val intent: Intent
     private val startForResult: ActivityResultLauncher<Intent>
 
@@ -45,10 +45,10 @@ class GooglePlacesAutocompleteHandler(context: Context, caller: ActivityResultCa
                         result.data!!.let {
                             val place = Autocomplete.getPlaceFromIntent(it)
                             autocompleteResult.complete(
-                                UserLocation(
+                                UserAddress(
                                     // They should never be null anyways
                                     placeId = place.id!!,
-                                    address = place.address!!,
+                                    name = place.address!!,
                                     latitude = place.latLng!!.latitude,
                                     longitude = place.latLng!!.longitude
                                 )
@@ -57,12 +57,12 @@ class GooglePlacesAutocompleteHandler(context: Context, caller: ActivityResultCa
                     }
                     Activity.RESULT_CANCELED -> {
                         // The user canceled the operation
-                        autocompleteResult.completeExceptionally(LocationAutocompleteHandler.AutocompleteCancelledException())
+                        autocompleteResult.completeExceptionally(AddressAutocompleteHandler.AutocompleteCancelledException())
                     }
                     else -> {
                         // There was an unknown error
                         // Log.d("AUTOCOMPLETE_STATUS", "Status ${Autocomplete.getStatusFromIntent(result.data!!)}") // access error details
-                        autocompleteResult.completeExceptionally(LocationAutocompleteHandler.AutocompleteFailedException())
+                        autocompleteResult.completeExceptionally(AddressAutocompleteHandler.AutocompleteFailedException())
                     }
                 }
         }
@@ -70,12 +70,12 @@ class GooglePlacesAutocompleteHandler(context: Context, caller: ActivityResultCa
 
     /**
      * Launches the Places Autocomplete activity and returns a CompletableFuture that will be completed
-     * with the UserLocation selected by the user.
+     * with the UserAddress selected by the user.
      *
-     * @return A CompletableFuture that will be completed with the UserLocation selected by the user.
+     * @return A CompletableFuture that will be completed with the UserAddress selected by the user.
      */
-    override fun launch(): CompletableFuture<UserLocation> {
-        autocompleteResult = CompletableFuture<UserLocation>()
+    override fun launch(): CompletableFuture<UserAddress> {
+        autocompleteResult = CompletableFuture<UserAddress>()
         startForResult.launch(intent)
         return autocompleteResult
     }

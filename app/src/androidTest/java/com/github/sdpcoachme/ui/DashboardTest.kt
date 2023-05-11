@@ -19,16 +19,12 @@ import com.github.sdpcoachme.BuildConfig
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.COACHES_LIST
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.LOGOUT
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.MESSAGING
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.PROFILE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.SCHEDULE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.MENU_LIST
-import com.github.sdpcoachme.auth.LoginActivity
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.profile.CoachesListActivity
 import com.github.sdpcoachme.profile.ProfileActivity
@@ -224,18 +220,22 @@ class DashboardTest {
     // It is passing locally though, so we are commenting it out for now
 
     /*
+
     @Test
     fun currentAppActivityIsDashboardContent() {
         setUpDashboardWithActivityContext().use {
             val context = (InstrumentationRegistry.getInstrumentation()
                 .targetContext.applicationContext as CoachMeApplication)
-            composeTestRule.waitUntil(5000) { context.userLocation.value != null }
-            val mapTag = MapActivity.TestTags.MAP + context.userLocation.value.toString()
+            val lastLocation = context.locationProvider.getLastLocation()
+            val mapTag = MAP + lastLocation.value.toString()
+            composeTestRule.waitUntil(5000) { lastLocation.value != null }
             composeTestRule.onNodeWithTag(mapTag).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(DRAWER_HEADER).assertIsNotDisplayed()
         }
     }
 
      */
+
+
 
 }
