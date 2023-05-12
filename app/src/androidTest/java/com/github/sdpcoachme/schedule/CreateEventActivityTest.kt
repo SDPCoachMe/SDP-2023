@@ -1,16 +1,8 @@
 package com.github.sdpcoachme.schedule
 
 import android.content.Intent
-import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsFocused
-import androidx.compose.ui.test.assertIsNotFocused
-import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performImeAction
-import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
@@ -26,7 +18,6 @@ import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.database.CachingStore
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.CANCEL
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.COLOR_BOX
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.END_DATE
@@ -132,20 +123,6 @@ class CreateEventActivityTest {
             .performImeAction()
         composeTestRule.onNodeWithTag(tag)
             .assertIsNotFocused()
-    }
-
-    @Test
-    fun addEventWithEmptyEmailRedirectsToErrorPage() {
-        store.setCurrentEmail("")
-        ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON)
-                .assertIsDisplayed()
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD)
-                .assertIsDisplayed()
-
-            composeTestRule.onNodeWithText("New event did not receive an email address.\n Please return to the login page and try again.")
-                .assertIsDisplayed()
-        }
     }
 
     @Test

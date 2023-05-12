@@ -86,7 +86,7 @@ class ProfileActivity : ComponentActivity() {
         stateUpdated = CompletableFuture()
         store = (application as CoachMeApplication).store
         val isViewingCoach = intent.getBooleanExtra("isViewingCoach", false)
-        if (isViewingCoach) {
+        emailFuture = if (isViewingCoach) {
             val email = intent.getStringExtra("email").toString()
             // note : in the case where a coach is viewed but the email is not found
             // the value of the email will be "null" (see toString method of String)
@@ -94,8 +94,8 @@ class ProfileActivity : ComponentActivity() {
                 val errorMsg = "Profile did not receive a correct email when viewing a coach."
                 ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
             }
-            emailFuture = CompletableFuture.completedFuture(email)
-        } else emailFuture = store.getCurrentEmail()
+            CompletableFuture.completedFuture(email)
+        } else store.getCurrentEmail()
 
         val futureUserInfo = emailFuture.thenCompose { store.getUser(it) }
 
