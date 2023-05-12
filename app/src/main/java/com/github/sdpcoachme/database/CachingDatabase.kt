@@ -157,15 +157,12 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     }
 
     override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
-        /*if (registeredGroupEvents.contains(groupEventId)) {
-            return wrappedDatabase.getGroupEvent(groupEventId, currentWeekMonday)
-        }*/
-        if (cachedSchedule.groupEvents.contains(groupEventId)) {
+        if (cachedSchedule.groupEvents.contains(groupEventId)) {    // Means that the current user is registered for the group event
             return wrappedDatabase.getGroupEvent(groupEventId, currentWeekMonday)
         }
 
         val failFuture = CompletableFuture<GroupEvent>()
-        failFuture.completeExceptionally(NoSuchElementException("Group event with id $groupEventId not found"))
+        failFuture.completeExceptionally(NoSuchElementException("Current user is not registered for group event with id $groupEventId"))
         return failFuture
     }
 

@@ -19,6 +19,7 @@ import com.github.sdpcoachme.schedule.EventOps
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
+import org.hamcrest.CoreMatchers.hasItem
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
@@ -168,26 +169,40 @@ class CachingDatabaseTest {
     }
 
     @Test
-    fun registerForGroupEventAddsThemToWrappedDatabase() {
+    fun registerForGroupEventAddsParticipantToWrappedDatabase() {
         var timesCalled = 0
-        class ScheduleDB: MockDatabase() {
+        class ScheduleDB(groupEventsMap: MutableMap<String, GroupEvent>): MockDatabase() {
+            val availableGroupEvents = groupEventsMap
+
             override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
                 timesCalled++
-                return CompletableFuture.completedFuture(null)
+                if (availableGroupEvents.containsKey(groupEventId)) {
+                    // register exampleEmail
+                    availableGroupEvents[groupEventId] = availableGroupEvents[groupEventId]!!.copy(participants = listOf(exampleEmail))
+                    return CompletableFuture.completedFuture(null)
+                }
+                val failFuture = CompletableFuture<Void>()
+                failFuture.completeExceptionally(NoSuchElementException())
+                return failFuture
             }
         }
 
-        val wrappedDatabase = ScheduleDB()
+
+        val availableGroupEvents = mutableMapOf<String, GroupEvent>()
+        groupEvents.forEach { availableGroupEvents[it.groupEventId] = it }
+
+        val eventsToRegisterFor = listOf(groupEvents[0], groupEvents[2], groupEvents[4], groupEvents[5])
+
+        val wrappedDatabase = ScheduleDB(availableGroupEvents)
         val cachingDatabase = CachingDatabase(wrappedDatabase)
         cachingDatabase.setCurrentEmail(exampleEmail)
-        val isCorrect = cachingDatabase.registerForGroupEvent(groupEvents[0].groupEventId)
-            .thenCompose { cachingDatabase.registerForGroupEvent(groupEvents[1].groupEventId) }
-            .thenCompose { cachingDatabase.registerForGroupEvent(groupEvents[2].groupEventId) }
-            .thenCompose { cachingDatabase.registerForGroupEvent(groupEvents[3].groupEventId) }
-            .thenCompose { cachingDatabase.registerForGroupEvent(groupEvents[4].groupEventId) }
-            .thenCompose { cachingDatabase.registerForGroupEvent(groupEvents[5].groupEventId) }
+        val isCorrect = cachingDatabase.registerForGroupEvent(eventsToRegisterFor[0].groupEventId)
+            .thenCompose { cachingDatabase.registerForGroupEvent(eventsToRegisterFor[1].groupEventId) }
+            .thenCompose { cachingDatabase.registerForGroupEvent(eventsToRegisterFor[2].groupEventId) }
+            .thenCompose { cachingDatabase.registerForGroupEvent(eventsToRegisterFor[3].groupEventId) }
             .thenApply {
-                assertThat(timesCalled, `is`(6))
+                assertThat(timesCalled, `is`(4))
+                eventsToRegisterFor.forEach { assertThat(availableGroupEvents[it.groupEventId]!!.participants, hasItem(exampleEmail)) }
                 true
             }.exceptionally {
                 false
@@ -318,12 +333,48 @@ class CachingDatabaseTest {
     }
 
     @Test
-    fun getGroupEventCachesUncachedId() {
-        // TODO: Implement test
+    fun getGroupEventGetsCachedId() {
+        var timesCalled = 0
+        class GroupEventDB(groupEvent: GroupEvent): MockDatabase() {
+            val storedGroupEvent = groupEvent
+            val storedSchedule = Schedule(listOf(groupEvent.event), listOf(groupEvent.groupEventId))
+            override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
+                timesCalled++
+                return CompletableFuture.completedFuture(storedGroupEvent)
+            }
+
+            override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+                return CompletableFuture.completedFuture(storedSchedule)
+            }
+        }
+
+        // initialize database s.t. it contains the group event where the test user is a participant
+        val testEvent = groupEvents[0].copy(participants = listOf(exampleEmail))
+        val wrappedDatabase = GroupEventDB(testEvent)
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+        cachingDatabase.setCurrentEmail(exampleEmail)
+
+        val currentMonday = EventOps.getStartMonday()
+        val isCorrect = cachingDatabase.getSchedule(currentMonday)  // caches the group event id to user's schedule
+            .thenCompose {
+                cachingDatabase.getGroupEvent(groupEvents[0].groupEventId, currentMonday)
+            }.thenCompose {
+                assertThat(timesCalled, `is`(1))
+                assertThat(it, `is`(testEvent))
+                cachingDatabase.getGroupEvent(groupEvents[0].groupEventId, currentMonday)
+            }.thenApply {
+                assertThat(timesCalled, `is`(2))
+                assertThat(it, `is`(testEvent))
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(isCorrect)
     }
 
     @Test
-    fun getGroupEventGetsCachedId() {
+    fun getGroupEventFailsForUnregisteredUser() {
         // TODO: Implement test
     }
 
