@@ -5,18 +5,19 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.Espresso.pressBackUnconditionally
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.uiautomator.*
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.data.UserAddressSamples
 import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.LOG_IN
+import com.github.sdpcoachme.data.UserAddressSamples
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.MapActivity
@@ -39,7 +40,7 @@ open class LoginActivityTest {
     @Test
     fun startFromHomeScreenLaunchesLoginActivity() {
         FirebaseAuth.getInstance().signOut()
-        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val instrumentation = getInstrumentation()
         val targetContext = instrumentation.targetContext
         device = UiDevice.getInstance(instrumentation)
 
@@ -68,6 +69,7 @@ open class LoginActivityTest {
             Until.hasObject(By.res(LOG_IN)),
             2000
         ))
+        pressBackUnconditionally()
     }
 
     class NextActivityTest: LoginActivityTest() {
@@ -144,6 +146,7 @@ open class LoginActivityTest {
                 // Assert that we launched the map activity
                 intended(hasComponent(MapActivity::class.java.name))
             }
+            pressBackUnconditionally()
         }
 
         @Test

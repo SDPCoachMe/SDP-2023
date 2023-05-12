@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.Espresso.pressBackUnconditionally
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
@@ -17,18 +18,20 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.github.sdpcoachme.BuildConfig
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.auth.LoginActivity
+import com.github.sdpcoachme.location.MapActivity
+import com.github.sdpcoachme.profile.CoachesListActivity
+import com.github.sdpcoachme.profile.ProfileActivity
+import com.github.sdpcoachme.schedule.ScheduleActivity
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.COACHES_LIST
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.LOGOUT
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.MESSAGING
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.PROFILE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.SCHEDULE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.MENU_LIST
-import com.github.sdpcoachme.location.MapActivity
-import com.github.sdpcoachme.profile.CoachesListActivity
-import com.github.sdpcoachme.profile.ProfileActivity
-import com.github.sdpcoachme.schedule.ScheduleActivity
 import org.hamcrest.Matcher
 import org.junit.After
 import org.junit.Before
@@ -163,8 +166,6 @@ class DashboardTest {
         )
     }
 
-    // TODO : Same problem linked to Google bug, "Not on the main thread"
-    /*
     @Test
     fun dashboardCorrectlyRedirectsOnLogOutClick() {
         // needs an application context here to get the authenticator
@@ -174,9 +175,8 @@ class DashboardTest {
                 hasComponent(LoginActivity::class.java.name)
             )
         }
+        pressBackUnconditionally()
     }
-
-     */
 
     @Test
     fun dashboardCorrectlyRedirectsOnCoachesListClick() {
