@@ -43,10 +43,23 @@ class FusedLocationProvider : LocationProvider {
     /**
      * Create an activity for result to display window to request location permission.
      * The contract is a predefined "function" which takes a permission as input and
-     * outputs if the user has granted it or not. See init(...).
+     * outputs if the user has granted it or not. See update(...).
      */
-    private var requestPermissionLauncher: ActivityResultLauncher<String> =
-        appContext.registerForActivityResult(
+    private var requestPermissionLauncher: ActivityResultLauncher<String>? = null
+
+    /**
+     * Create an activity for result to display a window to request location setting.
+     * The contract is a predefined "function" which takes an IntentSenderRequest as input and
+     * outputs if the user has enabled the setting or not. See update(...).
+     */
+    private var requestSettingLauncher:  ActivityResultLauncher<IntentSenderRequest>? = null
+
+    override fun updateContext(context: ComponentActivity, userInfo: CompletableFuture<UserInfo>) {
+        appContext = context
+        user = userInfo
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(appContext)
+
+        requestPermissionLauncher = appContext.registerForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { isGranted ->
             if (isGranted) {
@@ -56,13 +69,7 @@ class FusedLocationProvider : LocationProvider {
             }
         }
 
-    /**
-     * Create an activity for result to display a window to request location setting.
-     * The contract is a predefined "function" which takes an IntentSenderRequest as input and
-     * outputs if the user has enabled the setting or not. See init(...).
-     */
-    private var requestSettingLauncher:  ActivityResultLauncher<IntentSenderRequest> =
-        appContext.registerForActivityResult(
+        requestSettingLauncher = appContext.registerForActivityResult(
             ActivityResultContracts.StartIntentSenderForResult()
         ) {
             if (it.resultCode == RESULT_OK) {
@@ -73,15 +80,12 @@ class FusedLocationProvider : LocationProvider {
                 setLocationToAddress()
             }
         }
-
-    override fun updateContext(context: ComponentActivity, userInfo: CompletableFuture<UserInfo>) {
-        appContext = context
-        user = userInfo
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(appContext)
     }
 
     override fun requestPermission() {
-        requestPermissionLauncher.launch(ACCESS_FINE_LOCATION)
+        // update should have been called before calling this function
+        assert(requestPermissionLauncher != null)
+        requestPermissionLauncher?.launch(ACCESS_FINE_LOCATION)
     }
 
     /**
@@ -134,6 +138,8 @@ class FusedLocationProvider : LocationProvider {
      * Else, requests the user to enable the location service of the device.
      */
     override fun checkLocationSetting() {
+        // update should have been called before calling this function
+        assert(requestSettingLauncher != null)
         // A location request is needed to check the location settings although we don't need
         // this request to perform a one-time location retrieval.
         // Interval is set to 0 but it doesn't matter since we don't really use this request.
@@ -150,7 +156,7 @@ class FusedLocationProvider : LocationProvider {
             if (exception is ResolvableApiException) {
                 // Location settings are not satisfied, but this can be fixed
                 val intentSender = exception.resolution.intentSender
-                requestSettingLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+                requestSettingLauncher?.launch(IntentSenderRequest.Builder(intentSender).build())
             } else {
                 // else, there is no way to fix the location settings
                 setLocationToAddress()
