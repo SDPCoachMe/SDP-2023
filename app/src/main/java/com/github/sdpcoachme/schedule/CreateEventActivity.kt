@@ -223,7 +223,7 @@ fun NewEvent(database: Database) {
                                 val toast = Toast.makeText(context, "Start date must be before end date", Toast.LENGTH_SHORT)
                                 toast.show()
                             } else {
-                                EventOps.addEvent(event, database).thenCompose {
+                                EventOps.addEvent(event, database)/*.thenCompose {
                                     val organiser = database.getCurrentEmail().replace('.', ',')
                                     val testGroupEvent = GroupEvent(
                                         event = event.copy(
@@ -236,7 +236,7 @@ fun NewEvent(database: Database) {
                                     )
                                     // TODO: remove this once the "add group event" button is added to the UI
                                     database.addGroupEvent(testGroupEvent, EventOps.getStartMonday())
-                                }.thenAccept {
+                                }*/.thenAccept {
                                     goBackToScheduleActivity()
                                 }
                             }

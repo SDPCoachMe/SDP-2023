@@ -50,6 +50,7 @@ import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Compani
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_DATE_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_TIME_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_TIME_TEXT
+import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.SCHEDULE_COLUMN
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.`is`
 import org.junit.After
@@ -57,6 +58,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.lang.Thread.sleep
 
 @RunWith(AndroidJUnit4::class)
 class CreateEventActivityTest {
@@ -158,12 +160,16 @@ class CreateEventActivityTest {
             fillAndCheckFocus(defaultEventName, EVENT_NAME)
             fillAndCheckFocus(defaultEventDescription, DESCRIPTION)
 
+            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+            device.waitForIdle()
             composeTestRule.onNodeWithTag(SAVE)
                 .assertExists()
             composeTestRule.onNodeWithTag(SAVE)
                 .performClick()
+            device.waitForIdle()
 
             intended(hasComponent(ScheduleActivity::class.java.name))
+
         }
     }
 
@@ -320,7 +326,7 @@ class CreateEventActivityTest {
         device.waitForIdle()
         device.wait(Until.findObject(By.text("$testMinute2")), 500)
         device.findObject(By.text("$testMinute2")).click(500)
-        device.waitForIdle(10000)
+        device.waitForIdle(1000)
 
         // Press ok
         device.findObject(By.text("Ok")).click()

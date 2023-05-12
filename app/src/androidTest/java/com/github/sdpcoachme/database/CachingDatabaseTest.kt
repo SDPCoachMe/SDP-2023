@@ -167,6 +167,44 @@ class CachingDatabaseTest {
         assertTrue(isCorrect)
     }
 
+    @Test
+    fun registerForGroupEventAddsThemToWrappedDatabase() {
+        var timesCalled = 0
+        class ScheduleDB: MockDatabase() {
+            override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
+                timesCalled++
+                return CompletableFuture.completedFuture(null)
+            }
+        }
+
+        val wrappedDatabase = ScheduleDB()
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+        cachingDatabase.setCurrentEmail(exampleEmail)
+        val isCorrect = cachingDatabase.registerForGroupEvent(groupEvents[0].groupEventId)
+            .thenCompose { cachingDatabase.registerForGroupEvent(groupEvents[1].groupEventId) }
+            .thenCompose { cachingDatabase.registerForGroupEvent(groupEvents[2].groupEventId) }
+            .thenCompose { cachingDatabase.registerForGroupEvent(groupEvents[3].groupEventId) }
+            .thenCompose { cachingDatabase.registerForGroupEvent(groupEvents[4].groupEventId) }
+            .thenCompose { cachingDatabase.registerForGroupEvent(groupEvents[5].groupEventId) }
+            .thenApply {
+                assertThat(timesCalled, `is`(6))
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(isCorrect)
+    }
+
+    @Test
+    fun registerForGroupEventCachesEventId() {
+        val isCorrect = true
+
+        // TODO: Implement test
+
+        assertTrue(isCorrect)
+    }
+
     private class GetScheduleDB(val eventList: List<Event>, val groupEvents: List<GroupEvent>): MockDatabase() {
         private var timesCalled = 0
 

@@ -16,24 +16,10 @@ import java.util.concurrent.CompletableFuture
  * A mock database class
  */
 open class MockDatabase: Database {
-
     // TODO: database should be empty by default, and tests should add data to it.
     //  This way, we can make sure each test is independent from the others
 
     private var currEmail = ""
-
-    private val toEmail = "to@email.com"
-    val toUser = UserInfo(
-        "Jane",
-        "Doe",
-        toEmail,
-        "0987654321",
-        LAUSANNE,
-        false,
-        emptyList(),
-        emptyList()
-    )
-
     private var chat = Chat(participants = listOf(defaultEmail, toEmail))
     private var chatId = ""
     private var onChange: (Chat) -> Unit = {}
@@ -59,12 +45,32 @@ open class MockDatabase: Database {
             emptyList()
         )
 
+        private val toEmail = "to@email.com"
+        private val toUser = UserInfo(
+            "Jane",
+            "Doe",
+            toEmail,
+            "0987654321",
+            LAUSANNE,
+            false,
+            emptyList(),
+            emptyList()
+        )
+
         fun getDefaultEmail(): String {
             return defaultEmail
         }
 
+        fun getToUserEmail(): String {
+            return toEmail
+        }
+
         fun getDefaultUser(): UserInfo {
             return defaultUserInfo
+        }
+
+        fun getToUser(): UserInfo {
+            return toUser
         }
     }
 
