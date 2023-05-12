@@ -130,7 +130,6 @@ class ChatActivity : ComponentActivity() {
         val database = (application as CoachMeApplication).database
         val currentUserEmail = database.getCurrentEmail()
 
-        // TODO: consider refactoring to always pass the chatId
         val chatId = intent.getStringExtra("chatId")
         val isGroupChat: Boolean
         var contact = ""
@@ -186,7 +185,7 @@ fun ChatView(
     database: Database,
     toUserEmail: String,
     stateLoading: CompletableFuture<Void>,
-    isGroupChat: Boolean = false
+    isGroupChat: Boolean
 ) {
     var chat by remember { mutableStateOf(Chat()) }
     var toUser by remember { mutableStateOf(UserInfo()) }
@@ -594,7 +593,9 @@ fun ChatField(
                             val contact = if (isGroupChat) groupEvent.groupEventId else chat.id.replace(participantMail, "")
                             println("contact to update: $contact")
                             println("user whos contact list is being updated: ${it.email}")
-                            database.updateUser(it.copy(chatContacts = listOf(contact) + it.chatContacts.filter { e -> e != contact }))
+                            database.updateUser(it.copy(
+                                chatContacts = listOf(contact) + it.chatContacts.filter { e -> e != contact })
+                            )
                         }
                     }
                 },

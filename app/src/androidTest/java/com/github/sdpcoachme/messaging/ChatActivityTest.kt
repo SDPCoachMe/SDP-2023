@@ -59,7 +59,11 @@ class ChatActivityTest {
 
     private val toUser = UserInfoSamples.COACH_1
     private lateinit var database: Database
-    private val currentUser = UserInfoSamples.NON_COACH_1.copy(firstName = "Current_FirstName", lastName = "Current_LastName")
+    private var currentUser = UserInfoSamples.NON_COACH_1.copy(
+        firstName = "Current_FirstName",
+        lastName = "Current_LastName",
+        chatContacts = listOf(toUser.email)
+    )
     private val personalChatId = (currentUser.email + toUser.email)
     private val personalChatDefaultIntent = Intent(
         ApplicationProvider.getApplicationContext(), ChatActivity::class.java
@@ -173,8 +177,6 @@ class ChatActivityTest {
         }
     }
 
-    // TODO: add test for contact row click when chat is a group event chat (should display the event)
-
     @Test
     fun backButtonReturnsToListedContactsWhenPressed() {
         println("current user: $currentUser")
@@ -223,7 +225,8 @@ class ChatActivityTest {
     }
 
     @Test
-    fun whenReceivingAMessageFromANewContactThatContactIsAddedToTheUserInfoContactList() {
+    fun whenOpeningChatWithNewContactThatContactIsAddedToTheUserInfoContactList() {
+        currentUser = currentUser.copy(chatContacts = listOf())
         assertThat(currentUser.chatContacts, not(hasItem(toUser.email)))
 
         ActivityScenario.launch<ChatActivity>(personalChatDefaultIntent).use {
@@ -431,6 +434,39 @@ class ChatActivityTest {
                 .performClick()
 
             // assert that the correct activity is launched here:
+        }
+    }
+
+    @Test
+    fun whenSendingMessageTheChatIsPlacedAtTheTopOfTheContactList() {
+        val messageContent = "Send Message test!"
+
+        ActivityScenario.launch<ChatActivity>(groupChatDefaultIntent).use {
+            composeTestRule.onNodeWithTag(CHAT_FIELD.LABEL)
+                .assertIsDisplayed()
+                .performTextInput(messageContent)
+            Espresso.closeSoftKeyboard()
+
+            composeTestRule.onNodeWithTag(SEND)
+                .assertIsDisplayed()
+                .performClick()
+
+            val chat = database.getChat(groupEvent.groupEventId).get()
+            val message = chat.messages.last()
+            assertThat(message.sender, `is`(currentUser.email))
+            assertThat(message.content, `is`(messageContent))
+
+            val timeSinceSend = Duration.between(LocalDateTime.parse(message.timestamp), LocalDateTime.now())
+            assertThat(timeSinceSend.seconds, lessThan(5))
+
+            composeTestRule.onNodeWithText(messageContent, substring = true, useUnmergedTree = true)
+                .assertIsDisplayed()
+
+            for (userMail in groupEvent.participants) {
+                database.getUser(userMail).thenApply { it.chatContacts[0] }.get().let {
+                    assertThat(it, `is`(groupEvent.groupEventId))
+                }
+            }
         }
     }
 }
