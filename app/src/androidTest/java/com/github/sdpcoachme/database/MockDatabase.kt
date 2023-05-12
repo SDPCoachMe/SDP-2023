@@ -88,6 +88,7 @@ open class MockDatabase: Database {
 
     fun restoreDefaultSchedulesSetup() {
         schedules = hashMapOf()
+        groupEvents = hashMapOf()
     }
 
 
@@ -157,6 +158,7 @@ open class MockDatabase: Database {
 
     override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
         return getGroupEvent(groupEventId, EventOps.getStartMonday()).thenCompose { groupEvent ->
+            println("Get group event complete")
             val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
             if (!hasCapacity) {
                 val failingFuture = CompletableFuture<Void>()
@@ -181,6 +183,7 @@ open class MockDatabase: Database {
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
         }
+        println("Event ids in schedule: ${schedules[currEmail]?.groupEvents}")
         return schedules[currEmail]?.let { CompletableFuture.completedFuture(it) }
             ?: CompletableFuture.completedFuture(Schedule())
     }

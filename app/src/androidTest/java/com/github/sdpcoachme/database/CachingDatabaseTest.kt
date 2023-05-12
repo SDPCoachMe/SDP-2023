@@ -196,11 +196,43 @@ class CachingDatabaseTest {
         assertTrue(isCorrect)
     }
 
+    // note: for now, all IDs the user is registered for are cached (as part of the cached schedule)
     @Test
     fun registerForGroupEventCachesEventId() {
-        val isCorrect = true
+        var timesCalled = 0
+        class RegisterDB: MockDatabase() {
+            override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
+                timesCalled++
+                return CompletableFuture.completedFuture(null)
+            }
+        }
 
-        // TODO: Implement test
+        val wrappedDatabase = RegisterDB()
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+
+        val userToRegister = MockDatabase.getToUserEmail()
+        cachingDatabase.setCurrentEmail(userToRegister)
+
+        val isCorrect = cachingDatabase.registerForGroupEvent(groupEvents[0].groupEventId).thenCompose {
+            cachingDatabase.registerForGroupEvent(groupEvents[1].groupEventId)
+        }.thenCompose {
+            cachingDatabase.registerForGroupEvent(groupEvents[2].groupEventId)
+        }.thenCompose {
+            cachingDatabase.registerForGroupEvent(groupEvents[3].groupEventId)
+        }.thenCompose {
+            cachingDatabase.registerForGroupEvent(groupEvents[4].groupEventId)
+        }.thenCompose {
+            cachingDatabase.registerForGroupEvent(groupEvents[5].groupEventId)
+        }.thenCompose {
+            cachingDatabase.getSchedule(currentMonday)
+        }.thenApply {schedule ->
+            assertThat(timesCalled, `is`(6))
+            assertThat(schedule.groupEvents, `is`(groupEvents.map { it.groupEventId }))
+            true
+        }.exceptionally {
+            println(it.cause)
+            false
+        }.get(5, SECONDS)
 
         assertTrue(isCorrect)
     }
@@ -283,6 +315,16 @@ class CachingDatabaseTest {
             }.get(5, SECONDS)
 
         assertTrue(isCorrect)
+    }
+
+    @Test
+    fun getGroupEventCachesUncachedId() {
+        // TODO: Implement test
+    }
+
+    @Test
+    fun getGroupEventGetsCachedId() {
+        // TODO: Implement test
     }
 
     @Test

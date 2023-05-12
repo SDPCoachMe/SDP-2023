@@ -98,7 +98,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
                 setChild(groupEvents, groupEventId, updatedGroupEvent).thenCompose {
                     getSchedule(EventOps.getStartMonday()).thenCompose { s ->
                         val updatedSchedule = s.copy(groupEvents = s.groupEvents + groupEventId)
-                        setChild(schedule, id, updatedSchedule)
+                        setChild(schedule, id, updatedSchedule) // Return updated schedule?
                     }
                 }
             }
