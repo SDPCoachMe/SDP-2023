@@ -9,6 +9,7 @@ import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
+import com.github.sdpcoachme.schedule.EventOps
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
@@ -36,8 +37,6 @@ open class MockDatabase: Database {
     private val toEmail = "to@email.com"
     private val toUser = UserInfoSamples.COACH_1
 
-    private val toUser2 = UserInfoSamples.NON_COACH_1
-
     private var chat = Chat(participants = listOf(defaultEmail, toEmail))
     private var chatId = ""
     private var onChange: (Chat) -> Unit = {}
@@ -45,17 +44,13 @@ open class MockDatabase: Database {
     private var numberOfRemovedChatListenerCalls = 0
 
 
-    private var groupChat = Chat(participants = listOf(defaultEmail, toEmail, toUser2.email))
-    private var groupChatId = ""
-    private var groupChatTitle = "Group Chat"
-    private var groupChatOnChange: (Chat) -> Unit = {}
-    private var groupChatNumberOfAddChatListenerCalls = 0
-    private var groupChatNumberOfRemovedChatListenerCalls = 0
+    private var groupChat = Chat()
 
     // TODO: type any is not ideal, needs refactoring
     private var accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
     private val fcmTokens = hashMapOf<String, String>()
     private var schedules = hashMapOf<String, Schedule>()
+    private var groupEvents = hashMapOf<String, GroupEvent>()
 
     fun restoreDefaultChatSetup() {
         chat = Chat(participants = listOf(defaultEmail, toEmail))
@@ -64,12 +59,7 @@ open class MockDatabase: Database {
         numberOfRemovedChatListenerCalls = 0
         numberOfAddChatListenerCalls = 0
 
-        groupChat = Chat(participants = listOf(defaultEmail, toEmail, toUser2.email))
-        groupChatId = ""
-        groupChatTitle = "Group Chat"
-        groupChatOnChange = {}
-        groupChatNumberOfAddChatListenerCalls = 0
-        groupChatNumberOfRemovedChatListenerCalls = 0
+        groupChat = Chat()
     }
 
     fun restoreDefaultAccountsSetup() {
@@ -78,6 +68,7 @@ open class MockDatabase: Database {
 
     fun restoreDefaultSchedulesSetup() {
         schedules = hashMapOf()
+        groupEvents = hashMapOf()
     }
 
 
@@ -125,6 +116,46 @@ open class MockDatabase: Database {
         }
     }
 
+    override fun addGroupEvent(groupEvent: GroupEvent, currentWeekMonday: LocalDate): CompletableFuture<Void> {
+        val errorPreventionFuture = CompletableFuture<Void>()
+
+        if (groupEvent.participants.size > groupEvent.maxParticipants) {
+            errorPreventionFuture.completeExceptionally(Exception("Group event should not be full, initially"))
+        } else if (groupEvent.participants.isEmpty()) {
+            errorPreventionFuture.completeExceptionally(Exception("Group event must have at least 2 participants"))
+        } else if (LocalDateTime.parse(groupEvent.event.start).isBefore(LocalDateTime.now())) {
+            errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
+        } else {
+            groupEvents[groupEvent.groupEventId] = groupEvent
+            registerForGroupEvent(groupEvent.groupEventId).thenCompose {
+                errorPreventionFuture.complete(null)
+                errorPreventionFuture
+            }
+        }
+
+        return errorPreventionFuture
+    }
+
+    override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
+        return getGroupEvent(groupEventId, EventOps.getStartMonday()).thenCompose { groupEvent ->
+            val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
+            if (!hasCapacity) {
+                val failingFuture = CompletableFuture<Void>()
+                failingFuture.completeExceptionally(Exception("Group event is full"))
+                failingFuture
+            } else {
+                val updatedGroupEvent = groupEvent.copy(participants = groupEvent.participants + currEmail)
+                groupEvents[groupEventId] = updatedGroupEvent
+
+                getSchedule(EventOps.getStartMonday()).thenCompose { s ->
+                    val updatedSchedule = s.copy(groupEvents = s.groupEvents + groupEventId)
+                    schedules[currEmail] = updatedSchedule
+                    CompletableFuture.completedFuture(null)
+                }
+            }
+        }
+    }
+
     override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         if (currEmail == "throwGetSchedule@Exception.com") {
             val error = CompletableFuture<Schedule>()
@@ -132,7 +163,13 @@ open class MockDatabase: Database {
             return error
         }
         return schedules[currEmail]?.let { CompletableFuture.completedFuture(it) }
-            ?: CompletableFuture.completedFuture(Schedule(emptyList()))
+            ?: CompletableFuture.completedFuture(Schedule())
+    }
+
+    override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
+        val future = CompletableFuture<GroupEvent>()
+        future.complete(groupEvents[groupEventId] ?: GroupEvent())
+        return future
     }
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {
@@ -161,10 +198,7 @@ open class MockDatabase: Database {
             chat = chat.copy(id = this.chatId , messages = chat.messages + msg)
         } else {
             if (chatId.startsWith("@@event")) {
-                groupChatId = chatId
                 groupChat = groupChat.copy(id = chatId)
-                groupChatOnChange = onChange
-                groupChatNumberOfAddChatListenerCalls++
                 this.onChange(groupChat)
                 return
             } else {
@@ -181,7 +215,7 @@ open class MockDatabase: Database {
         val id = if (email < toEmail) email+toUser.email else toEmail+email
         return CompletableFuture.completedFuture(listOf(
             ContactRowInfo(id, toUser.firstName + " " + toUser.lastName, if (chat.messages.isEmpty()) Message() else chat.messages.last()),
-            ContactRowInfo(groupChatId, "Group Chat", if (groupChat.messages.isEmpty()) Message() else groupChat.messages.last(), true)
+            ContactRowInfo(groupChat.id, "Group Chat", if (groupChat.messages.isEmpty()) Message() else groupChat.messages.last(), true)
         ))
     }
 
@@ -190,27 +224,9 @@ open class MockDatabase: Database {
         participants: List<String>
     ): CompletableFuture<Void> {
         if (chatId.startsWith("@@event")) { // only group chats can be updated
-            groupChat = groupChat.copy(participants = participants)
+            groupChat = groupChat.copy(id = chatId, participants = participants)
         }
         return CompletableFuture.completedFuture(null)
-    }
-
-    override fun addGroupEvent(
-        groupEvent: GroupEvent,
-        currentWeekMonday: LocalDate
-    ): CompletableFuture<Void> {
-        return CompletableFuture.completedFuture(null)
-    }
-
-    override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
-        return CompletableFuture.completedFuture(null)
-    }
-
-    override fun getGroupEvent(
-        groupEventId: String,
-        currentWeekMonday: LocalDate
-    ): CompletableFuture<GroupEvent> {
-        TODO("Not yet implemented")
     }
 
     override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {

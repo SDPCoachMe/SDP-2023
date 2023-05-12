@@ -143,13 +143,15 @@ class ChatActivity : ComponentActivity() {
 
             database.getUser(currentUserEmail).thenAccept() { user ->
 
-                contact = if (chatId.startsWith("@@event")) chatId else chatId.replace(currentUserEmail, "")
+                contact =
+                    if (chatId.startsWith("@@event")) chatId
+                    else chatId.replace(currentUserEmail, "")
                 // Add the other user to the current user's chat contacts
                 if (!user.chatContacts.contains(contact)) {
                     val newUser = user.copy(chatContacts = user.chatContacts + contact)
                     database.updateUser(newUser)
                 }
-            }.exceptionally { println("error in getUser..."); null }
+            }
 
             // needed to remove the chat listener from the db so that
             // messages are only marked as read when ins the chat
@@ -595,15 +597,6 @@ fun ChatField(
                             database.updateUser(it.copy(chatContacts = listOf(contact) + it.chatContacts.filter { e -> e != contact }))
                         }
                     }
-                    // TODO: remove this after testing
-//                    // place this chat at the top of the users chat list whenever they send a message
-//                    database.getUser(database.getCurrentEmail()).thenCompose {
-//                        database.updateUser(it.copy(chatContacts = listOf(toUser.email) + it.chatContacts.filter { e -> e != toUser.email }))
-//                    }
-//                    //same for the toUser
-//                    database.getUser(toUser.email).thenCompose {
-//                        database.updateUser(it.copy(chatContacts = listOf(database.getCurrentEmail()) + it.chatContacts.filter { e -> e != database.getCurrentEmail() }))
-//                    }
                 },
                 modifier = Modifier
                     .padding(start = 8.dp)
