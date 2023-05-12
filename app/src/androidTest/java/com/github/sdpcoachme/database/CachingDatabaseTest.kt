@@ -378,6 +378,16 @@ class CachingDatabaseTest {
             sentMessage = message
             return CompletableFuture.completedFuture(null)
         }
+
+        var onChangeChat = Chat()
+        override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
+            println("adding chat listener and on change called $onChange")
+            onChange(onChangeChat)
+        }
+
+        fun chatToCallOnChange(chat: Chat) {
+            onChangeChat = chat
+        }
     }
 
     @Test
@@ -620,6 +630,127 @@ class CachingDatabaseTest {
             true
         }.exceptionally { false }
             .get(5, SECONDS)
+
+        assertTrue(isCorrect)
+    }
+    
+    @Test
+    fun onChangeDoesNotUpdateTheContactRowCacheIfTheChatContainsNoMessages() {
+
+        val rowInfo = ContactRowInfo(
+            "chatId",
+            "chatiName",
+            Message("sender@email.com", "Sender Name", "Test Message", LocalDateTime.now().toString(), ReadState.SENT, mapOf()),
+            false,
+        )
+        val notUpdatedRowInfo = rowInfo.copy(chatId = "newChatId")
+
+        val wrappedDatabase = ContactRowDB(defaultUser, listOf(rowInfo, notUpdatedRowInfo))
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+        cachingDatabase.setCurrentEmail(defaultUser.email)
+
+        var onChangeCalled = false
+
+        wrappedDatabase.chatToCallOnChange(Chat().copy(id = notUpdatedRowInfo.chatId))
+        val isCorrect = cachingDatabase.getContactRowInfo(defaultUser.email)
+            .thenCompose {
+                assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
+                assertThat(it, `is`(listOf(rowInfo, notUpdatedRowInfo)))
+
+                // we call the overridden addChatListener which calls the onChange method
+                // to simulate a change in the database
+                cachingDatabase.addChatListener(notUpdatedRowInfo.chatId) { onChangeCalled = true }
+                assertTrue(onChangeCalled)
+
+                cachingDatabase.getContactRowInfo(defaultUser.email)
+            }.thenApply {
+                assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
+                // as the new chat does not contain any messages, the cache should not be updated
+                // and the notUpdatedRowInfo should be have stayed in the second position
+                assertThat(it, `is`(listOf(rowInfo, notUpdatedRowInfo)))
+
+                true
+            }.exceptionally { false }.get(5, SECONDS)
+
+        assertTrue(isCorrect)
+    }
+
+    @Test
+    fun onChangeFromRemoveChatListenerDoesNotUpdateTheContactRowCacheIfTheChatContainsNoMessages() {
+
+        val rowInfo = ContactRowInfo(
+            "chatId",
+            "chatiName",
+            Message("sender@email.com", "Sender Name", "Test Message", LocalDateTime.now().toString(), ReadState.SENT, mapOf()),
+            false,
+        )
+        val notUpdatedRowInfo = rowInfo.copy(chatId = "newChatId")
+
+        val wrappedDatabase = ContactRowDB(defaultUser, listOf(rowInfo, notUpdatedRowInfo))
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+        cachingDatabase.setCurrentEmail(defaultUser.email)
+
+        wrappedDatabase.chatToCallOnChange(Chat().copy(id = notUpdatedRowInfo.chatId))
+        val isCorrect = cachingDatabase.getContactRowInfo(defaultUser.email)
+            .thenCompose {
+                assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
+                assertThat(it, `is`(listOf(rowInfo, notUpdatedRowInfo)))
+
+                // we call the overridden addChatListener which calls the onChange method
+                // to simulate a change in the database
+                cachingDatabase.removeChatListener(notUpdatedRowInfo.chatId)
+
+                cachingDatabase.getContactRowInfo(defaultUser.email)
+            }.thenApply {
+                assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
+                // as the new chat does not contain any messages, the cache should not be updated
+                // and the notUpdatedRowInfo should be have stayed in the second position
+                assertThat(it, `is`(listOf(rowInfo, notUpdatedRowInfo)))
+
+                true
+            }.exceptionally { false }.get(5, SECONDS)
+
+        assertTrue(isCorrect)
+    }
+
+    @Test
+    fun onChangeFromRemoveChatListenerUpdatesTheContactRowCacheIfTheChatContainsMessages() {
+        val message = Message("sender@email.com", "Sender Name", "Test Message", LocalDateTime.now().toString(), ReadState.SENT, mapOf())
+        val expectedNewMsg = message.copy(content = "New Message")
+
+        val rowInfo = ContactRowInfo(
+            "chatId",
+            "chatiName",
+            message,
+            false,
+        )
+        val rowInfoToBeUpdated = rowInfo.copy(chatId = "newChatId")
+
+        val wrappedDatabase = ContactRowDB(defaultUser, listOf(rowInfo, rowInfoToBeUpdated))
+        val cachingDatabase = CachingDatabase(wrappedDatabase)
+        cachingDatabase.setCurrentEmail(defaultUser.email)
+
+        wrappedDatabase.chatToCallOnChange(Chat().copy(id = rowInfoToBeUpdated.chatId, messages = listOf(message, expectedNewMsg)))
+        val isCorrect = cachingDatabase.getContactRowInfo(defaultUser.email)
+            .thenCompose {
+                assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
+                assertThat(it, `is`(listOf(rowInfo, rowInfoToBeUpdated)))
+
+                println("first contact row info: $it")
+
+                // we call the overridden addChatListener which calls the onChange method
+                // to simulate a change in the database
+                cachingDatabase.removeChatListener(rowInfoToBeUpdated.chatId)
+
+                cachingDatabase.getContactRowInfo(defaultUser.email)
+            }.thenApply {
+                assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
+                // as the new chat does not contain any messages, the cache should not be updated
+                // and the notUpdatedRowInfo should be have stayed in the second position
+                assertThat(it, `is`(listOf(rowInfoToBeUpdated.copy(lastMessage = expectedNewMsg), rowInfo)))
+
+                true
+            }.exceptionally { println("Error: ${it.cause}"); false }.get(5, SECONDS)
 
         assertTrue(isCorrect)
     }

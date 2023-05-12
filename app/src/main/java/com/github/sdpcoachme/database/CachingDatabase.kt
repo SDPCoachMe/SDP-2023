@@ -133,7 +133,6 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     }
 
     override fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
-        println("get contact row info: " + contacts.containsKey(email))
         if (contacts.containsKey(email)) {
             return CompletableFuture.completedFuture(contacts[email])
         }
@@ -156,7 +155,6 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     }
 
     override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
-        println("send message :" + chats.containsKey(chatId))
         // if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat from the db)
         if (chats.containsKey(chatId)) {
             chats[chatId] = chats[chatId]!!.copy(id = chatId, messages = chats[chatId]!!.messages + message)
@@ -169,18 +167,24 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
 
     private fun updateCachedContactRowInfo(chatId: String, message: Message) {
         val currentEmail = wrappedDatabase.getCurrentEmail()
+
         // update the contact's last message
         if (contacts.containsKey(currentEmail)) {
             var newContacts = listOf<ContactRowInfo>()
+            // we need to find the contact with the given chatId and update it
             var wantedContact: ContactRowInfo? = null
             for (contact in contacts[currentEmail]!!) {
+                // if the contact is the one we are looking for, we update it
+                // but only if the last message has changed (if, e.g.,new members entered the chat,
+                // we don't want to place the chat at the top of the list)
                 if (contact.chatId == chatId) {
                     wantedContact = contact.copy(lastMessage = message)
                 } else {
                     newContacts = newContacts + contact
                 }
             }
-            // only if the contact is found, we can assume that the cache is up to date and return without clearing the cache
+            // Iff the contact is found, we can assume that the cache is
+            // up-to-date and return without clearing the cache
             if (wantedContact != null) {
                 contacts[currentEmail] = listOf(wantedContact) + newContacts
                 return
@@ -202,12 +206,11 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         return wrappedDatabase.markMessagesAsRead(chatId, email)
     }
 
-    // TODO: update the cache of contactRowInfo
     override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
         val cachingOnChange = { chat: Chat ->
             chats[chatId] = chat
             if (chat.messages.isNotEmpty()) {
-                updateCachedContactRowInfo(getCurrentEmail(), chat.messages.last())
+                updateCachedContactRowInfo(chatId, chat.messages.last())
             }
             onChange(chat)
         }
@@ -217,6 +220,7 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
     override fun removeChatListener(chatId: String) {
         wrappedDatabase.removeChatListener(chatId)
         // still update the cache for the contact row info's and chat
+        // otherwise, when the user goes back to the contacts, we would display stale data
         wrappedDatabase.addChatListener(chatId) {newChat ->
             chats[chatId] = newChat
             if (newChat.messages.isNotEmpty()) {
