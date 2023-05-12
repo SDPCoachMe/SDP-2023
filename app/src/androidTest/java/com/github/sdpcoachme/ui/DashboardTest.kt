@@ -27,6 +27,7 @@ import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.COACHES_LIS
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.LOGOUT
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.MESSAGING
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.PLAN
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.PROFILE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.SCHEDULE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
@@ -164,6 +165,16 @@ class DashboardTest {
             PROFILE,
             hasComponent(ProfileActivity::class.java.name)
         )
+    }
+
+    @Test
+    fun dashboardCorrectlyRedirectsOnPlanClick() {
+        setUpDashboard()
+        dashboardCorrectlyRedirectsOnMenuItemClick(
+            PLAN,
+            hasComponent(MapActivity::class.java.name)
+        )
+        pressBackUnconditionally()
     }
 
     @Test
