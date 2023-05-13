@@ -19,24 +19,24 @@ open class MockDatabase: Database {
     // TODO: database should be empty by default, and tests should add data to it.
     //  This way, we can make sure each test is independent from the others
 
-    private var chat = Chat(participants = listOf(defaultEmail, toEmail))
+    private var chat = Chat(participants = listOf(DEFAULT_EMAIL, TO_EMAIL))
     private var chatId = ""
     private var onChange: (Chat) -> Unit = {}
     private var numberOfAddChatListenerCalls = 0
     private var numberOfRemovedChatListenerCalls = 0
 
     // TODO: type any is not ideal, needs refactoring
-    private var accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
+    private var accounts = hashMapOf<String, Any>(DEFAULT_EMAIL to defaultUserInfo)
     private val fcmTokens = hashMapOf<String, String>()
     private var schedules = hashMapOf<String, Schedule>()
     private var groupEvents = hashMapOf<String, GroupEvent>()
 
     companion object {
-        private val defaultEmail = "example@email.com"
+        private const val DEFAULT_EMAIL = "example@email.com"
         private val defaultUserInfo = UserInfo(
             "John",
             "Doe",
-            defaultEmail,
+            DEFAULT_EMAIL,
             "1234567890",
             LAUSANNE,
             false,
@@ -44,11 +44,11 @@ open class MockDatabase: Database {
             emptyList()
         )
 
-        private val toEmail = "to@email.com"
+        private const val TO_EMAIL = "to@email.com"
         private val toUser = UserInfo(
             "Jane",
             "Doe",
-            toEmail,
+            TO_EMAIL,
             "0987654321",
             LAUSANNE,
             false,
@@ -57,11 +57,11 @@ open class MockDatabase: Database {
         )
 
         fun getDefaultEmail(): String {
-            return defaultEmail
+            return DEFAULT_EMAIL
         }
 
         fun getToUserEmail(): String {
-            return toEmail
+            return TO_EMAIL
         }
 
         fun getDefaultUser(): UserInfo {
@@ -74,7 +74,7 @@ open class MockDatabase: Database {
     }
 
     fun restoreDefaultChatSetup() {
-        chat = Chat(participants = listOf(defaultEmail, toEmail))
+        chat = Chat(participants = listOf(DEFAULT_EMAIL, TO_EMAIL))
         chatId = ""
         onChange = {}
         numberOfRemovedChatListenerCalls = 0
@@ -82,7 +82,7 @@ open class MockDatabase: Database {
     }
 
     fun restoreDefaultAccountsSetup() {
-        accounts = hashMapOf(defaultEmail to defaultUserInfo)
+        accounts = hashMapOf(DEFAULT_EMAIL to defaultUserInfo)
     }
 
     fun restoreDefaultSchedulesSetup() {

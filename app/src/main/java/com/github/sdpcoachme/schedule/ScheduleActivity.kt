@@ -140,7 +140,6 @@ fun Schedule(
     // the starting day is always the monday of the current week
     var shownWeekMonday by remember { mutableStateOf(getStartMonday()) }
     var events by remember { mutableStateOf(emptyList<Event>()) }
-    // TODO: add var for group events; or just transform groupEvents to events
     var eventsFuture by remember { mutableStateOf(futureDBSchedule.thenApply {
         Schedule(events = it.events) })
     }
