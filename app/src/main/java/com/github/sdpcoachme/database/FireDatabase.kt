@@ -98,7 +98,6 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     }
 
     override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
-
         return getChild(groupEvents, groupEventId).thenApply { it.getValue(GroupEvent::class.java)!! }
             .exceptionally { GroupEvent() }
     }
