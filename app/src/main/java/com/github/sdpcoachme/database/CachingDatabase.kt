@@ -58,8 +58,6 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
 
     // Note: to efficiently use caching, we do not use the wrappedDatabase's addEventsToUser method
     override fun addEvent(event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        val email = wrappedDatabase.getCurrentEmail()
-
         return wrappedDatabase.addEvent(event, currentWeekMonday).thenApply {
             // Update the cached schedule
             val start = LocalDateTime.parse(event.start).toLocalDate()
@@ -68,12 +66,6 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
                 cachedSchedule = cachedSchedule.copy(events = cachedSchedule.events.plus(event))
             }
 
-            /*cachedSchedules[email] = cachedSchedules[email]?.plus(event) ?: listOf(event).filter {
-                val start = LocalDateTime.parse(it.start).toLocalDate()
-                val end = LocalDateTime.parse(it.end).toLocalDate()
-                start >= currentWeekMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
-                        && end < currentWeekMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
-            }*/
             cachedSchedule
         }
     }
@@ -109,9 +101,13 @@ class CachingDatabase(private val wrappedDatabase: Database) : Database {
         if (cachedSchedule.events.isEmpty() && cachedSchedule.groupEvents.isEmpty()) {  // If no cached schedule for that account, we fetch the schedule from the db
             return wrappedDatabase.getSchedule(currentWeekMonday).thenApply { schedule ->
                 val events = schedule.events.filter {   // We only cache the events that are in the current week or close to it
-                    val start = LocalDateTime.parse(it.start).toLocalDate()
-                    val end = LocalDateTime.parse(it.end).toLocalDate()
-                    start >= minCachedMonday && end <= maxCachedMonday
+                    if (it != Event()) {
+                        val start = LocalDateTime.parse(it.start).toLocalDate()
+                        val end = LocalDateTime.parse(it.end).toLocalDate()
+                        start >= minCachedMonday && end <= maxCachedMonday
+                    } else {
+                        false
+                    }
                 }
 
                 val transformedGroupEvents = fetchGroupEvents(schedule, currentWeekMonday)
