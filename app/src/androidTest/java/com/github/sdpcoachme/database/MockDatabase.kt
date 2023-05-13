@@ -19,7 +19,6 @@ open class MockDatabase: Database {
     // TODO: database should be empty by default, and tests should add data to it.
     //  This way, we can make sure each test is independent from the others
 
-    //private var currEmail = ""
     private var chat = Chat(participants = listOf(defaultEmail, toEmail))
     private var chatId = ""
     private var onChange: (Chat) -> Unit = {}
@@ -149,7 +148,7 @@ open class MockDatabase: Database {
             errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
         } else {
             groupEvents[groupEvent.groupEventId] = groupEvent
-            registerForGroupEvent(groupEvent.groupEventId).thenCompose {
+            registerForGroupEvent(groupEvent.organiser, groupEvent.groupEventId).thenCompose {
                 errorPreventionFuture.complete(null)
                 errorPreventionFuture
             }
@@ -158,7 +157,7 @@ open class MockDatabase: Database {
         return errorPreventionFuture
     }
 
-    override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
+    override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Void> {
         return getGroupEvent(groupEventId, EventOps.getStartMonday()).thenCompose { groupEvent ->
             val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
             if (!hasCapacity) {
@@ -166,12 +165,12 @@ open class MockDatabase: Database {
                 failingFuture.completeExceptionally(Exception("Group event is full"))
                 failingFuture
             } else {
-                val updatedGroupEvent = groupEvent.copy(participants = groupEvent.participants + currEmail)
+                val updatedGroupEvent = groupEvent.copy(participants = groupEvent.participants + email)
                 groupEvents[groupEventId] = updatedGroupEvent
 
-                getSchedule(EventOps.getStartMonday()).thenCompose { s ->
+                getSchedule(email, EventOps.getStartMonday()).thenCompose { s ->
                     val updatedSchedule = s.copy(groupEvents = s.groupEvents + groupEventId)
-                    schedules[currEmail] = updatedSchedule
+                    schedules[email] = updatedSchedule
                     CompletableFuture.completedFuture(null)
                 }
             }

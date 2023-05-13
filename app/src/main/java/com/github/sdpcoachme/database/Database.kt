@@ -85,10 +85,11 @@ interface Database {
 
     /**
      * Add new participant to the group event
+     * @param email The email of the user to add as a participant
      * @param groupEventId The id of the group event to add the participant to
      * @return A future that will complete when the participant has been added.
      */
-    fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void>
+    fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Void>
 
     /**
      * Get the schedule from the database
@@ -107,12 +108,6 @@ interface Database {
      * the future will complete exceptionally with a NoSuchKeyException.
      */
     fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent>
-
-    /**
-     * Get the current user's email
-     * @return The current user's email
-     */
-    fun getCurrentEmail(): String
 
     /**
      * Get the chat contacts for the given user

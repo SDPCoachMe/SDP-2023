@@ -64,15 +64,15 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
         } else {
             errorPreventionFuture = setChild(groupEvents, groupEvent.groupEventId, groupEvent).thenCompose {
-                registerForGroupEvent(groupEvent.groupEventId)
+                registerForGroupEvent(groupEvent.organiser, groupEvent.groupEventId)
             }
         }
 
         return errorPreventionFuture
     }
 
-    override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
-        val id = currEmail.replace('.', ',')
+    override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Void> {
+        val id = email.replace('.', ',')
         return getGroupEvent(groupEventId, EventOps.getStartMonday()).thenCompose { groupEvent ->
             val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
             if (!hasCapacity) {
@@ -80,9 +80,9 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
                 failingFuture.completeExceptionally(Exception("Group event is full"))
                 failingFuture
             } else {
-                val updatedGroupEvent = groupEvent.copy(participants = groupEvent.participants + currEmail)
+                val updatedGroupEvent = groupEvent.copy(participants = groupEvent.participants + email)
                 setChild(groupEvents, groupEventId, updatedGroupEvent).thenCompose {
-                    getSchedule(EventOps.getStartMonday()).thenCompose { s ->
+                    getSchedule(email, EventOps.getStartMonday()).thenCompose { s ->
                         val updatedSchedule = s.copy(groupEvents = s.groupEvents + groupEventId)
                         setChild(schedule, id, updatedSchedule) // Return updated schedule?
                     }

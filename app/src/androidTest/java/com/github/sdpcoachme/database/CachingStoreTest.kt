@@ -1,13 +1,9 @@
 // TODO this class is commented because of a bug involving multiple instances of Datastore. To be fixed quickly
-
-/**
-
 package com.github.sdpcoachme.database
 
-// This test class is in the androidTest directory instead of Test directory because it uses
+/*// This test class is in the androidTest directory instead of Test directory because it uses
 // MockDatabase which is in the androidTest directory.
 // Otherwise we would have complicated dependencies.
-
 
 import android.content.Context
 import androidx.compose.ui.graphics.Color
@@ -714,6 +710,4 @@ class CachingStoreTest {
 
     private val eventList = cachedEvents + nonCachedEvents
 
-}
-
- */
+}*/
