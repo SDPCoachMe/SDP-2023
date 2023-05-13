@@ -214,12 +214,10 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             val readStates = chat.messages.filter { it.sender != email }.map { it.readState }
 
             if (!readStates.all { it == ReadState.READ }) { // check if update is needed
-                println("marking as read...")
                 val newChat = markOtherUsersMessagesAsRead(
                     chat,
                     email
                 )
-                println("newChat: $newChat")
                 setChild(chats, id, newChat
                 ).exceptionally { println("exception... in set child") ; null}
             } else {
