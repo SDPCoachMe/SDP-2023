@@ -20,6 +20,7 @@ import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import org.hamcrest.CoreMatchers.hasItem
+import org.hamcrest.CoreMatchers.hasItems
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
@@ -168,32 +169,46 @@ class CachingDatabaseTest {
         assertTrue(isCorrect)
     }
 
-    @Test
-    fun registerForGroupEventAddsParticipantToWrappedDatabase() {
-        var timesCalled = 0
-        class ScheduleDB(groupEventsMap: MutableMap<String, GroupEvent>): MockDatabase() {
-            val availableGroupEvents = groupEventsMap
+    private class RegisterForEventDB(groupEventsMap: MutableMap<String, GroupEvent>): MockDatabase() {
+        private val availableGroupEvents = groupEventsMap
+        private var schedule = Schedule()
+        private var timesCalled = 0
 
-            override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
-                timesCalled++
-                if (availableGroupEvents.containsKey(groupEventId)) {
-                    // register exampleEmail
-                    availableGroupEvents[groupEventId] = availableGroupEvents[groupEventId]!!.copy(participants = listOf(exampleEmail))
-                    return CompletableFuture.completedFuture(null)
-                }
-                val failFuture = CompletableFuture<Void>()
-                failFuture.completeExceptionally(NoSuchElementException())
-                return failFuture
-            }
+        fun getTimesCalled(): Int {
+            return timesCalled
         }
 
+        fun getAvailableGroupEvents(): MutableMap<String, GroupEvent> {
+            return availableGroupEvents
+        }
+        override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
+            timesCalled++
+            if (availableGroupEvents.containsKey(groupEventId)) {
+                // register exampleEmail
+                println("Registering ${getDefaultEmail()} for $groupEventId")
+                availableGroupEvents[groupEventId] = availableGroupEvents[groupEventId]!!.copy(participants = listOf(
+                    getDefaultEmail()
+                ))
+                schedule = schedule.copy(events = schedule.events + availableGroupEvents[groupEventId]!!.event, groupEvents = schedule.groupEvents + availableGroupEvents[groupEventId]!!.groupEventId)
+                return CompletableFuture.completedFuture(null)
+            }
+            val failFuture = CompletableFuture<Void>()
+            failFuture.completeExceptionally(NoSuchElementException())
+            return failFuture
+        }
 
+        override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+            return CompletableFuture.completedFuture(schedule)
+        }
+    }
+    @Test
+    fun registerForGroupEventAddsParticipantToWrappedDatabase() {
         val availableGroupEvents = mutableMapOf<String, GroupEvent>()
         groupEvents.forEach { availableGroupEvents[it.groupEventId] = it }
 
         val eventsToRegisterFor = listOf(groupEvents[0], groupEvents[2], groupEvents[4], groupEvents[5])
 
-        val wrappedDatabase = ScheduleDB(availableGroupEvents)
+        val wrappedDatabase = RegisterForEventDB(availableGroupEvents)
         val cachingDatabase = CachingDatabase(wrappedDatabase)
         cachingDatabase.setCurrentEmail(exampleEmail)
         val isCorrect = cachingDatabase.registerForGroupEvent(eventsToRegisterFor[0].groupEventId)
@@ -201,8 +216,8 @@ class CachingDatabaseTest {
             .thenCompose { cachingDatabase.registerForGroupEvent(eventsToRegisterFor[2].groupEventId) }
             .thenCompose { cachingDatabase.registerForGroupEvent(eventsToRegisterFor[3].groupEventId) }
             .thenApply {
-                assertThat(timesCalled, `is`(4))
-                eventsToRegisterFor.forEach { assertThat(availableGroupEvents[it.groupEventId]!!.participants, hasItem(exampleEmail)) }
+                assertThat(wrappedDatabase.getTimesCalled(), `is`(4))
+                eventsToRegisterFor.forEach { assertThat(wrappedDatabase.getAvailableGroupEvents()[it.groupEventId]!!.participants, hasItem(exampleEmail)) }
                 true
             }.exceptionally {
                 false
@@ -214,40 +229,33 @@ class CachingDatabaseTest {
     // note: for now, all IDs the user is registered for are cached (as part of the cached schedule)
     @Test
     fun registerForGroupEventCachesEventId() {
-        var timesCalled = 0
-        class RegisterDB: MockDatabase() {
-            override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
-                timesCalled++
-                return CompletableFuture.completedFuture(null)
-            }
-        }
+        val availableGroupEvents = mutableMapOf<String, GroupEvent>()
+        groupEvents.forEach { availableGroupEvents[it.groupEventId] = it }
 
-        val wrappedDatabase = RegisterDB()
+        val eventsToRegisterFor = listOf(groupEvents[0], groupEvents[2])
+
+        val wrappedDatabase = RegisterForEventDB(availableGroupEvents)
         val cachingDatabase = CachingDatabase(wrappedDatabase)
-
-        val userToRegister = MockDatabase.getToUserEmail()
-        cachingDatabase.setCurrentEmail(userToRegister)
-
-        val isCorrect = cachingDatabase.registerForGroupEvent(groupEvents[0].groupEventId).thenCompose {
-            cachingDatabase.registerForGroupEvent(groupEvents[1].groupEventId)
-        }.thenCompose {
-            cachingDatabase.registerForGroupEvent(groupEvents[2].groupEventId)
-        }.thenCompose {
-            cachingDatabase.registerForGroupEvent(groupEvents[3].groupEventId)
-        }.thenCompose {
-            cachingDatabase.registerForGroupEvent(groupEvents[4].groupEventId)
-        }.thenCompose {
-            cachingDatabase.registerForGroupEvent(groupEvents[5].groupEventId)
-        }.thenCompose {
-            cachingDatabase.getSchedule(currentMonday)
-        }.thenApply {schedule ->
-            assertThat(timesCalled, `is`(6))
-            assertThat(schedule.groupEvents, `is`(groupEvents.map { it.groupEventId }))
-            true
-        }.exceptionally {
-            println(it.cause)
-            false
-        }.get(5, SECONDS)
+        cachingDatabase.setCurrentEmail(exampleEmail)
+        val isCorrect = cachingDatabase.getSchedule(currentMonday)
+            .thenCompose { schedule ->
+                assertThat(schedule.groupEvents.size, `is`(0))
+                cachingDatabase.registerForGroupEvent(eventsToRegisterFor[0].groupEventId) }
+            .thenCompose {
+                cachingDatabase.getSchedule(currentMonday) }
+            .thenCompose { schedule ->
+                assertThat(schedule.groupEvents.size, `is`(1))
+                assertThat(schedule.groupEvents, hasItem(eventsToRegisterFor[0].groupEventId))
+                cachingDatabase.registerForGroupEvent(eventsToRegisterFor[1].groupEventId) }
+            .thenCompose {
+                cachingDatabase.getSchedule(currentMonday) }
+            .thenApply { schedule ->
+                assertThat(schedule.groupEvents.size, `is`(2))
+                assertThat(schedule.groupEvents, hasItems(eventsToRegisterFor[0].groupEventId, eventsToRegisterFor[1].groupEventId))
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
 
         assertTrue(isCorrect)
     }

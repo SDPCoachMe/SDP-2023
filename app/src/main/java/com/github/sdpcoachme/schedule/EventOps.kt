@@ -171,11 +171,6 @@ class EventOps {
                 )
                 events.add(event)
             }
-            println("Transformed group events: \n")
-            println("Size: ${events.size}")
-            events.forEach {
-                println(it)
-            }
             return events
         }
     }

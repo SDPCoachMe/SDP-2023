@@ -143,7 +143,6 @@ fun Schedule(
     var events by remember { mutableStateOf(emptyList<Event>()) }
     // TODO: add var for group events; or just transform groupEvents to events
     var eventsFuture by remember { mutableStateOf(futureDBSchedule.thenApply {
-        println("Events to show: ${it.events}")
         Schedule(events = it.events) })
     }
     val context = LocalContext.current
