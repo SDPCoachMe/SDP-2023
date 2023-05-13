@@ -2,10 +2,10 @@ package com.github.sdpcoachme.schedule
 
 import androidx.compose.ui.graphics.Color
 import androidx.test.platform.app.InstrumentationRegistry
-import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.ShownEvent
-import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.CachingStore
 import junit.framework.TestCase
 import org.junit.After
 import org.junit.Before
@@ -64,13 +64,13 @@ class EventOpsTest {
         val eventList = oneDayEvents + multiDayEvent + multiWeekEvent
     }
 
-    private lateinit var database: Database
+    private lateinit var store: CachingStore
     private val defaultEmail = "example@email.com"
 
     @Before
     fun setUp() {
-        database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
-        database.setCurrentEmail(defaultEmail)
+        store = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeTestApplication).store
+        store.setCurrentEmail(defaultEmail)
     }
 
     @After
@@ -118,7 +118,7 @@ class EventOpsTest {
 
     @Test
     fun addEventUpdatesMultiDayEventMap() {
-        EventOps.addEvent(multiDayEvent, database).thenRun {
+        EventOps.addEvent(multiDayEvent, store).thenRun {
             val actualMap = EventOps.getMultiDayEventMap()
             val expectedMap = mutableMapOf<Event, List<ShownEvent>>()
 
@@ -147,7 +147,7 @@ class EventOpsTest {
 
     @Test
     fun addEventDoesNotUpdateMultiDayEventMapForOnedayEvents() {
-        EventOps.addEvent(oneDayEvents[0], database).thenRun {
+        EventOps.addEvent(oneDayEvents[0], store).thenRun {
             val actualMap = EventOps.getMultiDayEventMap()
             val expectedMap = mutableMapOf<Event, List<ShownEvent>>()
             TestCase.assertEquals(expectedMap, actualMap)

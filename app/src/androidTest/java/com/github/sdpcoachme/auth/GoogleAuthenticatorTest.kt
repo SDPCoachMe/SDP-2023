@@ -5,7 +5,6 @@ import androidx.test.espresso.matcher.ViewMatchers.assertThat
 import com.firebase.ui.auth.IdpResponse
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.firebase.ui.auth.data.model.User
-import com.github.sdpcoachme.auth.GoogleAuthenticator
 import com.google.firebase.auth.FirebaseAuth
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert

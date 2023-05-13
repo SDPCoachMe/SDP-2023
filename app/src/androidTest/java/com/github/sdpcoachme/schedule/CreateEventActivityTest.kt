@@ -1,16 +1,8 @@
 package com.github.sdpcoachme.schedule
 
 import android.content.Intent
-import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsFocused
-import androidx.compose.ui.test.assertIsNotFocused
-import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performImeAction
-import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
@@ -22,11 +14,10 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
-import com.github.sdpcoachme.database.Database
-import com.github.sdpcoachme.database.MockDatabase
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.CANCEL
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.COLOR_BOX
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.END_DATE
@@ -62,7 +53,7 @@ import java.lang.Thread.sleep
 
 @RunWith(AndroidJUnit4::class)
 class CreateEventActivityTest {
-    private lateinit var database: Database
+    private lateinit var store: CachingStore
     private val defaultEmail = "example@email.com"
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), CreateEventActivity::class.java)
 
@@ -74,25 +65,21 @@ class CreateEventActivityTest {
 
     private val eventDateFormatter = EventOps.getEventDateFormatter()
 
-
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
     @Before
     fun setup() {
-        database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
-        database.setCurrentEmail(defaultEmail)
+        store = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).store
+        store.setCurrentEmail(defaultEmail)
         Intents.init()
     }
 
     @After
     fun teardown() {
         EventOps.clearMultiDayEventMap()
-        database.setCurrentEmail("")
-        if (database is MockDatabase) {
-            (database as MockDatabase).restoreDefaultSchedulesSetup()
-            println("MockDatabase was torn down")
-        }
+        store.setCurrentEmail("")
+        ApplicationProvider.getApplicationContext<CoachMeTestApplication>().clearDataStoreAndResetCachingStore()
         Intents.release()
     }
 
@@ -138,20 +125,6 @@ class CreateEventActivityTest {
             .performImeAction()
         composeTestRule.onNodeWithTag(tag)
             .assertIsNotFocused()
-    }
-
-    @Test
-    fun addEventWithEmptyEmailRedirectsToErrorPage() {
-        database.setCurrentEmail("")
-        ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON)
-                .assertIsDisplayed()
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD)
-                .assertIsDisplayed()
-
-            composeTestRule.onNodeWithText("New event did not receive an email address.\n Please return to the login page and try again.")
-                .assertIsDisplayed()
-        }
     }
 
     @Test
@@ -201,7 +174,7 @@ class CreateEventActivityTest {
                 EventColors.DEFAULT.color.value.toString()
             )
 
-            database.getSchedule(currentWeekMonday).thenAccept {
+            store.getSchedule(currentWeekMonday).thenAccept {
                 val actualEvents = it.events
 
                 assertThat(actualEvents.size, `is`(1))

@@ -4,7 +4,7 @@ import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.data.schedule.ShownEvent
-import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.CachingStore
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -145,15 +145,15 @@ class EventOps {
          * If the event spans multiple days, it will be split into multiple events of type ShownEvent, one for each day.
          *
          * @param event The event to add
-         * @param database The database to add the event to
+         * @param store The database to add the event to
          * @return A completable future that will be completed when the event has been added to the database
          */
-        fun addEvent(event: Event, database: Database): CompletableFuture<Schedule> {
+        fun addEvent(event: Event, store: CachingStore): CompletableFuture<Schedule> {
             val shownEvents = wrapEvent(event)
             if (shownEvents.size > 1) {
                 multiDayEventMap[event] = shownEvents
             }
-            return database.addEvent(event, startMonday)
+            return store.addEvent(event, startMonday)
         }
 
         fun groupEventsToEvents(groupEvents: List<GroupEvent>): List<Event> {

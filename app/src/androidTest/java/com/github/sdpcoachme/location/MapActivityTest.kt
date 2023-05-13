@@ -19,8 +19,6 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.DELAY
 import com.github.sdpcoachme.location.provider.MockLocationProvider
@@ -58,7 +56,7 @@ class MapActivityTest {
     )
 
     private val database = (InstrumentationRegistry.getInstrumentation()
-        .targetContext.applicationContext as CoachMeApplication).database
+        .targetContext.applicationContext as CoachMeApplication).store
     private val defaultIntent =
         Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
     private val EXISTING_EMAIL = "example@email.com"
@@ -129,17 +127,6 @@ class MapActivityTest {
     @Test
     fun mapViewWorksWithoutLocation() {
         mapViewWorksOnLocation(location = random)
-    }
-
-    @Test
-    fun errorPageIsShownWhenMapIsLaunchedWithEmptyCurrentEmail() {
-        database.setCurrentEmail("")
-        ActivityScenario.launch<MapActivity>(defaultIntent).use {
-            // not possible to use Intents.init()... to check if the correct intent
-            // is launched as the intents are launched from within the onCreate function
-            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
-        }
     }
 
     @Test

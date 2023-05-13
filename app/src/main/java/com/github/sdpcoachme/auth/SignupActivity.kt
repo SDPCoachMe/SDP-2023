@@ -23,13 +23,14 @@ import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.data.UserAddress
-import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
 import com.github.sdpcoachme.profile.SelectSportsActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
 class SignupActivity : ComponentActivity() {
@@ -52,30 +53,35 @@ class SignupActivity : ComponentActivity() {
         }
     }
 
-    private lateinit var database : Database
-    private lateinit var email: String
+    var stateLoading = CompletableFuture<Void>()
+
+    private lateinit var store : CachingStore
+    private lateinit var emailFuture: CompletableFuture<String>
     private lateinit var addressAutocompleteHandler: AddressAutocompleteHandler
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        database = (application as CoachMeApplication).database
-        email = database.getCurrentEmail()
+        store = (application as CoachMeApplication).store
+        emailFuture = store.getCurrentEmail()
 
-        if (email.isEmpty()) {
-            val errorMsg = "The signup page did not receive an email address.\n Please return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
-        } else {
-            // Set up handler for calls to address autocomplete
-            addressAutocompleteHandler = (application as CoachMeApplication).addressAutocompleteHandler(this, this)
+        // Set up handler for calls to location autocomplete
+        addressAutocompleteHandler = (application as CoachMeApplication).addressAutocompleteHandler(this, this)
 
-            // Set up handler for calls to select sports
-            selectSportsHandler = SelectSportsActivity.getHandler(this)
+        // Set up handler for calls to select sports
+        selectSportsHandler = SelectSportsActivity.getHandler(this)
 
-            setContent {
-                CoachMeTheme {
-                    AccountForm(email)
-                }
+        setContent {
+            var email by remember { mutableStateOf("") }
+
+            LaunchedEffect(true) {
+                email = emailFuture.await()
+                // Activity is now ready for testing
+                stateLoading.complete(null)
+            }
+
+            CoachMeTheme {
+                AccountForm(email)
             }
         }
     }
@@ -163,7 +169,7 @@ class SignupActivity : ComponentActivity() {
                         // activity to launch the map activity in the tests. This means that we have
                         // to test that the database is updated correctly here, instead of after the
                         // map activity is launched.
-                        database.updateUser(newUser)
+                        store.updateUser(newUser)
                     }.thenCompose {
                         // Notify test framework that the activity has finished sending data to the database
                         databaseStateSending.complete(null)
@@ -178,7 +184,7 @@ class SignupActivity : ComponentActivity() {
                     }.thenCompose { sports ->
                         newUser = newUser.copy(sports = sports)
                         // Update database with sports (this one is not tested)
-                        database.updateUser(newUser)
+                        store.updateUser(newUser)
                     }.thenAccept {
                         // Go to main activity
                         startActivity(Intent(context, MapActivity::class.java))

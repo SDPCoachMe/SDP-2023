@@ -3,10 +3,10 @@ package com.github.sdpcoachme
 import android.app.Application
 import android.content.Context
 import androidx.activity.result.ActivityResultCaller
+import androidx.datastore.core.DataStore
 import com.github.sdpcoachme.auth.Authenticator
 import com.github.sdpcoachme.auth.GoogleAuthenticator
-import com.github.sdpcoachme.database.CachingDatabase
-import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.database.FireDatabase
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
 import com.github.sdpcoachme.location.autocomplete.GooglePlacesAutocompleteHandler
@@ -16,10 +16,17 @@ import com.google.android.libraries.places.api.Places
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.*
 
 open class CoachMeApplication : Application() {
+
+    private val USER_PREFERENCES_NAME = "coachme_preferences"
+
+    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = USER_PREFERENCES_NAME)
+
     // For DI in testing, add reference to dependencies here
-    open lateinit var database: Database
+    open lateinit var store: CachingStore
     // We don't want to put the exact user location in the database, so it will
     // be stored here thanks to a locationProvider that will handle all location-related processes
     open lateinit var locationProvider: LocationProvider
@@ -27,11 +34,21 @@ open class CoachMeApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
-        database = CachingDatabase(FireDatabase(Firebase.database.reference))
+
+        store = CachingStore(FireDatabase(Firebase.database.reference), dataStore, this)
         locationProvider = FusedLocationProvider()
 
         // Initialize Places SDK
         Places.initialize(applicationContext, BuildConfig.MAPS_API_KEY)
+    }
+
+    override fun onTerminate() {
+        super.onTerminate()
+        store.storeLocalData()
+    }
+
+    fun superOnTerminate() {
+        super.onTerminate()
     }
 
     open val authenticator: Authenticator = GoogleAuthenticator()

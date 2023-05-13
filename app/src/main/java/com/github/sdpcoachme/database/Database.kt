@@ -70,8 +70,10 @@ interface Database {
      * @param event The event to add
      * @param currentWeekMonday The monday of the current week
      * @return A future with currently stored schedule that will complete when the event has been added.
+     * @param email The email of the user to add the events for
+     * @return A future with currently stored schedule that will complete when the events have been added.
      */
-    fun addEvent(event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule>
+    fun addEvent(email: String, event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule>
 
     /**
      * Add group event to the database
@@ -91,10 +93,11 @@ interface Database {
     /**
      * Get the schedule from the database
      * @param currentWeekMonday The monday of the current week
+     * @param email The email of the user to get the schedule for
      * @return A future that will complete with the schedule. If the user does not exist,
      * the future will complete exceptionally with a NoSuchKeyException.
      */
-    fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule>
+    fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule>
 
     /**
      * Get the group event from the database
@@ -112,16 +115,12 @@ interface Database {
     fun getCurrentEmail(): String
 
     /**
-     * Set the current user's email
-     * @param email The email to set
+     * Get the chat contacts for the given user
+     * @param email The email of the user to get the chat contacts for
+     * @return A future that will complete with the chat contacts
      */
-    fun setCurrentEmail(email: String)
-
-    // Used to handle database errors
-    class NoSuchKeyException(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {
-        constructor(cause: Throwable) : this(null, cause)
-    }
     fun getChatContacts(email: String): CompletableFuture<List<UserInfo>>
+
     /**
      * Get chat with the given id from the database
      *
@@ -163,6 +162,13 @@ interface Database {
     fun removeChatListener(chatId: String)
 
     /**
+     * Add a listener to the users
+     *
+     * @param onChange The function to call when the users change
+     */
+    fun addUsersListeners(onChange: (List<UserInfo>) -> Unit)
+
+    /**
      * Get the FCM token data class for the given user
      *
      * @param email The email of the user to get the token for
@@ -178,4 +184,9 @@ interface Database {
      * @return A future that will complete when the token has been set
      */
     fun setFCMToken(email: String, token: String): CompletableFuture<Void>
+
+    // Used to handle database errors
+    class NoSuchKeyException(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {
+        constructor(cause: Throwable) : this(null, cause)
+    }
 }

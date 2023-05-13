@@ -19,10 +19,10 @@ import java.util.concurrent.TimeoutException
  */
 class MockLocationProvider: LocationProvider {
 
-    private lateinit var user: CompletableFuture<UserInfo>
-    private lateinit var appContext: ComponentActivity
-    private lateinit var mockLocation: MutableState<LatLng?>
-    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+    private var user: CompletableFuture<UserInfo> = CompletableFuture.completedFuture(null)
+    private var appContext: ComponentActivity = ComponentActivity()
+    private var mockLocation: MutableState<LatLng?> = mutableStateOf(null)
+    private var fusedLocationProviderClient: FusedLocationProviderClient? = null
 
     /**
      * The two var that allow us to control the stateflow of the location provider.
@@ -38,10 +38,9 @@ class MockLocationProvider: LocationProvider {
         withPermission = false
     }
 
-    override fun init(context: ComponentActivity, userInfo: CompletableFuture<UserInfo>) {
+    override fun updateContext(context: ComponentActivity, userInfo: CompletableFuture<UserInfo>) {
         appContext = context
         user = userInfo
-        mockLocation = mutableStateOf(null)
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(appContext)
     }
 
@@ -70,11 +69,12 @@ class MockLocationProvider: LocationProvider {
     }
 
     private fun getDeviceLocation(delay: Long) {
+        assert(fusedLocationProviderClient != null)
         if (delay >= DELAY) {
             error("getDeviceLocation has reached its max recursive delay")
         }
         try {
-            fusedLocationProviderClient.lastLocation.addOnCompleteListener {
+            fusedLocationProviderClient?.lastLocation?.addOnCompleteListener {
                 if (it.isSuccessful) {
                     if (it.result != null) {
                         mockLocation.value = LatLng(it.result.latitude, it.result.longitude)
