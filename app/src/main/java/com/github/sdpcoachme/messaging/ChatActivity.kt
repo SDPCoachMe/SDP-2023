@@ -534,7 +534,7 @@ fun ChatField(
     currentUserEmail: String,
     database: Database,
     chat: Chat,
-    onSend: () -> Unit = {},
+    onSend: () -> Unit,
     isGroupChat: Boolean,
     groupEvent: GroupEvent,
 ) {
