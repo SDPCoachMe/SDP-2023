@@ -45,6 +45,7 @@ class CachingStore(private val wrappedDatabase: Database,
     private val contacts = mutableMapOf<String, List<UserInfo>>()
     private val chats = mutableMapOf<String, Chat>()
     private val cachedSchedules = mutableMapOf<String, List<Event>>()
+    private val cachedTokens = mutableMapOf<String, String>()
 
     private var currentShownMonday = getStartMonday()
     private var minCachedMonday = currentShownMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
@@ -375,7 +376,12 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return A completable future that completes when the FCM token has been retrieved
      */
     fun getFCMToken(email: String): CompletableFuture<String> {
-        return wrappedDatabase.getFCMToken(email)
+        if (cachedTokens.containsKey(email)) {
+            return CompletableFuture.completedFuture(cachedTokens[email])
+        }
+        return wrappedDatabase.getFCMToken(email).thenApply {
+            it.also { cachedTokens[email] = it }
+        }
     }
 
     /**
@@ -385,6 +391,7 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return A completable future that completes when the FCM token has been set
      */
     fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
+        cachedTokens[email] = token
         return wrappedDatabase.setFCMToken(email, token)
     }
 
