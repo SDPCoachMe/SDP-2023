@@ -139,12 +139,11 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
                     else currEmail + contactId
                 }
 
+                // Fetch the chat and create the corresponding ContactRowInfo
                 getChat(chatId).thenCompose { chat ->
                     val lastMessage = if (chat.messages.isEmpty()) Message() else chat.messages.last()
 
                     if (contactId.startsWith("@@event")) {
-                        // TODO: get event info here!!!
-                        //  getEventInfo(contactId)
                         getGroupEvent(contactId, EventOps.getStartMonday().plusDays(7))
                             .thenApply { groupEvent ->
                                 val row = ContactRowInfo(
@@ -155,14 +154,6 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
                                 )
                                 row
                             }.exceptionally { println("error in getgroup event") ; null}
-//                        CompletableFuture.completedFuture(
-//                            ContactRowInfo(
-//                                chatId = chatId,
-//                                chatTitle = "TEST EVENT",
-//                                lastMessage = lastMessage,
-//                                isGroupChat = true
-//                            )
-//                        )
                     } else {
                         getUser(contactId).thenApply {
                             val row = ContactRowInfo(
