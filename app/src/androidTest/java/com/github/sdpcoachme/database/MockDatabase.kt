@@ -56,6 +56,7 @@ open class MockDatabase: Database {
             emptyList()
         )
 
+        // Those functions are going to be used in the CacheStore tests
         fun getDefaultEmail(): String {
             return DEFAULT_EMAIL
         }

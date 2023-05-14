@@ -49,10 +49,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.data.UserAddress
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.database.CachingStore
-import com.github.sdpcoachme.data.schedule.GroupEvent
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.maxkeppeker.sheets.core.models.base.Header
@@ -196,7 +196,14 @@ fun NewEvent(store: CachingStore) {
                 val intent = Intent(context, ScheduleActivity::class.java)
                 context.startActivity(intent)
             }
-            val event = Event(eventName, selectedColor.value.toString(), start.format(formatterEventDate), end.format(formatterEventDate), description)
+            val event = Event(
+                name = eventName,
+                color = selectedColor.value.toString(),
+                start = start.format(formatterEventDate),
+                end = end.format(formatterEventDate),
+                location = UserAddress(),   // TODO: Add possibility to choose location during next task
+                description = description
+            )
             TopAppBar(
                 title = {
                     Text(

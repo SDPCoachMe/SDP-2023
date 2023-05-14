@@ -108,10 +108,8 @@ class ScheduleActivity : ComponentActivity() {
         store = (application as CoachMeApplication).store
 
         val startMonday = getStartMonday()
-        //TODO: For demo, let this function run once to add sample events to the database
-        //database.addEvents(sampleEvents, startMonday).thenRun {
+
         val futureDBSchedule: CompletableFuture<Schedule> = store.getSchedule(startMonday).exceptionally {
-            println("ScheduleActivity: Error getting schedule from database")
             null
         }
 
@@ -122,7 +120,6 @@ class ScheduleActivity : ComponentActivity() {
                 }
             }
         }
-        //}
     }
 }
 

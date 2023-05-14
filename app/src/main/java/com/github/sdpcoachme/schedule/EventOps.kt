@@ -165,6 +165,8 @@ class EventOps {
                     color = internalEvent.color,
                     start = internalEvent.start,
                     end = internalEvent.end,
+                    sport = internalEvent.sport,
+                    location = internalEvent.location,
                     description = "Organiser: ${it.organiser}\n" +
                             "Max participants: ${it.maxParticipants}\n" +
                             internalEvent.description,

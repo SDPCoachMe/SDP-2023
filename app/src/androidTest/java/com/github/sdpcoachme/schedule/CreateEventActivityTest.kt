@@ -15,6 +15,7 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
+import com.github.sdpcoachme.data.UserAddress
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.database.CachingStore
@@ -167,11 +168,13 @@ class CreateEventActivityTest {
                 .performClick()
 
             val expectedEvent = Event(
-                defaultEventName,
-                defaultEventStart.format(eventDateFormatter),
-                defaultEventEnd.format(eventDateFormatter),
-                defaultEventDescription,
-                EventColors.DEFAULT.color.value.toString()
+                name = defaultEventName,
+                color = EventColors.DEFAULT.color.value.toString(),
+                start = defaultEventStart.format(eventDateFormatter),
+                end = defaultEventEnd.format(eventDateFormatter),
+                //sport = ???,
+                location = UserAddress(),   // adapt this when location choosing is added
+                description = defaultEventDescription
             )
 
             store.getSchedule(currentWeekMonday).thenAccept {
