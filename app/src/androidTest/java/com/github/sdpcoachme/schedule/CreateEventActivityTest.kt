@@ -15,7 +15,7 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
-import com.github.sdpcoachme.data.UserAddress
+import com.github.sdpcoachme.data.Address
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.database.CachingStore
@@ -42,7 +42,6 @@ import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Compani
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_DATE_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_TIME_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_TIME_TEXT
-import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.SCHEDULE_COLUMN
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.`is`
 import org.junit.After
@@ -50,7 +49,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.lang.Thread.sleep
 
 @RunWith(AndroidJUnit4::class)
 class CreateEventActivityTest {
@@ -173,7 +171,7 @@ class CreateEventActivityTest {
                 start = defaultEventStart.format(eventDateFormatter),
                 end = defaultEventEnd.format(eventDateFormatter),
                 //sport = ???,
-                location = UserAddress(),   // adapt this when location choosing is added
+                address = Address(),   // adapt this when location choosing is added
                 description = defaultEventDescription
             )
 

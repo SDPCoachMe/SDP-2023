@@ -1,9 +1,9 @@
 package com.github.sdpcoachme.schedule
 
 import androidx.compose.ui.graphics.Color
-import com.github.sdpcoachme.data.UserAddress
+import com.github.sdpcoachme.data.Address
 import com.github.sdpcoachme.data.schedule.Event
-import com.github.sdpcoachme.data.schedule.GroupEvent
+import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.database.CachingStore
@@ -35,7 +35,7 @@ class EventOps {
                 color = Color(0xFFAFBBF2).value.toString(),
                 start = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(13, 0, 0).toString(),
                 end = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(15, 0, 0).toString(),
-                location = UserAddress(),
+                address = Address(),
                 description = "Tune in to find out about how we're furthering our mission to organize the world’s information and make it universally accessible and useful.",
             ),
             Event(
@@ -43,7 +43,7 @@ class EventOps {
                 color = Color(0xFFAFBBF2).value.toString(),
                 start = startMonday.plusDays(2).atTime(7, 0, 0).toString(),
                 end = startMonday.plusDays(2).atTime(9, 0, 0).toString(),
-                location = UserAddress(),
+                address = Address(),
                 description = "Learn about the latest updates to our developer products and platforms from Google Developers.",
             )
         )
@@ -52,7 +52,7 @@ class EventOps {
             color = Color(0xFFF4BFDB).value.toString(),
             start = startMonday.plusDays(2).atTime(22, 0, 0).toString(),
             end = startMonday.plusDays(3).atTime(4, 0, 0).toString(),
-            location = UserAddress(),
+            address = Address(),
             description = "Learn about the latest and greatest in ML from Google. We’ll cover what’s available to developers when it comes to creating, understanding, and deploying models for a variety of different applications.",
         )
         private val multiWeekEvent = Event(
@@ -60,7 +60,7 @@ class EventOps {
             color = Color(0xFF6DD3CE).value.toString(),
             start = startMonday.plusDays(3).atTime(13, 0, 0).toString(),
             end = startMonday.plusWeeks(1).atTime(15, 0, 0).toString(),
-            location = UserAddress(),
+            address = Address(),
             description = "Learn about the latest design improvements to help you build personal dynamic experiences with Material Design."
         )
 
@@ -69,7 +69,7 @@ class EventOps {
             color = Color(0xFF1B998B).value.toString(),
             start = startMonday.plusWeeks(1).plusDays(2).atTime(10, 0, 0).toString(),
             end = startMonday.plusWeeks(1).plusDays(2).atTime(12, 0, 0).toString(),
-            location = UserAddress(),
+            address = Address(),
             description = "In this Keynote, Chet Haase, Dan Sandler, and Romain Guy discuss the latest Android features and enhancements for developers.",
         )
 
@@ -78,7 +78,7 @@ class EventOps {
             color = Color(0xFF1B998B).value.toString(),
             start = startMonday.minusWeeks(1).plusDays(2).atTime(10, 0, 0).toString(),
             end = startMonday.minusWeeks(1).plusDays(2).atTime(12, 0, 0).toString(),
-            location = UserAddress(),
+            address = Address(),
             description = "In this Keynote, Chet Haase, Dan Sandler, and Romain Guy discuss the latest Android features and enhancements for developers.",
         )
 
@@ -248,7 +248,7 @@ class EventOps {
                     start = internalEvent.start,
                     end = internalEvent.end,
                     sport = internalEvent.sport,
-                    location = internalEvent.location,
+                    address = internalEvent.address,
                     description = "Organiser: ${it.organiser}\n" +
                             "Max participants: ${it.maxParticipants}\n" +
                             internalEvent.description,

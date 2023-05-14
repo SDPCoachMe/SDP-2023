@@ -24,7 +24,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.database.CachingStore
-import com.github.sdpcoachme.data.UserAddress
+import com.github.sdpcoachme.data.Address
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
@@ -156,7 +156,7 @@ class SignupActivity : ComponentActivity() {
                         phone = phone,
                         coach = isCoach,
                         // address added later with AddressAutocompleteHandler
-                        address = UserAddress(),
+                        address = Address(),
                         // sports added later in SelectSportsActivity
                         sports = listOf()
                     )

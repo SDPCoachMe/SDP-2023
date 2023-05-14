@@ -1,4 +1,6 @@
-package com.github.sdpcoachme.data.schedule
+package com.github.sdpcoachme.data
+
+import com.github.sdpcoachme.data.schedule.Event
 
 /**
  * Group event data class
