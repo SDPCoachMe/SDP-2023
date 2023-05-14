@@ -53,7 +53,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         }
     }
 
-    override fun addGroupEvent(groupEvent: GroupEvent, currentWeekMonday: LocalDate): CompletableFuture<Void> {
+    override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
         var errorPreventionFuture = CompletableFuture<Void>()
 
         if (groupEvent.participants.size > groupEvent.maxParticipants) {
@@ -73,7 +73,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
 
     override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Void> {
         val id = email.replace('.', ',')
-        return getGroupEvent(groupEventId, EventOps.getStartMonday()).thenCompose { groupEvent ->
+        return getGroupEvent(groupEventId).thenCompose { groupEvent ->
             val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
             if (!hasCapacity) {
                 val failingFuture = CompletableFuture<Void>()
@@ -97,7 +97,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             .exceptionally { Schedule() }
     }
 
-    override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
+    override fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
         return getChild(groupEvents, groupEventId).thenApply { it.getValue(GroupEvent::class.java)!! }
             .exceptionally { GroupEvent() }
     }

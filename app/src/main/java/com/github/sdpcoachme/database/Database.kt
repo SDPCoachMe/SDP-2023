@@ -78,10 +78,9 @@ interface Database {
     /**
      * Add group event to the database
      * @param groupEvent The group event to add
-     * @param currentWeekMonday The monday of the current week
      * @return A future that will complete when the group event has been added.
      */
-    fun addGroupEvent(groupEvent: GroupEvent, currentWeekMonday: LocalDate): CompletableFuture<Void>
+    fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void>
 
     /**
      * Add new participant to the group event
@@ -103,11 +102,10 @@ interface Database {
     /**
      * Get the group event from the database
      * @param groupEventId The id of the group event to get
-     * @param currentWeekMonday The monday of the current week
      * @return A future that will complete with the group event. If the user does not exist,
      * the future will complete exceptionally with a NoSuchKeyException.
      */
-    fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent>
+    fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent>
 
     /**
      * Get the chat contacts for the given user
