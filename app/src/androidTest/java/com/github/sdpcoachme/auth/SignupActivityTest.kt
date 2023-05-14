@@ -133,26 +133,45 @@ open class SignupActivityTest {
 
         // Important note: this get method was used instead of onTimeout due to onTimeout not
         // being found when running tests on Cirrus CI even with java version changed in build.gradle
-        val retrievedUser = database.getUser(user.email).get(10, SECONDS)
+        /*val retrievedUser = database.getUser(user.email).get(10, SECONDS)
         TestCase.assertEquals(user, retrievedUser)
 
         // Assert that we are redirected to the SelectSportsActivity with correct intent
-        Intents.intended(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name))
+        Intents.intended(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name))*/
+
+        val isCorrect = database.getUser(user.email)
+            .thenApply { retrievedUser ->
+                TestCase.assertEquals(user, retrievedUser)
+                Intents.intended(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name))
+                true
+            }.exceptionally {
+                false
+            }.get(10, SECONDS)
+
+        TestCase.assertTrue(isCorrect)
     }
 
     private fun inputUserInfo(user: UserInfo) {
+        val device = UiDevice.getInstance(getInstrumentation())
         // Put focus on first name field
         composeTestRule.onNodeWithTag(FIRST_NAME)
             .performClick()
+        device.waitForIdle()
 
         fillAndCheckFocus(user.firstName, FIRST_NAME)
+        device.waitForIdle()
         fillAndCheckFocus(user.lastName, LAST_NAME)
+        device.waitForIdle()
         fillAndCheckFocus(user.phone, PHONE)
+        device.waitForIdle()
 
-        if (user.coach)
+        if (user.coach) {
             composeTestRule.onNodeWithTag(BE_COACH).performClick()
+            device.waitForIdle()
+        }
 
         composeTestRule.onNodeWithTag(SIGN_UP).performClick()
+        device.waitForIdle()
 
         // Testing Google Places Autocomplete Activity is too complex, instead, we've mocked it
         // so that it directly returns a fixed address MockAddressAutocompleteHandler.DEFAULT_ADDRESS
