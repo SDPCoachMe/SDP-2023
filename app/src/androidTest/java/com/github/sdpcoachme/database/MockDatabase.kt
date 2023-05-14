@@ -138,7 +138,7 @@ open class MockDatabase: Database {
         }
     }
 
-    override fun addGroupEvent(groupEvent: GroupEvent, currentWeekMonday: LocalDate): CompletableFuture<Void> {
+    override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
         val errorPreventionFuture = CompletableFuture<Void>()
 
         if (groupEvent.participants.size > groupEvent.maxParticipants) {
@@ -159,7 +159,7 @@ open class MockDatabase: Database {
     }
 
     override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Void> {
-        return getGroupEvent(groupEventId, EventOps.getStartMonday()).thenCompose { groupEvent ->
+        return getGroupEvent(groupEventId).thenCompose { groupEvent ->
             val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
             if (!hasCapacity) {
                 val failingFuture = CompletableFuture<Void>()
@@ -188,7 +188,7 @@ open class MockDatabase: Database {
             ?: CompletableFuture.completedFuture(Schedule())
     }
 
-    override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
+    override fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
         val future = CompletableFuture<GroupEvent>()
         future.complete(groupEvents[groupEventId] ?: GroupEvent())
         return future

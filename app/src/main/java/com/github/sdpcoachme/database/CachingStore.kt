@@ -226,8 +226,8 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
-    fun addGroupEvent(groupEvent: GroupEvent, currentWeekMonday: LocalDate): CompletableFuture<Void> {
-        return wrappedDatabase.addGroupEvent(groupEvent, currentWeekMonday)
+    fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
+        return wrappedDatabase.addGroupEvent(groupEvent)
     }
 
     fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
@@ -243,9 +243,12 @@ class CachingStore(private val wrappedDatabase: Database,
     private fun fetchGroupEvents(schedule: Schedule, currentWeekMonday: LocalDate): List<Event> {
         val groupEvents = listOf<GroupEvent>()
         schedule.groupEvents.map { id ->
-            getGroupEvent(id, currentWeekMonday).thenApply { groupEvent ->
-                groupEvents.plus(groupEvent)
+            if (cachedSchedule.groupEvents.contains(id)) {
+                getGroupEvent(id).thenApply { groupEvent ->
+                    groupEvents.plus(groupEvent)
+                }
             }
+
         }
 
         // Transform of groupEvents to a list of Events
@@ -310,14 +313,8 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
-    fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
-        if (cachedSchedule.groupEvents.contains(groupEventId)) {    // Means that the current user is registered for the group event
-            return wrappedDatabase.getGroupEvent(groupEventId, currentWeekMonday)
-        }
-
-        val failFuture = CompletableFuture<GroupEvent>()
-        failFuture.completeExceptionally(NoSuchElementException("Current user is not registered for group event with id $groupEventId"))
-        return failFuture
+    fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
+        return wrappedDatabase.getGroupEvent(groupEventId)
     }
 
     fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
