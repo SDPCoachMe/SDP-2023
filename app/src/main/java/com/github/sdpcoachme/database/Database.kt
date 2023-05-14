@@ -5,8 +5,6 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Schedule
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.SphericalUtil
 import java.time.LocalDate
 import java.util.concurrent.CompletableFuture
 
@@ -36,25 +34,6 @@ interface Database {
      */
     fun getAllUsers(): CompletableFuture<List<UserInfo>>
 
-    /**
-     * Get all users from the database sorted by distance from a given location
-     * @param latitude Latitude of the location
-     * @param longitude Longitude of the location
-     * @return A future that will complete with a list of all users in the database sorted by distance
-     */
-    fun getAllUsersByNearest(latitude: Double, longitude: Double): CompletableFuture<List<UserInfo>> {
-        return getAllUsers().thenApply { users ->
-            users.sortedBy { user ->
-                val userLatitude = user.address.latitude
-                val userLongitude = user.address.longitude
-                val distance = SphericalUtil.computeDistanceBetween(
-                    LatLng(latitude, longitude),
-                    LatLng(userLatitude, userLongitude)
-                )
-                distance
-            }
-        }
-    }
 
     /**
      * Check if a user exists in the database

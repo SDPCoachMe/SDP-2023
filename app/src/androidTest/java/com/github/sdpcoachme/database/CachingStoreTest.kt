@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 val CACHINGSTORE_TEST_PREFERENCES_NAME = "cachingStore_test_preferences"
 val Context.dataStoreTest: DataStore<Preferences> by preferencesDataStore(name = CACHINGSTORE_TEST_PREFERENCES_NAME)
 
-class CachingDatabaseTest {
+class CachingStoreTest {
 
     // IMPORTANT:
     // Note that here MockDatabase needs to be re-instantiated for each test as we
@@ -162,7 +162,7 @@ class CachingDatabaseTest {
             ApplicationProvider.getApplicationContext()
         )
         cachingDatabase.setCurrentEmail(exampleEmail).get(1000, MILLISECONDS)
-        val isCorrect = cachingDatabase.addEvent(eventList[0], currentMonday)
+        cachingDatabase.addEvent(eventList[0], currentMonday)
             .thenCompose { cachingDatabase.addEvent(eventList[1], currentMonday) }
             .thenCompose { cachingDatabase.addEvent(eventList[2], currentMonday) }
             .thenCompose { cachingDatabase.addEvent(eventList[3], currentMonday) }
