@@ -21,7 +21,6 @@ import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.Message.*
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
-import com.github.sdpcoachme.schedule.EventOpsTest.Companion.eventList
 import junit.framework.TestCase.*
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.CoreMatchers.`is`
@@ -174,41 +173,39 @@ class CachingStoreTest {
         assertThat(wrappedDatabase.timesCalled, `is`(6))
     }
 
-    class ScheduleDB: MockDatabase() {
+//    class ScheduleDB: MockDatabase() {
+//        var timesCalled = 0
+//        override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+//            timesCalled++
+//            return CompletableFuture.completedFuture(Schedule(eventList))
+//        }
+//    }
+
+    class ScheduleDB(schedule: Schedule): MockDatabase() {
         var timesCalled = 0
+        var storedSchedule = schedule
         override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
             timesCalled++
-            return CompletableFuture.completedFuture(Schedule(eventList))
+            return CompletableFuture.completedFuture(storedSchedule)
         }
     }
 
 
-    // todo take asserts out of the futures
     @Test
-    fun getScheduleWithCorrectCacheReturnsCachedSchedule() {
-        val wrappedDatabase = ScheduleDB()
+    fun getScheduleUsesCacheCorrectlyWithInitialCacheDateRange() {
+        val testSchedule = Schedule(cachedEvents)
+        val wrappedDatabase = ScheduleDB(testSchedule)
         cachingStore = CachingStore(wrappedDatabase,
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
         cachingStore.setCurrentEmail(exampleEmail)
-        val schedule = cachingStore.getSchedule(currentMonday)
-            .get(5, SECONDS)
-
-        assertThat(wrappedDatabase.timesCalled, `is`(1))
-        assertThat(schedule.events, `is`(cachedEvents))
-    }
-
-    @Test
-    fun getScheduleWithEmptyCacheCachesCorrectSchedule() {
-        val wrappedDatabase = ScheduleDB()
-        cachingStore = CachingStore(wrappedDatabase,
-            ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
-            ApplicationProvider.getApplicationContext()
-        )
-        cachingStore.setCurrentEmail(exampleEmail)
-        val isCorrect = cachingStore.getSchedule(currentMonday)
-            .thenApply {
+        val isCorrect = cachingStore.getSchedule(currentMonday) // this call should cache the schedule
+            .thenCompose {
+                assertThat(wrappedDatabase.timesCalled, `is`(1))
+                assertThat(it.events, `is`(cachedEvents))
+                cachingStore.getSchedule(currentMonday) // this call should return the cached schedule
+            }.thenApply {
                 assertThat(wrappedDatabase.timesCalled, `is`(1))
                 assertThat(it.events, `is`(cachedEvents))
                 true
@@ -221,7 +218,8 @@ class CachingStoreTest {
 
     @Test
     fun getScheduleWithNewCurrentMondayCachesCorrectSchedule() {
-        val wrappedDatabase = ScheduleDB()
+        val testSchedule = Schedule(eventList)
+        val wrappedDatabase = ScheduleDB(testSchedule)
         cachingStore = CachingStore(wrappedDatabase,
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
@@ -233,7 +231,7 @@ class CachingStoreTest {
                 assertThat(it.events, `is`(cachedEvents))
                 cachingStore.getSchedule(currentMonday.plusWeeks(6))
             }.thenApply {
-                assertThat(wrappedDatabase, `is`(2))
+                assertThat(wrappedDatabase.timesCalled, `is`(2))
                 assertThat(it.events, `is`(nonCachedEvents))
                 true
             }.exceptionally {
