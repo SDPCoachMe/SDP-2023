@@ -157,17 +157,18 @@ class CachingStoreTest {
     @Test
     fun addEventsAddsThemToWrappedDatabase() {
         val wrappedDatabase = ScheduleDBSingleEvent()
-        val cachingDatabase = CachingStore(wrappedDatabase,
+        cachingStore = CachingStore(wrappedDatabase,
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-        cachingDatabase.setCurrentEmail(exampleEmail).get(1000, MILLISECONDS)
-        cachingDatabase.addEvent(eventList[0], currentMonday)
-            .thenCompose { cachingDatabase.addEvent(eventList[1], currentMonday) }
-            .thenCompose { cachingDatabase.addEvent(eventList[2], currentMonday) }
-            .thenCompose { cachingDatabase.addEvent(eventList[3], currentMonday) }
-            .thenCompose { cachingDatabase.addEvent(eventList[4], currentMonday) }
-            .thenCompose { cachingDatabase.addEvent(eventList[5], currentMonday) }
+        cachingStore.setCurrentEmail(exampleEmail).get(1000, MILLISECONDS)
+        cachingStore.getCurrentEmail().get(1000, MILLISECONDS)
+        cachingStore.addEvent(eventList[0], currentMonday)
+            .thenCompose { cachingStore.addEvent(eventList[1], currentMonday) }
+            .thenCompose { cachingStore.addEvent(eventList[2], currentMonday) }
+            .thenCompose { cachingStore.addEvent(eventList[3], currentMonday) }
+            .thenCompose { cachingStore.addEvent(eventList[4], currentMonday) }
+            .thenCompose { cachingStore.addEvent(eventList[5], currentMonday) }
             .get(5, SECONDS)
 
         assertThat(wrappedDatabase.timesCalled, `is`(6))
@@ -186,34 +187,27 @@ class CachingStoreTest {
     @Test
     fun getScheduleWithCorrectCacheReturnsCachedSchedule() {
         val wrappedDatabase = ScheduleDB()
-        val cachingDatabase = CachingStore(wrappedDatabase,
+        cachingStore = CachingStore(wrappedDatabase,
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-        cachingDatabase.setCurrentEmail(exampleEmail)
-        val isCorrect = cachingDatabase.getSchedule(currentMonday)
-            .thenCompose {
-                assertThat(wrappedDatabase.timesCalled, `is`(1))
-                cachingDatabase.getSchedule(currentMonday)
-            }.thenApply {
-                assertThat(wrappedDatabase.timesCalled, `is`(1))
-                assertThat(it.events, `is`(cachedEvents))
-                true
-            }.exceptionally {
-                false
-            }.get(5, SECONDS)
-        assertTrue(isCorrect)
+        cachingStore.setCurrentEmail(exampleEmail)
+        val schedule = cachingStore.getSchedule(currentMonday)
+            .get(5, SECONDS)
+
+        assertThat(wrappedDatabase.timesCalled, `is`(1))
+        assertThat(schedule.events, `is`(cachedEvents))
     }
 
     @Test
     fun getScheduleWithEmptyCacheCachesCorrectSchedule() {
         val wrappedDatabase = ScheduleDB()
-        val cachingDatabase = CachingStore(wrappedDatabase,
+        cachingStore = CachingStore(wrappedDatabase,
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-        cachingDatabase.setCurrentEmail(exampleEmail)
-        val isCorrect = cachingDatabase.getSchedule(currentMonday)
+        cachingStore.setCurrentEmail(exampleEmail)
+        val isCorrect = cachingStore.getSchedule(currentMonday)
             .thenApply {
                 assertThat(wrappedDatabase.timesCalled, `is`(1))
                 assertThat(it.events, `is`(cachedEvents))
@@ -228,16 +222,16 @@ class CachingStoreTest {
     @Test
     fun getScheduleWithNewCurrentMondayCachesCorrectSchedule() {
         val wrappedDatabase = ScheduleDB()
-        val cachingDatabase = CachingStore(wrappedDatabase,
+        cachingStore = CachingStore(wrappedDatabase,
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-        cachingDatabase.setCurrentEmail(exampleEmail)
-        val isCorrect = cachingDatabase.getSchedule(currentMonday)
+        cachingStore.setCurrentEmail(exampleEmail)
+        val isCorrect = cachingStore.getSchedule(currentMonday)
             .thenCompose {
                 assertThat(wrappedDatabase.timesCalled, `is`(1))
                 assertThat(it.events, `is`(cachedEvents))
-                cachingDatabase.getSchedule(currentMonday.plusWeeks(6))
+                cachingStore.getSchedule(currentMonday.plusWeeks(6))
             }.thenApply {
                 assertThat(wrappedDatabase, `is`(2))
                 assertThat(it.events, `is`(nonCachedEvents))
@@ -260,16 +254,16 @@ class CachingStoreTest {
     @Test
     fun getChatContactsCachesContacts() {
         val wrappedDatabase = ContactsDB()
-        val cachingDatabase = CachingStore(wrappedDatabase,
+        cachingStore = CachingStore(wrappedDatabase,
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-        val isCorrect = cachingDatabase.getChatContacts(exampleEmail)
+        val isCorrect = cachingStore.getChatContacts(exampleEmail)
             .thenCompose {
                 assertThat(wrappedDatabase.timesCalled, `is`(1))
                 assertThat(it, `is`(userList))
 
-                cachingDatabase.getChatContacts(exampleEmail)
+                cachingStore.getChatContacts(exampleEmail)
             }.thenApply {
                 assertThat(wrappedDatabase.timesCalled, `is`(1))
                 assertThat(it, `is`(userList))
@@ -292,17 +286,17 @@ class CachingStoreTest {
             }
         }
 
-        val wrappedDatabase = ContactsDBDefaultChat()
-        val cachingDatabase = CachingStore(wrappedDatabase,
+        wrappedDatabase = ContactsDBDefaultChat()
+        cachingStore = CachingStore(wrappedDatabase,
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-        val isCorrect = cachingDatabase.getChat(defaultChat.id)
+        val isCorrect = cachingStore.getChat(defaultChat.id)
             .thenCompose {
                 assertThat(timesCalled, `is`(1))
                 assertThat(it, `is`(defaultChat))
 
-                cachingDatabase.getChat(defaultChat.id)
+                cachingStore.getChat(defaultChat.id)
             }.thenApply {
                 assertThat(timesCalled, `is`(1))
                 assertThat(it, `is`(defaultChat))
@@ -339,19 +333,19 @@ class CachingStoreTest {
         val expectedChat = defaultChat.copy(messages = defaultMessages + newMessage)
 
         val wrappedDatabase = SendMessageDB(defaultChat)
-        val cachingDatabase = CachingStore(wrappedDatabase,
+        cachingStore = CachingStore(wrappedDatabase,
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
 
-        val isCorrect = cachingDatabase.getChat(defaultChat.id) // to place chat into the cache
+        val isCorrect = cachingStore.getChat(defaultChat.id) // to place chat into the cache
             .thenCompose { chat ->
                 assertThat(wrappedDatabase.timesCalled(), `is`(1))
                 assertThat(chat, `is`(defaultChat))
 
-                cachingDatabase.sendMessage(defaultChat.id, newMessage)
+                cachingStore.sendMessage(defaultChat.id, newMessage)
                     .thenCompose {
-                        cachingDatabase.getChat(defaultChat.id)
+                        cachingStore.getChat(defaultChat.id)
                     }.thenApply {
                         // should not have called the database again as it is cached
                         assertThat(wrappedDatabase.timesCalled(), `is`(1))

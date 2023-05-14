@@ -54,18 +54,17 @@ class CachingStore(private val wrappedDatabase: Database,
 
     private val gson = Gson()
 
-    private var retrieveData =
-        if (isOnline()) {
-            retrieveLocalData().thenAccept {
-                Log.d("CachingStore", "Internet available")
-                clearCache()
-                getAllUsers()
-            }
-        } else {
-            retrieveLocalData().thenAccept {
-                Log.d("CachingStore", "Internet not available")
-            }
-        }
+    private var retrieveData = CompletableFuture.completedFuture(null)
+//        if (isOnline()) {
+//            retrieveLocalData().thenAccept {
+//                Log.d("CachingStore", "Internet available")
+//                clearCache()
+//            }
+//        } else {
+//            retrieveLocalData().thenAccept {
+//                Log.d("CachingStore", "Internet not available")
+//            }
+//        }
 
     init {
         wrappedDatabase.addUsersListeners { users ->
@@ -100,8 +99,8 @@ class CachingStore(private val wrappedDatabase: Database,
             val serializedContacts = values[CONTACTS_KEY]
             val serializedChats = values[CHATS_KEY]
             val serializedSchedules = values[CACHED_SCHEDULES_KEY]
-//
-//            // Deserialize the caching maps from Json and put them in the caching maps
+
+            // Deserialize the caching maps from Json and put them in the caching maps
             processRetrievedCache(serializedUsers, cachedUsers)
             processRetrievedCache(serializedContacts, contacts)
             processRetrievedCache(serializedChats, chats)
