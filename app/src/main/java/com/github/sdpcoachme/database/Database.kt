@@ -4,7 +4,7 @@ import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
-import com.github.sdpcoachme.data.schedule.GroupEvent
+import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.SphericalUtil

@@ -49,7 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.data.UserAddress
+import com.github.sdpcoachme.data.Address
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.database.CachingStore
@@ -201,7 +201,7 @@ fun NewEvent(store: CachingStore) {
                 color = selectedColor.value.toString(),
                 start = start.format(formatterEventDate),
                 end = end.format(formatterEventDate),
-                location = UserAddress(),   // TODO: Add possibility to choose location during next task
+                address = Address(),   // TODO: Add possibility to choose location during next task
                 description = description
             )
             TopAppBar(

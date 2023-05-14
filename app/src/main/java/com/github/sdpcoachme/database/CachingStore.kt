@@ -5,22 +5,23 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
+import com.github.sdpcoachme.schedule.EventOps
 import com.github.sdpcoachme.schedule.EventOps.Companion.getStartMonday
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.util.concurrent.CompletableFuture
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import androidx.datastore.preferences.core.*
-import com.github.sdpcoachme.data.schedule.GroupEvent
-import com.github.sdpcoachme.schedule.EventOps
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.util.concurrent.CompletableFuture
 
 // todo finir de faire la documentation
 

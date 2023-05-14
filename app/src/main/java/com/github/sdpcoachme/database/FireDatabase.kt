@@ -6,7 +6,7 @@ import com.github.sdpcoachme.data.messaging.Chat.Companion.markOtherUsersMessage
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.Message.*
 import com.github.sdpcoachme.data.schedule.Event
-import com.github.sdpcoachme.data.schedule.GroupEvent
+import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.schedule.EventOps
 import com.google.firebase.database.DataSnapshot
