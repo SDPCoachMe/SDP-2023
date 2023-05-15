@@ -75,14 +75,27 @@ class CachingStoreTest {
         assertTrue(cachingStore.isCached(exampleEmail))
     }
 
+    class UpdatesUserDB: MockDatabase()  {
+        var timesCalled = 0
+        override fun updateUser(user: UserInfo): CompletableFuture<Void> {
+            timesCalled++
+            return super.updateUser(user)
+        }
+    }
+
     @Test
-    fun addUserPutsUserInCache() {
-        val retrievedUser = cachingStore.updateUser(willSmithUser)
-            .thenCompose { cachingStore.getUser(willSmithUser.email) }
-            .get(5, SECONDS)
+    fun updateUserPutsUserInCache() {
+        val wrappedDatabase = UpdatesUserDB()
+        cachingStore = CachingStore(wrappedDatabase,
+            ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
+            ApplicationProvider.getApplicationContext()
+        )
+        cachingStore.updateUser(willSmithUser).get(1, SECONDS)
         assertTrue(cachingStore.isCached(willSmithUser.email))
         assertTrue(cachingStore.userExists(willSmithUser.email).get(1, SECONDS))
+        val retrievedUser = cachingStore.getUser(willSmithUser.email).get(5, SECONDS)
         assertEquals(willSmithUser, retrievedUser)
+        assertEquals(1, wrappedDatabase.timesCalled)
     }
 
     class ExistsDB: MockDatabase()  {

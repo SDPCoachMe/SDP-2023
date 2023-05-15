@@ -28,7 +28,6 @@ open class MockDatabase: Database {
         emptyList(),
         emptyList()
     )
-    //private var currEmail = ""
 
     private val toEmail = "to@email.com"
     val toUser = UserInfo(

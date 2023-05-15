@@ -132,14 +132,6 @@ open class SignupActivityTest {
         }
         databaseStateSending.get(10, SECONDS)
 
-        // Important note: this get method was used instead of onTimeout due to onTimeout not
-        // being found when running tests on Cirrus CI even with java version changed in build.gradle
-        /*val retrievedUser = database.getUser(user.email).get(10, SECONDS)
-        TestCase.assertEquals(user, retrievedUser)
-
-        // Assert that we are redirected to the SelectSportsActivity with correct intent
-        Intents.intended(IntentMatchers.hasComponent(SelectSportsActivity::class.java.name))*/
-
         val isCorrect = database.getUser(user.email)
             .thenApply { retrievedUser ->
                 TestCase.assertEquals(user, retrievedUser)

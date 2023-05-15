@@ -53,16 +53,11 @@ class CachingStore(private val wrappedDatabase: Database,
 
     private val gson = Gson()
 
-    var retrieveData =
+    var retrieveData: CompletableFuture<Void> =
         if (isOnline()) {
-            retrieveLocalData().thenAccept {
-                Log.d("CachingStore", "Internet available")
-                clearCache()
-            }
+            retrieveLocalData().thenAccept { clearCache() }
         } else {
-            retrieveLocalData().thenAccept {
-                Log.d("CachingStore", "Internet not available")
-            }
+            retrieveLocalData()
         }
 
     init {

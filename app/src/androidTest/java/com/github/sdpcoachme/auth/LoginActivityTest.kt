@@ -37,6 +37,18 @@ open class LoginActivityTest {
     private val launchTimeout = 5000L
     private lateinit var device: UiDevice
 
+    @Before // done to enable testing without android ui
+    fun setup() {
+        store = (ApplicationProvider.getApplicationContext() as CoachMeApplication).store
+        store.retrieveData.get(1, TimeUnit.SECONDS)
+        Intents.init()
+    }
+
+    @After
+    fun cleanup() {
+        Intents.release()
+    }
+
     @Test
     fun startFromHomeScreenLaunchesLoginActivity() {
         FirebaseAuth.getInstance().signOut()
@@ -72,128 +84,114 @@ open class LoginActivityTest {
         pressBackUnconditionally()
     }
 
-    class NextActivityTest: LoginActivityTest() {
+    lateinit var store: CachingStore
+    private val toUser = UserInfo(
+        "Jane",
+        "Doe",
+        "to@email.com",
+        "0987654321",
+        UserAddressSamples.LAUSANNE,
+        true,
+        emptyList(),
+        emptyList()
+    )
 
-        @get:Rule
-        val composeTestRule = createEmptyComposeRule()
+    private val currentUser = UserInfo(
+        "John",
+        "Doe",
+        "example@email.com",
+        "0123456789",
+        UserAddressSamples.NEW_YORK,
+        false,
+        emptyList(),
+        emptyList()
+    )
 
-        lateinit var store: CachingStore
-        private val toUser = UserInfo(
-            "Jane",
-            "Doe",
-            "to@email.com",
-            "0987654321",
-            UserAddressSamples.LAUSANNE,
-            true,
-            emptyList(),
-            emptyList()
-        )
+    private val nonExistingUser = UserInfo(
+        "",
+        "",
+        "nonexisting@email.com",
+        "",
+        UserAddressSamples.NEW_YORK,
+        false,
+        emptyList(),
+        emptyList()
+    )
 
-        private val currentUser = UserInfo(
-            "John",
-            "Doe",
-            "example@email.com",
-            "0123456789",
-            UserAddressSamples.NEW_YORK,
-            false,
-            emptyList(),
-            emptyList()
-        )
+    @get:Rule
+    val composeTestRule = createEmptyComposeRule()
 
-        private val nonExistingUser = UserInfo(
-            "",
-            "",
-            "nonexisting@email.com",
-            "",
-            UserAddressSamples.NEW_YORK,
-            false,
-            emptyList(),
-            emptyList()
-        )
-        @Before // done to enable testing without android ui
-        fun setup() {
-            store = (ApplicationProvider.getApplicationContext() as CoachMeApplication).store
-            store.retrieveData.get(1, TimeUnit.SECONDS)
-            Intents.init()
+    @Test
+    fun whenNotLoggedInNoRedirection() {
+        store.setCurrentEmail("").get(1000, TimeUnit.MILLISECONDS)
+        val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
+
+        ActivityScenario.launch<LoginActivity>(intent).use {
+            waitForLoading(it)
+
+            // Assert that we are still in the login activity
+            composeTestRule.onNodeWithTag(LOG_IN, useUnmergedTree = true).assertIsDisplayed()
         }
+    }
 
-        @After
-        fun cleanup() {
-            Intents.release()
+    @Test
+    fun whenExistingUserLoggedInWithNoActionSetRedirectToMapActivity() {
+        store.updateUser(currentUser).get(1000, TimeUnit.MILLISECONDS)
+        store.setCurrentEmail(currentUser.email).get(1000, TimeUnit.MILLISECONDS)
+        val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
+
+        ActivityScenario.launch<LoginActivity>(intent).use {
+            waitForLoading(it)
+
+            // Assert that we launched the map activity
+            intended(hasComponent(MapActivity::class.java.name))
         }
-        
-        @Test
-        fun whenNotLoggedInNoRedirection() {
-            store.setCurrentEmail("").get(1000, TimeUnit.MILLISECONDS)
-            val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
+        pressBackUnconditionally()
+    }
 
-            ActivityScenario.launch<LoginActivity>(intent).use {
-                waitForLoading(it)
+    @Test
+    fun whenExistingUserLoggedInWithOpenChatActivityActionSetRedirectToChatActivity() {
+        store.updateUser(currentUser).get(1000, TimeUnit.MILLISECONDS)
+        store.updateUser(toUser).get(1000, TimeUnit.MILLISECONDS)
+        store.setCurrentEmail(currentUser.email).get(1000, TimeUnit.MILLISECONDS)
+        val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
+            .putExtra("sender", toUser.email)
+        intent.action = "OPEN_CHAT_ACTIVITY"
 
-                // Assert that we are still in the login activity
-                composeTestRule.onNodeWithTag(LOG_IN, useUnmergedTree = true).assertIsDisplayed()
-            }
+        ActivityScenario.launch<LoginActivity>(intent).use {
+            waitForLoading(it)
+
+            // Assert that we launched the chat activity
+            intended(allOf(
+                hasComponent(ChatActivity::class.java.name),
+                hasExtra("toUserEmail", toUser.email)
+            ))
         }
+    }
 
-        @Test
-        fun whenExistingUserLoggedInWithNoActionSetRedirectToMapActivity() {
-            store.updateUser(currentUser).get(1000, TimeUnit.MILLISECONDS)
-            store.setCurrentEmail(currentUser.email).get(1000, TimeUnit.MILLISECONDS)
-            val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
+    @Test
+    fun whenNonExistingUserLoggedInRedirectToSignupActivity() {
+        // Make sure the database is empty before starting the test
+        (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
 
-            ActivityScenario.launch<LoginActivity>(intent).use {
-                waitForLoading(it)
+        (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).store
+            .setCurrentEmail(nonExistingUser.email).get(1000, TimeUnit.MILLISECONDS)
+        val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
 
-                // Assert that we launched the map activity
-                intended(hasComponent(MapActivity::class.java.name))
-            }
-            pressBackUnconditionally()
+        ActivityScenario.launch<LoginActivity>(intent).use {
+            waitForLoading(it)
+            // Assert that we launched the signup activity
+            intended(hasComponent(SignupActivity::class.java.name))
         }
+    }
 
-        @Test
-        fun whenExistingUserLoggedInWithOpenChatActivityActionSetRedirectToChatActivity() {
-            store.updateUser(currentUser).get(1000, TimeUnit.MILLISECONDS)
-            store.updateUser(toUser).get(1000, TimeUnit.MILLISECONDS)
-            store.setCurrentEmail(currentUser.email).get(1000, TimeUnit.MILLISECONDS)
-            val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
-                .putExtra("sender", toUser.email)
-            intent.action = "OPEN_CHAT_ACTIVITY"
-
-            ActivityScenario.launch<LoginActivity>(intent).use {
-                waitForLoading(it)
-
-                // Assert that we launched the chat activity
-                intended(allOf(
-                    hasComponent(ChatActivity::class.java.name),
-                    hasExtra("toUserEmail", toUser.email)
-                ))
-            }
+    // Waits for the activity to finish loading any async state
+    private fun waitForLoading(scenario: ActivityScenario<LoginActivity>) {
+        // Instead, make the test wait for the future to finish, and crash after a certain time
+        lateinit var stateLoading: CompletableFuture<Void>
+        scenario.onActivity {
+            stateLoading = it.stateLoading
         }
-
-        @Test
-        fun whenNonExistingUserLoggedInRedirectToSignupActivity() {
-            // Make sure the database is empty before starting the test
-            (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
-
-            (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).store
-                .setCurrentEmail(nonExistingUser.email).get(1000, TimeUnit.MILLISECONDS)
-            val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
-
-            ActivityScenario.launch<LoginActivity>(intent).use {
-                waitForLoading(it)
-                // Assert that we launched the signup activity
-                intended(hasComponent(SignupActivity::class.java.name))
-            }
-        }
-
-        // Waits for the activity to finish loading any async state
-        private fun waitForLoading(scenario: ActivityScenario<LoginActivity>) {
-            // Instead, make the test wait for the future to finish, and crash after a certain time
-            lateinit var stateLoading: CompletableFuture<Void>
-            scenario.onActivity {
-                stateLoading = it.stateLoading
-            }
-            stateLoading.get(1000, TimeUnit.MILLISECONDS)
-        }
+        stateLoading.get(1000, TimeUnit.MILLISECONDS)
     }
 }
