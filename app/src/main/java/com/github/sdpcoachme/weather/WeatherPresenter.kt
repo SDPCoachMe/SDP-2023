@@ -1,6 +1,5 @@
 package com.github.sdpcoachme.weather
 
-import com.github.sdpcoachme.weather.api.WeatherData
 import com.github.sdpcoachme.weather.repository.WeatherRepository
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.CoroutineScope
@@ -31,7 +30,7 @@ class WeatherPresenter {
         }
     }
 
-    private suspend fun loadWeatherForecast(lat: Double, long: Double): WeatherData {
+    private suspend fun loadWeatherForecast(lat: Double, long: Double): Weather {
         return weatherRepository.loadWeatherForecast(lat, long)
     }
 

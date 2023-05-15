@@ -13,7 +13,7 @@ fun WeatherView(weatherState: WeatherState) {
         }
         is DataState -> {
             // data view with weatherState.data
-            Text(text = "Data State ${weatherState.data}")
+            Text(text = "Data State ${weatherState.weather}")
         }
         is ErrorState -> {
             // error view with weatherState.error

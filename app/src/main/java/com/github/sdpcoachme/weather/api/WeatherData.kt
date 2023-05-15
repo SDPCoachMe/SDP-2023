@@ -3,13 +3,17 @@ package com.github.sdpcoachme.weather.api
 import com.google.gson.annotations.SerializedName
 
 data class WeatherData(
-    @SerializedName("hourly")
+    @SerializedName("daily")
     val weatherDataObject: WeatherDataObject
 )
 
 data class WeatherDataObject(
-    @SerializedName("temperature_2m")
-    val temperatures: List<Double>,
+    @SerializedName("time")
+    val days: List<String>,
     @SerializedName("weathercode")
-    val weatherCodes: List<Int>
+    val weatherCodes: List<Int>,
+    @SerializedName("apparent_temperature_max")
+    val maxTemperatures: List<Double>,
+    @SerializedName("apparent_temperature_min")
+    val minTemperatures: List<Double>
 )

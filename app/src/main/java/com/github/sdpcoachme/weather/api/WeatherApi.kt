@@ -5,10 +5,14 @@ import retrofit2.http.Query
 
 interface WeatherApi {
 
-    @GET("v1/forecast?hourly=temperature_2m,weathercode")
+    /**
+     * Gets two weeks daily weather forecast
+     */
+    @GET("v1/forecast?daily=weathercode,apparent_temperature_max,apparent_temperature_min&forecast_days=14")
     suspend fun getWeatherData(
         @Query("latitude") lat: Double,
-        @Query("longitude") long: Double
+        @Query("longitude") long: Double,
+        @Query("timezone") timezone: String
     ): WeatherData
 
 }
