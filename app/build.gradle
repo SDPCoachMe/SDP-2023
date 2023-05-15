@@ -151,6 +151,10 @@ dependencies {
     implementation("androidx.work:work-runtime:2.8.1")
 
     //implementation("koin-androidx-workmanager:3.4.0")
+
+    // Retrofit for Weather http request
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
 }
 
 tasks.withType(Test) {
