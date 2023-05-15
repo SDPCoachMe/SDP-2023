@@ -23,8 +23,6 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.SphericalUtil
 import kotlinx.coroutines.flow.first
 
-// todo finir de faire la documentation
-
 /**
  * A caching database that wraps another database
  */
@@ -55,17 +53,17 @@ class CachingStore(private val wrappedDatabase: Database,
 
     private val gson = Gson()
 
-    private var retrieveData = CompletableFuture.completedFuture(null)
-//        if (isOnline()) {
-//            retrieveLocalData().thenAccept {
-//                Log.d("CachingStore", "Internet available")
-//                clearCache()
-//            }
-//        } else {
-//            retrieveLocalData().thenAccept {
-//                Log.d("CachingStore", "Internet not available")
-//            }
-//        }
+    var retrieveData =
+        if (isOnline()) {
+            retrieveLocalData().thenAccept {
+                Log.d("CachingStore", "Internet available")
+                clearCache()
+            }
+        } else {
+            retrieveLocalData().thenAccept {
+                Log.d("CachingStore", "Internet not available")
+            }
+        }
 
     init {
         wrappedDatabase.addUsersListeners { users ->
@@ -125,27 +123,41 @@ class CachingStore(private val wrappedDatabase: Database,
         cache.putAll(gson.fromJson(jsonString, type))
     }
 
+    /**
+     * Stores the given cache in the Datatstore
+     * The cache is serialized to Json using the Gson library before being stored
+     * @param cache the cache to store
+     * @param key the key to store the cache under
+     * @param <T> the type of the cache
+     * @return a completable future that completes when the cache has been stored
+     */
+    private inline fun <reified T> storeCache(cache: MutableMap<String, T>, key: Preferences.Key<String>) {
+        val type = object : TypeToken<Map<String, T>>() {}.type
+        // Serialize the cache map to Json
+        val serializedCache = gson.toJson(cache, type)
+        // Write to datastore in a background coroutine
+        GlobalScope.launch {
+            dataStore.edit { preferences ->
+                preferences[key] = serializedCache
+            }
+        }
+    }
+
+    /**
+     * Stores the local data in the datastore
+     * @return a completable future that completes when the background write has been launched
+     */
     fun storeLocalData(): CompletableFuture<Void> {
         val writeDatastoreFuture = CompletableFuture<Void>()
         GlobalScope.launch {
             dataStore.edit { preferences ->
 
-                // Serialze the caching maps to Json
-                val type = object : TypeToken<Map<String, UserInfo>>() {}.type
-                val serializedUsers = gson.toJson(cachedUsers, type)
-                val serializedContacts = gson.toJson(contacts)
-                val serializedChats = gson.toJson(chats)
-                val serializedSchedules = gson.toJson(cachedSchedules)
-
-                // Write to datastore
-                preferences[USER_EMAIL_KEY] = currentEmail ?: ""
-                preferences[CACHED_USERS_KEY] = serializedUsers
-                preferences[CONTACTS_KEY] = serializedContacts
-                preferences[CHATS_KEY] = serializedChats
-                preferences[CACHED_SCHEDULES_KEY] = serializedSchedules
+                storeCache(cachedUsers, CACHED_USERS_KEY)
+                storeCache(contacts, CONTACTS_KEY)
+                storeCache(chats, CHATS_KEY)
+                storeCache(cachedSchedules, CACHED_SCHEDULES_KEY)
 
                 writeDatastoreFuture.complete(null)
-                println("Data was stored")
             }
         }
         return writeDatastoreFuture
@@ -301,7 +313,12 @@ class CachingStore(private val wrappedDatabase: Database,
         if (contacts.containsKey(email)) {
             return CompletableFuture.completedFuture(contacts[email])
         }
-        return wrappedDatabase.getChatContacts(email).thenApply { it.also { contacts[email] = it } }
+        return wrappedDatabase.getChatContacts(email).thenApply {
+            it.also {
+                contacts[email] = it
+                storeLocalData()
+            }
+        }
     }
 
     /**
@@ -313,7 +330,12 @@ class CachingStore(private val wrappedDatabase: Database,
         if (chats.containsKey(chatId)) {
             return CompletableFuture.completedFuture(chats[chatId]!!)
         }
-        return wrappedDatabase.getChat(chatId).thenApply { it.also { chats[chatId] = it } }
+        return wrappedDatabase.getChat(chatId).thenApply {
+            it.also {
+                chats[chatId] = it
+                storeLocalData()
+            }
+        }
     }
 
     /**
@@ -326,6 +348,7 @@ class CachingStore(private val wrappedDatabase: Database,
         // if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat from the db)
         if (chats.containsKey(chatId)) {
             chats[chatId] = chats[chatId]!!.copy(messages = chats[chatId]!!.messages + message)
+            storeLocalData()
         }
         return wrappedDatabase.sendMessage(chatId, message) // we only the chat with the new message if the chat is already cached
     }
@@ -355,6 +378,7 @@ class CachingStore(private val wrappedDatabase: Database,
     fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
         val cachingOnChange = { chat: Chat ->
             chats[chatId] = chat
+            storeLocalData()
             onChange(chat)
         }
         wrappedDatabase.addChatListener(chatId, cachingOnChange)
@@ -380,7 +404,10 @@ class CachingStore(private val wrappedDatabase: Database,
             return CompletableFuture.completedFuture(cachedTokens[email])
         }
         return wrappedDatabase.getFCMToken(email).thenApply {
-            it.also { cachedTokens[email] = it }
+            it.also {
+                cachedTokens[email] = it
+                storeLocalData()
+            }
         }
     }
 
@@ -392,6 +419,7 @@ class CachingStore(private val wrappedDatabase: Database,
      */
     fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
         cachedTokens[email] = token
+        storeLocalData()
         return wrappedDatabase.setFCMToken(email, token)
     }
 

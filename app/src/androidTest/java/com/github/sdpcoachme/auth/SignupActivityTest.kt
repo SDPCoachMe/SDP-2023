@@ -63,6 +63,7 @@ open class SignupActivityTest {
 
     @Before
     fun setup() {
+        database.retrieveData.get(1, SECONDS)
         Intents.init()
     }
 

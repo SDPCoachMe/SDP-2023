@@ -10,6 +10,7 @@ import androidx.test.espresso.intent.matcher.IntentMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
@@ -59,6 +60,8 @@ class ProfileActivityTest {
 
     @Before
     fun setup() {
+        (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
+        getStore().retrieveData.get(1, TimeUnit.SECONDS)
         for (user in COACHES + NON_COACHES) {
             getStore().updateUser(user).join()
         }

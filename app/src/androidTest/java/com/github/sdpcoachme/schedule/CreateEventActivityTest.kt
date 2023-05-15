@@ -48,6 +48,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class CreateEventActivityTest {
@@ -68,7 +69,9 @@ class CreateEventActivityTest {
 
     @Before
     fun setup() {
+        (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
         store = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).store
+        store.retrieveData.get(1, TimeUnit.SECONDS)
         store.setCurrentEmail(defaultEmail)
         Intents.init()
     }

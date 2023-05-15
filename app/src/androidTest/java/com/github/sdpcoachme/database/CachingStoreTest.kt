@@ -58,6 +58,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
+        cachingStore.retrieveData.get(1, SECONDS)
     }
 
     @After
@@ -99,7 +100,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-
+        cachingStore.retrieveData.get(1, SECONDS)
         assertFalse(cachingStore.isCached(willSmithUser.email))
         assertTrue(cachingStore.userExists(willSmithUser.email).get(1, SECONDS))
         assertTrue(wrappedDatabase.existsCalled)
@@ -112,6 +113,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
+        cachingStore.retrieveData.get(1, SECONDS)
         val updatedUser = cachingStore.getUser(exampleEmail)
             .thenCompose {
                 cachingStore.updateUser(defaultUser) }
@@ -128,6 +130,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
+        cachingStore.retrieveData.get(1, SECONDS)
         val users = listOf(defaultUser, willSmithUser, rogerFedererUser)
         val setUsers = users.map { cachingStore.updateUser(it) }
         val allUsersInDatabase = CompletableFuture.allOf(*setUsers.toTypedArray())
@@ -160,6 +163,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
+        cachingStore.retrieveData.get(1, SECONDS)
         cachingStore.setCurrentEmail(exampleEmail).get(1000, MILLISECONDS)
         cachingStore.getCurrentEmail().get(1000, MILLISECONDS)
         cachingStore.addEvent(eventList[0], currentMonday)
@@ -172,14 +176,6 @@ class CachingStoreTest {
 
         assertThat(wrappedDatabase.timesCalled, `is`(6))
     }
-
-//    class ScheduleDB: MockDatabase() {
-//        var timesCalled = 0
-//        override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-//            timesCalled++
-//            return CompletableFuture.completedFuture(Schedule(eventList))
-//        }
-//    }
 
     class ScheduleDB(schedule: Schedule): MockDatabase() {
         var timesCalled = 0
@@ -199,6 +195,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
+        cachingStore.retrieveData.get(1, SECONDS)
         cachingStore.setCurrentEmail(exampleEmail)
         val isCorrect = cachingStore.getSchedule(currentMonday) // this call should cache the schedule
             .thenCompose {
@@ -224,6 +221,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
+        cachingStore.retrieveData.get(1, SECONDS)
         cachingStore.setCurrentEmail(exampleEmail)
         val isCorrect = cachingStore.getSchedule(currentMonday)
             .thenCompose {
@@ -256,6 +254,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
+        cachingStore.retrieveData.get(1, SECONDS)
         val isCorrect = cachingStore.getChatContacts(exampleEmail)
             .thenCompose {
                 assertThat(wrappedDatabase.timesCalled, `is`(1))
@@ -289,6 +288,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
+        cachingStore.retrieveData.get(1, SECONDS)
         val isCorrect = cachingStore.getChat(defaultChat.id)
             .thenCompose {
                 assertThat(timesCalled, `is`(1))
@@ -335,7 +335,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-
+        cachingStore.retrieveData.get(1, SECONDS)
         val isCorrect = cachingStore.getChat(defaultChat.id) // to place chat into the cache
             .thenCompose { chat ->
                 assertThat(wrappedDatabase.timesCalled(), `is`(1))
@@ -372,7 +372,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-
+        cachingStore.retrieveData.get(1, SECONDS)
         val isCorrect = cachingStore.sendMessage(defaultChat.id, newMessage)
             .thenCompose {
                 cachingStore.getChat(defaultChat.id)
@@ -415,7 +415,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-
+        cachingStore.retrieveData.get(1, SECONDS)
         val isCorrect = cachingStore.getChat(defaultChat.id) // to place chat into cache
             .thenCompose {
                 assertThat(wrappedDatabase.timesCalled(), `is`(1))
@@ -444,7 +444,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-
+        cachingStore.retrieveData.get(1, SECONDS)
         val isCorrect = cachingStore.markMessagesAsRead(defaultChat.id, defaultUser.email)
             .thenCompose {
                 cachingStore.getChat(defaultChat.id)
@@ -485,6 +485,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
+        cachingStore.retrieveData.get(1, SECONDS)
         cachingStore.addChatListener("chatId") { onChange(it) }
 
         assertThat(receivedChatId, `is`("chatId"))
@@ -514,6 +515,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
+        cachingStore.retrieveData.get(1, SECONDS)
         cachingStore.removeChatListener("chatId")
 
         assertThat(receivedChatId, `is`("chatId"))
@@ -545,7 +547,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-
+        cachingStore.retrieveData.get(1, SECONDS)
         val noError = cachingDatabase.getFCMToken(testEmail)
             .thenCompose {
                 assertThat(it, `is`(token))
@@ -573,7 +575,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-
+        cachingStore.retrieveData.get(1, SECONDS)
         val noError = cachingStore.setFCMToken(testEmail, token)
             .thenCompose {
                 assertThat(wrappedDatabase.timesCalled(), `is`(0))
@@ -599,7 +601,7 @@ class CachingStoreTest {
         val cachingDatabase = CachingStore(wrappedDatabase,
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext())
-
+        cachingStore.retrieveData.get(1, SECONDS)
         val noError = cachingDatabase.getFCMToken(testEmail)
             .thenCompose {
                 assertThat(wrappedDatabase.timesCalled(), `is`(1))
@@ -625,7 +627,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-
+        cachingStore.retrieveData.get(1, SECONDS)
         val noError = cachingStore.setFCMToken(testEmail, token)
             .thenCompose {
                 assertThat(wrappedDatabase.timesCalled(), `is`(0))

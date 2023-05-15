@@ -113,6 +113,7 @@ open class LoginActivityTest {
         @Before // done to enable testing without android ui
         fun setup() {
             store = (ApplicationProvider.getApplicationContext() as CoachMeApplication).store
+            store.retrieveData.get(1, TimeUnit.SECONDS)
             Intents.init()
         }
 

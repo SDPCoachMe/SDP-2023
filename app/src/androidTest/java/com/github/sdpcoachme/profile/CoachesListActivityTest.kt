@@ -31,6 +31,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 @RunWith(AndroidJUnit4::class)
@@ -53,6 +54,7 @@ open class CoachesListActivityTest {
         // Refresh the CachingStore before each test
         ApplicationProvider.getApplicationContext<CoachMeTestApplication>().clearDataStoreAndResetCachingStore()
         store = (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).store
+        store.retrieveData.get(1, SECONDS)
         store.setCurrentEmail(defaultEmail).get(100, MILLISECONDS)
 
         // Given nondeterministic behavior depending on order of tests, we reset the database here
