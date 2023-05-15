@@ -90,6 +90,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
+        cachingStore.retrieveData.get(1, SECONDS)
         cachingStore.updateUser(willSmithUser).get(1, SECONDS)
         assertTrue(cachingStore.isCached(willSmithUser.email))
         assertTrue(cachingStore.userExists(willSmithUser.email).get(1, SECONDS))
@@ -144,6 +145,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext()
         )
         cachingStore.retrieveData.get(1, SECONDS)
+        println("IsOnline: ${cachingStore.isOnline()}")
         val users = listOf(defaultUser, willSmithUser, rogerFedererUser)
         val setUsers = users.map { cachingStore.updateUser(it) }
         val allUsersInDatabase = CompletableFuture.allOf(*setUsers.toTypedArray())

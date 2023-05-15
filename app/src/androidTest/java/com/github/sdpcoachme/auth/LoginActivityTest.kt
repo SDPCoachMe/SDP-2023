@@ -39,7 +39,7 @@ open class LoginActivityTest {
 
     @Before // done to enable testing without android ui
     fun setup() {
-        store = (ApplicationProvider.getApplicationContext() as CoachMeApplication).store
+        store = (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).store
         store.retrieveData.get(1, TimeUnit.SECONDS)
         Intents.init()
     }
@@ -173,9 +173,9 @@ open class LoginActivityTest {
     fun whenNonExistingUserLoggedInRedirectToSignupActivity() {
         // Make sure the database is empty before starting the test
         (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
-
-        (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).store
-            .setCurrentEmail(nonExistingUser.email).get(1000, TimeUnit.MILLISECONDS)
+        val store = (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).store
+        store.retrieveData.get(1, TimeUnit.SECONDS)
+        store.setCurrentEmail(nonExistingUser.email).get(1000, TimeUnit.MILLISECONDS)
         val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
 
         ActivityScenario.launch<LoginActivity>(intent).use {

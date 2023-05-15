@@ -190,14 +190,14 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return a completable future that completes when all users have been retrieved
      */
     fun getAllUsers(): CompletableFuture<List<UserInfo>> {
-        if (isOnline()) {
-            return wrappedDatabase.getAllUsers().thenCompose { user ->
+        return if (isOnline()) {
+            wrappedDatabase.getAllUsers().thenCompose { user ->
                 cachedUsers.clear()
                 cachedUsers.putAll(user.associateBy { it.email })
                 storeLocalData().thenApply { user }
             }
         } else {
-            return CompletableFuture.completedFuture(cachedUsers.values.toList())
+            CompletableFuture.completedFuture(cachedUsers.values.toList())
         }
     }
 
