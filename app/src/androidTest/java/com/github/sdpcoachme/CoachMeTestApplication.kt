@@ -2,21 +2,27 @@ package com.github.sdpcoachme
 
 import android.content.Context
 import androidx.activity.result.ActivityResultCaller
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.preferencesDataStore
 import com.github.sdpcoachme.auth.Authenticator
 import com.github.sdpcoachme.auth.MockAuthenticator
-import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
 import com.github.sdpcoachme.location.autocomplete.MockAddressAutocompleteHandler
-import com.github.sdpcoachme.location.provider.LocationProvider
 import com.github.sdpcoachme.location.provider.MockLocationProvider
+import kotlinx.coroutines.runBlocking
 
 class CoachMeTestApplication : CoachMeApplication() {
     // For DI in testing, add reference to mocks here
     // todo for emulator testing
     //override var database: Database = FireDatabase(Firebase.database.reference)
-    override var database: Database = MockDatabase()
-    override var locationProvider: LocationProvider = MockLocationProvider()
+
+    private val TEST_PREFERENCES_NAME = "coachme_test_preferences"
+
+    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = TEST_PREFERENCES_NAME)
 
     override fun onCreate() {
         super.onCreate()
@@ -32,12 +38,21 @@ class CoachMeTestApplication : CoachMeApplication() {
             // Ignore
         }
          */
-        database = MockDatabase()
+        store = CachingStore(MockDatabase(), dataStore, this)
         locationProvider = MockLocationProvider()
-
         // Might be necessary to initialize Places SDK, but for now, we don't need it.
     }
     override val authenticator: Authenticator = MockAuthenticator()
+
+    /**
+     * Clear the data store and reset the caching store.
+     */
+    fun clearDataStoreAndResetCachingStore() {
+        runBlocking {
+            dataStore.edit { it.clear() }
+        }
+        store = CachingStore(MockDatabase(), dataStore, this)
+    }
 
     override fun addressAutocompleteHandler(
         context: Context,

@@ -11,15 +11,14 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
-import com.github.sdpcoachme.database.MockDatabase
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.CoachesListActivity.TestTags.Buttons.Companion.FILTER
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
@@ -32,16 +31,18 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 @RunWith(AndroidJUnit4::class)
 open class CoachesListActivityTest {
 
+    private val defaultEmail = "example@email.com"
+
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
-    private val database = (InstrumentationRegistry.getInstrumentation()
-        .targetContext.applicationContext as CoachMeApplication).database as MockDatabase
+    private lateinit var store: CachingStore
 
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
 
@@ -50,10 +51,16 @@ open class CoachesListActivityTest {
     // With this, tests will wait until activity has finished loading state
     @Before
     open fun setup() {
+        // Refresh the CachingStore before each test
+        ApplicationProvider.getApplicationContext<CoachMeTestApplication>().clearDataStoreAndResetCachingStore()
+        store = (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).store
+        store.retrieveData.get(1, SECONDS)
+        store.setCurrentEmail(defaultEmail).get(100, MILLISECONDS)
+
         // Given nondeterministic behavior depending on order of tests, we reset the database here
         // TODO: this is temporary, we should find a better way to guarantee the database is refreshed
         //  before each test
-        database.restoreDefaultAccountsSetup()
+        //database.restoreDefaultAccountsSetup()
 
         // Populate the database, and wait for it to finish
         populateDatabase().join()
@@ -143,17 +150,6 @@ open class CoachesListActivityTest {
     }
 
     @Test
-    fun errorPageIsShownWhenCoachesListIsLaunchedWithEmptyCurrentEmail() {
-        database.setCurrentEmail("")
-        ActivityScenario.launch<CoachesListActivity>(defaultIntent).use {
-            // not possible to use Intents.init()... to check if the correct intent
-            // is launched as the intents are launched from within the onCreate function
-            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
-        }
-    }
-
-    @Test
     fun filteringButtonIsShownInNearbyCoaches() {
         composeTestRule.onNodeWithTag(FILTER).assertExists().assertIsDisplayed()
     }
@@ -234,12 +230,12 @@ open class CoachesListActivityTest {
 
     fun populateDatabase(): CompletableFuture<Void> {
 
-        database.setCurrentEmail("example@email.com")
+        store.setCurrentEmail("example@email.com")
         // Add a few coaches to the database
-        val futures1 = COACHES.map { database.updateUser(it) }
+        val futures1 = COACHES.map { store.updateUser(it) }
 
         // Add non-coach user to the database
-        val futures2 = NON_COACHES.map { database.updateUser(it) }
+        val futures2 = NON_COACHES.map { store.updateUser(it) }
 
         return CompletableFuture.allOf(*futures1.toTypedArray(), *futures2.toTypedArray())
     }

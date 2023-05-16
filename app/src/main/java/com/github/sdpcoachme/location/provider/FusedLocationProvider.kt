@@ -16,7 +16,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.location.MapActivity
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
@@ -36,35 +35,28 @@ class FusedLocationProvider : LocationProvider {
         const val DELAY = 5000L
     }
 
-    private lateinit var user: CompletableFuture<UserInfo>
-    private lateinit var appContext: ComponentActivity
-    private lateinit var lastUserLocation: MutableState<LatLng?>
-    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+    private var user: CompletableFuture<UserInfo> = CompletableFuture.completedFuture(null)
+    private var appContext: ComponentActivity = ComponentActivity()
+    private var lastUserLocation: MutableState<LatLng?> = mutableStateOf(null)
+    private var fusedLocationProviderClient: FusedLocationProviderClient? = null
 
     /**
      * Create an activity for result to display window to request location permission.
      * The contract is a predefined "function" which takes a permission as input and
-     * outputs if the user has granted it or not. See init(...).
+     * outputs if the user has granted it or not. See update(...).
      */
-    private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
+    private var requestPermissionLauncher: ActivityResultLauncher<String>? = null
 
     /**
      * Create an activity for result to display a window to request location setting.
      * The contract is a predefined "function" which takes an IntentSenderRequest as input and
-     * outputs if the user has enabled the setting or not. See init(...).
+     * outputs if the user has enabled the setting or not. See update(...).
      */
-    private lateinit var requestSettingLauncher:  ActivityResultLauncher<IntentSenderRequest>
+    private var requestSettingLauncher:  ActivityResultLauncher<IntentSenderRequest>? = null
 
-    override fun init(context: ComponentActivity, userInfo: CompletableFuture<UserInfo>) {
+    override fun updateContext(context: ComponentActivity, userInfo: CompletableFuture<UserInfo>) {
         appContext = context
         user = userInfo
-        // Only the MapActivity initializes the location as it is guaranteed to be set in its
-        // context. For other activities, we launch init on the LocationProvider of the app while
-        // maintaining the lastUserLocation state.
-        // This allows single activity launch tests, ie without launching the MapActivity first.
-        if (context is MapActivity) {
-            lastUserLocation = mutableStateOf(null)
-        }
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(appContext)
 
         requestPermissionLauncher = appContext.registerForActivityResult(
@@ -91,7 +83,9 @@ class FusedLocationProvider : LocationProvider {
     }
 
     override fun requestPermission() {
-        requestPermissionLauncher.launch(ACCESS_FINE_LOCATION)
+        // update should have been called before calling this function
+        assert(requestPermissionLauncher != null)
+        requestPermissionLauncher?.launch(ACCESS_FINE_LOCATION)
     }
 
     /**
@@ -114,12 +108,14 @@ class FusedLocationProvider : LocationProvider {
      */
     @SuppressLint("MissingPermission") //permission is checked before the call
     private fun getDeviceLocation(delay: Long) {
+        // The fusedLocationProviderClient should be correctly instantiated before calling this function.
+        assert(fusedLocationProviderClient != null)
         // getDeviceLocation should not be called more than DELAY time
         if (delay >= DELAY) {
             error("getDeviceLocation has reached its max recursive delay")
         }
         try {
-            fusedLocationProviderClient.lastLocation.addOnCompleteListener {
+            fusedLocationProviderClient?.lastLocation?.addOnCompleteListener {
                 if (it.isSuccessful) {
                     if (it.result != null) {
                         lastUserLocation.value = LatLng(it.result.latitude, it.result.longitude)
@@ -142,6 +138,8 @@ class FusedLocationProvider : LocationProvider {
      * Else, requests the user to enable the location service of the device.
      */
     override fun checkLocationSetting() {
+        // update should have been called before calling this function
+        assert(requestSettingLauncher != null)
         // A location request is needed to check the location settings although we don't need
         // this request to perform a one-time location retrieval.
         // Interval is set to 0 but it doesn't matter since we don't really use this request.
@@ -158,7 +156,7 @@ class FusedLocationProvider : LocationProvider {
             if (exception is ResolvableApiException) {
                 // Location settings are not satisfied, but this can be fixed
                 val intentSender = exception.resolution.intentSender
-                requestSettingLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+                requestSettingLauncher?.launch(IntentSenderRequest.Builder(intentSender).build())
             } else {
                 // else, there is no way to fix the location settings
                 setLocationToAddress()

@@ -51,7 +51,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
-import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.maxkeppeker.sheets.core.models.base.Header
@@ -71,6 +71,7 @@ import com.maxkeppeler.sheets.color.models.ColorSelectionMode
 import com.maxkeppeler.sheets.color.models.MultipleColors
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.TimeUnit
 
 class CreateEventActivity : ComponentActivity() {
     class TestTags {
@@ -121,7 +122,7 @@ class CreateEventActivity : ComponentActivity() {
 
         class TextFields {
             companion object {
-                fun textField(tag: String): String {
+                private fun textField(tag: String): String {
                     return "${tag}TextField"
                 }
 
@@ -147,12 +148,12 @@ class CreateEventActivity : ComponentActivity() {
         }
     }
 
-    private lateinit var database: Database
+    private lateinit var store: CachingStore
     private lateinit var email: String
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        database = (application as CoachMeApplication).database
-        email = database.getCurrentEmail()
+        store = (application as CoachMeApplication).store
+        email = store.getCurrentEmail().get(1000, TimeUnit.MILLISECONDS)
         if (email.isEmpty()) {
             val errorMsg = "New event did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
@@ -160,7 +161,7 @@ class CreateEventActivity : ComponentActivity() {
             setContent {
                 CoachMeTheme {
                     Surface(color = MaterialTheme.colors.background) {
-                        NewEvent(database)
+                        NewEvent(store)
                     }
                 }
             }
@@ -170,7 +171,7 @@ class CreateEventActivity : ComponentActivity() {
 
 
 @Composable
-fun NewEvent(database: Database) {
+fun NewEvent(store: CachingStore) {
     val startDateSheet = rememberSheetState()
     val startTimeSheet = rememberSheetState()
     val endDateSheet = rememberSheetState()
@@ -222,7 +223,7 @@ fun NewEvent(database: Database) {
                                 val toast = Toast.makeText(context, "Start date must be before end date", Toast.LENGTH_SHORT)
                                 toast.show()
                             } else {
-                                EventOps.addEvent(event, database).thenAccept {
+                                EventOps.addEvent(event, store).thenAccept {
                                     goBackToScheduleActivity()
                                 }
                             }
@@ -239,7 +240,7 @@ fun NewEvent(database: Database) {
                     }
                 })
         }
-    ) {padding ->
+    ) { padding ->
         Column (
             modifier = Modifier
                 .padding(start = 10.dp, end = 10.dp)

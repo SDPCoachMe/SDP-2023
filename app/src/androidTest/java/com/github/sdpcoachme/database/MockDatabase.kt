@@ -28,7 +28,6 @@ open class MockDatabase: Database {
         emptyList(),
         emptyList()
     )
-    private var currEmail = ""
 
     private val toEmail = "to@email.com"
     val toUser = UserInfo(
@@ -96,31 +95,33 @@ open class MockDatabase: Database {
     }
 
     override fun userExists(email: String): CompletableFuture<Boolean> {
-        return getMap(accounts, email).thenApply { it != null }
+        return getMap(accounts, email)
+            .thenApply { it != null }
+            .exceptionally { false }
     }
 
-    override fun addEvent(event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        if (currEmail == "throw@Exception.com") {
+    override fun addEvent(email: String, event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        if (email == "throw@Exception.com") {
             val error = CompletableFuture<Schedule>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
         }
-        return getSchedule(currentWeekMonday).thenCompose { schedule ->
+        return getSchedule(email, currentWeekMonday).thenCompose { schedule ->
             val newSchedule = schedule.copy(events = schedule.events + event)
-            schedules[currEmail] = newSchedule
+            schedules[email] = newSchedule
             val future = CompletableFuture<Schedule>()
             future.complete(null)
             future
         }
     }
 
-    override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        if (currEmail == "throwGetSchedule@Exception.com") {
+    override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        if (email == "throwGetSchedule@Exception.com") {
             val error = CompletableFuture<Schedule>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
         }
-        return schedules[currEmail]?.let { CompletableFuture.completedFuture(it) }
+        return schedules[email]?.let { CompletableFuture.completedFuture(it) }
             ?: CompletableFuture.completedFuture(Schedule(emptyList()))
     }
 
@@ -162,6 +163,10 @@ open class MockDatabase: Database {
         numberOfRemovedChatListenerCalls++
     }
 
+    override fun addUsersListeners(onChange: (List<UserInfo>) -> Unit) {
+        // Not necessary
+    }
+
     fun numberOfRemovedChatListenerCalls(): Int {
         return numberOfRemovedChatListenerCalls
     }
@@ -197,13 +202,5 @@ open class MockDatabase: Database {
         } else
             future.complete(value)
         return future
-    }
-
-    override fun getCurrentEmail(): String {
-        return currEmail
-    }
-
-    override fun setCurrentEmail(email: String) {
-        currEmail = email
     }
 }

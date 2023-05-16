@@ -4,11 +4,10 @@ import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.util.Log
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.database.Database
-import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import java.util.concurrent.CompletableFuture
 
 /**
  * This service handles all incoming push notifications when the app is in the foreground.
@@ -40,7 +39,7 @@ class InAppNotificationService : FirebaseMessagingService() {
 
             // Since it does not seem to be possible to create RemoteMessages containing a notification,
             // the in-app push notification part has been moved to the InAppNotifier class to enable testing.
-            InAppNotifier(this, (application as CoachMeApplication).database)
+            InAppNotifier(this, (application as CoachMeApplication).store)
                 .sendNotification(
                     title = notificationTitle!!.title,
                     body = notificationBody!!.body,
@@ -55,17 +54,19 @@ class InAppNotificationService : FirebaseMessagingService() {
         /**
          * Adds the FCM token of the current user to the database.
          */
-        fun addFCMTokenToDatabase(database: Database) {
-            FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
+        fun getFCMToken(): CompletableFuture<String> {
+            val future = CompletableFuture<String>()
+            FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
                 if (!task.isSuccessful) {
                     Log.w(ContentValues.TAG, "Fetching FCM registration token failed", task.exception)
-                    return@OnCompleteListener
+                    future.completeExceptionally(task.exception)
+                } else {
+                    // Get new FCM registration token
+                    val token = task.result
+                    future.complete(token)
                 }
-
-                // Get new FCM registration token
-                val token = task.result
-                database.setFCMToken(database.getCurrentEmail(), token)
-            })
+            }
+            return future
         }
     }
 }

@@ -30,7 +30,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.CAMPUS
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.CoachesListActivity.TestTags.Buttons.Companion.FILTER
@@ -52,6 +52,11 @@ class CoachesListActivity : ComponentActivity() {
     }
 
     // Allows to notice testing framework that the activity is ready
+
+    private lateinit var store: CachingStore
+    private lateinit var emailFuture: CompletableFuture<String>
+
+
     var stateLoading = CompletableFuture<Void>()
 
     // Observable state of the current sports used to filter the coaches list
@@ -61,12 +66,13 @@ class CoachesListActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
-        val database = (application as CoachMeApplication).database
-        val email = database.getCurrentEmail()
+        store = (application as CoachMeApplication).store
+
+        emailFuture = store.getCurrentEmail()
 
         val locationProvider = (application as CoachMeApplication).locationProvider
         // Here we don't need the UserInfo
-        locationProvider.init(this, CompletableFuture.completedFuture(null))
+        locationProvider.updateContext(this, CompletableFuture.completedFuture(null))
         // the lastLocation return a null containing state if no location retrieval has been
         // performed yet. In production, this should for now never be the case as this code is
         // necessarily run after MapActivity. We keep it for robustness against tests.
@@ -74,47 +80,39 @@ class CoachesListActivity : ComponentActivity() {
 
         selectSportsHandler = SelectSportsActivity.getHandler(this)
 
-        if (email.isEmpty()) {
-            val errorMsg = "The coach list did not receive an email address.\nPlease return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
-        } else {
-            val futureListOfCoaches =
-                if (isViewingContacts) {
-                    database.getChatContacts(email = email)
-                } else {
-                    database
-                        .getAllUsersByNearest(
-                            latitude = userLatLng.latitude,
-                            longitude = userLatLng.longitude
-                        ).thenApply {
-                            it.filter { user -> user.coach }
-                        }
+        val futureListOfCoaches = emailFuture.thenCompose { email ->
+            if (isViewingContacts) {
+                store.getChatContacts(email = email)
+            } else {
+                store.getAllUsersByNearest(
+                    latitude = userLatLng.latitude,
+                    longitude = userLatLng.longitude
+                ).thenApply {
+                    it.filter { user -> user.coach }
                 }
+            }
+        }
+        setContent {
+            var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
 
-            setContent {
-                var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
+            // Proper way to handle result of a future in a Composable.
+            // This makes sure the listOfCoaches state is updated only ONCE, when the future is complete
+            // This is because the code in LaunchedEffect(true) will only be executed once, when the
+            // Composable is first created (given that the parameter key1 never changes). The code won't
+            // be executed on every recomposition.
+            // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
+            LaunchedEffect(true) {
+                listOfCoaches = futureListOfCoaches.await()
 
+                // Activity is now ready for testing
+                stateLoading.complete(null)
+            }
 
-                // Proper way to handle result of a future in a Composable.
-                // This makes sure the listOfCoaches state is updated only ONCE, when the future is complete
-                // This is because the code in LaunchedEffect(true) will only be executed once, when the
-                // Composable is first created (given that the parameter key1 never changes). The code won't
-                // be executed on every recomposition.
-                // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
-                LaunchedEffect(true) {
-                    listOfCoaches = futureListOfCoaches.await()
-
-                    // Activity is now ready for testing
-                    stateLoading.complete(null)
-                }
-
-                val title = if (isViewingContacts) stringResource(R.string.contacts)
-                else stringResource(R.string.title_activity_coaches_list)
-
-                CoachMeTheme {
-                    Dashboard(title) {
-                        CoachesList(it, listOfCoaches, isViewingContacts)
-                    }
+            val title = if (isViewingContacts) stringResource(R.string.contacts)
+            else stringResource(R.string.title_activity_coaches_list)
+            CoachMeTheme {
+                Dashboard(title) {
+                    CoachesList(it, listOfCoaches, isViewingContacts)
                 }
             }
         }
@@ -250,4 +248,3 @@ class CoachesListActivity : ComponentActivity() {
         Divider()
     }
 }
-

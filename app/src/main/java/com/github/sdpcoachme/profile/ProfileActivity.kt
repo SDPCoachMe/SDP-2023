@@ -30,7 +30,7 @@ import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
 import com.github.sdpcoachme.messaging.ChatActivity
@@ -75,8 +75,8 @@ class ProfileActivity : ComponentActivity() {
     // To notify tests when the state has been updated in the UI
     lateinit var stateUpdated: CompletableFuture<Void>
 
-    private lateinit var database: Database
-    private lateinit var email: String
+    private lateinit var store: CachingStore
+    private lateinit var emailFuture: CompletableFuture<String>
     private lateinit var addressAutocompleteHandler: AddressAutocompleteHandler
     private lateinit var editTextHandler: (Intent) -> CompletableFuture<String>
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
@@ -84,43 +84,42 @@ class ProfileActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         stateUpdated = CompletableFuture()
-        database = (application as CoachMeApplication).database
+        store = (application as CoachMeApplication).store
         val isViewingCoach = intent.getBooleanExtra("isViewingCoach", false)
-        email =
-            if (isViewingCoach) intent.getStringExtra("email").toString()
-            else database.getCurrentEmail()
+        emailFuture = if (isViewingCoach) {
+            val email = intent.getStringExtra("email").toString()
+            // note : in the case where a coach is viewed but the email is not found
+            // the value of the email will be "null" (see toString method of String)
+            if (email.isEmpty() || email == "null") {
+                val errorMsg = "Profile did not receive a correct email when viewing a coach."
+                ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
+            }
+            CompletableFuture.completedFuture(email)
+        } else store.getCurrentEmail()
 
-        // note : in the case where a coach is viewed but the email is not found
-        // the value of the email will be "null" (see toString method of String)
-        if (email.isEmpty() || email == "null") {
-            val errorMsg = "Profile editing did not receive an email address." +
-                    "\n Please return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
-        } else {
-            val futureUserInfo = database.getUser(email)
+        val futureUserInfo = emailFuture.thenCompose { store.getUser(it) }
 
-            // Set up handler for calls to address autocomplete
-            addressAutocompleteHandler = (application as CoachMeApplication).addressAutocompleteHandler(this, this)
+        // Set up handler for calls to location autocomplete
+        addressAutocompleteHandler = (application as CoachMeApplication).addressAutocompleteHandler(this, this)
 
-            // Set up handler for calls to edit text activity
-            editTextHandler = EditTextActivity.getHandler(this)
+        // Set up handler for calls to edit text activity
+        editTextHandler = EditTextActivity.getHandler(this)
 
-            // Set up handler for calls to select sports activity
-            selectSportsHandler = SelectSportsActivity.getHandler(this)
+        // Set up handler for calls to select sports activity
+        selectSportsHandler = SelectSportsActivity.getHandler(this)
 
-            setContent {
-                val title =
-                    if (isViewingCoach) stringResource(R.string.coach_profile)
-                    else stringResource(R.string.my_profile)
+        setContent {
+            val title =
+                if (isViewingCoach) stringResource(R.string.coach_profile)
+                else stringResource(R.string.my_profile)
 
-                CoachMeTheme {
-                    Dashboard(title) {
-                        Surface(
-                            modifier = it.fillMaxSize(),
-                            color = MaterialTheme.colors.background
-                        ) {
-                            Profile(email, futureUserInfo, isViewingCoach)
-                        }
+            CoachMeTheme {
+                Dashboard(title) {
+                    Surface(
+                        modifier = it.fillMaxSize(),
+                        color = MaterialTheme.colors.background
+                    ) {
+                        Profile(futureUserInfo, isViewingCoach)
                     }
                 }
             }
@@ -131,10 +130,9 @@ class ProfileActivity : ComponentActivity() {
      * Composable used to display the user's profile.
      */
     @Composable
-    fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewingCoach: Boolean) {
+    fun Profile(futureUserInfo: CompletableFuture<UserInfo>, isViewingCoach: Boolean) {
 
         val context = LocalContext.current
-        val database = (LocalContext.current.applicationContext as CoachMeApplication).database
 
         var userInfo by remember { mutableStateOf(UserInfo()) }
 
@@ -152,7 +150,7 @@ class ProfileActivity : ComponentActivity() {
         fun saveUserInfo(futureNewUserInfo: CompletableFuture<UserInfo>): CompletableFuture<Void> {
             return futureNewUserInfo
                 .thenCompose { newUserInfo ->
-                    database.updateUser(newUserInfo)
+                    store.updateUser(newUserInfo)
                         .thenAccept {
                             userInfo = newUserInfo
                             stateUpdated.complete(null)
@@ -194,7 +192,7 @@ class ProfileActivity : ComponentActivity() {
             TextRow(
                 label = "EMAIL",
                 tag = EMAIL,
-                value = email,
+                value = userInfo.email,
                 onClick = {
                     if (!isViewingCoach) {
                         // Uneditable, for now, do nothing (might allow to copy to clipboard on click)
@@ -202,7 +200,7 @@ class ProfileActivity : ComponentActivity() {
                         // If the user is viewing a coach's profile, they can message the coach
                         val intent = Intent(Intent.ACTION_SENDTO)
                         intent.data = Uri.parse("mailto:")
-                        intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
+                        intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(userInfo.email))
                         try {
                             startActivity(intent)
                         } catch (e: ActivityNotFoundException) {
@@ -347,11 +345,12 @@ class ProfileActivity : ComponentActivity() {
                         // For the moment, nothing happens
                         // but in the future this could open the in app messenger with the coach
                         //TODO: get own email!!!
-                        val userEmail = database.getCurrentEmail()
-                        val intent = Intent(context, ChatActivity::class.java)
-                        intent.putExtra("currentUserEmail", userEmail)
-                        intent.putExtra("toUserEmail", email)
-                        context.startActivity(intent)
+                        emailFuture.thenApply {
+                            val intent = Intent(context, ChatActivity::class.java)
+                            intent.putExtra("currentUserEmail", it)
+                            intent.putExtra("toUserEmail", userInfo.email)
+                            context.startActivity(intent)
+                        }
                     }
                 ) {
                     Text(text = "MESSAGE COACH")
@@ -522,13 +521,15 @@ fun SwitchClientCoachRow(value: Boolean, onValueChange: (Boolean) -> Unit) {
         Text(
             text = "I would like others to see me as a coach",
             style = MaterialTheme.typography.body1,
-            modifier = Modifier.fillMaxWidth(fraction = 0.8f)
+            modifier = Modifier
+                .fillMaxWidth(fraction = 0.8f)
                 .padding(20.dp, 0.dp, 0.dp, 0.dp)
         )
         Switch(
             checked = value,
             onCheckedChange = onValueChange,
-            modifier = Modifier.testTag(COACH_SWITCH)
+            modifier = Modifier
+                .testTag(COACH_SWITCH)
                 .padding(0.dp, 0.dp, 20.dp, 0.dp)
         )
     }
