@@ -20,6 +20,7 @@ class EventOpsTest {
 
     @Before
     fun setUp() {
+        (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
         store = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeTestApplication).store
         store.setCurrentEmail(defaultEmail)
     }

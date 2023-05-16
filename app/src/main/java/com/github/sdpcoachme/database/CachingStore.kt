@@ -24,13 +24,17 @@ import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 // todo finir de faire la documentation
+import androidx.datastore.preferences.core.*
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.SphericalUtil
+import kotlinx.coroutines.flow.first
 
 /**
  * A caching database that wraps another database
  */
 class CachingStore(private val wrappedDatabase: Database,
                    private val dataStore: DataStore<Preferences>,
-                   context: Context) {
+                   private val context: Context) {
 
     val USER_EMAIL_KEY = stringPreferencesKey("user_email")
     val CACHED_USERS_KEY = stringPreferencesKey("cached_users")
@@ -44,6 +48,7 @@ class CachingStore(private val wrappedDatabase: Database,
     private val cachedUsers = mutableMapOf<String, UserInfo>()
     private val contacts = mutableMapOf<String, List<UserInfo>>()
     private val chats = mutableMapOf<String, Chat>()
+    private val cachedTokens = mutableMapOf<String, String>()
 
     private var cachedSchedule = Schedule()
     private var currentShownMonday = getStartMonday()
@@ -52,16 +57,13 @@ class CachingStore(private val wrappedDatabase: Database,
 
     private var currentEmail: String? = null
 
-    private var retrieveData =
-        if (isOnline(context)) {
-            retrieveLocalData().thenCompose {
-                Log.d("CachingStore", "Internet available")
-                retrieveRemoteData()
-            }
+    private val gson = Gson()
+
+    var retrieveData: CompletableFuture<Void> =
+        if (isOnline()) {
+            retrieveLocalData().thenAccept { clearCache() }
         } else {
-            retrieveLocalData().thenAccept {
-                Log.d("CachingStore", "Internet not available")
-            }
+            retrieveLocalData()
         }
 
     init {
@@ -89,7 +91,6 @@ class CachingStore(private val wrappedDatabase: Database,
         val localFuture = CompletableFuture<Void>()
         GlobalScope.launch {
 
-            /*
             val values = dataStore.data.first()
             currentEmail = values[USER_EMAIL_KEY]
 
@@ -105,8 +106,6 @@ class CachingStore(private val wrappedDatabase: Database,
             processRetrievedCache(serializedChats, chats)
             processRetrievedCache(serializedSchedules, cachedSchedules)
 
-             */
-
             localFuture.complete(null)
         }
         return localFuture
@@ -117,89 +116,114 @@ class CachingStore(private val wrappedDatabase: Database,
      * @param jsonString the Json string to process
      * @param cache the cache to put the processed Json into
      */
-    private fun <T> processRetrievedCache(jsonString: String?, cache: MutableMap<String, T>) {
+    private inline fun <reified T> processRetrievedCache(jsonString: String?, cache: MutableMap<String, T>) {
         if (jsonString.isNullOrEmpty()) {
             return
         }
-        val gson = Gson()
         val type = object : TypeToken<Map<String, T>>() {}.type
         cache.putAll(gson.fromJson(jsonString, type))
     }
 
     /**
-     * Retrieve remote data from the database
-     * @return a completable future that completes when the remote data has been retrieved
+     * Stores the given cache in the Datatstore
+     * The cache is serialized to Json using the Gson library before being stored
+     * @param cache the cache to store
+     * @param key the key to store the cache under
+     * @param <T> the type of the cache
+     * @return a completable future that completes when the cache has been stored
      */
-    private fun retrieveRemoteData(): CompletableFuture<Void> {
-        return CompletableFuture.allOf(
-            // todo if we could get by nearest here it would probably work to retrieve nearby coaches in offline mode
-            //getAllUsers()
-        )
+    private inline fun <reified T> storeCache(cache: MutableMap<String, T>, key: Preferences.Key<String>) {
+        val type = object : TypeToken<Map<String, T>>() {}.type
+        // Serialize the cache map to Json
+        val serializedCache = gson.toJson(cache, type)
+        // Write to datastore in a background coroutine
+        GlobalScope.launch {
+            dataStore.edit { preferences ->
+                preferences[key] = serializedCache
+            }
+        }
     }
 
+    /**
+     * Stores the local data in the datastore
+     * @return a completable future that completes when the background write has been launched
+     */
     fun storeLocalData(): CompletableFuture<Void> {
         val writeDatastoreFuture = CompletableFuture<Void>()
         GlobalScope.launch {
-            /*
             dataStore.edit { preferences ->
-                val gson = Gson()
 
-                // Serialze the caching maps to Json
-                val serializedUsers = gson.toJson(cachedUsers)
-                val serializedContacts = gson.toJson(contacts)
-                val serializedChats = gson.toJson(chats)
-                val serializedSchedules = gson.toJson(cachedSchedules)
-
-                // Write to datastore
-                preferences[USER_EMAIL_KEY] = currentEmail ?: ""
-                preferences[CACHED_USERS_KEY] = serializedUsers
-                preferences[CONTACTS_KEY] = serializedContacts
-                preferences[CHATS_KEY] = serializedChats
-                preferences[CACHED_SCHEDULES_KEY] = serializedSchedules
-
-             */
+                storeCache(cachedUsers, CACHED_USERS_KEY)
+                storeCache(contacts, CONTACTS_KEY)
+                storeCache(chats, CHATS_KEY)
+                storeCache(cachedSchedules, CACHED_SCHEDULES_KEY)
 
                 writeDatastoreFuture.complete(null)
-                println("Data was stored")
-            //}
+            }
         }
         return writeDatastoreFuture
     }
 
-
+    /**
+     * Updates the current user
+     * @param user the user to update
+     * @return a completable future that completes when the user has been updated
+     */
     fun updateUser(user: UserInfo): CompletableFuture<Void> {
-        return wrappedDatabase.updateUser(user).thenAccept {
+        return wrappedDatabase.updateUser(user).thenCompose {
             cachedUsers[user.email] = user
             storeLocalData()
         }
     }
 
+    /**
+     * Gets the current user
+     * @param email the email of the user to get
+     * @return a completable future that completes when the user has been retrieved
+     */
     fun getUser(email: String): CompletableFuture<UserInfo> {
         if (isCached(email)) {
             return CompletableFuture.completedFuture(cachedUsers[email])
         }
-        return wrappedDatabase.getUser(email).thenApply {
-            it.also { cachedUsers[email] = it
-            storeLocalData()
-            }
+        return wrappedDatabase.getUser(email).thenCompose {user ->
+            cachedUsers[email] = user
+            storeLocalData().thenApply { user }
         }
     }
 
+    /**
+     * Gets all users
+     * @return a completable future that completes when all users have been retrieved
+     */
     fun getAllUsers(): CompletableFuture<List<UserInfo>> {
-        return wrappedDatabase.getAllUsers().thenApply {
-            it.also {
+        return if (isOnline()) {
+            wrappedDatabase.getAllUsers().thenCompose { user ->
                 cachedUsers.clear()
-                cachedUsers.putAll(it.associateBy { it.email }) }
+                cachedUsers.putAll(user.associateBy { it.email })
+                storeLocalData().thenApply { user }
+            }
+        } else {
+            CompletableFuture.completedFuture(cachedUsers.values.toList())
         }
     }
 
     // todo refactor with userLocation inside CachingStore
+    /**
+     * Get all users from the database sorted by distance from a given location
+     * @param latitude Latitude of the location
+     * @param longitude Longitude of the location
+     * @return A future that will complete with a list of all users in the database sorted by distance
+     */
     fun getAllUsersByNearest(latitude: Double, longitude: Double): CompletableFuture<List<UserInfo>> {
-        return wrappedDatabase.getAllUsersByNearest(latitude, longitude).thenApply {
-            it.also {
-                cachedUsers.clear()
-                cachedUsers.putAll(it.associateBy { it.email })
-                storeLocalData()
+        return getAllUsers().thenApply { users ->
+            users.sortedBy { user ->
+                val userLatitude = user.address.latitude
+                val userLongitude = user.address.longitude
+                val distance = SphericalUtil.computeDistanceBetween(
+                    LatLng(latitude, longitude),
+                    LatLng(userLatitude, userLongitude)
+                )
+                distance
             }
         }
     }
@@ -257,6 +281,11 @@ class CachingStore(private val wrappedDatabase: Database,
     }
 
     // Note: checks if it is time to prefetch
+    /**
+     * Gets the schedule for the current user
+     * @param currentWeekMonday the monday of the current week
+     * @return a completable future that completes when the schedule has been retrieved
+     */
     fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         currentShownMonday = currentWeekMonday
 
@@ -318,28 +347,61 @@ class CachingStore(private val wrappedDatabase: Database,
         return wrappedDatabase.getGroupEvent(groupEventId)
     }
 
+    /**
+     * Get chat contacts for a user
+     * @param email the email of the user to get the chat contacts for
+     * @return a completable future that completes when the chat contacts have been retrieved
+     */
     fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
         if (contacts.containsKey(email)) {
             return CompletableFuture.completedFuture(contacts[email])
         }
-        return wrappedDatabase.getChatContacts(email).thenApply { it.also { contacts[email] = it } }
+        return wrappedDatabase.getChatContacts(email).thenApply {
+            it.also {
+                contacts[email] = it
+                storeLocalData()
+            }
+        }
     }
 
+    /**
+     * Get a chat
+     * @param chatId the id of the chat to get
+     * @return a completable future that completes when the chat has been retrieved
+     */
     fun getChat(chatId: String): CompletableFuture<Chat> {
         if (chats.containsKey(chatId)) {
             return CompletableFuture.completedFuture(chats[chatId]!!)
         }
-        return wrappedDatabase.getChat(chatId).thenApply { it.also { chats[chatId] = it } }
+        return wrappedDatabase.getChat(chatId).thenApply {
+            it.also {
+                chats[chatId] = it
+                storeLocalData()
+            }
+        }
     }
 
+    /**
+     * Send a message
+     * @param chatId the id of the chat to send the message to
+     * @param message the message to send
+     * @return a completable future that completes when the message has been sent
+     */
     fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
         // if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat from the db)
         if (chats.containsKey(chatId)) {
             chats[chatId] = chats[chatId]!!.copy(messages = chats[chatId]!!.messages + message)
+            storeLocalData()
         }
         return wrappedDatabase.sendMessage(chatId, message) // we only the chat with the new message if the chat is already cached
     }
 
+    /**
+     * Mark messages as read
+     * @param chatId the id of the chat to mark the messages as read
+     * @param email the email of the user to mark the messages as read
+     * @return a completable future that completes when the messages have been marked as read
+     */
     fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
         // Also here, if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat from the db)
         if (chats.containsKey(chatId)) {
@@ -351,26 +413,66 @@ class CachingStore(private val wrappedDatabase: Database,
         return wrappedDatabase.markMessagesAsRead(chatId, email)
     }
 
+    /**
+     * Add a chat listener
+     * @param chatId the id of the chat to add the listener to
+     * @param onChange the function to call when the chat changes
+     */
     fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
         val cachingOnChange = { chat: Chat ->
             chats[chatId] = chat
+            storeLocalData()
             onChange(chat)
         }
         wrappedDatabase.addChatListener(chatId, cachingOnChange)
     }
 
+    /**
+     * Remove a chat listener
+     * @param chatId the id of the chat to remove the listener from
+     */
     fun removeChatListener(chatId: String) {
         wrappedDatabase.removeChatListener(chatId)
     }
 
+
     // No cache here, method just used for testing to fetch from database
+    /**
+     * Get the FCM token for a user
+     * @param email The email of the user to get the FCM token for
+     * @return A completable future that completes when the FCM token has been retrieved
+     */
     fun getFCMToken(email: String): CompletableFuture<String> {
-        return wrappedDatabase.getFCMToken(email)
+        if (cachedTokens.containsKey(email)) {
+            return CompletableFuture.completedFuture(cachedTokens[email])
+        }
+        return wrappedDatabase.getFCMToken(email).thenApply {
+            it.also {
+                cachedTokens[email] = it
+                storeLocalData()
+            }
+        }
     }
 
+    /**
+     * Set the FCM token for a user
+     * @param email The email of the user to set the FCM token for
+     * @param token The FCM token to set
+     * @return A completable future that completes when the FCM token has been set
+     */
     fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
+        cachedTokens[email] = token
+        storeLocalData()
         return wrappedDatabase.setFCMToken(email, token)
     }
+
+    /**
+     * Get the current email
+     * Note: this method needs to return a future as the email is retrieved asynchronously from
+     * the local storage (datastore).
+     * @return A completable future that completes when the current email has been retrieved
+     * @throws IllegalStateException if the current email is null or empty
+     */
     fun getCurrentEmail(): CompletableFuture<String> {
         return retrieveData.thenApply {
             if (currentEmail.isNullOrEmpty()) {
@@ -380,6 +482,11 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
+    /**
+     * Set the current email
+     * @param email The email to set as current
+     * @return A completable future that completes when the email has been set
+     */
     fun setCurrentEmail(email: String): CompletableFuture<Void> {
         currentEmail = email
         return CompletableFuture.completedFuture(null)
@@ -410,17 +517,9 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Check if the device is connected to the internet
-     * @param context The context of the application
      * @return True if the device is connected to the internet, false otherwise
      */
-    private fun isInternetAvailable(context: Context): Boolean {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val networkCapabilities = connectivityManager.activeNetwork ?: return false
-        val actNw = connectivityManager.getNetworkCapabilities(networkCapabilities) ?: return false
-        return actNw.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-    }
-
-    fun isOnline(context: Context): Boolean {
+    fun isOnline(): Boolean {
         val connectivityManager =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         if (connectivityManager != null) {

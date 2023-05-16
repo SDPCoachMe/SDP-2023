@@ -48,7 +48,9 @@ class ScheduleActivityTest {
 
     @Before
     fun setup() {
+        (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
         store = (ApplicationProvider.getApplicationContext() as CoachMeApplication).store
+        store.retrieveData.get(1, SECONDS)
         store.setCurrentEmail(defaultEmail).get(1000, MILLISECONDS)
     }
 

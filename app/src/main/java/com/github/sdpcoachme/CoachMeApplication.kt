@@ -42,15 +42,6 @@ open class CoachMeApplication : Application() {
         Places.initialize(applicationContext, BuildConfig.MAPS_API_KEY)
     }
 
-    override fun onTerminate() {
-        super.onTerminate()
-        store.storeLocalData()
-    }
-
-    fun superOnTerminate() {
-        super.onTerminate()
-    }
-
     open val authenticator: Authenticator = GoogleAuthenticator()
 
     open fun addressAutocompleteHandler(

@@ -8,6 +8,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserAddressSamples.Companion.PARIS
@@ -23,6 +24,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 open class SelectSportsActivityTest {
@@ -36,7 +38,7 @@ open class SelectSportsActivityTest {
         phone = "0123456789",
         coach = false
     )
-    private val database = (InstrumentationRegistry.getInstrumentation()
+    private val store = (InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as CoachMeApplication).store
 
 
@@ -49,8 +51,10 @@ open class SelectSportsActivityTest {
 
     @Before
     fun setup() { // set user in db to default
-        database.updateUser(userInfo).join()
-        database.setCurrentEmail(email)
+        (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
+        store.retrieveData.get(1, TimeUnit.SECONDS)
+        store.updateUser(userInfo).join()
+        store.setCurrentEmail(email)
     }
 
     @Test

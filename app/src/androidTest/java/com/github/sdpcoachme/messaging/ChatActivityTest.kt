@@ -79,6 +79,7 @@ class ChatActivityTest {
     fun setup() {
         Intents.init()
         store = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).store
+        store.retrieveData.get(1, TimeUnit.SECONDS)
         store.setCurrentEmail(currentUser.email).get(1000, TimeUnit.MILLISECONDS)
         store.updateUser(toUser).get(1000, TimeUnit.MILLISECONDS)
         store.updateUser(currentUser).get(1000, TimeUnit.MILLISECONDS)

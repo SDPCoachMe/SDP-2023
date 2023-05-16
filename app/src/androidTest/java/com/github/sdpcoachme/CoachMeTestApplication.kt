@@ -44,10 +44,6 @@ class CoachMeTestApplication : CoachMeApplication() {
     }
     override val authenticator: Authenticator = MockAuthenticator()
 
-    override fun onTerminate() {
-        super.superOnTerminate()
-    }
-
     /**
      * Clear the data store and reset the caching store.
      */

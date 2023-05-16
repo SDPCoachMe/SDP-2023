@@ -8,6 +8,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.data.UserAddressSamples
@@ -45,7 +46,9 @@ class InAppNotificationServiceTest {
 
     @Before
     fun setup() {
+        (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
         store = (ApplicationProvider.getApplicationContext() as CoachMeApplication).store
+        store.retrieveData.get(1, TimeUnit.SECONDS)
     }
 
     @Test
