@@ -242,7 +242,12 @@ class CachingStore(private val wrappedDatabase: Database,
         return wrappedDatabase.userExists(email)
     }
 
-    // Note: to efficiently use caching, we do not use the wrappedDatabase's addEventsToUser method
+    /**
+     * Adds event to a user's schedule
+     * @param event the event to add
+     * @param currentWeekMonday the monday of the currently displayed week
+     * @return a completable future that completes when the events have been added, containing the cached schedule
+     */
     fun addEvent(event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         return getCurrentEmail().thenCompose { email ->
             wrappedDatabase.addEvent(email, event, currentWeekMonday).thenApply {
@@ -258,10 +263,20 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
+    /**
+     * Adds group event to the database
+     * @param groupEvent the group event to add
+     * @return a completable future that completes when the group event has been added
+     */
     fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
         return wrappedDatabase.addGroupEvent(groupEvent)
     }
 
+    /**
+     * Registers the current user for a group event
+     * @param groupEventId the id of the group event to register for
+     * @return a completable future that completes when the user has been registered for the group event
+     */
     fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
         return getCurrentEmail().thenCompose { email ->
             wrappedDatabase.registerForGroupEvent(email, groupEventId).thenCompose {
@@ -350,6 +365,9 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
+    /**
+     * Gets the group event with the given id
+     */
     fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
         return wrappedDatabase.getGroupEvent(groupEventId)
     }

@@ -202,9 +202,10 @@ class CachingStoreTest {
             .thenCompose { cachingStore.addEvent(eventList[3], currentMonday) }
             .thenCompose { cachingStore.addEvent(eventList[4], currentMonday) }
             .thenCompose { cachingStore.addEvent(eventList[5], currentMonday) }
+            .thenCompose { cachingStore.addEvent(eventList[6], currentMonday) }
             .get(5, SECONDS)
 
-        assertThat(wrappedDatabase.timesCalled, `is`(6))
+        assertThat(wrappedDatabase.timesCalled, `is`(7))
     }
 
     @Test
@@ -229,8 +230,9 @@ class CachingStoreTest {
             .thenCompose { cachingStore.addGroupEvent(groupEvents[3]) }
             .thenCompose { cachingStore.addGroupEvent(groupEvents[4]) }
             .thenCompose { cachingStore.addGroupEvent(groupEvents[5]) }
+            .thenCompose { cachingStore.addGroupEvent(groupEvents[6]) }
             .thenApply {
-                assertThat(timesCalled, `is`(6))
+                assertThat(timesCalled, `is`(7))
                 true
             }.exceptionally {
                 false
@@ -282,13 +284,20 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
+        cachingStore.retrieveData.get(1, SECONDS)
         cachingStore.setCurrentEmail(exampleEmail)
 
         val isCorrect = cachingStore.registerForGroupEvent(eventsToRegisterFor[0].groupEventId)
-            .thenCompose { cachingStore.registerForGroupEvent(eventsToRegisterFor[1].groupEventId) }
-            .thenCompose { cachingStore.registerForGroupEvent(eventsToRegisterFor[2].groupEventId) }
-            .thenCompose { cachingStore.registerForGroupEvent(eventsToRegisterFor[3].groupEventId) }
-            .thenApply {
+            .thenCompose {
+                assertThat(wrappedDatabase.getTimesCalled(), `is`(1))
+                cachingStore.registerForGroupEvent(eventsToRegisterFor[1].groupEventId)
+            }.thenCompose {
+                assertThat(wrappedDatabase.getTimesCalled(), `is`(2))
+                cachingStore.registerForGroupEvent(eventsToRegisterFor[2].groupEventId)
+            }.thenCompose {
+                assertThat(wrappedDatabase.getTimesCalled(), `is`(3))
+                cachingStore.registerForGroupEvent(eventsToRegisterFor[3].groupEventId)
+            }.thenApply {
                 assertThat(wrappedDatabase.getTimesCalled(), `is`(4))
                 eventsToRegisterFor.forEach { assertThat(wrappedDatabase.getAvailableGroupEvents()[it.groupEventId]!!.participants, hasItem(exampleEmail)) }
                 true
@@ -312,6 +321,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
+        cachingStore.retrieveData.get(1, SECONDS)
         cachingStore.setCurrentEmail(exampleEmail)
 
         val isCorrect = cachingStore.getSchedule(currentMonday)
@@ -351,6 +361,7 @@ class CachingStoreTest {
 
         override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
             timesCalled++
+            // we also add an empty event to the schedule to make sure that the caching store doesn't cache empty events -> covers additional branch in caching store
             return CompletableFuture.completedFuture(Schedule(eventList, getGroupEventIds()))
         }
     }
@@ -940,12 +951,12 @@ class CachingStoreTest {
 
     private val nonCachedEvents = listOf(
         Event(
-            name = "Event outside of cache borders",
+            name = "Event ahead of cache borders",
             color = Color(0xFF6DD3CE).value.toString(),
             start = currentMonday.plusWeeks(5).atTime(13, 0, 0).toString(),
             end = currentMonday.plusWeeks(5).atTime(15, 0, 0).toString(),
             address = Address(),
-        )
+        ),
     )
 
     private val eventList = cachedEvents + nonCachedEvents
