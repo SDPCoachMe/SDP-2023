@@ -26,7 +26,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
@@ -35,14 +34,15 @@ import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Buttons.Companion.MESSAGE_COACH
+import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.ADDRESS
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.COACH_SWITCH
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.LAST_NAME
-import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.ADDRESS
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PHONE
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.SPORTS
+import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
@@ -110,7 +110,7 @@ class ProfileActivity : ComponentActivity() {
 
         setContent {
             val title =
-                if (isViewingCoach) stringResource(R.string.coach_profile)
+                if (isViewingCoach) stringResource(R.string.profile_details)
                 else stringResource(R.string.my_profile)
 
             CoachMeTheme {

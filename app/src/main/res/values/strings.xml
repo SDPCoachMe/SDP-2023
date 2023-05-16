@@ -12,9 +12,9 @@
     <string name="title_activity_coaches_list">Nearby coaches</string>
     <string name="title_activity_dashboard">Dashboard</string>
     <string name="title_activity_edit_text">Edit</string>
+    <string name="title_activity_group_event_details">Event details</string>
 
     <string name="contacts">Contacts</string>
     <string name="my_profile">My profile</string>
-    <string name="coach_profile">Coach profile</string>
-    <string name="title_activity_group_event_details">Event details</string>
+    <string name="profile_details">Profile details</string>
 </resources>
