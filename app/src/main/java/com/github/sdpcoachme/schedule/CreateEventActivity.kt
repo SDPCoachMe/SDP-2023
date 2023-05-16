@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.Address
+import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.data.schedule.EventType
@@ -242,21 +243,24 @@ fun NewEvent(store: CachingStore, eventType: EventType) {
                                 val toast = Toast.makeText(context, "Start date must be before end date", Toast.LENGTH_SHORT)
                                 toast.show()
                             } else {
-                                EventOps.addEvent(event, store)/*.thenCompose {
-                                    val organiser = database.getCurrentEmail().replace('.', ',')
-                                    val testGroupEvent = GroupEvent(
+                                if (eventType == EventType.PRIVATE) {
+                                    EventOps.addEvent(event, store).thenAccept {
+                                        goBackToScheduleActivity()
+                                    }
+                                } else if (eventType == EventType.GROUP) {
+                                    val organiser = store.getCurrentEmail().exceptionally { println("Did not get email"); null }.get(1000, TimeUnit.MILLISECONDS).replace('.', ',')
+                                    val groupEvent = GroupEvent(
                                         event = event.copy(
                                             name = "Test Group Event",
-                                            start = LocalDateTime.parse(event.start, formatterEventDate).plusDays(1).format(formatterEventDate), //LocalDateTime.now().plusHours(1).format(formatterEventDate),
-                                            end = LocalDateTime.parse(event.end, formatterEventDate).plusDays(1).format(formatterEventDate), //LocalDateTime.now().plusHours(3).format(formatterEventDate),
+                                            start = event.start,
+                                            end = event.end,
                                         ),
                                         organiser = organiser,
-                                        maxParticipants = 5,
+                                        maxParticipants = maxParticipants,
                                     )
-                                    // TODO: remove this once the "add group event" button is added to the UI
-                                    database.addGroupEvent(testGroupEvent, EventOps.getStartMonday())
-                                }*/.thenAccept {
-                                    goBackToScheduleActivity()
+                                    store.addGroupEvent(groupEvent).thenAccept {
+                                        goBackToScheduleActivity()
+                                    }
                                 }
                             }
                         },
@@ -322,6 +326,7 @@ fun NewEvent(store: CachingStore, eventType: EventType) {
 
             if (eventType == EventType.GROUP) {
                 MaxParticipantsRow(
+                    maxParticipants = maxParticipants,
                     onMaxParticipantsChange = { maxParticipants = it }
                 )
             }
@@ -562,6 +567,7 @@ fun EndTimeRow(
 
 @Composable
 fun MaxParticipantsRow(
+    maxParticipants: Int,
     onMaxParticipantsChange: (Int) -> Unit
 ) {
     Row(
@@ -576,16 +582,16 @@ fun MaxParticipantsRow(
                 .weight(1f)
                 //.testTag(CreateEventActivity.TestTags.Texts.MAX_PARTICIPANTS_TEXT)
         )
-        val maxParticipants = remember { mutableStateOf(0) }
+        val focusManager = LocalFocusManager.current
         TextField(
-            value = maxParticipants.value.toString(),
+            value = maxParticipants.toString(),
             onValueChange = {
-                maxParticipants.value = it.toIntOrNull() ?: 0
-                onMaxParticipantsChange(maxParticipants.value)
+                onMaxParticipantsChange(it.toInt())
             },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number
-            ),
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next, keyboardType = KeyboardType.Number),
+            /*keyboardActions = KeyboardActions(
+                onNext = { focusManager.clearFocus() }
+            ),*/
             modifier = Modifier
                 .weight(.8f)
                 //.testTag(CreateEventActivity.TestTags.Texts.MAX_PARTICIPANTS)
