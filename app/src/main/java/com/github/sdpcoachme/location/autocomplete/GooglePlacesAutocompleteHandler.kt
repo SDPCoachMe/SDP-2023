@@ -7,7 +7,7 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import com.github.sdpcoachme.data.UserAddress
+import com.github.sdpcoachme.data.Address
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.model.PlaceTypes
 import com.google.android.libraries.places.widget.Autocomplete
@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture
  */
 class GooglePlacesAutocompleteHandler(context: Context, caller: ActivityResultCaller) : AddressAutocompleteHandler {
 
-    private lateinit var autocompleteResult: CompletableFuture<UserAddress>
+    private lateinit var autocompleteResult: CompletableFuture<Address>
     private val intent: Intent
     private val startForResult: ActivityResultLauncher<Intent>
 
@@ -45,7 +45,7 @@ class GooglePlacesAutocompleteHandler(context: Context, caller: ActivityResultCa
                         result.data!!.let {
                             val place = Autocomplete.getPlaceFromIntent(it)
                             autocompleteResult.complete(
-                                UserAddress(
+                                Address(
                                     // They should never be null anyways
                                     placeId = place.id!!,
                                     name = place.address!!,
@@ -74,8 +74,8 @@ class GooglePlacesAutocompleteHandler(context: Context, caller: ActivityResultCa
      *
      * @return A CompletableFuture that will be completed with the UserAddress selected by the user.
      */
-    override fun launch(): CompletableFuture<UserAddress> {
-        autocompleteResult = CompletableFuture<UserAddress>()
+    override fun launch(): CompletableFuture<Address> {
+        autocompleteResult = CompletableFuture<Address>()
         startForResult.launch(intent)
         return autocompleteResult
     }

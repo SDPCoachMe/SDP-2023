@@ -1,6 +1,6 @@
 package com.github.sdpcoachme.data
 
-data class UserAddress (
+data class Address (
     val placeId: String,
     val name: String,
     val latitude: Double,

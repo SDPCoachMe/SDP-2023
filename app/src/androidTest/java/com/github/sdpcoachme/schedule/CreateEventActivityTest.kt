@@ -15,6 +15,7 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
+import com.github.sdpcoachme.data.Address
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.database.CachingStore
@@ -134,12 +135,16 @@ class CreateEventActivityTest {
             fillAndCheckFocus(defaultEventName, EVENT_NAME)
             fillAndCheckFocus(defaultEventDescription, DESCRIPTION)
 
+            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+            device.waitForIdle()
             composeTestRule.onNodeWithTag(SAVE)
                 .assertExists()
             composeTestRule.onNodeWithTag(SAVE)
                 .performClick()
+            device.waitForIdle()
 
             intended(hasComponent(ScheduleActivity::class.java.name))
+
         }
     }
 
@@ -164,11 +169,13 @@ class CreateEventActivityTest {
                 .performClick()
 
             val expectedEvent = Event(
-                defaultEventName,
-                defaultEventStart.format(eventDateFormatter),
-                defaultEventEnd.format(eventDateFormatter),
-                defaultEventDescription,
-                EventColors.DEFAULT.color.value.toString()
+                name = defaultEventName,
+                color = EventColors.DEFAULT.color.value.toString(),
+                start = defaultEventStart.format(eventDateFormatter),
+                end = defaultEventEnd.format(eventDateFormatter),
+                //sport = ???,
+                address = Address(),   // adapt this when location choosing is added
+                description = defaultEventDescription
             )
 
             store.getSchedule(currentWeekMonday).thenAccept {
@@ -296,7 +303,7 @@ class CreateEventActivityTest {
         device.waitForIdle()
         device.wait(Until.findObject(By.text("$testMinute2")), 500)
         device.findObject(By.text("$testMinute2")).click(500)
-        device.waitForIdle(10000)
+        device.waitForIdle(1000)
 
         // Press ok
         device.findObject(By.text("Ok")).click()
