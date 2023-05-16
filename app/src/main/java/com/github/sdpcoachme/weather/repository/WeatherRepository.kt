@@ -7,6 +7,6 @@ import com.github.sdpcoachme.weather.Weather
  */
 interface WeatherRepository {
 
-    suspend fun loadWeatherForecast(lat: Double, long: Double): Weather
+    suspend fun loadWeatherForecast(lat: Double, long: Double): List<Weather>
 
 }

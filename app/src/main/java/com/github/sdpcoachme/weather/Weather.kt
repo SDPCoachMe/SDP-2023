@@ -6,8 +6,3 @@ data class Weather(
     val minTemperature: Double
 )
 
-data class DailyWeather(
-    val day: Int,
-    val weather: Weather
-)
-

@@ -1,5 +1,7 @@
 package com.github.sdpcoachme.weather
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import com.github.sdpcoachme.weather.repository.WeatherRepository
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.CoroutineScope
@@ -12,7 +14,7 @@ class WeatherPresenter {
     private lateinit var weatherRepository: WeatherRepository
 
     private val scope = CoroutineScope(Job())
-    var weatherState: WeatherState = WeatherState.LoadingState
+    var weatherState: MutableState<List<Weather>> = mutableStateOf(listOf())
 
     fun bind(weatherRepository: WeatherRepository, target: LatLng) {
         this.weatherRepository = weatherRepository
@@ -25,12 +27,12 @@ class WeatherPresenter {
 
     private fun getWeatherForecast(lat: Double, long: Double) {
         scope.launch {
-            weatherState = WeatherState.DataState(loadWeatherForecast(lat, long))
+            weatherState.value = loadWeatherForecast(lat, long)
             // TODO handle return here
         }
     }
 
-    private suspend fun loadWeatherForecast(lat: Double, long: Double): Weather {
+    private suspend fun loadWeatherForecast(lat: Double, long: Double): List<Weather> {
         return weatherRepository.loadWeatherForecast(lat, long)
     }
 
