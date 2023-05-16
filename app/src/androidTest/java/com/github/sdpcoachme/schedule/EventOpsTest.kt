@@ -1,5 +1,6 @@
 package com.github.sdpcoachme.schedule
 
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.data.schedule.Event

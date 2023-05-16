@@ -6,6 +6,7 @@ import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.UserInfo
@@ -15,19 +16,17 @@ import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.schedule.EventOps
 import com.github.sdpcoachme.schedule.EventOps.Companion.getStartMonday
+import com.google.android.gms.maps.model.LatLng
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.google.maps.android.SphericalUtil
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
-
-// todo finir de faire la documentation
-import androidx.datastore.preferences.core.*
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.SphericalUtil
-import kotlinx.coroutines.flow.first
 
 /**
  * A caching database that wraps another database
@@ -40,7 +39,7 @@ class CachingStore(private val wrappedDatabase: Database,
     val CACHED_USERS_KEY = stringPreferencesKey("cached_users")
     val CONTACTS_KEY = stringPreferencesKey("contacts")
     val CHATS_KEY = stringPreferencesKey("chats")
-    val CACHED_SCHEDULES_KEY = stringPreferencesKey("cached_schedules")
+    val CACHED_SCHEDULE_KEY = stringPreferencesKey("cached_schedules")
 
     private val CACHED_SCHEDULE_WEEKS_AHEAD = 4L
     private val CACHED_SCHEDULE_WEEKS_BEHIND = 4L
@@ -87,6 +86,7 @@ class CachingStore(private val wrappedDatabase: Database,
      * Retrieves local data from the datastore
      * @return a completable future that completes when the local data has been retrieved
      */
+    @OptIn(DelicateCoroutinesApi::class)
     private fun retrieveLocalData(): CompletableFuture<Void> {
         val localFuture = CompletableFuture<Void>()
         GlobalScope.launch {
@@ -98,13 +98,13 @@ class CachingStore(private val wrappedDatabase: Database,
             val serializedUsers = values[CACHED_USERS_KEY]
             val serializedContacts = values[CONTACTS_KEY]
             val serializedChats = values[CHATS_KEY]
-            val serializedSchedules = values[CACHED_SCHEDULES_KEY]
+            val serializedSchedule = values[CACHED_SCHEDULE_KEY]
 
             // Deserialize the caching maps from Json and put them in the caching maps
             processRetrievedCache(serializedUsers, cachedUsers)
             processRetrievedCache(serializedContacts, contacts)
             processRetrievedCache(serializedChats, chats)
-            processRetrievedCache(serializedSchedules, cachedSchedules)
+            processRetrievedCache(serializedSchedule, cachedSchedule)
 
             localFuture.complete(null)
         }
@@ -116,12 +116,18 @@ class CachingStore(private val wrappedDatabase: Database,
      * @param jsonString the Json string to process
      * @param cache the cache to put the processed Json into
      */
-    private inline fun <reified T> processRetrievedCache(jsonString: String?, cache: MutableMap<String, T>) {
+    private inline fun <reified T> processRetrievedCache(jsonString: String?, cache: T) {
         if (jsonString.isNullOrEmpty()) {
             return
         }
-        val type = object : TypeToken<Map<String, T>>() {}.type
-        cache.putAll(gson.fromJson(jsonString, type))
+        val type = object : TypeToken<T>() {}.type
+        if (cache is Schedule) {
+            val schedule = gson.fromJson<Schedule>(jsonString, type)
+            cachedSchedule = schedule
+        } else {
+            cache as MutableMap<*, *>
+            cache.putAll(gson.fromJson(jsonString, type))
+        }
     }
 
     /**
@@ -132,8 +138,9 @@ class CachingStore(private val wrappedDatabase: Database,
      * @param <T> the type of the cache
      * @return a completable future that completes when the cache has been stored
      */
-    private inline fun <reified T> storeCache(cache: MutableMap<String, T>, key: Preferences.Key<String>) {
-        val type = object : TypeToken<Map<String, T>>() {}.type
+    @OptIn(DelicateCoroutinesApi::class)
+    private inline fun <reified T> storeCache(cache: T, key: Preferences.Key<String>) {
+        val type = object : TypeToken<T>() {}.type
         // Serialize the cache map to Json
         val serializedCache = gson.toJson(cache, type)
         // Write to datastore in a background coroutine
@@ -148,15 +155,15 @@ class CachingStore(private val wrappedDatabase: Database,
      * Stores the local data in the datastore
      * @return a completable future that completes when the background write has been launched
      */
+    @OptIn(DelicateCoroutinesApi::class)
     fun storeLocalData(): CompletableFuture<Void> {
         val writeDatastoreFuture = CompletableFuture<Void>()
         GlobalScope.launch {
             dataStore.edit { preferences ->
-
                 storeCache(cachedUsers, CACHED_USERS_KEY)
                 storeCache(contacts, CONTACTS_KEY)
                 storeCache(chats, CHATS_KEY)
-                storeCache(cachedSchedules, CACHED_SCHEDULES_KEY)
+                storeCache(cachedSchedule, CACHED_SCHEDULE_KEY)
 
                 writeDatastoreFuture.complete(null)
             }
@@ -197,10 +204,10 @@ class CachingStore(private val wrappedDatabase: Database,
      */
     fun getAllUsers(): CompletableFuture<List<UserInfo>> {
         return if (isOnline()) {
-            wrappedDatabase.getAllUsers().thenCompose { user ->
+            wrappedDatabase.getAllUsers().thenCompose { userList ->
                 cachedUsers.clear()
-                cachedUsers.putAll(user.associateBy { it.email })
-                storeLocalData().thenApply { user }
+                cachedUsers.putAll(userList.associateBy { it.email })
+                storeLocalData().thenApply { userList }
             }
         } else {
             CompletableFuture.completedFuture(cachedUsers.values.toList())
@@ -265,7 +272,7 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
-    private fun fetchGroupEvents(schedule: Schedule, currentWeekMonday: LocalDate): List<Event> {
+    private fun fetchGroupEventsAsEvents(schedule: Schedule): List<Event> {
         val groupEvents = listOf<GroupEvent>()
         schedule.groupEvents.map { id ->
             if (cachedSchedule.groupEvents.contains(id)) {
@@ -302,7 +309,7 @@ class CachingStore(private val wrappedDatabase: Database,
                         }
                     }
 
-                    val transformedGroupEvents = fetchGroupEvents(schedule, currentWeekMonday)
+                    val transformedGroupEvents = fetchGroupEventsAsEvents(schedule)
 
                     schedule.copy(events = events + transformedGroupEvents).also {   // Update the cache
                         cachedSchedule = it
@@ -326,7 +333,7 @@ class CachingStore(private val wrappedDatabase: Database,
                         }
 
                         // Transform of groupEvents to a list of Events
-                        val transformedGroupEvents = fetchGroupEvents(schedule, currentWeekMonday)
+                        val transformedGroupEvents = fetchGroupEventsAsEvents(schedule)
 
                         schedule.copy(events = events + transformedGroupEvents).also {
                             cachedSchedule = it  // Update the cache
@@ -522,20 +529,18 @@ class CachingStore(private val wrappedDatabase: Database,
     fun isOnline(): Boolean {
         val connectivityManager =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        if (connectivityManager != null) {
-            val capabilities =
-                connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-            if (capabilities != null) {
-                if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
-                    Log.i("Internet", "NetworkCapabilities.TRANSPORT_CELLULAR")
-                    //return true
-                } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
-                    Log.i("Internet", "NetworkCapabilities.TRANSPORT_WIFI")
-                    return true
-                } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
-                    Log.i("Internet", "NetworkCapabilities.TRANSPORT_ETHERNET")
-                    return true
-                }
+        val capabilities =
+            connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+        if (capabilities != null) {
+            if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                Log.i("Internet", "NetworkCapabilities.TRANSPORT_CELLULAR")
+                //return true
+            } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                Log.i("Internet", "NetworkCapabilities.TRANSPORT_WIFI")
+                return true
+            } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+                Log.i("Internet", "NetworkCapabilities.TRANSPORT_ETHERNET")
+                return true
             }
         }
         return false
