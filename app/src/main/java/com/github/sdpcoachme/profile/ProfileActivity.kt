@@ -26,26 +26,26 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.R
+import com.github.sdpcoachme.data.Address
+import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.schedule.Event
-import com.github.sdpcoachme.data.schedule.GroupEvent
-import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Buttons.Companion.MESSAGE_COACH
+import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.ADDRESS
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.COACH_SWITCH
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.LAST_NAME
-import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.ADDRESS
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PHONE
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.SPORTS
-import com.github.sdpcoachme.schedule.EventOps
+import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.future.await
 import java.time.DayOfWeek
@@ -81,8 +81,8 @@ class ProfileActivity : ComponentActivity() {
     // To notify tests when the state has been updated in the UI
     lateinit var stateUpdated: CompletableFuture<Void>
 
-    private lateinit var database: Database
-    private lateinit var email: String
+    private lateinit var store: CachingStore
+    private lateinit var emailFuture: CompletableFuture<String>
     private lateinit var addressAutocompleteHandler: AddressAutocompleteHandler
     private lateinit var editTextHandler: (Intent) -> CompletableFuture<String>
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
@@ -90,72 +90,73 @@ class ProfileActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         stateUpdated = CompletableFuture()
-        database = (application as CoachMeApplication).database
+        store = (application as CoachMeApplication).store
 
 
 
         val groupEvent = GroupEvent(
-            "@@event group event",
             Event(
                 name = "Google I/O Keynote",
                 color = Color(0xFFAFBBF2).value.toString(),
                 start = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(13, 0, 0).toString(),
                 end = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(15, 0, 0).toString(),
+                sport = Sports.TENNIS,
+                address = Address(),
                 description = "Tune in to find out about how we're furthering our mission to organize the world’s information and make it universally accessible and useful.",
             ),
             "lucaengu@gmail.com",
             5,
-            listOf("luca.aengu@gmail.com", "lucaengu@gmail.com", "luca.engel@epfl.ch")
+            listOf("luca.aengu@gmail.com", "lucaengu@gmail.com", "luca.engel@epfl.ch"),
+            "@@event group event",
         )
         println("groupEvent: $groupEvent")
-        database.addGroupEvent(groupEvent, EventOps.getStartMonday().plusDays(7))
+        store.addGroupEvent(groupEvent)
             .thenAccept { println("worked: $it") }
             .exceptionally { println("didnt work: ${it.cause}"); null }
-        database.updateChatParticipants(groupEvent.groupEventId, listOf("luca.aengu@gmail.com", "lucaengu@gmail.com", "luca.engel@epfl.ch"))
+        store.updateChatParticipants(groupEvent.groupEventId, listOf("luca.aengu@gmail.com", "lucaengu@gmail.com", "luca.engel@epfl.ch"))
         val list = listOf("luca.aengu@gmail.com", "lucaengu@gmail.com", "luca.engel@epfl.ch")
         list.forEach {
-            database.getUser(it).thenCompose { userInfo ->
-                database.updateUser(userInfo.copy(chatContacts = userInfo.chatContacts.filter { c -> c != groupEvent.groupEventId } + groupEvent.groupEventId)  ) }
+            store.getUser(it).thenCompose { userInfo ->
+                store.updateUser(userInfo.copy(chatContacts = userInfo.chatContacts.filter { c -> c != groupEvent.groupEventId } + groupEvent.groupEventId)  ) }
         }
 
 
 
         val isViewingCoach = intent.getBooleanExtra("isViewingCoach", false)
-        email =
-            if (isViewingCoach) intent.getStringExtra("email").toString()
-            else database.getCurrentEmail()
+        emailFuture = if (isViewingCoach) {
+            val email = intent.getStringExtra("email").toString()
+            // note : in the case where a coach is viewed but the email is not found
+            // the value of the email will be "null" (see toString method of String)
+            if (email.isEmpty() || email == "null") {
+                val errorMsg = "Profile did not receive a correct email when viewing a coach."
+                ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
+            }
+            CompletableFuture.completedFuture(email)
+        } else store.getCurrentEmail()
 
-        // note : in the case where a coach is viewed but the email is not found
-        // the value of the email will be "null" (see toString method of String)
-        if (email.isEmpty() || email == "null") {
-            val errorMsg = "Profile editing did not receive an email address." +
-                    "\n Please return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
-        } else {
-            val futureUserInfo = database.getUser(email)
+        val futureUserInfo = emailFuture.thenCompose { store.getUser(it) }
 
-            // Set up handler for calls to address autocomplete
-            addressAutocompleteHandler = (application as CoachMeApplication).addressAutocompleteHandler(this, this)
+        // Set up handler for calls to location autocomplete
+        addressAutocompleteHandler = (application as CoachMeApplication).addressAutocompleteHandler(this, this)
 
-            // Set up handler for calls to edit text activity
-            editTextHandler = EditTextActivity.getHandler(this)
+        // Set up handler for calls to edit text activity
+        editTextHandler = EditTextActivity.getHandler(this)
 
-            // Set up handler for calls to select sports activity
-            selectSportsHandler = SelectSportsActivity.getHandler(this)
+        // Set up handler for calls to select sports activity
+        selectSportsHandler = SelectSportsActivity.getHandler(this)
 
-            setContent {
-                val title =
-                    if (isViewingCoach) stringResource(R.string.coach_profile)
-                    else stringResource(R.string.my_profile)
+        setContent {
+            val title =
+                if (isViewingCoach) stringResource(R.string.coach_profile)
+                else stringResource(R.string.my_profile)
 
-                CoachMeTheme {
-                    Dashboard(title) {
-                        Surface(
-                            modifier = it.fillMaxSize(),
-                            color = MaterialTheme.colors.background
-                        ) {
-                            Profile(email, futureUserInfo, isViewingCoach)
-                        }
+            CoachMeTheme {
+                Dashboard(title) {
+                    Surface(
+                        modifier = it.fillMaxSize(),
+                        color = MaterialTheme.colors.background
+                    ) {
+                        Profile(futureUserInfo, isViewingCoach)
                     }
                 }
             }
@@ -166,10 +167,9 @@ class ProfileActivity : ComponentActivity() {
      * Composable used to display the user's profile.
      */
     @Composable
-    fun Profile(email: String, futureUserInfo: CompletableFuture<UserInfo>, isViewingCoach: Boolean) {
+    fun Profile(futureUserInfo: CompletableFuture<UserInfo>, isViewingCoach: Boolean) {
 
         val context = LocalContext.current
-        val database = (LocalContext.current.applicationContext as CoachMeApplication).database
 
         var userInfo by remember { mutableStateOf(UserInfo()) }
 
@@ -187,7 +187,7 @@ class ProfileActivity : ComponentActivity() {
         fun saveUserInfo(futureNewUserInfo: CompletableFuture<UserInfo>): CompletableFuture<Void> {
             return futureNewUserInfo
                 .thenCompose { newUserInfo ->
-                    database.updateUser(newUserInfo)
+                    store.updateUser(newUserInfo)
                         .thenAccept {
                             userInfo = newUserInfo
                             stateUpdated.complete(null)
@@ -229,7 +229,7 @@ class ProfileActivity : ComponentActivity() {
             TextRow(
                 label = "EMAIL",
                 tag = EMAIL,
-                value = email,
+                value = userInfo.email,
                 onClick = {
                     if (!isViewingCoach) {
                         // Uneditable, for now, do nothing (might allow to copy to clipboard on click)
@@ -237,7 +237,7 @@ class ProfileActivity : ComponentActivity() {
                         // If the user is viewing a coach's profile, they can message the coach
                         val intent = Intent(Intent.ACTION_SENDTO)
                         intent.data = Uri.parse("mailto:")
-                        intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
+                        intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(userInfo.email))
                         try {
                             startActivity(intent)
                         } catch (e: ActivityNotFoundException) {
@@ -379,15 +379,17 @@ class ProfileActivity : ComponentActivity() {
                         .align(Alignment.CenterHorizontally)
                         .testTag(MESSAGE_COACH),
                     onClick = {
-                        val userEmail = database.getCurrentEmail()
-                        val intent = Intent(context, ChatActivity::class.java)
-                        val chatId = if (userEmail < email) "$userEmail$email" else "$email$userEmail"
+                        emailFuture.thenApply {
+                            val userEmail = userInfo.email
+                            val intent = Intent(context, ChatActivity::class.java)
+                            val chatId = if (userEmail < it) "$userEmail$it" else "$it$userEmail"
 
-                        // Add the user to the chat participants and instantiate the chat if not already done
-                        database.updateChatParticipants(chatId, listOf(userEmail, email))
+                            // Add the user to the chat participants and instantiate the chat if not already done
+                            store.updateChatParticipants(chatId, listOf(userEmail, it))
 
-                        intent.putExtra("chatId", chatId)
-                        context.startActivity(intent)
+                            intent.putExtra("chatId", chatId)
+                            context.startActivity(intent)
+                        }
                     }
                 ) {
                     Text(text = "Message Coach")

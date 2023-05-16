@@ -19,8 +19,6 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.DELAY
 import com.github.sdpcoachme.location.provider.MockLocationProvider
@@ -37,6 +35,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
 
 /**
  * Test class for the Composable MapView. Unfortunately, the GoogleMap api for Jetpack Compose
@@ -57,8 +56,8 @@ class MapActivityTest {
         ACCESS_FINE_LOCATION
     )
 
-    private val database = (InstrumentationRegistry.getInstrumentation()
-        .targetContext.applicationContext as CoachMeApplication).database
+    private val store = (InstrumentationRegistry.getInstrumentation()
+        .targetContext.applicationContext as CoachMeApplication).store
     private val defaultIntent =
         Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
     private val EXISTING_EMAIL = "example@email.com"
@@ -68,12 +67,13 @@ class MapActivityTest {
 
     @Before
     fun setUp() {
-        database.setCurrentEmail(EXISTING_EMAIL)
+        store.retrieveData.get(1, SECONDS)
+        store.setCurrentEmail(EXISTING_EMAIL)
         for (coach in COACHES) {
-            database.updateUser(coach).join()
+            store.updateUser(coach).join()
         }
         for (nonCoach in NON_COACHES) {
-            database.updateUser(nonCoach).join()
+            store.updateUser(nonCoach).join()
         }
         Intents.init()
     }
@@ -132,17 +132,6 @@ class MapActivityTest {
     }
 
     @Test
-    fun errorPageIsShownWhenMapIsLaunchedWithEmptyCurrentEmail() {
-        database.setCurrentEmail("")
-        ActivityScenario.launch<MapActivity>(defaultIntent).use {
-            // not possible to use Intents.init()... to check if the correct intent
-            // is launched as the intents are launched from within the onCreate function
-            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
-        }
-    }
-
-    @Test
     fun dashboardHasRightTitleOnMap() {
         val title = (InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as CoachMeApplication).getString(R.string.app_name)
@@ -192,7 +181,7 @@ class MapActivityTest {
     private fun mapLocationIsAddress() {
         ActivityScenario.launch<MapActivity>(defaultIntent).use {
             val lastLocation = mockLocationProvider.getLastLocation().value
-            val userAddress = database.getUser(EXISTING_EMAIL).get(DELAY, MILLISECONDS).address
+            val userAddress = store.getUser(EXISTING_EMAIL).get(DELAY, MILLISECONDS).address
             val userLatLng = LatLng(userAddress.latitude, userAddress.longitude)
             assertThat(lastLocation, `is`(userLatLng))
         }

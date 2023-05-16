@@ -17,62 +17,77 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.content.ContextCompat
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.R
-import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.LOG_IN
+import com.github.sdpcoachme.database.CachingStore
+import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.messaging.ChatActivity
-import com.github.sdpcoachme.messaging.InAppNotificationService.Companion.addFCMTokenToDatabase
+import com.github.sdpcoachme.messaging.InAppNotificationService
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import kotlinx.coroutines.future.await
+import java.util.concurrent.CompletableFuture
 
 
 class LoginActivity : ComponentActivity() {
+    // Allows to notice testing framework that the activity is ready
+    var stateLoading = CompletableFuture<Void>()
 
     class TestTags {
-        companion object {
-            const val INFO_TEXT = "signInInfo"
-        }
         class Buttons {
             companion object {
-                const val SIGN_IN = "signInButton"
-                const val SIGN_OUT = "signOutButton"
-                const val DELETE_ACCOUNT = "deleteAccountButton"
+                const val LOG_IN = "logInButton"
             }
         }
     }
 
-    private lateinit var userExistsIntent: Intent
-    private lateinit var database : Database
-    private var signInInfo: String by mutableStateOf("Not signed in")
+    private lateinit var store : CachingStore
     private lateinit var authenticator: Authenticator
+    // Register the launcher to handle the result of Google Authentication
     private val signInLauncher: ActivityResultLauncher<Intent> = registerForActivityResult (
         FirebaseAuthUIActivityResultContract()
     ) { res ->
         authenticator.onSignInResult(
             res,
-            { email ->
+            onSuccess = { email ->
                 // Should not be null on success
-                email!!.let {
-                    signInInfo = email
-                    database.setCurrentEmail(it)
-                    launchPostLoginActivity(it)
+                store.setCurrentEmail(email!!).thenAccept {
+                    // Once we are logged in, we can add the FCM token to the database.
+                    // Note on FCM tokens: only the newest device on which the user logged in will
+                    // have the FCM token and receive notifications. This is done for simplicity as
+                    // otherwise, we would need to remove notifications on one device when they are
+                    // read on another. This could be added/handled in a future sprint.
+                    InAppNotificationService.getFCMToken().thenCompose {
+                        store.setFCMToken(email, it)
+                    }.thenAccept {
+                        launchNextActivity(email)
+                    }
                 }
             },
-            { errorMsg -> signInInfo = errorMsg.toString() }
+            onFailure = {
+                val errorMsg = "There was an error while trying to log in."
+                ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
+            }
         )
+    }
+    // Register the launcher to ask for notification permissions
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Toast.makeText(this, "Notifications enabled", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Notifications disabled", Toast.LENGTH_SHORT).show()
+        }
     }
 
     // Allows to use testTagsAsResourceId feature (since tests are done with UI Automator, it is
@@ -81,29 +96,21 @@ class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         authenticator = (application as CoachMeApplication).authenticator
-        database =  (application as CoachMeApplication).database
+        store =  (application as CoachMeApplication).store
 
-        // Check if a notification was clicked
-        val pushNotificationIntent = intent
-        val action = pushNotificationIntent.action
-
-        // By default, if the user exists, we open the map activity after login
-        userExistsIntent = Intent(this, MapActivity::class.java)
-        // If the user clicked on a chat notification, then the action is OPEN_CHAT_ACTIVITY
-        // to open the chat, the sender of the message must not be null
-        if (action.equals("OPEN_CHAT_ACTIVITY") && pushNotificationIntent.getStringExtra("sender") != null) {
-
-            // prepare the intent to open the chat activity
-            userExistsIntent = Intent(this, ChatActivity::class.java)
-                .putExtra("chatId", pushNotificationIntent.getStringExtra("chatId"))
-
-            // If the user is logged in, then we can open the chat activity directly without letting the user log in,
-            // otherwise we wait for the login process to complete and then open the chat activity
-            if (database.getCurrentEmail().isNotEmpty()) {
-                startActivity(userExistsIntent)
+        store.isLoggedIn().thenAccept { loggedIn ->
+            if (loggedIn) {
+                store.getCurrentEmail().thenAccept {
+                    launchNextActivity(it)
+                    // Notify tests
+                    stateLoading.complete(null)
+                }
+            } else {
+                // If the user is not logged in, we can start loading the activity
+                // Also notify tests
+                stateLoading.complete(null)
             }
         }
-
 
         setContent {
             CoachMeTheme {
@@ -114,25 +121,36 @@ class LoginActivity : ComponentActivity() {
                     }
                 ) {
                     // Need to pass padding to child node
-                    innerPadding ->
-                        AuthenticationForm(
-                            signInInfo = this.signInInfo,
-                            context = this,
-                            modifier = Modifier.padding(innerPadding)
-                        )
+                    innerPadding -> AuthenticationForm(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
     }
 
-    // Declare the launcher at the top of your Activity/Fragment:
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            Toast.makeText(this, "Notifications enabled", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, "Notifications disabled", Toast.LENGTH_SHORT).show()
+    @Composable
+    fun AuthenticationForm(modifier: Modifier = Modifier) {
+
+        var showUI by remember { mutableStateOf(false) }
+
+        LaunchedEffect(true) {
+            stateLoading.await()
+            showUI = true
+        }
+
+        Column(
+            modifier = modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (showUI) {
+                // TODO: add app icon and make this activity look nicer.
+                Button(
+                    modifier = Modifier.testTag(LOG_IN),
+                    onClick = {
+                        authenticator.signIn(signInLauncher)
+                    })
+                { Text("LOG IN") }
+            }
         }
     }
 
@@ -157,76 +175,32 @@ class LoginActivity : ComponentActivity() {
         requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
-    private fun launchPostLoginActivity(email: String) {
-        database.userExists(email).thenAccept { exists ->
-            if (exists) {
-                startActivity(userExistsIntent)
+    private fun launchNextActivity(email: String) {
+        store.userExists(email).thenAccept { exists ->
+            val intent = if (!exists) {
+                // If the user does not exist, launch sign up activity
+                Intent(this, SignupActivity::class.java)
             } else {
-                startActivity(Intent(this, SignupActivity::class.java))
+                // Otherwise, decide where to redirect
+                // Check if a notification was clicked
+                val pushNotificationIntent = intent
+                val action = pushNotificationIntent.action
+                if (action.equals("OPEN_CHAT_ACTIVITY")
+                    && pushNotificationIntent.getStringExtra("chatId") != null) {
+                    // If a notification was clicked, redirect to chat activity
+                    Intent(this, ChatActivity::class.java)
+                        .putExtra("chatId", pushNotificationIntent.getStringExtra("chatId"))
+                } else {
+                    // If no notification was clicked, redirect to map activity
+                    Intent(this, MapActivity::class.java)
+                }
             }
 
+            // Launch the next activity
+            startActivity(intent)
+            // TODO: notification should be asked in Map Activity, not here. Keep it like this for
+            //  now.
             askNotificationPermission()
-            // only the newest device on which the user logged in will have the FCM token
-            // and receive notifications. This is done for simplicity as otherwise, we would need to
-            // remove notifications on one device when they are read on another.
-            // This could be added/handled in a future sprint.
-            addFCMTokenToDatabase(database)
         }
-    }
-
-    /**
-     * Deletes the google account from the device
-     */
-    fun deleteAccount() {
-        authenticator.delete(this) { signInInfo = getString(R.string.account_deleted) }
-    }
-
-    /**
-     * Signs into the google account
-     */
-    fun signIntoAccount() {
-        authenticator.signIn(signInLauncher)
-    }
-
-    /**
-     * Signs out of the google account
-     */
-    fun signOutOfAccount() {
-        authenticator.signOut(this) { signInInfo = getString(R.string.signed_out) }
-    }
-}
-
-@Composable
-fun AuthenticationForm(signInInfo: String, context: LoginActivity, modifier: Modifier = Modifier) {
-
-    Column(
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-
-        Text(
-            modifier = Modifier.testTag(LoginActivity.TestTags.INFO_TEXT),
-            text = signInInfo,
-        )
-
-        Button(
-            modifier = Modifier.testTag(LoginActivity.TestTags.Buttons.SIGN_IN),
-            onClick = {
-                context.signIntoAccount()
-            })
-        { Text(stringResource(id = R.string.sign_in_button_text)) }
-        Button(
-            modifier = Modifier.testTag(LoginActivity.TestTags.Buttons.SIGN_OUT),
-            onClick = {
-                context.signOutOfAccount()
-            })
-        { Text(stringResource(id = R.string.sign_out_button_text)) }
-        Button(
-            modifier = Modifier.testTag(LoginActivity.TestTags.Buttons.DELETE_ACCOUNT),
-            onClick = {
-                context.deleteAccount()
-            })
-        { Text(stringResource(id = R.string.delete_account_button_text)) }
     }
 }

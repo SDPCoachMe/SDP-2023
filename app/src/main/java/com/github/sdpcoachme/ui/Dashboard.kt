@@ -9,8 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons.Default
 import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
@@ -24,7 +23,6 @@ import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.auth.LoginActivity
-import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.profile.CoachesListActivity
 import com.github.sdpcoachme.profile.ProfileActivity
@@ -42,7 +40,9 @@ import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.MENU_LIST
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
+import java.util.concurrent.CompletableFuture
 
 /**
  * Helper Dashboard class for TestTags of the dashboard UI
@@ -74,19 +74,12 @@ class Dashboard {
 /**
  * Dashboard UI implemented as a left-sided drawer to navigate to other application activities.
  * @param appContent = set here the root composable of the current launched activity
- */
-@Composable
-fun Dashboard(appContent: @Composable (Modifier) -> Unit) {
-    Dashboard(null, appContent)
-}
-
-/**
- * Dashboard UI implemented as a left-sided drawer to navigate to other application activities.
- * @param appContent = set here the root composable of the current launched activity
  * @param title = title to display on the top application bar
  */
 @Composable
-fun Dashboard(title: String?, appContent: @Composable (Modifier) -> Unit) {
+fun Dashboard(title: String? = null,
+              UIDisplayed: CompletableFuture<Void> = CompletableFuture<Void>(),
+              appContent: @Composable (Modifier) -> Unit) {
 
     val context = LocalContext.current
     // equivalent to remember { ScaffoldState(...) }
@@ -104,7 +97,7 @@ fun Dashboard(title: String?, appContent: @Composable (Modifier) -> Unit) {
             )},
         drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
         drawerContent = {
-            DrawerHeader(context)
+            DrawerHeader(context, UIDisplayed)
             DrawerBody(
                 items = listOf(
                     MenuItem(tag = PLAN, title = "Map",
@@ -142,7 +135,10 @@ fun Dashboard(title: String?, appContent: @Composable (Modifier) -> Unit) {
                         }
                         LOGOUT -> {
                             (context.applicationContext as CoachMeApplication).authenticator.signOut(context) {
-                                context.startActivity(Intent(context, LoginActivity::class.java))
+                                (context.applicationContext as CoachMeApplication).store.setCurrentEmail("")
+                                    .thenApply {
+                                        context.startActivity(Intent(context, LoginActivity::class.java))
+                                    }
                             }
                         }
                         SCHEDULE -> {
@@ -192,30 +188,32 @@ fun AppBar(title: String, onNavigationIconClick: () -> Unit) {
 }
 
 @Composable
-fun DrawerHeader(context: Context) {
-    val email = (context.applicationContext as CoachMeApplication).database.getCurrentEmail()
+fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
+    val emailFuture = (context.applicationContext as CoachMeApplication).store.getCurrentEmail()
 
-    if (email.isEmpty()) {
-        val errorMsg = "Dashboard did not receive an email address.\n Please return to the login page and try again."
-        ErrorHandlerLauncher().launchExtrasErrorHandler(context, errorMsg)
-    } else {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 40.dp)
-                .testTag(DRAWER_HEADER),
-            contentAlignment = Alignment.Center,
-            content = {
-                Column(horizontalAlignment = CenterHorizontally) {
-                    Text(text = "Dashboard", fontSize = 50.sp)
-                    Text(
-                        modifier = Modifier.testTag(DASHBOARD_EMAIL),
-                        text = email, fontSize = 20.sp
-                    )
-                }
-            }
-        )
+    var email by remember { mutableStateOf("") }
+
+    LaunchedEffect(emailFuture) {
+        email = emailFuture.await()
+        UIDisplayed.complete(null)
     }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 40.dp)
+            .testTag(DRAWER_HEADER),
+        contentAlignment = Alignment.Center,
+        content = {
+            Column(horizontalAlignment = CenterHorizontally) {
+                Text(text = "Dashboard", fontSize = 50.sp)
+                Text(
+                    modifier = Modifier.testTag(DASHBOARD_EMAIL),
+                    text = email, fontSize = 20.sp
+                )
+            }
+        }
+    )
 }
 
 @Composable

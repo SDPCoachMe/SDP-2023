@@ -20,8 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.database.Database
-import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MARKER
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MARKER_INFO_WINDOW
@@ -55,50 +54,49 @@ class MapActivity : ComponentActivity() {
 
     }
 
-    private lateinit var database: Database
-    private lateinit var email: String
+    private lateinit var store: CachingStore
     private lateinit var locationProvider: LocationProvider
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        database = (application as CoachMeApplication).database
-        locationProvider = (application as CoachMeApplication).locationProvider
-        email = database.getCurrentEmail()
+        store = (application as CoachMeApplication).store
 
-        if (email.isEmpty()) {
-            val errorMsg = "The map did not receive an email address.\nPlease return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
-        } else {
-            val user = database.getUser(email).exceptionally {
+        // gets user location at map creation
+        locationProvider = (application as CoachMeApplication).locationProvider
+
+        val user = store.getCurrentEmail().thenCompose {
+            store.getUser(it).exceptionally {
                 error("MapActivity: user could not have been retrieved from the database.")
             }
-            locationProvider.init(this, user)
+        }
 
-            // Performs the whole location retrieval process
-            if (locationProvider.locationIsPermitted()) {
-                locationProvider.checkLocationSetting()
-            } else {
-                locationProvider.requestPermission()
-            }
-            // For now, simply retrieve all users. We can decide later whether we want to have
-            // a dynamic list of markers that only displays nearby users (based on camera position
-            // for example). Since we have no way to download only the users that are nearby, we
-            // have to download all users anyways and filter them locally. This means that either
-            // way, we already have available all users locations, so we might as well display them
-            // all.
-            // Note: this is absolutely not scalable, but we can change this later on.
-            val futureUsers = database.getAllUsers().thenApply { users -> users.filter { it.coach } }
-            setContent {
-                CoachMeTheme {
-                    Dashboard {
-                        Map(
-                            modifier = it,
-                            lastUserLocation = locationProvider.getLastLocation(),
-                            futureCoachesToDisplay = futureUsers,
-                            markerLoading = markerLoading,
-                            mapLoading = mapLoading)
-                    }
+        locationProvider.updateContext(this, user)
+
+        // Performs the whole location retrieval process
+        if (locationProvider.locationIsPermitted()) {
+            locationProvider.checkLocationSetting()
+        } else {
+            locationProvider.requestPermission()
+        }
+
+        // For now, simply retrieve all users. We can decide later whether we want to have
+        // a dynamic list of markers that only displays nearby users (based on camera position
+        // for example). Since we have no way to download only the users that are nearby, we
+        // have to download all users anyways and filter them locally. This means that either
+        // way, we already have available all users locations, so we might as well display them
+        // all.
+        // Note: this is absolutely not scalable, but we can change this later on.
+        val futureUsers = store.getAllUsers().thenApply { users -> users.filter { it.coach } }
+        setContent {
+            CoachMeTheme {
+                Dashboard {
+                    Map(
+                        modifier = it,
+                        lastUserLocation = locationProvider.getLastLocation(),
+                        futureCoachesToDisplay = futureUsers,
+                        markerLoading = markerLoading,
+                        mapLoading = mapLoading)
                 }
             }
         }

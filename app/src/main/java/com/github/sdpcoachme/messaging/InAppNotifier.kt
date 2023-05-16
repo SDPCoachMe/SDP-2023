@@ -8,7 +8,7 @@ import android.content.Intent
 import android.media.RingtoneManager
 import androidx.core.app.NotificationCompat
 import com.github.sdpcoachme.auth.LoginActivity
-import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.profile.CoachesListActivity
 import com.google.firebase.messaging.FirebaseMessagingService
 
@@ -20,9 +20,9 @@ import com.google.firebase.messaging.FirebaseMessagingService
  * @see InAppNotificationService
  *
  * @param context Context of the application
- * @param database Database of the application
+ * @param store CachingStore of the application
  */
-class InAppNotifier(val context: Context, val database: Database) {
+class InAppNotifier(val context: Context, val store: CachingStore) {
     private val channelId = "fcm_default_channel"
 
     /**
@@ -59,36 +59,36 @@ class InAppNotifier(val context: Context, val database: Database) {
     private fun sendMessagingNotification(notificationTitle: String, notificationBody: String, chatId: String) {
 
         // The more info we receive, the more we can customize the notification's behaviour (up until the chat itself)
-        val intent: Intent
-        when {
-            database.getCurrentEmail().isEmpty() -> {
-                intent = Intent(context, LoginActivity::class.java)
+        store.isLoggedIn().thenAccept { isLoggedIn ->
+            val intent = when {
+                !isLoggedIn ->
+                    Intent(context, LoginActivity::class.java)
                     .putExtra("chatId", chatId)
-                intent.action = "OPEN_CHAT_ACTIVITY"
-            }
-            chatId.isEmpty() -> intent = Intent(context, CoachesListActivity::class.java)
-                .putExtra("isViewingContacts", true)
-            else -> {
-                intent = Intent(context, ChatActivity::class.java)
+                    .setAction("OPEN_CHAT_ACTIVITY")
+                chatId.isEmpty() ->
+                    Intent(context, CoachesListActivity::class.java)
+                    .putExtra("isViewingContacts", true)
+                else ->
+                    Intent(context, ChatActivity::class.java)
                     .putExtra("chatId", chatId)
             }
+
+            // Create the pending intent to be used when the notification is clicked
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            val pendingIntent = PendingIntent.getActivity(
+                context,
+                0 /* Request code */,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val (notificationBuilder, notificationManager, channel) =
+                createNotificationElements(notificationTitle, notificationBody, pendingIntent)
+
+            notificationManager.createNotificationChannel(channel)
+            // current time is used to make sure that each notification id is unique
+            notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
         }
-
-        // Create the pending intent to be used when the notification is clicked
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            0 /* Request code */,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val (notificationBuilder, notificationManager, channel) =
-            createNotificationElements(notificationTitle, notificationBody, pendingIntent)
-
-        notificationManager.createNotificationChannel(channel)
-        // current time is used to make sure that each notification id is unique
-        notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
     }
 
     /**

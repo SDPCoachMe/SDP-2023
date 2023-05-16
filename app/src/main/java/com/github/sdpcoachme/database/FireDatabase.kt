@@ -7,7 +7,7 @@ import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.Message.*
 import com.github.sdpcoachme.data.schedule.Event
-import com.github.sdpcoachme.data.schedule.GroupEvent
+import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.schedule.EventOps
 import com.google.firebase.database.DataSnapshot
@@ -25,12 +25,11 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
 
     private val rootDatabase: DatabaseReference = databaseReference
     private val accounts: DatabaseReference = rootDatabase.child("coachme").child("accounts")
-    private var currEmail = ""
     private val chats: DatabaseReference = rootDatabase.child("coachme").child("messages")
     private val fcmTokens: DatabaseReference = rootDatabase.child("coachme").child("fcmTokens")
     private val schedule: DatabaseReference = rootDatabase.child("coachme").child("schedule")
     private val groupEvents: DatabaseReference = schedule.child("groupEvents")
-    var valueEventListener: ValueEventListener? = null
+    private var valueEventListener: ValueEventListener? = null
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         val userID = user.email.replace('.', ',')
@@ -42,109 +41,89 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         return getChild(accounts, userID).thenApply { it.getValue(UserInfo::class.java) }
     }
 
-    override fun getAllUsers(): CompletableFuture<List<UserInfo>> {
-        return getAllChildren(accounts).thenApply { users ->
-            users.values.map {
-                try { // done to ensure that erroneous users in the
-                    // db do not inhibit the other users to be retrieved
-                    it.getValue(UserInfo::class.java)!!
-                } catch (e: Exception) {
-                    UserInfo()
-                }
-            }.filter { it != UserInfo() }
-        }
-    }
-
     override fun userExists(email: String): CompletableFuture<Boolean> {
         val userID = email.replace('.', ',')
         return childExists(accounts, userID)
     }
 
-    override fun addEvent(event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        val id = currEmail.replace('.', ',')
-        return getSchedule(currentWeekMonday).thenCompose {
+    override fun addEvent(email: String, event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        val id = email.replace('.', ',')
+        return getSchedule(email, currentWeekMonday).thenCompose {
             val updatedSchedule = it.copy(events = it.events + event)  // Add new events to the schedule
             setChild(schedule, id, updatedSchedule).thenApply { updatedSchedule }// Update DB
         }
     }
 
-    override fun addGroupEvent(groupEvent: GroupEvent, currentWeekMonday: LocalDate): CompletableFuture<Void> {
+    override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
         var errorPreventionFuture = CompletableFuture<Void>()
-//        return errorPreventionFuture.thenAccept {
+
         if (groupEvent.participants.size > groupEvent.maxParticipants) {
             errorPreventionFuture.completeExceptionally(Exception("Group event should not be full, initially"))
-        } else if (groupEvent.participants.size < 2) {
-            errorPreventionFuture.completeExceptionally(Exception("Group event must have at least 2 participants"))
+        } else if (groupEvent.participants.isEmpty()) {
+            errorPreventionFuture.completeExceptionally(Exception("Group event must have at least 1 participants"))
         } else if (LocalDateTime.parse(groupEvent.event.start).isBefore(LocalDateTime.now())) {
             errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
         } else {
-//                errorPreventionFuture.complete(null)
-            errorPreventionFuture = setChild(groupEvents, groupEvent.groupEventId, groupEvent)
+            errorPreventionFuture = setChild(groupEvents, groupEvent.groupEventId, groupEvent).thenCompose {
+                registerForGroupEvent(groupEvent.organiser, groupEvent.groupEventId)
+            }
         }
-//        }.thenCompose {
-//        }
+
         return errorPreventionFuture
     }
 
-    override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
-        val id = currEmail.replace('.', ',')
-        return getGroupEvent(groupEventId, EventOps.getStartMonday()).thenCompose { groupEvent ->
+    override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Void> {
+        val id = email.replace('.', ',')
+        return getGroupEvent(groupEventId).thenCompose { groupEvent ->
             val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
             if (!hasCapacity) {
                 val failingFuture = CompletableFuture<Void>()
                 failingFuture.completeExceptionally(Exception("Group event is full"))
                 failingFuture
             } else {
-                val updatedGroupEvent = groupEvent.copy(participants = groupEvent.participants + currEmail)
+                val updatedGroupEvent = groupEvent.copy(participants = groupEvent.participants + email)
                 setChild(groupEvents, groupEventId, updatedGroupEvent).thenCompose {
-                    getSchedule(EventOps.getStartMonday()).thenCompose { s ->
+                    getSchedule(email, EventOps.getStartMonday()).thenCompose { s ->
                         val updatedSchedule = s.copy(groupEvents = s.groupEvents + groupEventId)
-                        setChild(schedule, id, updatedSchedule)
+                        setChild(schedule, id, updatedSchedule) // Return updated schedule?
                     }
                 }
             }
         }
     }
 
-    override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        val id = currEmail.replace('.', ',')
+    override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        val id = email.replace('.', ',')
         return getChild(schedule, id).thenApply { it.getValue(Schedule::class.java)!! }
-            .exceptionally {
-                Schedule() }
+            .exceptionally { Schedule() }
     }
 
-    override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
-        return getChild(groupEvents, groupEventId).thenApply { it.getValue(GroupEvent::class.java)!! }
+    override fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
+        val id = groupEventId.replace('.', ',')
+        return getChild(groupEvents, id).thenApply { it.getValue(GroupEvent::class.java)!! }
             .exceptionally { GroupEvent() }
     }
 
-    override fun getCurrentEmail(): String {
-        return currEmail
-    }
-
-    override fun setCurrentEmail(email: String) {
-        currEmail = email
-    }
-
     override fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
-        return getUser(currEmail).thenApply {
+        return getUser(email).thenApply {
             it.chatContacts.filterNotNull()
 
         }.thenCompose { contactList ->
             val mappedF = contactList.map { contactId ->
                 val isGroupChat = contactId.startsWith("@@event")
                 val chatId = if (isGroupChat) contactId
-                else {
-                    if (contactId < currEmail) contactId + currEmail
-                    else currEmail + contactId
+                else { // since, here, the contactId is the email of the recipient
+                    if (contactId < email) contactId + email
+                    else email + contactId
                 }
 
                 // Fetch the chat and create the corresponding ContactRowInfo
                 getChat(chatId).thenCompose { chat ->
-                    val lastMessage = if (chat.messages.isEmpty()) Message() else chat.messages.last()
+                    val lastMessage =
+                        if (chat.messages.isEmpty()) Message() else chat.messages.last()
 
                     if (contactId.startsWith("@@event")) {
-                        getGroupEvent(contactId, EventOps.getStartMonday().plusDays(7))
+                        getGroupEvent(contactId)
                             .thenApply { groupEvent ->
                                 val row = ContactRowInfo(
                                     chatId = chatId,
@@ -153,7 +132,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
                                     isGroupChat = true
                                 )
                                 row
-                            }.exceptionally { println("error in getgroup event") ; null}
+                            }.exceptionally { println("error in getgroup event"); null }
                     } else {
                         getUser(contactId).thenApply {
                             val row = ContactRowInfo(
@@ -163,9 +142,9 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
                                 isGroupChat = false
                             )
                             row
-                        }.exceptionally { println("error in getuser") ; println(it.cause); null}
+                        }.exceptionally { println("error in getuser"); println(it.cause); null }
                     }
-                }.exceptionally { println("error in get chat") ; null}
+                }.exceptionally { println("error in get chat"); null }
             }
             // done to make sure that all the futures are completed before calling join
             val allOf = CompletableFuture.allOf(*mappedF.toTypedArray())
@@ -238,6 +217,22 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         chatRef.addValueEventListener(valueEventListener)
     }
 
+    override fun addUsersListeners(onChange: (List<UserInfo>) -> Unit) {
+        val usersRef = accounts
+        val valueEventListener = object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                val usersSnapShots = getAllChildren(dataSnapshot)
+                val users = mapDStoList(usersSnapShots.values, UserInfo::class.java)
+                onChange(users)
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Handle errors here
+            }
+        }
+        usersRef.addValueEventListener(valueEventListener)
+    }
+
     override fun removeChatListener(chatId: String) {
         val id = chatId.replace('.', ',')
         val chatRef = chats.child(id)
@@ -256,17 +251,31 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         return setChild(fcmTokens, userID, token)
     }
 
-    /**
-     * Gets all children of a given database reference
-     * @param databaseRef the database reference whose children to get
-     * @return a completable future that completes when the children are retrieved. The future
-     * contains a map of the children, with the key being the key of the child and the value being
-     * the child itself
-     */
-    private fun getAllChildren(databaseRef: DatabaseReference): CompletableFuture<Map<String, DataSnapshot>> {
-        return getRef(databaseRef).thenApply {
-            it.children.associateBy { child -> child.key!! /* can't be null */ }
+    override fun getAllUsers(): CompletableFuture<List<UserInfo>> {
+        return getRef(accounts)
+            .thenApply { getAllChildren(it) }
+            .thenApply { users -> mapDStoList(users.values, UserInfo::class.java)
         }
+    }
+
+    private fun <T> mapDStoList(ds: Collection<DataSnapshot>, clazz: Class<T>): List<T> {
+        return ds.mapNotNull {
+            try { // done to ensure that erroneous users in the
+                // db do not inhibit the other users to be retrieved
+                it.getValue(clazz)!!
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    /**
+     * Gets all children of a Datasnapshot
+     * @param dataSnapshot the Datasnapshot from which to get the children
+     * @return a map of the children, with the key being the key of the child
+     */
+    private fun getAllChildren(dataSnapshot: DataSnapshot): Map<String, DataSnapshot> {
+        return dataSnapshot.children.associateBy { child -> child.key!! } /* can't be null */
     }
 
     /**

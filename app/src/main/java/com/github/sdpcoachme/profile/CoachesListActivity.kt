@@ -7,15 +7,35 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.*
+import androidx.compose.material.Divider
+import androidx.compose.material.FloatingActionButton
+import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons.Default
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,7 +51,7 @@ import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.ContactRowInfo
-import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.CAMPUS
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.CoachesListActivity.TestTags.Buttons.Companion.FILTER
@@ -39,7 +59,7 @@ import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.github.sdpcoachme.ui.theme.Purple200
 import kotlinx.coroutines.future.await
-import java.util.*
+import java.util.Collections
 import java.util.concurrent.CompletableFuture
 
 class CoachesListActivity : ComponentActivity() {
@@ -53,6 +73,11 @@ class CoachesListActivity : ComponentActivity() {
     }
 
     // Allows to notice testing framework that the activity is ready
+
+    private lateinit var store: CachingStore
+    private lateinit var emailFuture: CompletableFuture<String>
+
+
     var stateLoading = CompletableFuture<Void>()
 
     // Observable state of the current sports used to filter the coaches list
@@ -62,12 +87,13 @@ class CoachesListActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
-        val database = (application as CoachMeApplication).database
-        val email = database.getCurrentEmail()
+        store = (application as CoachMeApplication).store
+
+        emailFuture = store.getCurrentEmail()
 
         val locationProvider = (application as CoachMeApplication).locationProvider
         // Here we don't need the UserInfo
-        locationProvider.init(this, CompletableFuture.completedFuture(null))
+        locationProvider.updateContext(this, CompletableFuture.completedFuture(null))
         // the lastLocation return a null containing state if no location retrieval has been
         // performed yet. In production, this should for now never be the case as this code is
         // necessarily run after MapActivity. We keep it for robustness against tests.
@@ -75,47 +101,43 @@ class CoachesListActivity : ComponentActivity() {
 
         selectSportsHandler = SelectSportsActivity.getHandler(this)
 
-        if (email.isEmpty()) {
-            val errorMsg = "The coach list did not receive an email address.\nPlease return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
-        } else {
+        setContent {
+            var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
+            var contactRowInfos by remember { mutableStateOf(listOf<ContactRowInfo>()) }
+            var email = ""
 
-            setContent {
-                var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
-                var contactRowInfos by remember { mutableStateOf(listOf<ContactRowInfo>()) }
-
-
-                // Proper way to handle result of a future in a Composable.
-                // This makes sure the listOfCoaches state is updated only ONCE, when the future is complete
-                // This is because the code in LaunchedEffect(true) will only be executed once, when the
-                // Composable is first created (given that the parameter key1 never changes). The code won't
-                // be executed on every recomposition.
-                // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
-                LaunchedEffect(true) {
-                    if (isViewingContacts) {
-                        contactRowInfos = database
-                            .getContactRowInfo(email = email)
-                            .await()
-                    } else {
-                        listOfCoaches = database
-                            .getAllUsersByNearest(
-                                latitude = userLatLng.latitude,
-                                longitude = userLatLng.longitude
-                            ).thenApply {
-                                it.filter { user -> user.coach }
-                            }.await()
-                    }
-                    // Activity is now ready for testing
-                    stateLoading.complete(null)
+            // Proper way to handle result of a future in a Composable.
+            // This makes sure the listOfCoaches state is updated only ONCE, when the future is complete
+            // This is because the code in LaunchedEffect(true) will only be executed once, when the
+            // Composable is first created (given that the parameter key1 never changes). The code won't
+            // be executed on every recomposition.
+            // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
+            LaunchedEffect(true) {
+                email = emailFuture.await()
+                if (isViewingContacts) {
+                    contactRowInfos = store
+                        .getContactRowInfo(email = email)
+                        .await()
+                } else {
+                    listOfCoaches = store
+                        .getAllUsersByNearest(
+                            latitude = userLatLng.latitude,
+                            longitude = userLatLng.longitude
+                        ).thenApply {
+                            it.filter { user -> user.coach }
+                        }.await()
                 }
 
-                val title = if (isViewingContacts) stringResource(R.string.contacts)
-                else stringResource(R.string.title_activity_coaches_list)
+                // Activity is now ready for testing
+                stateLoading.complete(null)
+            }
 
-                CoachMeTheme {
-                    Dashboard(title) {
-                        CoachesList(it, email, listOfCoaches, isViewingContacts, contactRowInfos)
-                    }
+            val title = if (isViewingContacts) stringResource(R.string.contacts)
+            else stringResource(R.string.title_activity_coaches_list)
+
+            CoachMeTheme {
+                Dashboard(title) {
+                    CoachesList(it, email, listOfCoaches, isViewingContacts, contactRowInfos)
                 }
             }
         }

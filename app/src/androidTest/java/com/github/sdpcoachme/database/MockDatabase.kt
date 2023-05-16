@@ -7,7 +7,7 @@ import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Event
-import com.github.sdpcoachme.data.schedule.GroupEvent
+import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.schedule.EventOps
 import java.time.LocalDate
@@ -18,42 +18,59 @@ import java.util.concurrent.CompletableFuture
  * A mock database class
  */
 open class MockDatabase: Database {
-
     // TODO: database should be empty by default, and tests should add data to it.
     //  This way, we can make sure each test is independent from the others
-    private val defaultEmail = "example@email.com"
-    private val defaultUserInfo = UserInfo(
-        "John",
-        "Doe",
-        defaultEmail,
-        "1234567890",
-        LAUSANNE,
-        false,
-        emptyList(),
-        emptyList()
-    )
-    private var currEmail = ""
 
-    private val toEmail = "to@email.com"
-    private val toUser = UserInfoSamples.COACH_1
-
-    private var chat = Chat(participants = listOf(defaultEmail, toEmail))
+    private var chat = Chat(participants = listOf(DEFAULT_EMAIL, TO_EMAIL))
     private var chatId = ""
     private var onChange: (Chat) -> Unit = {}
     private var numberOfAddChatListenerCalls = 0
     private var numberOfRemovedChatListenerCalls = 0
 
-
     private var groupChat = Chat()
 
     // TODO: type any is not ideal, needs refactoring
-    private var accounts = hashMapOf<String, Any>(defaultEmail to defaultUserInfo)
+    private var accounts = hashMapOf<String, Any>(DEFAULT_EMAIL to defaultUserInfo)
     private val fcmTokens = hashMapOf<String, String>()
     private var schedules = hashMapOf<String, Schedule>()
     private var groupEvents = hashMapOf<String, GroupEvent>()
 
+    companion object {
+        private const val DEFAULT_EMAIL = "example@email.com"
+        private val defaultUserInfo = UserInfo(
+            "John",
+            "Doe",
+            DEFAULT_EMAIL,
+            "1234567890",
+            LAUSANNE,
+            false,
+            emptyList(),
+            emptyList()
+        )
+
+        private val TO_EMAIL = "to@email.com"
+        private val toUser = UserInfoSamples.COACH_1
+
+        // Those functions are going to be used in the CacheStore tests
+        fun getDefaultEmail(): String {
+            return DEFAULT_EMAIL
+        }
+
+        fun getToUserEmail(): String {
+            return TO_EMAIL
+        }
+
+        fun getDefaultUser(): UserInfo {
+            return defaultUserInfo
+        }
+
+        fun getToUser(): UserInfo {
+            return toUser
+        }
+    }
+
     fun restoreDefaultChatSetup() {
-        chat = Chat(participants = listOf(defaultEmail, toEmail))
+        chat = Chat(participants = listOf(DEFAULT_EMAIL, TO_EMAIL))
         chatId = ""
         onChange = {}
         numberOfRemovedChatListenerCalls = 0
@@ -63,7 +80,7 @@ open class MockDatabase: Database {
     }
 
     fun restoreDefaultAccountsSetup() {
-        accounts = hashMapOf(defaultEmail to defaultUserInfo)
+        accounts = hashMapOf(DEFAULT_EMAIL to defaultUserInfo)
     }
 
     fun restoreDefaultSchedulesSetup() {
@@ -98,25 +115,27 @@ open class MockDatabase: Database {
     }
 
     override fun userExists(email: String): CompletableFuture<Boolean> {
-        return getMap(accounts, email).thenApply { it != null }
+        return getMap(accounts, email)
+            .thenApply { it != null }
+            .exceptionally { false }
     }
 
-    override fun addEvent(event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        if (currEmail == "throw@Exception.com") {
+    override fun addEvent(email: String, event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        if (email == "throw@Exception.com") {
             val error = CompletableFuture<Schedule>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
         }
-        return getSchedule(currentWeekMonday).thenCompose { schedule ->
+        return getSchedule(email, currentWeekMonday).thenCompose { schedule ->
             val newSchedule = schedule.copy(events = schedule.events + event)
-            schedules[currEmail] = newSchedule
+            schedules[email] = newSchedule
             val future = CompletableFuture<Schedule>()
             future.complete(null)
             future
         }
     }
 
-    override fun addGroupEvent(groupEvent: GroupEvent, currentWeekMonday: LocalDate): CompletableFuture<Void> {
+    override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
         val errorPreventionFuture = CompletableFuture<Void>()
 
         if (groupEvent.participants.size > groupEvent.maxParticipants) {
@@ -127,7 +146,7 @@ open class MockDatabase: Database {
             errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
         } else {
             groupEvents[groupEvent.groupEventId] = groupEvent
-            registerForGroupEvent(groupEvent.groupEventId).thenCompose {
+            registerForGroupEvent(groupEvent.organiser, groupEvent.groupEventId).thenCompose {
                 errorPreventionFuture.complete(null)
                 errorPreventionFuture
             }
@@ -136,37 +155,37 @@ open class MockDatabase: Database {
         return errorPreventionFuture
     }
 
-    override fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
-        return getGroupEvent(groupEventId, EventOps.getStartMonday()).thenCompose { groupEvent ->
+    override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Void> {
+        return getGroupEvent(groupEventId).thenCompose { groupEvent ->
             val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
             if (!hasCapacity) {
                 val failingFuture = CompletableFuture<Void>()
                 failingFuture.completeExceptionally(Exception("Group event is full"))
                 failingFuture
             } else {
-                val updatedGroupEvent = groupEvent.copy(participants = groupEvent.participants + currEmail)
+                val updatedGroupEvent = groupEvent.copy(participants = groupEvent.participants + email)
                 groupEvents[groupEventId] = updatedGroupEvent
 
-                getSchedule(EventOps.getStartMonday()).thenCompose { s ->
+                getSchedule(email, EventOps.getStartMonday()).thenCompose { s ->
                     val updatedSchedule = s.copy(groupEvents = s.groupEvents + groupEventId)
-                    schedules[currEmail] = updatedSchedule
+                    schedules[email] = updatedSchedule
                     CompletableFuture.completedFuture(null)
                 }
             }
         }
     }
 
-    override fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        if (currEmail == "throwGetSchedule@Exception.com") {
+    override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        if (email == "throwGetSchedule@Exception.com") {
             val error = CompletableFuture<Schedule>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
         }
-        return schedules[currEmail]?.let { CompletableFuture.completedFuture(it) }
+        return schedules[email]?.let { CompletableFuture.completedFuture(it) }
             ?: CompletableFuture.completedFuture(Schedule())
     }
 
-    override fun getGroupEvent(groupEventId: String, currentWeekMonday: LocalDate): CompletableFuture<GroupEvent> {
+    override fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
         val future = CompletableFuture<GroupEvent>()
         future.complete(groupEvents[groupEventId] ?: GroupEvent())
         return future
@@ -212,7 +231,7 @@ open class MockDatabase: Database {
     }
 
     override fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
-        val id = if (email < toEmail) email+toUser.email else toEmail+email
+        val id = if (email < toUser.email) email+toUser.email else toUser.email+email
         return CompletableFuture.completedFuture(listOf(
             ContactRowInfo(id, toUser.firstName + " " + toUser.lastName, if (chat.messages.isEmpty()) Message() else chat.messages.last()),
             ContactRowInfo(groupChat.id, "Group Chat", if (groupChat.messages.isEmpty()) Message() else groupChat.messages.last(), true)
@@ -241,6 +260,10 @@ open class MockDatabase: Database {
 
     override fun removeChatListener(chatId: String) {
         numberOfRemovedChatListenerCalls++
+    }
+
+    override fun addUsersListeners(onChange: (List<UserInfo>) -> Unit) {
+        // Not necessary
     }
 
     fun numberOfRemovedChatListenerCalls(): Int {
@@ -278,13 +301,5 @@ open class MockDatabase: Database {
         } else
             future.complete(value)
         return future
-    }
-
-    override fun getCurrentEmail(): String {
-        return currEmail
-    }
-
-    override fun setCurrentEmail(email: String) {
-        currEmail = email
     }
 }

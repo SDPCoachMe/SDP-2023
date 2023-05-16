@@ -1,16 +1,8 @@
 package com.github.sdpcoachme.schedule
 
 import android.content.Intent
-import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsFocused
-import androidx.compose.ui.test.assertIsNotFocused
-import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performImeAction
-import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
@@ -22,11 +14,11 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.CoachMeTestApplication
+import com.github.sdpcoachme.data.Address
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
-import com.github.sdpcoachme.database.Database
-import com.github.sdpcoachme.database.MockDatabase
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.CANCEL
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.COLOR_BOX
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.END_DATE
@@ -57,10 +49,11 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class CreateEventActivityTest {
-    private lateinit var database: Database
+    private lateinit var store: CachingStore
     private val defaultEmail = "example@email.com"
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), CreateEventActivity::class.java)
 
@@ -72,25 +65,23 @@ class CreateEventActivityTest {
 
     private val eventDateFormatter = EventOps.getEventDateFormatter()
 
-
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
     @Before
     fun setup() {
-        database = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).database
-        database.setCurrentEmail(defaultEmail)
+        (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
+        store = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).store
+        store.retrieveData.get(1, TimeUnit.SECONDS)
+        store.setCurrentEmail(defaultEmail)
         Intents.init()
     }
 
     @After
     fun teardown() {
         EventOps.clearMultiDayEventMap()
-        database.setCurrentEmail("")
-        if (database is MockDatabase) {
-            (database as MockDatabase).restoreDefaultSchedulesSetup()
-            println("MockDatabase was torn down")
-        }
+        store.setCurrentEmail("")
+        ApplicationProvider.getApplicationContext<CoachMeTestApplication>().clearDataStoreAndResetCachingStore()
         Intents.release()
     }
 
@@ -139,31 +130,21 @@ class CreateEventActivityTest {
     }
 
     @Test
-    fun addEventWithEmptyEmailRedirectsToErrorPage() {
-        database.setCurrentEmail("")
-        ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.Buttons.GO_TO_LOGIN_BUTTON)
-                .assertIsDisplayed()
-            composeTestRule.onNodeWithTag(IntentExtrasErrorHandlerActivity.TestTags.TextFields.ERROR_MESSAGE_FIELD)
-                .assertIsDisplayed()
-
-            composeTestRule.onNodeWithText("New event did not receive an email address.\n Please return to the login page and try again.")
-                .assertIsDisplayed()
-        }
-    }
-
-    @Test
     fun addEventWithCustomNameAndDescriptionRedirectsToSchedule() {
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
             fillAndCheckFocus(defaultEventName, EVENT_NAME)
             fillAndCheckFocus(defaultEventDescription, DESCRIPTION)
 
+            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+            device.waitForIdle()
             composeTestRule.onNodeWithTag(SAVE)
                 .assertExists()
             composeTestRule.onNodeWithTag(SAVE)
                 .performClick()
+            device.waitForIdle()
 
             intended(hasComponent(ScheduleActivity::class.java.name))
+
         }
     }
 
@@ -188,14 +169,16 @@ class CreateEventActivityTest {
                 .performClick()
 
             val expectedEvent = Event(
-                defaultEventName,
-                defaultEventStart.format(eventDateFormatter),
-                defaultEventEnd.format(eventDateFormatter),
-                defaultEventDescription,
-                EventColors.DEFAULT.color.value.toString()
+                name = defaultEventName,
+                color = EventColors.DEFAULT.color.value.toString(),
+                start = defaultEventStart.format(eventDateFormatter),
+                end = defaultEventEnd.format(eventDateFormatter),
+                //sport = ???,
+                address = Address(),   // adapt this when location choosing is added
+                description = defaultEventDescription
             )
 
-            database.getSchedule(currentWeekMonday).thenAccept {
+            store.getSchedule(currentWeekMonday).thenAccept {
                 val actualEvents = it.events
 
                 assertThat(actualEvents.size, `is`(1))
@@ -320,7 +303,7 @@ class CreateEventActivityTest {
         device.waitForIdle()
         device.wait(Until.findObject(By.text("$testMinute2")), 500)
         device.findObject(By.text("$testMinute2")).click(500)
-        device.waitForIdle(10000)
+        device.waitForIdle(1000)
 
         // Press ok
         device.findObject(By.text("Ok")).click()

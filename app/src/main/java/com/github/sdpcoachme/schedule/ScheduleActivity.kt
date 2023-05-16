@@ -57,7 +57,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.data.schedule.ShownEvent
-import com.github.sdpcoachme.database.Database
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.schedule.EventOps.Companion.getDayFormatter
@@ -102,25 +102,21 @@ class ScheduleActivity : ComponentActivity() {
         }
     }
 
-    private lateinit var database: Database
-    private lateinit var email: String
+    private lateinit var store: CachingStore
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        database = (application as CoachMeApplication).database
-        email = database.getCurrentEmail()
+        store = (application as CoachMeApplication).store
 
-        if (email.isEmpty()) {
-            val errorMsg = "Schedule did not receive an email address.\n Please return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
-        } else {
-            val startMonday = getStartMonday()
-            val futureDBSchedule: CompletableFuture<Schedule> = database.getSchedule(startMonday)
+        val startMonday = getStartMonday()
 
-            setContent {
-                CoachMeTheme {
-                    Surface(color = MaterialTheme.colors.background) {
-                        Schedule(futureDBSchedule, database)
-                    }
+        val futureDBSchedule: CompletableFuture<Schedule> = store.getSchedule(startMonday).exceptionally {
+            null
+        }
+
+        setContent {
+            CoachMeTheme {
+                Surface(color = MaterialTheme.colors.background) {
+                    Schedule(futureDBSchedule, store)
                 }
             }
         }
@@ -135,13 +131,15 @@ private const val ColumnsPerWeek = 7
 @Composable
 fun Schedule(
     futureDBSchedule: CompletableFuture<Schedule>,
-    database: Database,
+    store: CachingStore,
     modifier: Modifier = Modifier,
 ) {
     // the starting day is always the monday of the current week
     var shownWeekMonday by remember { mutableStateOf(getStartMonday()) }
     var events by remember { mutableStateOf(emptyList<Event>()) }
-    var eventsFuture by remember { mutableStateOf(futureDBSchedule.thenApply { Schedule(events = it.events) }) }
+    var eventsFuture by remember { mutableStateOf(futureDBSchedule.thenApply {
+        Schedule(events = it.events) })
+    }
     val context = LocalContext.current
 
     // Launch an effect when the eventsFuture changes
@@ -166,7 +164,7 @@ fun Schedule(
     fun updateCurrentWeekMonday(weeksToAdd: Int) {
         shownWeekMonday = shownWeekMonday.plusWeeks(weeksToAdd.toLong())
         // Update the cached events and if not already cached, get the events from the database
-        database.getSchedule(shownWeekMonday).thenAccept { schedule ->
+        store.getSchedule(shownWeekMonday).thenAccept { schedule ->
             events = schedule.events
         }
     }
@@ -188,6 +186,7 @@ fun Schedule(
 
             // filter events to only show events in the current week
             val eventsToShow = EventOps.eventsToWrappedEvents(events)
+            // TODO: add function (+call) to transform GroupedEvents to ShownEvents
             BasicSchedule(
                 events = eventsToShow.filter { event ->
                     val eventDate = LocalDateTime.parse(event.start).toLocalDate()
