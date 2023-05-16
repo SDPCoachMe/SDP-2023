@@ -108,10 +108,8 @@ class ScheduleActivity : ComponentActivity() {
         store = (application as CoachMeApplication).store
 
         val startMonday = getStartMonday()
-        //TODO: For demo, let this function run once to add sample events to the database
-        //database.addEvents(sampleEvents, startMonday).thenRun {
+
         val futureDBSchedule: CompletableFuture<Schedule> = store.getSchedule(startMonday).exceptionally {
-            println("ScheduleActivity: Error getting schedule from database")
             null
         }
 
@@ -122,7 +120,6 @@ class ScheduleActivity : ComponentActivity() {
                 }
             }
         }
-        //}
     }
 }
 
@@ -140,7 +137,9 @@ fun Schedule(
     // the starting day is always the monday of the current week
     var shownWeekMonday by remember { mutableStateOf(getStartMonday()) }
     var events by remember { mutableStateOf(emptyList<Event>()) }
-    var eventsFuture by remember { mutableStateOf(futureDBSchedule.thenApply { Schedule(events = it.events) }) }
+    var eventsFuture by remember { mutableStateOf(futureDBSchedule.thenApply {
+        Schedule(events = it.events) })
+    }
     val context = LocalContext.current
 
     // Launch an effect when the eventsFuture changes
@@ -187,6 +186,7 @@ fun Schedule(
 
             // filter events to only show events in the current week
             val eventsToShow = EventOps.eventsToWrappedEvents(events)
+            // TODO: add function (+call) to transform GroupedEvents to ShownEvents
             BasicSchedule(
                 events = eventsToShow.filter { event ->
                     val eventDate = LocalDateTime.parse(event.start).toLocalDate()

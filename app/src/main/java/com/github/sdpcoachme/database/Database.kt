@@ -4,9 +4,8 @@ import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
+import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.SphericalUtil
 import java.time.LocalDate
 import java.util.concurrent.CompletableFuture
 
@@ -36,25 +35,6 @@ interface Database {
      */
     fun getAllUsers(): CompletableFuture<List<UserInfo>>
 
-    /**
-     * Get all users from the database sorted by distance from a given location
-     * @param latitude Latitude of the location
-     * @param longitude Longitude of the location
-     * @return A future that will complete with a list of all users in the database sorted by distance
-     */
-    fun getAllUsersByNearest(latitude: Double, longitude: Double): CompletableFuture<List<UserInfo>> {
-        return getAllUsers().thenApply { users ->
-            users.sortedBy { user ->
-                val userLatitude = user.address.latitude
-                val userLongitude = user.address.longitude
-                val distance = SphericalUtil.computeDistanceBetween(
-                    LatLng(latitude, longitude),
-                    LatLng(userLatitude, userLongitude)
-                )
-                distance
-            }
-        }
-    }
 
     /**
      * Check if a user exists in the database
@@ -74,6 +54,20 @@ interface Database {
      */
     fun addEvent(email: String, event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule>
 
+    /**
+     * Add group event to the database
+     * @param groupEvent The group event to add
+     * @return A future that will complete when the group event has been added.
+     */
+    fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void>
+
+    /**
+     * Add new participant to the group event
+     * @param email The email of the user to add as a participant
+     * @param groupEventId The id of the group event to add the participant to
+     * @return A future that will complete when the participant has been added.
+     */
+    fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Void>
 
     /**
      * Get the schedule from the database
@@ -83,6 +77,14 @@ interface Database {
      * the future will complete exceptionally with a NoSuchKeyException.
      */
     fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule>
+
+    /**
+     * Get the group event from the database
+     * @param groupEventId The id of the group event to get
+     * @return A future that will complete with the group event. If the user does not exist,
+     * the future will complete exceptionally with a NoSuchKeyException.
+     */
+    fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent>
 
     /**
      * Get the chat contacts for the given user

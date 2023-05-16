@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.data.Address
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.database.CachingStore
@@ -195,7 +196,14 @@ fun NewEvent(store: CachingStore) {
                 val intent = Intent(context, ScheduleActivity::class.java)
                 context.startActivity(intent)
             }
-            val event = Event(eventName, selectedColor.value.toString(), start.format(formatterEventDate), end.format(formatterEventDate), description)
+            val event = Event(
+                name = eventName,
+                color = selectedColor.value.toString(),
+                start = start.format(formatterEventDate),
+                end = end.format(formatterEventDate),
+                address = Address(),   // TODO: Add possibility to choose location during next task
+                description = description
+            )
             TopAppBar(
                 title = {
                     Text(
@@ -223,11 +231,23 @@ fun NewEvent(store: CachingStore) {
                                 val toast = Toast.makeText(context, "Start date must be before end date", Toast.LENGTH_SHORT)
                                 toast.show()
                             } else {
-                                EventOps.addEvent(event, store).thenAccept {
+                                EventOps.addEvent(event, store)/*.thenCompose {
+                                    val organiser = database.getCurrentEmail().replace('.', ',')
+                                    val testGroupEvent = GroupEvent(
+                                        event = event.copy(
+                                            name = "Test Group Event",
+                                            start = LocalDateTime.parse(event.start, formatterEventDate).plusDays(1).format(formatterEventDate), //LocalDateTime.now().plusHours(1).format(formatterEventDate),
+                                            end = LocalDateTime.parse(event.end, formatterEventDate).plusDays(1).format(formatterEventDate), //LocalDateTime.now().plusHours(3).format(formatterEventDate),
+                                        ),
+                                        organiser = organiser,
+                                        maxParticipants = 5,
+                                    )
+                                    // TODO: remove this once the "add group event" button is added to the UI
+                                    database.addGroupEvent(testGroupEvent, EventOps.getStartMonday())
+                                }*/.thenAccept {
                                     goBackToScheduleActivity()
                                 }
                             }
-
                         },
                         modifier = Modifier.testTag(CreateEventActivity.TestTags.Clickables.SAVE),
                     ) {

@@ -1,6 +1,6 @@
 package com.github.sdpcoachme.location.autocomplete
 
-import com.github.sdpcoachme.data.UserAddress
+import com.github.sdpcoachme.data.Address
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -20,7 +20,7 @@ interface AddressAutocompleteHandler {
      * If the user cancels the operation, the CompletableFuture will fail with an AutocompleteCancelledException.
      * If there is an error, the CompletableFuture will fail with an AutocompleteFailedException.
      */
-    fun launch(): CompletableFuture<UserAddress>
+    fun launch(): CompletableFuture<Address>
 
     // Used to handle places autocomplete activity errors
     class AutocompleteFailedException(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {

@@ -35,6 +35,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
 
 /**
  * Test class for the Composable MapView. Unfortunately, the GoogleMap api for Jetpack Compose
@@ -55,7 +56,7 @@ class MapActivityTest {
         ACCESS_FINE_LOCATION
     )
 
-    private val database = (InstrumentationRegistry.getInstrumentation()
+    private val store = (InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as CoachMeApplication).store
     private val defaultIntent =
         Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
@@ -66,12 +67,13 @@ class MapActivityTest {
 
     @Before
     fun setUp() {
-        database.setCurrentEmail(EXISTING_EMAIL)
+        store.retrieveData.get(1, SECONDS)
+        store.setCurrentEmail(EXISTING_EMAIL)
         for (coach in COACHES) {
-            database.updateUser(coach).join()
+            store.updateUser(coach).join()
         }
         for (nonCoach in NON_COACHES) {
-            database.updateUser(nonCoach).join()
+            store.updateUser(nonCoach).join()
         }
         Intents.init()
     }
@@ -179,7 +181,7 @@ class MapActivityTest {
     private fun mapLocationIsAddress() {
         ActivityScenario.launch<MapActivity>(defaultIntent).use {
             val lastLocation = mockLocationProvider.getLastLocation().value
-            val userAddress = database.getUser(EXISTING_EMAIL).get(DELAY, MILLISECONDS).address
+            val userAddress = store.getUser(EXISTING_EMAIL).get(DELAY, MILLISECONDS).address
             val userLatLng = LatLng(userAddress.latitude, userAddress.longitude)
             assertThat(lastLocation, `is`(userLatLng))
         }

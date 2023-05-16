@@ -6,12 +6,15 @@ import com.github.sdpcoachme.data.messaging.Chat.Companion.markOtherUsersMessage
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.Message.*
 import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
+import com.github.sdpcoachme.schedule.EventOps
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -24,6 +27,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private val chats: DatabaseReference = rootDatabase.child("coachme").child("messages")
     private val fcmTokens: DatabaseReference = rootDatabase.child("coachme").child("fcmTokens")
     private val schedule: DatabaseReference = rootDatabase.child("coachme").child("schedule")
+    private val groupEvents: DatabaseReference = schedule.child("groupEvents")
     var valueEventListener: ValueEventListener? = null
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
@@ -49,10 +53,54 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         }
     }
 
+    override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
+        var errorPreventionFuture = CompletableFuture<Void>()
+
+        if (groupEvent.participants.size > groupEvent.maxParticipants) {
+            errorPreventionFuture.completeExceptionally(Exception("Group event should not be full, initially"))
+        } else if (groupEvent.participants.isEmpty()) {
+            errorPreventionFuture.completeExceptionally(Exception("Group event must have at least 1 participants"))
+        } else if (LocalDateTime.parse(groupEvent.event.start).isBefore(LocalDateTime.now())) {
+            errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
+        } else {
+            errorPreventionFuture = setChild(groupEvents, groupEvent.groupEventId, groupEvent).thenCompose {
+                registerForGroupEvent(groupEvent.organiser, groupEvent.groupEventId)
+            }
+        }
+
+        return errorPreventionFuture
+    }
+
+    override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Void> {
+        val id = email.replace('.', ',')
+        return getGroupEvent(groupEventId).thenCompose { groupEvent ->
+            val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
+            if (!hasCapacity) {
+                val failingFuture = CompletableFuture<Void>()
+                failingFuture.completeExceptionally(Exception("Group event is full"))
+                failingFuture
+            } else {
+                val updatedGroupEvent = groupEvent.copy(participants = groupEvent.participants + email)
+                setChild(groupEvents, groupEventId, updatedGroupEvent).thenCompose {
+                    getSchedule(email, EventOps.getStartMonday()).thenCompose { s ->
+                        val updatedSchedule = s.copy(groupEvents = s.groupEvents + groupEventId)
+                        setChild(schedule, id, updatedSchedule) // Return updated schedule?
+                    }
+                }
+            }
+        }
+    }
+
     override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         val id = email.replace('.', ',')
         return getChild(schedule, id).thenApply { it.getValue(Schedule::class.java)!! }
             .exceptionally { Schedule() }
+    }
+
+    override fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
+        val id = groupEventId.replace('.', ',')
+        return getChild(groupEvents, id).thenApply { it.getValue(GroupEvent::class.java)!! }
+            .exceptionally { GroupEvent() }
     }
 
     override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
