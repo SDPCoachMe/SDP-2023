@@ -453,7 +453,41 @@ class CachingStore(private val wrappedDatabase: Database,
             chats[chatId] = chats[chatId]!!.copy(messages = chats[chatId]!!.messages + message)
             storeLocalData()
         }
+        updateCachedContactRowInfo(chatId, message)
+
         return wrappedDatabase.sendMessage(chatId, message) // we only the chat with the new message if the chat is already cached
+    }
+
+    private fun updateCachedContactRowInfo(chatId: String, message: Message) {
+
+        getCurrentEmail().thenAccept { currEmail ->
+
+            // update the contact's last message
+            if (contactRowInfos.containsKey(currEmail)) {
+                var newContacts = listOf<ContactRowInfo>()
+                // we need to find the contact with the given chatId and update it
+                var wantedContact: ContactRowInfo? = null
+                for (contact in contactRowInfos[currEmail]!!) {
+                    // if the contact is the one we are looking for, we update it
+                    // but only if the last message has changed (if, e.g.,new members entered the chat,
+                    // we don't want to place the chat at the top of the list)
+                    if (contact.chatId == chatId) {
+                        wantedContact = contact.copy(lastMessage = message)
+                    } else {
+                        newContacts = newContacts + contact
+                    }
+                }
+                // Iff the contact is found, we can assume that the cache is
+                // up-to-date and return without clearing the cache
+                if (wantedContact != null) {
+                    contactRowInfos[currEmail] = listOf(wantedContact) + newContacts
+                    return@thenAccept
+                }
+            }
+
+            // to signal that the cache is not up to date
+            contactRowInfos.remove(currEmail)
+        }
     }
 
     /**

@@ -104,7 +104,7 @@ class CoachesListActivity : ComponentActivity() {
         setContent {
             var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
             var contactRowInfos by remember { mutableStateOf(listOf<ContactRowInfo>()) }
-            var email = ""
+            var email by remember { mutableStateOf("") }
 
             // Proper way to handle result of a future in a Composable.
             // This makes sure the listOfCoaches state is updated only ONCE, when the future is complete
@@ -152,7 +152,7 @@ class CoachesListActivity : ComponentActivity() {
         currentUserEmail: String,
         listOfCoaches: List<UserInfo>,
         isViewingContacts: Boolean,
-        contactRowInfos: List<ContactRowInfo> = listOf(),
+        contactRowInfos: List<ContactRowInfo>,
     ) {
         val context = LocalContext.current
         // initially all sports are selected
@@ -211,6 +211,7 @@ class CoachesListActivity : ComponentActivity() {
                 .fillMaxWidth()
                 .clickable {
                     if (isViewingContacts) {
+                        println("currentUserEmail: $currentUserEmail")
                         val displayChatIntent = Intent(context, ChatActivity::class.java)
                         displayChatIntent.putExtra("chatId", contactRowInfo.chatId)
                         context.startActivity(displayChatIntent)

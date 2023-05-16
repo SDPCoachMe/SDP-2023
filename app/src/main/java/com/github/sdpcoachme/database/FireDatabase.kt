@@ -113,9 +113,11 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
                 val isGroupChat = contactId.startsWith("@@event")
                 val chatId = if (isGroupChat) contactId
                 else { // since, here, the contactId is the email of the recipient
+                    Chat.chatIdForPersonalChats(email, contactId)
                     if (contactId < email) contactId + email
                     else email + contactId
                 }
+                println("firedatabase chatId: $chatId")
 
                 // Fetch the chat and create the corresponding ContactRowInfo
                 getChat(chatId).thenCompose { chat ->
