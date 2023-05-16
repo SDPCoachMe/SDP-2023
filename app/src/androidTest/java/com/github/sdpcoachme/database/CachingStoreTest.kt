@@ -209,11 +209,18 @@ class CachingStoreTest {
     }
 
     @Test
-    fun addGroupEventsAddsThemToWrappedDatabase() {
+    fun addGroupEventAddsItToWrappedDatabase() {
         var timesCalled = 0
         class ScheduleDB: MockDatabase() {
+            private var addedGroupEvents = mutableListOf<GroupEvent>()
+
+            fun getAddedGroupEvents(): List<GroupEvent> {
+                return addedGroupEvents
+            }
+
             override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
                 timesCalled++
+                addedGroupEvents.add(groupEvent)
                 return CompletableFuture.completedFuture(null)
             }
         }
@@ -225,13 +232,32 @@ class CachingStoreTest {
         )
         cachingStore.setCurrentEmail(exampleEmail)
         val isCorrect = cachingStore.addGroupEvent(groupEvents[0])
-            .thenCompose { cachingStore.addGroupEvent(groupEvents[1]) }
-            .thenCompose { cachingStore.addGroupEvent(groupEvents[2]) }
-            .thenCompose { cachingStore.addGroupEvent(groupEvents[3]) }
-            .thenCompose { cachingStore.addGroupEvent(groupEvents[4]) }
-            .thenCompose { cachingStore.addGroupEvent(groupEvents[5]) }
-            .thenCompose { cachingStore.addGroupEvent(groupEvents[6]) }
-            .thenApply {
+            .thenCompose {
+                assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(1))
+                assertThat(wrappedDatabase.getAddedGroupEvents()[0], `is`(groupEvents[0]))
+                cachingStore.addGroupEvent(groupEvents[1])
+            }.thenCompose {
+                assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(2))
+                assertThat(wrappedDatabase.getAddedGroupEvents()[1], `is`(groupEvents[1]))
+                cachingStore.addGroupEvent(groupEvents[2])
+            }.thenCompose {
+                assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(3))
+                assertThat(wrappedDatabase.getAddedGroupEvents()[2], `is`(groupEvents[2]))
+                cachingStore.addGroupEvent(groupEvents[3])
+            }.thenCompose {
+                assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(4))
+                assertThat(wrappedDatabase.getAddedGroupEvents()[3], `is`(groupEvents[3]))
+                cachingStore.addGroupEvent(groupEvents[4])
+            }.thenCompose {
+                assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(5))
+                assertThat(wrappedDatabase.getAddedGroupEvents()[4], `is`(groupEvents[4]))
+                cachingStore.addGroupEvent(groupEvents[5])
+            }
+            .thenCompose {
+                assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(6))
+                assertThat(wrappedDatabase.getAddedGroupEvents()[5], `is`(groupEvents[5]))
+                cachingStore.addGroupEvent(groupEvents[6])
+            }.thenApply {
                 assertThat(timesCalled, `is`(7))
                 true
             }.exceptionally {
@@ -436,9 +462,9 @@ class CachingStoreTest {
     }
 
     @Test
-    fun getGroupEventGetsCachedId() {
+    fun getGroupEventGetsCorrectGroupEvent() {
         // initialize database s.t. it contains the group event where the test user is a participant
-        val testEvent = groupEvents[0].copy(participants = listOf(exampleEmail))
+        val testEvent = groupEvents[0]
         val wrappedDatabase = GetGroupEventDB(testEvent)
         cachingStore = CachingStore(wrappedDatabase,
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
@@ -450,13 +476,9 @@ class CachingStoreTest {
         val currentMonday = EventOps.getStartMonday()
         val isCorrect = cachingStore.getSchedule(currentMonday)  // caches the group event id to user's schedule
             .thenCompose {
-                cachingStore.getGroupEvent(groupEvents[0].groupEventId)
-            }.thenCompose {
-                assertThat(wrappedDatabase.getTimesCalled(), `is`(1))
-                assertThat(it, `is`(testEvent))
-                cachingStore.getGroupEvent(groupEvents[0].groupEventId)
+                cachingStore.getGroupEvent(testEvent.groupEventId)
             }.thenApply {
-                assertThat(wrappedDatabase.getTimesCalled(), `is`(2))
+                assertThat(wrappedDatabase.getTimesCalled(), `is`(1))
                 assertThat(it, `is`(testEvent))
                 true
             }.exceptionally {
@@ -466,6 +488,7 @@ class CachingStoreTest {
         assertTrue(isCorrect)
     }
 
+    // This test might have to be adapted for next PR
     @Test
     fun getGroupEventFailsForUnregisteredUser() {
         val wrappedDatabase = GetGroupEventDB(GroupEvent())
