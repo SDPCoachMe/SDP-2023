@@ -595,8 +595,9 @@ class CachingStoreTest {
     @Test
     fun sendingMessageForCachedChatUpdatesThatChatInsideTheCache() {
         val newMessage = Message(
-            "New Message!",
             defaultUser.email,
+            "Sender Name",
+            "New Message!",
             LocalDateTime.now().toString(),
             ReadState.SENT
         )
@@ -633,8 +634,9 @@ class CachingStoreTest {
     @Test
     fun sendingMessageForNotCachedChatDoesNotCacheTheChat() {
         val newMessage = Message(
-            "New Message!",
             defaultUser.email,
+            "Sender Name",
+            "New Message!",
             LocalDateTime.now().toString(),
             ReadState.SENT
         )
@@ -949,15 +951,6 @@ class CachingStoreTest {
             "1111111111",
             LAUSANNE,
             true
-        )
-
-        val userList = listOf(defaultUser, willSmithUser, rogerFedererUser)
-
-        val newMessage = Message(
-            "New Message!",
-            defaultUser.email,
-            LocalDateTime.now().toString(),
-            ReadState.SENT
         )
     }
 

@@ -63,7 +63,7 @@ open class CoachesListActivityTest {
         //database.restoreDefaultAccountsSetup()
 
         // Populate the database, and wait for it to finish
-        populateDatabase().join()
+        populateDatabase(store).join()
         scenario = ActivityScenario.launch(defaultIntent)
 
         // This is the proper way of waiting for an activity to finish loading. However, it does not
@@ -164,10 +164,13 @@ open class CoachesListActivityTest {
 
     // Subclass added to be able to run a different setup method (to simulate viewing contacts)
     class ContactsListTest: CoachesListActivityTest() {
+        lateinit var store: CachingStore
+
         @Before
         override fun setup() {
+            store = (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).store
             // Launch the activity
-            populateDatabase().join()
+            populateDatabase(store).join()
 
             val contactIntent = Intent(ApplicationProvider.getApplicationContext(), CoachesListActivity::class.java)
             contactIntent.putExtra("isViewingContacts", true)
@@ -228,15 +231,17 @@ open class CoachesListActivityTest {
 
     }
 
-    fun populateDatabase(): CompletableFuture<Void> {
+    companion object {
+        fun populateDatabase(store: CachingStore): CompletableFuture<Void> {
 
-        store.setCurrentEmail("example@email.com")
-        // Add a few coaches to the database
-        val futures1 = COACHES.map { store.updateUser(it) }
+            store.setCurrentEmail("example@email.com")
+            // Add a few coaches to the database
+            val futures1 = COACHES.map { store.updateUser(it) }
 
-        // Add non-coach user to the database
-        val futures2 = NON_COACHES.map { store.updateUser(it) }
+            // Add non-coach user to the database
+            val futures2 = NON_COACHES.map { store.updateUser(it) }
 
-        return CompletableFuture.allOf(*futures1.toTypedArray(), *futures2.toTypedArray())
+            return CompletableFuture.allOf(*futures1.toTypedArray(), *futures2.toTypedArray())
+        }
     }
 }
