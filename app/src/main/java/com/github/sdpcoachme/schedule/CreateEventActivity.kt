@@ -45,6 +45,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -52,8 +53,10 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.Address
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
+import com.github.sdpcoachme.data.schedule.EventType
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
+import com.github.sdpcoachme.profile.SportsRow
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.maxkeppeker.sheets.core.models.base.Header
 import com.maxkeppeker.sheets.core.models.base.SheetState
@@ -151,18 +154,24 @@ class CreateEventActivity : ComponentActivity() {
 
     private lateinit var store: CachingStore
     private lateinit var email: String
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         store = (application as CoachMeApplication).store
         email = store.getCurrentEmail().get(1000, TimeUnit.MILLISECONDS)
+        val eventTypeName = intent.getStringExtra("eventType")
         if (email.isEmpty()) {
             val errorMsg = "New event did not receive an email address.\n Please return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
+        } else if (eventTypeName == null) { // TODO: write test for this
+            val errorMsg = "New event did not receive an event type.\n Please return to the login page and try again."
+            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
         } else {
+            val eventType = EventType.fromString(eventTypeName)!!
             setContent {
                 CoachMeTheme {
                     Surface(color = MaterialTheme.colors.background) {
-                        NewEvent(store)
+                        NewEvent(store, eventType)
                     }
                 }
             }
@@ -172,7 +181,7 @@ class CreateEventActivity : ComponentActivity() {
 
 
 @Composable
-fun NewEvent(store: CachingStore) {
+fun NewEvent(store: CachingStore, eventType: EventType) {
     val startDateSheet = rememberSheetState()
     val startTimeSheet = rememberSheetState()
     val endDateSheet = rememberSheetState()
@@ -186,8 +195,10 @@ fun NewEvent(store: CachingStore) {
     var eventName by remember { mutableStateOf("") }
     var start by remember { mutableStateOf(EventOps.getDefaultEventStart()) }
     var end by remember { mutableStateOf(EventOps.getDefaultEventEnd()) }
-    var description by remember { mutableStateOf("") }
+    var maxParticipants by remember { mutableStateOf(0) }
     var selectedColor by remember { mutableStateOf(EventColors.DEFAULT.color) }
+    var description by remember { mutableStateOf("") }
+
 
     Scaffold(
         modifier = Modifier.testTag(CreateEventActivity.TestTags.SCAFFOLD),
@@ -308,6 +319,16 @@ fun NewEvent(store: CachingStore) {
                 formatter = formatterUserTime,
                 onTimeChange = { end = it }
             )
+
+            if (eventType == EventType.GROUP) {
+                MaxParticipantsRow(
+                    onMaxParticipantsChange = { maxParticipants = it }
+                )
+            }
+
+            //EventSportRow()
+
+            //EventLocationRow()
 
             // Color
             ColorRow(
@@ -540,6 +561,39 @@ fun EndTimeRow(
 }
 
 @Composable
+fun MaxParticipantsRow(
+    onMaxParticipantsChange: (Int) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        verticalAlignment = Alignment.Bottom
+    ) {
+        Text(
+            text = "Max Participants: ",
+            modifier = Modifier
+                .weight(1f)
+                //.testTag(CreateEventActivity.TestTags.Texts.MAX_PARTICIPANTS_TEXT)
+        )
+        val maxParticipants = remember { mutableStateOf(0) }
+        TextField(
+            value = maxParticipants.value.toString(),
+            onValueChange = {
+                maxParticipants.value = it.toIntOrNull() ?: 0
+                onMaxParticipantsChange(maxParticipants.value)
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number
+            ),
+            modifier = Modifier
+                .weight(.8f)
+                //.testTag(CreateEventActivity.TestTags.Texts.MAX_PARTICIPANTS)
+        )
+    }
+}
+
+@Composable
 fun ColorRow(
     colorSheet: SheetState,
     selectedColor: Color,
@@ -612,9 +666,9 @@ fun DescriptionRow(
     onDescriptionChange: (String) -> Unit
 ) {
     Row (modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-            .padding(top = 10.dp),
+        .fillMaxWidth()
+        .fillMaxHeight()
+        .padding(top = 10.dp),
         verticalAlignment = Alignment.Bottom
     ){
         val focusManager = LocalFocusManager.current

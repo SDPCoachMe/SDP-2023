@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -53,8 +55,10 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.EventType
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.database.CachingStore
@@ -160,7 +164,6 @@ fun Schedule(
     val dayWidth = LocalConfiguration.current.screenWidthDp.dp / ColumnsPerWeek
     val verticalScrollState = rememberScrollState()
 
-
     fun updateCurrentWeekMonday(weeksToAdd: Int) {
         shownWeekMonday = shownWeekMonday.plusWeeks(weeksToAdd.toLong())
         // Update the cached events and if not already cached, get the events from the database
@@ -201,19 +204,57 @@ fun Schedule(
             )
         }
 
+        var isDropdownExpanded by remember { mutableStateOf(false) }
+
+        // TODO: should only be visible if the user is a coach
         FloatingActionButton(
             onClick = {
-                val intent = Intent(context, CreateEventActivity::class.java)
-                context.startActivity(intent) },
+                isDropdownExpanded = !isDropdownExpanded
+            },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
                 .testTag(ScheduleActivity.TestTags.Buttons.ADD_EVENT_BUTTON),
-            backgroundColor = Purple500) {
+            backgroundColor = Purple500
+        ) {
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Add Event"
             )
+        }
+
+        fun launchCreateEventActivity(eventType: EventType) {
+            val intent = Intent(context, CreateEventActivity::class.java)
+            intent.putExtra("eventType", eventType.eventTypeName)
+            context.startActivity(intent)
+        }
+
+        // TODO: align the dropdown menu with the add event button
+        DropdownMenu(
+            expanded = isDropdownExpanded,
+            onDismissRequest = { isDropdownExpanded = false },
+            properties = PopupProperties(clippingEnabled = false),
+        ) {
+            DropdownMenuItem(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally),
+                onClick = {
+                    isDropdownExpanded = false
+                    launchCreateEventActivity(EventType.PRIVATE)
+                }
+            ) {
+                Text(text = "Private Event")
+            }
+            DropdownMenuItem(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally),
+                onClick = {
+                    isDropdownExpanded = false
+                    launchCreateEventActivity(EventType.GROUP)
+                }
+            ) {
+                Text(text = "Group Event")
+            }
         }
     }
 }
