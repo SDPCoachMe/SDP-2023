@@ -53,6 +53,8 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         }
     }
 
+    // TODO: fix addGroupEvent and registerForGroupEvent to not allow user to do bad things.
+
     override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
         var errorPreventionFuture = CompletableFuture<Void>()
 

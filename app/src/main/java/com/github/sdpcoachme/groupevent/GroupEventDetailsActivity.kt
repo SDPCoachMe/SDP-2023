@@ -6,11 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.RocketLaunch
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,16 +33,20 @@ import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Buttons.Companion.BACK
+import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.EVENT_DESCRIPTION
+import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.EVENT_LOCATION
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.EVENT_NAME
-import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.ORGANIZER_PICTURE
+import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.EVENT_SPORT
+import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.EVENT_TIME
+import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.ORGANIZER_NAME
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.TITLE
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Tabs.Companion.ABOUT
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Tabs.Companion.PARTICIPANTS
-import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.TextFields.Companion.DESCRIPTION
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.future.await
 import java.time.LocalDateTime
 import java.time.Month
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
 
 class GroupEventDetailsActivity : ComponentActivity() {
@@ -51,9 +55,11 @@ class GroupEventDetailsActivity : ComponentActivity() {
         companion object {
             const val TITLE = "title"
             const val EVENT_NAME = "eventName"
-            const val ORGANIZER_PICTURE = "organizerPicture"
-            const val EVENT_DESCRIPTION = "eventDescription"
+            const val EVENT_SPORT = "eventSport"
+            const val ORGANIZER_NAME = "organizerName"
             const val EVENT_LOCATION = "eventLocation"
+            const val EVENT_TIME = "eventTime"
+            const val EVENT_DESCRIPTION = "eventDescription"
         }
 
         class Buttons {
@@ -90,6 +96,7 @@ class GroupEventDetailsActivity : ComponentActivity() {
             var groupEvent by remember { mutableStateOf<GroupEvent?>(null) }
             var organizer by remember { mutableStateOf<UserInfo?>(null) }
             var participants by remember { mutableStateOf<List<UserInfo>?>(null) }
+            var currentUser by remember { mutableStateOf<UserInfo?>(null) }
 
             LaunchedEffect(true) {
                 groupEvent = futureGroupEvent.await()
@@ -97,6 +104,7 @@ class GroupEventDetailsActivity : ComponentActivity() {
                 participants = groupEvent!!.participants.map {
                     store.getUser(it).await()
                 }
+                currentUser = store.getUser(store.getCurrentEmail().await()).await()
                 stateLoading.complete(null)
             }
 
@@ -115,6 +123,7 @@ class GroupEventDetailsActivity : ComponentActivity() {
                                     Icon(Icons.Filled.ArrowBack, "Back")
                                 }
                             }
+                            // TODO
                             //                            actions = {
                             //                                IconButton(
                             //                                    onClick = {
@@ -133,10 +142,12 @@ class GroupEventDetailsActivity : ComponentActivity() {
                     Column(
                         modifier = Modifier.padding(padding)
                     ) {
-                        if (groupEvent != null && organizer != null && participants != null) {
+                        if (groupEvent != null && currentUser != null
+                            && organizer != null && participants != null) {
                             GroupEventDetailsLayout(
                                 groupEvent!!,
                                 organizer!!,
+                                currentUser!!,
                                 participants!!
                             )
                         }
@@ -156,9 +167,12 @@ class GroupEventDetailsActivity : ComponentActivity() {
 fun GroupEventDetailsLayout(
     groupEvent: GroupEvent,
     organizer: UserInfo,
+    currentUser: UserInfo,
     participants: List<UserInfo>
 ) {
     val eventStart = LocalDateTime.parse(groupEvent.event.start)
+    val eventEnd = LocalDateTime.parse(groupEvent.event.end)
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     Column(
         modifier = Modifier.fillMaxHeight()
@@ -187,6 +201,7 @@ fun GroupEventDetailsLayout(
                 )
                 Spacer(modifier = Modifier.width(2.dp))
                 Text(
+                    modifier = Modifier.testTag(EVENT_SPORT),
                     text = groupEvent.event.sport.sportName.uppercase(),
                     style = MaterialTheme.typography.overline.copy(fontSize = 12.sp),
                     color = Color.Gray
@@ -201,7 +216,7 @@ fun GroupEventDetailsLayout(
                 Spacer(modifier = Modifier.width(10.dp))
                 DayBox(eventStart.dayOfMonth, eventStart.month)
             }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -215,7 +230,6 @@ fun GroupEventDetailsLayout(
                         .clip(CircleShape)
                         .border(2.dp, Color.Gray, CircleShape)
                         .padding(0.dp, 0.dp, 0.dp, 0.dp)
-                        .testTag(ORGANIZER_PICTURE)
                 )
                 Text(
                     modifier = Modifier.padding(10.dp, 0.dp, 0.dp, 0.dp),
@@ -224,6 +238,7 @@ fun GroupEventDetailsLayout(
                     color = Color.Gray
                 )
                 ClickableText(
+                    modifier = Modifier.testTag(ORGANIZER_NAME),
                     text = AnnotatedString("${organizer.firstName} ${organizer.lastName}"),
                     style = MaterialTheme.typography.body1,
                     onClick = {
@@ -231,6 +246,23 @@ fun GroupEventDetailsLayout(
                     }
                 )
             }
+            Spacer(modifier = Modifier.height(20.dp))
+            IconTextRow(
+                icon = Icons.Default.Place,
+                contentDescription = "Location",
+                text = groupEvent.event.address.name,
+                tag = EVENT_LOCATION,
+                onClick = {
+                    // TODO : open map
+                }
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            IconTextRow(
+                icon = Icons.Default.Schedule,
+                contentDescription = "Time",
+                text = "${eventStart.format(timeFormatter)}–${eventEnd.format(timeFormatter)}",
+                tag = EVENT_TIME
+            )
         }
         var selectedTabIndex by remember { mutableStateOf(0) }
         val tabs = listOf(
@@ -240,7 +272,7 @@ fun GroupEventDetailsLayout(
             ) {
                 Text(
                     modifier = Modifier
-                        .testTag(DESCRIPTION)
+                        .testTag(EVENT_DESCRIPTION)
                         .padding(20.dp),
                     text = groupEvent.event.description,
                 )
@@ -249,7 +281,17 @@ fun GroupEventDetailsLayout(
                 "PARTICIPANTS",
                 PARTICIPANTS
             ) {
-                // TODO
+                Column {
+                    participants.filter { it.email != currentUser.email }
+                        .map {
+                            SmallUserInfoListItem(
+                                userInfo = it,
+                                onClick = {
+                                    // TODO : open user profile
+                                }
+                            )
+                        }
+                }
             },
         )
         TabRow(
@@ -279,19 +321,33 @@ fun GroupEventDetailsLayout(
                 tabs[selectedTabIndex].content()
                 Spacer(modifier = Modifier.height(70.dp))
             }
-            // TODO: show chat ?
-            ExtendedFloatingActionButton(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(20.dp),
-                backgroundColor = MaterialTheme.colors.primary,
-                contentColor = MaterialTheme.colors.onPrimary,
-                icon = { Icon(Icons.Filled.RocketLaunch, contentDescription = "Join event") },
-                text = { Text("JOIN EVENT") },
-                onClick = {
-                    // TODO : join event
-                }
-            )
+            if (currentUser.email in groupEvent.participants) {
+                ExtendedFloatingActionButton(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(20.dp),
+                    backgroundColor = MaterialTheme.colors.primary,
+                    contentColor = MaterialTheme.colors.onPrimary,
+                    icon = { Icon(Icons.Filled.Chat, contentDescription = "Go to event chat") },
+                    text = { Text("CHAT") },
+                    onClick = {
+                        // TODO : go to event chat
+                    }
+                )
+            } else {
+                ExtendedFloatingActionButton(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(20.dp),
+                    backgroundColor = MaterialTheme.colors.primary,
+                    contentColor = MaterialTheme.colors.onPrimary,
+                    icon = { Icon(Icons.Filled.RocketLaunch, contentDescription = "Join event") },
+                    text = { Text("JOIN EVENT") },
+                    onClick = {
+                        // TODO : join event
+                    }
+                )
+            }
         }
     }
 }
@@ -303,7 +359,7 @@ fun DayBox(
 ) {
     Column(
         Modifier
-            .clip(MaterialTheme.shapes.medium)
+            .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colors.primary)
             .defaultMinSize(60.dp, 60.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -328,7 +384,9 @@ fun DayBox(
 fun IconTextRow(
     icon: ImageVector,
     contentDescription: String,
-    text: String
+    text: String,
+    tag: String,
+    onClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier,
@@ -338,16 +396,61 @@ fun IconTextRow(
             imageVector = icon,
             contentDescription = contentDescription,
             modifier = Modifier
-                .size(20.dp),
+                .size(25.dp),
             tint = Color.Gray
         )
-        Spacer(modifier = Modifier.width(2.dp))
+        Spacer(modifier = Modifier.width(7.dp))
+        if (onClick != null) {
+            ClickableText(
+                modifier = Modifier.testTag(tag),
+                text = AnnotatedString(text),
+                style = MaterialTheme.typography.body1,
+                onClick = { onClick() }
+            )
+        } else {
+            Text(
+                modifier = Modifier.testTag(tag),
+                text = text,
+                style = MaterialTheme.typography.body1,
+                color = Color.Gray
+            )
+        }
+    }
+}
+
+// TODO: might be a way to modularize with UserInfoListItem from CoachesListActivity
+@Composable
+fun SmallUserInfoListItem(
+    userInfo: UserInfo,
+    onClick: (() -> Unit)? = null
+) {
+    Row(
+        modifier =
+        if (onClick != null) {
+            Modifier.clickable(onClick = onClick)
+        } else {
+            Modifier
+        }
+            .padding(10.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.ic_launcher_background),
+            contentDescription = "${userInfo.firstName} ${userInfo.lastName}'s profile picture",
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .border(2.dp, Color.Gray, CircleShape)
+                .padding(0.dp, 0.dp, 0.dp, 0.dp)
+        )
+        Spacer(modifier = Modifier.width(10.dp))
         Text(
-            text = text,
-            style = MaterialTheme.typography.body1,
-            color = Color.Gray
+            text = "${userInfo.firstName} ${userInfo.lastName}",
+            style = MaterialTheme.typography.body1
         )
     }
+    Divider()
 }
 
 data class TabItem(
@@ -414,6 +517,20 @@ fun DefaultPreview() {
                 phone = "0123456789",
                 sports = listOf(Sports.SKI, Sports.SWIMMING),
                 coach = true
+            ),
+            UserInfo(
+                firstName = "James",
+                lastName = "Dolorian",
+                email = "jammy@email.com",
+                address = Address(
+                    placeId = "ChIJ5aeJzT4pjEcRXu7iysk_F-s",
+                    name = "Lausanne, Switzerland",
+                    latitude = 46.5196535,
+                    longitude = 6.6335972
+                ),
+                phone = "0123456789",
+                sports = listOf(Sports.SKI, Sports.SWIMMING),
+                coach = false
             ),
             listOf(
                 UserInfo(
