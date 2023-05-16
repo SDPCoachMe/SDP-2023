@@ -170,7 +170,6 @@ class ProfileActivity : ComponentActivity() {
     fun Profile(futureUserInfo: CompletableFuture<UserInfo>, isViewingCoach: Boolean) {
 
         val context = LocalContext.current
-
         var userInfo by remember { mutableStateOf(UserInfo()) }
 
         // Make sure the userInfo variable is updated when the futureUserInfo completes
@@ -379,7 +378,9 @@ class ProfileActivity : ComponentActivity() {
                         .align(Alignment.CenterHorizontally)
                         .testTag(MESSAGE_COACH),
                     onClick = {
-                        emailFuture.thenApply {
+                        store.getCurrentEmail().thenApply {
+                            println("emailFuture: $it")
+                            println("userInfo mail: ${userInfo.email}")
                             val userEmail = userInfo.email
                             val intent = Intent(context, ChatActivity::class.java)
                             val chatId = if (userEmail < it) "$userEmail$it" else "$it$userEmail"

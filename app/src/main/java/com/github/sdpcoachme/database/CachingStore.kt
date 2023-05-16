@@ -573,6 +573,8 @@ class CachingStore(private val wrappedDatabase: Database,
         cachedSchedule = Schedule()
         contacts.clear()
         chats.clear()
+        cachedTokens.clear()
+        contactRowInfos.clear()
     }
 
     /**

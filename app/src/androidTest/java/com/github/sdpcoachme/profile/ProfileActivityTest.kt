@@ -169,6 +169,8 @@ class ProfileActivityTest {
         profileIntent.putExtra("email", email)
         profileIntent.putExtra("isViewingCoach", true)
 
+        val expectedChatId = Chat.chatIdForPersonalChats(email, NON_COACH_2.email)
+
         ActivityScenario.launch<ProfileActivity>(profileIntent).use {
             waitForUpdate(it)
 
@@ -177,7 +179,7 @@ class ProfileActivityTest {
             Intents.intended(
                 CoreMatchers.allOf(
                     IntentMatchers.hasComponent(ChatActivity::class.java.name),
-                    IntentMatchers.hasExtra("chatId", Chat.chatIdForPersonalChats(email, NON_COACH_2.email))
+                    IntentMatchers.hasExtra("chatId", expectedChatId)
                 )
             )
         }

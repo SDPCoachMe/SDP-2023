@@ -140,6 +140,7 @@ class ChatActivity : ComponentActivity() {
             val errorMsg =
                 "The Chat Interface did not receive the needed information for the chat.\nPlease return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
+            stateLoading.complete(null)
         } else {
             isGroupChat = chatId.startsWith("@@event")
 
@@ -204,7 +205,6 @@ class ChatActivity : ComponentActivity() {
                 toUser = store.getUser(toUserEmail).await()
             }
             currentUserEmail = emailFuture.await()
-            toUser = store.getUser(toUserEmail).await()
             chat = store.getChat(chatId).await()
             store.addChatListener(chatId) { newChat ->
                 chat = newChat

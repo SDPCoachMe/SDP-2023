@@ -27,6 +27,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.lang.Thread.sleep
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -79,6 +80,7 @@ class ContactsListTest {
     @After
     fun cleanup() {
         scenario.close()
+        store.clearCache()
         Intents.release()
     }
 
@@ -91,18 +93,19 @@ class ContactsListTest {
 
     @Test
     fun whenViewingContactsTheLastMessageAndTheSenderNameIsDisplayedWhenNotSentByCurrentUser() {
-        store.sendMessage("chatId", othersMessage.copy(content = "Shouldn't be displayed"))
-        store.sendMessage("chatId", othersMessage)
+        store.sendMessage("chatId", othersMessage.copy(content = "Shouldn't be displayed")).get(1000, TimeUnit.MILLISECONDS)
+        store.sendMessage("chatId", othersMessage).get(1000, TimeUnit.MILLISECONDS)
         startActivity()
 
+        sleep(5000)
         composeTestRule.onNodeWithText("${othersMessage.senderName}: ${othersMessage.content}")
             .assertIsDisplayed()
     }
 
     @Test
     fun whenViewingContactsTheLastMessageOfTheChatAndYouIsDisplayedWhenSentByCurrentUser() {
-        store.sendMessage("chatId", ownMessage.copy(content = "Shouldn't be displayed"))
-        store.sendMessage("chatId", ownMessage)
+        store.sendMessage("chatId", ownMessage.copy(content = "Shouldn't be displayed")).get(1000, TimeUnit.MILLISECONDS)
+        store.sendMessage("chatId", ownMessage).get(1000, TimeUnit.MILLISECONDS)
         startActivity()
 
         composeTestRule.onNodeWithText("You: ${ownMessage.content}")
@@ -113,7 +116,7 @@ class ContactsListTest {
     fun whenViewingContactWhereNoMessageHasBeenSentYetDefaultMessagePromptIsShown() {
         // send a message to make sure only the other default message is displayed
         // (i.e., so onNodeWithText only finds one instance)
-        store.sendMessage("chatId", othersMessage.copy(content = "Won't be accounted for by the test"))
+        store.sendMessage("chatId", othersMessage.copy(content = "Won't be accounted for by the test")).get(1000, TimeUnit.MILLISECONDS)
         startActivity()
         composeTestRule.onNodeWithText("Tap to write a message")
             .assertIsDisplayed()
@@ -124,7 +127,6 @@ class ContactsListTest {
         startActivity()
         val coach = UserInfoSamples.COACH_1
 
-        Thread.sleep(5000)
         composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
             .assertIsDisplayed()
             .performClick()

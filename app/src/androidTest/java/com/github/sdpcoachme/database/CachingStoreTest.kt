@@ -678,12 +678,8 @@ class CachingStoreTest {
 
     @Test
     fun markMessagesAsReadForCachedChatUpdatesCache() {
-        val expectedChat = defaultChat.copy(messages = defaultChat.messages.map {
-            if (it.sender != defaultUser.email)
-                it.copy(readState = ReadState.READ)
-            else
-                it
-        })
+        val expectedChat = Chat.markOtherUsersMessagesAsRead(defaultChat, defaultUser.email)
+
         val wrappedDatabase = MarkMessagesAsReadDB(defaultChat)
         val cachingStore = CachingStore(wrappedDatabase,
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
@@ -944,14 +940,6 @@ class CachingStoreTest {
             false
         )
 
-        val rogerFedererUser = UserInfo(
-            "Roger",
-            "Federer",
-            "roger@federer.com",
-            "1111111111",
-            LAUSANNE,
-            true
-        )
     }
 
     private val defaultMessages = ChatSample.MESSAGES

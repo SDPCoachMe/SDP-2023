@@ -302,7 +302,7 @@ class ChatActivityTest {
         ActivityScenario.launch<ChatActivity>(personalChatDefaultIntent).use {
             waitForLoading(it)
 
-            store.sendMessage(personalChatId, Message(toUser.email, "", LocalDateTime.now().toString())).get(1000, TimeUnit.MILLISECONDS)
+            store.sendMessage(personalChatId, Message(toUser.email, "Sender Name","Does not contain checkmark", LocalDateTime.now().toString()))
 
             composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertDoesNotExist()
@@ -314,7 +314,7 @@ class ChatActivityTest {
         ActivityScenario.launch<ChatActivity>(personalChatDefaultIntent).use {
             waitForLoading(it)
 
-            store.sendMessage(personalChatId, Message(currentUser.email, "Sender Name","message", LocalDateTime.now().toString())).get(1000, TimeUnit.MILLISECONDS)
+            store.sendMessage(personalChatId, Message(currentUser.email, "Sender Name","message", LocalDateTime.now().toString()))
 
             composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertIsDisplayed()
@@ -326,7 +326,7 @@ class ChatActivityTest {
         ActivityScenario.launch<ChatActivity>(personalChatDefaultIntent).use {
             waitForLoading(it)
 
-            store.sendMessage(personalChatId, Message(currentUser.email, "Sender Name", "message", LocalDateTime.now().toString(), ReadState.SENT)).get(1000, TimeUnit.MILLISECONDS)
+            store.sendMessage(personalChatId, Message(currentUser.email, "Sender Name", "message", LocalDateTime.now().toString(), ReadState.SENT))
 
             composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertIsDisplayed()
@@ -339,7 +339,7 @@ class ChatActivityTest {
         ActivityScenario.launch<ChatActivity>(personalChatDefaultIntent).use {
             waitForLoading(it)
 
-            store.sendMessage(personalChatId, Message(currentUser.email, "Sender Name","message", LocalDateTime.now().toString(), ReadState.RECEIVED)).get(1000, TimeUnit.MILLISECONDS)
+            store.sendMessage(personalChatId, Message(currentUser.email, "Sender Name","message", LocalDateTime.now().toString(), ReadState.RECEIVED))
 
             composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertIsDisplayed()
@@ -352,7 +352,7 @@ class ChatActivityTest {
         ActivityScenario.launch<ChatActivity>(personalChatDefaultIntent).use {
             waitForLoading(it)
 
-            store.sendMessage(personalChatId, Message(currentUser.email, "Sender Name","message", LocalDateTime.now().toString(), ReadState.READ)).get(1000, TimeUnit.MILLISECONDS)
+            store.sendMessage(personalChatId, Message(currentUser.email, "Sender Name","message", LocalDateTime.now().toString(), ReadState.READ))
 
             composeTestRule.onNodeWithTag(CHAT_MESSAGE.READ_STATE, useUnmergedTree = true)
                 .assertIsDisplayed()
@@ -361,19 +361,10 @@ class ChatActivityTest {
     }
 
     @Test
-    fun errorHandlerIsLaunchedIfCurrentUserEmailIsEmpty() {
-        store.setCurrentEmail("").get(1000, TimeUnit.MILLISECONDS)
-        checkErrorPageIsLaunched(personalChatDefaultIntent)
-    }
-
-    @Test
-    fun errorHandlerIsLaunchedIfToUserEmailNotPassedInIntentExtra() {
+    fun errorHandlerIsLaunchedIfChatIdNotPassedInIntentExtra() {
         val errorIntent = Intent(ApplicationProvider.getApplicationContext(), ChatActivity::class.java)
-        checkErrorPageIsLaunched(errorIntent)
-    }
 
-    private fun checkErrorPageIsLaunched(chatIntent: Intent) {
-        ActivityScenario.launch<ChatActivity>(chatIntent).use {
+        ActivityScenario.launch<ChatActivity>(errorIntent).use {
             waitForLoading(it)
 
             composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON)
@@ -445,6 +436,8 @@ class ChatActivityTest {
     // TODO: complete this test once the event displaying activity is implemented
     @Test
     fun whenClickingOnTheContactFieldOfAnEventGroupChatTheEventIsDisplayed() {
+        store.addGroupEvent(groupEvent).get(1000, TimeUnit.MILLISECONDS)
+
         ActivityScenario.launch<ChatActivity>(groupChatDefaultIntent).use {
             waitForLoading(it)
 
