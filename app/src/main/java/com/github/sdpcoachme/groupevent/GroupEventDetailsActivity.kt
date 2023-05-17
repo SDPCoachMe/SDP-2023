@@ -159,9 +159,7 @@ class GroupEventDetailsActivity : ComponentActivity() {
 }
 
 /**
- * This is the main layout for the GroupEventDetailsActivity
- *
- * @param groupEvent the GroupEvent to display
+ * This is the main layout for the GroupEventDetailsActivity.
  */
 @Composable
 fun GroupEventDetailsLayout(
@@ -264,6 +262,13 @@ fun GroupEventDetailsLayout(
                 tag = EVENT_TIME
             )
         }
+
+        // Used for easier readability
+        data class TabItem(
+            val title: String,
+            val tag: String,
+            val content: @Composable () -> Unit
+        )
         var selectedTabIndex by remember { mutableStateOf(0) }
         val tabs = listOf(
             TabItem(
@@ -282,6 +287,7 @@ fun GroupEventDetailsLayout(
                 PARTICIPANTS
             ) {
                 Column {
+                    // TODO: should we filter the current user out?
                     participants.filter { it.email != currentUser.email }
                         .map {
                             SmallUserInfoListItem(
@@ -334,7 +340,7 @@ fun GroupEventDetailsLayout(
                 tabs[selectedTabIndex].content()
                 Spacer(modifier = Modifier.height(70.dp))
             }
-            if (currentUser.email in groupEvent.participants) {
+            if (currentUser.email == groupEvent.organiser || currentUser.email in groupEvent.participants) {
                 DisablableExtendFloatingActionButton(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -369,46 +375,11 @@ fun GroupEventDetailsLayout(
     }
 }
 
-// Needed because of https://stackoverflow.com/questions/68847231/jetpack-compose-how-to-disable-floatingaction-button
+/**
+ * Composable that displays the date of an event.
+ */
 @Composable
-fun DisablableExtendFloatingActionButton(
-    modifier: Modifier = Modifier,
-    text: @Composable () -> Unit,
-    icon: ImageVector? = null,
-    contentDescription: String? = null,
-    onClick: (() -> Unit),
-    enabled: Boolean = true
-) {
-    Button(
-        modifier = modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp),
-        shape = CircleShape,
-        onClick = onClick,
-        enabled = enabled,
-        elevation = ButtonDefaults.elevation(
-            defaultElevation = 6.dp,
-            pressedElevation = 12.dp,
-            hoveredElevation = 8.dp,
-            focusedElevation = 8.dp,
-            disabledElevation = 6.dp
-        )
-    ) {
-        icon?.let {
-            Icon(
-                icon,
-                contentDescription = contentDescription,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(Modifier.size(12.dp))
-        }
-        text()
-        icon?.let {
-            Spacer(Modifier.size(2.dp))
-        }
-    }
-}
-
-@Composable
-fun DayBox(
+private fun DayBox(
     dayOfMonth: Int,
     month: Month
 ) {
@@ -435,8 +406,11 @@ fun DayBox(
     }
 }
 
+/**
+ * Composable that displays a row with an icon and a text, used for the event details.
+ */
 @Composable
-fun IconTextRow(
+private fun IconTextRow(
     icon: ImageVector,
     contentDescription: String,
     text: String,
@@ -474,6 +448,9 @@ fun IconTextRow(
 }
 
 // TODO: might be a way to modularize with UserInfoListItem from CoachesListActivity
+/**
+ * Composable that displays a row with a user's profile picture and name.
+ */
 @Composable
 fun SmallUserInfoListItem(
     userInfo: UserInfo,
@@ -508,11 +485,46 @@ fun SmallUserInfoListItem(
     Divider()
 }
 
-data class TabItem(
-    val title: String,
-    val tag: String,
-    val content: @Composable () -> Unit
-)
+// Needed because of https://stackoverflow.com/questions/68847231/jetpack-compose-how-to-disable-floatingaction-button
+/**
+ * A [FloatingActionButton] that can be disabled.
+ */
+@Composable
+fun DisablableExtendFloatingActionButton(
+    modifier: Modifier = Modifier,
+    text: @Composable () -> Unit,
+    icon: ImageVector? = null,
+    contentDescription: String? = null,
+    onClick: (() -> Unit),
+    enabled: Boolean = true
+) {
+    Button(
+        modifier = modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp),
+        shape = CircleShape,
+        onClick = onClick,
+        enabled = enabled,
+        elevation = ButtonDefaults.elevation(
+            defaultElevation = 6.dp,
+            pressedElevation = 12.dp,
+            hoveredElevation = 8.dp,
+            focusedElevation = 8.dp,
+            disabledElevation = 6.dp
+        )
+    ) {
+        icon?.let {
+            Icon(
+                icon,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(Modifier.size(12.dp))
+        }
+        text()
+        icon?.let {
+            Spacer(Modifier.size(2.dp))
+        }
+    }
+}
 
 // TODO: remove this
 @Preview(

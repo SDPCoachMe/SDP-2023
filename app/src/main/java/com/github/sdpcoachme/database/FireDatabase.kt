@@ -27,6 +27,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private val chats: DatabaseReference = rootDatabase.child("coachme").child("messages")
     private val fcmTokens: DatabaseReference = rootDatabase.child("coachme").child("fcmTokens")
     private val schedule: DatabaseReference = rootDatabase.child("coachme").child("schedule")
+    // TODO: change this to be a child of rootDatabase
     private val groupEvents: DatabaseReference = schedule.child("groupEvents")
     var valueEventListener: ValueEventListener? = null
 
