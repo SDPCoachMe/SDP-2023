@@ -13,6 +13,7 @@
     <string name="title_activity_dashboard">Dashboard</string>
     <string name="title_activity_edit_text">Edit</string>
     <string name="title_activity_group_event_details">Event details</string>
+    <string name="title_activity_group_events_list">Group events</string>
 
     <string name="contacts">Contacts</string>
     <string name="my_profile">My profile</string>

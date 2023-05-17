@@ -291,6 +291,19 @@ fun GroupEventDetailsLayout(
                                 }
                             )
                         }
+                    Row(
+                        modifier = Modifier
+                            .defaultMinSize(minHeight = 60.dp)
+                            .fillMaxWidth()
+                            .padding(10.dp),
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Text(
+                            text = "${groupEvent.participants.size}/${groupEvent.maxParticipants} participants",
+                            style = MaterialTheme.typography.body1,
+                            color = Color.Gray
+                        )
+                    }
                 }
             },
         )
@@ -322,32 +335,74 @@ fun GroupEventDetailsLayout(
                 Spacer(modifier = Modifier.height(70.dp))
             }
             if (currentUser.email in groupEvent.participants) {
-                ExtendedFloatingActionButton(
+                DisablableExtendFloatingActionButton(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(20.dp),
-                    backgroundColor = MaterialTheme.colors.primary,
-                    contentColor = MaterialTheme.colors.onPrimary,
-                    icon = { Icon(Icons.Filled.Chat, contentDescription = "Go to event chat") },
+                    icon = Icons.Filled.Chat,
+                    contentDescription = "Go to event chat",
                     text = { Text("CHAT") },
                     onClick = {
                         // TODO : go to event chat
                     }
                 )
             } else {
-                ExtendedFloatingActionButton(
+                DisablableExtendFloatingActionButton(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(20.dp),
-                    backgroundColor = MaterialTheme.colors.primary,
-                    contentColor = MaterialTheme.colors.onPrimary,
-                    icon = { Icon(Icons.Filled.RocketLaunch, contentDescription = "Join event") },
-                    text = { Text("JOIN EVENT") },
+                    icon = if (groupEvent.participants.size < groupEvent.maxParticipants) Icons.Filled.RocketLaunch else null,
+                    contentDescription = "Join event",
+                    text = {
+                        if (groupEvent.participants.size < groupEvent.maxParticipants)
+                            Text("JOIN EVENT")
+                        else
+                            Text("THIS EVENT IS FULLY BOOKED")
+                    },
                     onClick = {
                         // TODO : join event
-                    }
+                    },
+                    enabled = groupEvent.participants.size < groupEvent.maxParticipants
                 )
             }
+        }
+    }
+}
+
+// Needed because of https://stackoverflow.com/questions/68847231/jetpack-compose-how-to-disable-floatingaction-button
+@Composable
+fun DisablableExtendFloatingActionButton(
+    modifier: Modifier = Modifier,
+    text: @Composable () -> Unit,
+    icon: ImageVector? = null,
+    contentDescription: String? = null,
+    onClick: (() -> Unit),
+    enabled: Boolean = true
+) {
+    Button(
+        modifier = modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp),
+        shape = CircleShape,
+        onClick = onClick,
+        enabled = enabled,
+        elevation = ButtonDefaults.elevation(
+            defaultElevation = 6.dp,
+            pressedElevation = 12.dp,
+            hoveredElevation = 8.dp,
+            focusedElevation = 8.dp,
+            disabledElevation = 6.dp
+        )
+    ) {
+        icon?.let {
+            Icon(
+                icon,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(Modifier.size(12.dp))
+        }
+        text()
+        icon?.let {
+            Spacer(Modifier.size(2.dp))
         }
     }
 }
@@ -459,6 +514,7 @@ data class TabItem(
     val content: @Composable () -> Unit
 )
 
+// TODO: remove this
 @Preview(
     showBackground = true,
     backgroundColor = 0xFFFFFFFF,
@@ -519,9 +575,9 @@ fun DefaultPreview() {
                 coach = true
             ),
             UserInfo(
-                firstName = "James",
-                lastName = "Dolorian",
-                email = "jammy@email.com",
+                firstName = "Michel",
+                lastName = "Sardoux",
+                email = "michou@email.com",
                 address = Address(
                     placeId = "ChIJ5aeJzT4pjEcRXu7iysk_F-s",
                     name = "Lausanne, Switzerland",
