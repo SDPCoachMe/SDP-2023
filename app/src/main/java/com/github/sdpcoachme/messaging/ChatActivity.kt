@@ -159,7 +159,7 @@ class ChatActivity : ComponentActivity() {
             }
 
             // needed to remove the chat listener from the db so that
-            // messages are only marked as read when ins the chat
+            // messages are only marked as read when in the chat
             onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
                     store.removeChatListener(chatId)

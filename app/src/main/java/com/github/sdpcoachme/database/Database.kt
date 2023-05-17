@@ -96,7 +96,7 @@ interface Database {
      * @param email The email of the user whose contacts should be retrieved
      * @return A future that will complete with the contact row info
      */
-    fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>>
+    fun getContactRowInfos(email: String): CompletableFuture<List<ContactRowInfo>>
 
     /**
      * Get chat with the given id from the database

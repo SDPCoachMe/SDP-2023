@@ -19,8 +19,11 @@ import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserInfoSamples
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.messaging.ChatActivity
+import com.github.sdpcoachme.profile.CoachesListActivity.TestTags.Buttons.Companion.FILTER
 import com.github.sdpcoachme.profile.CoachesListActivityTest.Companion.populateDatabase
-import com.github.sdpcoachme.ui.Dashboard
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import org.hamcrest.CoreMatchers
 import org.junit.After
 import org.junit.Before
@@ -145,25 +148,25 @@ class ContactsListTest {
         startActivity()
         val title = (InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as CoachMeApplication).getString(R.string.contacts)
-        composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assertExists()
+        composeTestRule.onNodeWithTag(BAR_TITLE).assertExists()
             .assertIsDisplayed()
-        composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assert(hasText(title))
+        composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText(title))
     }
 
     @Test
     fun dashboardIsAccessibleAndDisplayableFromContactsList() {
         startActivity()
-        composeTestRule.onNodeWithTag(Dashboard.TestTags.Buttons.HAMBURGER_MENU).assertExists()
+        composeTestRule.onNodeWithTag(HAMBURGER_MENU).assertExists()
             .assertIsDisplayed()
-        composeTestRule.onNodeWithTag(Dashboard.TestTags.Buttons.HAMBURGER_MENU).performClick()
-        composeTestRule.onNodeWithTag(Dashboard.TestTags.DRAWER_HEADER).assertExists()
+        composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+        composeTestRule.onNodeWithTag(DRAWER_HEADER).assertExists()
             .assertIsDisplayed()
     }
 
     @Test
     fun filteringButtonIsNotShownInContactsList() {
         startActivity()
-        composeTestRule.onNodeWithTag(CoachesListActivity.TestTags.Buttons.FILTER)
+        composeTestRule.onNodeWithTag(FILTER)
             .assertDoesNotExist()
     }
 }

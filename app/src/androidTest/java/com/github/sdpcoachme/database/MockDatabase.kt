@@ -225,7 +225,7 @@ open class MockDatabase: Database {
         this.onChange(chat)
     }
 
-    override fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
+    override fun getContactRowInfos(email: String): CompletableFuture<List<ContactRowInfo>> {
         val id = if (email < toUser.email) email+toUser.email else toUser.email+email
         return CompletableFuture.completedFuture(listOf(
             ContactRowInfo(id, toUser.firstName + " " + toUser.lastName, if (chat.messages.isEmpty()) Message() else chat.messages.last()),

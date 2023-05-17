@@ -104,7 +104,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             .exceptionally { GroupEvent() }
     }
 
-    override fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
+    override fun getContactRowInfos(email: String): CompletableFuture<List<ContactRowInfo>> {
         return getUser(email).thenApply {
             it.chatContacts.filterNotNull()
 

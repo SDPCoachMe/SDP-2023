@@ -387,7 +387,7 @@ class CachingStore(private val wrappedDatabase: Database,
         if (contactRowInfos.containsKey(email)) {
             return CompletableFuture.completedFuture(contactRowInfos[email])
         }
-        return wrappedDatabase.getContactRowInfo(email).thenApply { it.also { contactRowInfos[email] = it } }
+        return wrappedDatabase.getContactRowInfos(email).thenApply { it.also { contactRowInfos[email] = it } }
     }
 
     /**
