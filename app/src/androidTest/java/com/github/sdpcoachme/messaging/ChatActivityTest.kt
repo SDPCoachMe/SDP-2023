@@ -199,30 +199,6 @@ class ChatActivityTest {
         }
     }
 
-    // TODO: fix this
-//    @Test
-//    fun chatListenerAddedAtStartUp() {
-//        val mockDB = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeTestApplication).mockDb
-//        assertThat(mockDB.numberOfAddChatListenerCalls(), `is`(0))
-//
-//        ActivityScenario.launch<ChatActivity>(personalChatDefaultIntent).use {
-//            assertThat(mockDB.numberOfAddChatListenerCalls(), `is`(1))
-//        }
-//    }
-//
-//    @Test
-//    fun pressingBackButtonRemovesChatListener() {
-//        val mockDB = database as MockDatabase
-//        assertThat(mockDB.numberOfRemovedChatListenerCalls(), `is`(0))
-//        ActivityScenario.launch<ChatActivity>(personalChatDefaultIntent).use {
-//            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-//
-//            val callsBeforeBack = mockDB.numberOfRemovedChatListenerCalls()
-//            device.pressBack()
-//            assertThat(mockDB.numberOfRemovedChatListenerCalls(), `is`(callsBeforeBack + 1))
-//        }
-//    }
-
     @Test
     fun whenOpeningChatWithNewContactThatContactIsAddedToTheUserInfoContactList() {
         currentUser = currentUser.copy(chatContacts = listOf())

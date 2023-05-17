@@ -24,8 +24,6 @@ open class MockDatabase: Database {
     private var chat = Chat(participants = listOf(DEFAULT_EMAIL, TO_EMAIL))
     private var chatId = ""
     private var onChange: (Chat) -> Unit = {}
-    private var numberOfAddChatListenerCalls = 0
-    private var numberOfRemovedChatListenerCalls = 0
 
     private var groupChat = Chat()
 
@@ -73,8 +71,6 @@ open class MockDatabase: Database {
         chat = Chat(participants = listOf(DEFAULT_EMAIL, TO_EMAIL))
         chatId = ""
         onChange = {}
-        numberOfRemovedChatListenerCalls = 0
-        numberOfAddChatListenerCalls = 0
 
         groupChat = Chat()
     }
@@ -224,7 +220,6 @@ open class MockDatabase: Database {
                 this.chatId = chatId
                 chat = chat.copy(id = chatId)
                 this.onChange = onChange
-                numberOfAddChatListenerCalls++
             }
         }
         this.onChange(chat)
@@ -259,19 +254,11 @@ open class MockDatabase: Database {
     }
 
     override fun removeChatListener(chatId: String) {
-        numberOfRemovedChatListenerCalls++
+        // Not necessary
     }
 
     override fun addUsersListeners(onChange: (List<UserInfo>) -> Unit) {
         // Not necessary
-    }
-
-    fun numberOfRemovedChatListenerCalls(): Int {
-        return numberOfRemovedChatListenerCalls
-    }
-
-    fun numberOfAddChatListenerCalls(): Int {
-        return numberOfAddChatListenerCalls
     }
 
     override fun getFCMToken(email: String): CompletableFuture<String> {
