@@ -70,20 +70,17 @@ export const sendPushNotification = functions.database
       return;
     }
 
-    const [participantsSnapshot,
+    const [dotChatIdSnapshot, // needed since the key chatId above has commas
+      participantsSnapshot,
       firstNameSenderSnapshot,
       lastNameSenderSnapshot]: DataSnapshot[] =
         await fetchSnapshotValues(change, chatId, senderWithCommas, recipient);
 
-    functions.logger.log("before the if statement for participantsSnapshot", participantsSnapshot.val());
     // if no participants found for given chatId (i.e., .val() returns null)
     // return without sending push notification
     if (!participantsSnapshot.val()) {
       return;
     }
-
-    functions.logger.log("after the if statement for participantsSnapshot");
-    functions.logger.log("participants: " + participantsSnapshot.val());
 
     const recipientsTokenSnapshot: DataSnapshot[] =
       await fetchRecipientsTokensSnapshotValues(
@@ -91,11 +88,9 @@ export const sendPushNotification = functions.database
 
     const payload = createPayload(
       firstNameSenderSnapshot.val(), lastNameSenderSnapshot.val(),
-      message.content, sender);
+      message.content, dotChatIdSnapshot.val());
 
-    functions.logger.log("before the for loop for recipientsTokenSnapshot");
     for (const recipientTokenSnapshot of recipientsTokenSnapshot) {
-      functions.logger.log("recipientTokenSnapshot: " + recipientTokenSnapshot.val());
       // if recipient has not registered a token, no need for push notification
       if (!recipientTokenSnapshot.val()) {
         continue;
@@ -103,7 +98,6 @@ export const sendPushNotification = functions.database
       // send push notification
       await admin.messaging().sendToDevice(recipientTokenSnapshot.val(), payload);
     }
-    functions.logger.log("after the for loop for recipientsTokenSnapshot");
     // update readState to RECEIVED
     await change.after.ref.update({readState: "RECEIVED"});
   });
@@ -158,10 +152,14 @@ async function fetchSnapshotValues(
   senderWithCommas: string,
   recipientWithCommas: string,
 ): Promise<DataSnapshot[]> {
-  const [participantsSnapshot,
+  const [dotChatIdSnapshot,
+    participantsSnapshot,
     firstNameSenderSnapshot,
     lastNameSenderSnapshot] =
       await Promise.all([
+        change.after.ref.root
+          .child("/coachme/messages/" + chatId + "/id")
+          .once("value"),
         change.after.ref.root
           .child("/coachme/messages/" + chatId + "/participants")
           .once("value"),
@@ -173,7 +171,8 @@ async function fetchSnapshotValues(
           .once("value"),
       ]);
 
-  return [participantsSnapshot,
+  return [dotChatIdSnapshot,
+    participantsSnapshot,
     firstNameSenderSnapshot,
     lastNameSenderSnapshot];
 }
@@ -185,14 +184,14 @@ async function fetchSnapshotValues(
  * @param {string} firstNameSender - The first name of the sender.
  * @param {string} lastNameSender - The last name of the sender.
  * @param {string} bodyContent - The message content.
- * @param {string} sender - The ID of the sender.
+ * @param {string} chatId - The ID of the chat.
  * @return {admin.messaging.MessagingPayload} - The payload object.
  */
 function createPayload(
   firstNameSender: string,
   lastNameSender: string,
   bodyContent: string,
-  sender: string): admin.messaging.MessagingPayload {
+  chatId: string): admin.messaging.MessagingPayload {
   return {
     notification: {
       title: `${firstNameSender} ${lastNameSender}`,
@@ -204,7 +203,7 @@ function createPayload(
       // needed to tell the app what type of notification this is
       // (to enable different types of push notifications in the future)
       notificationType: "messaging",
-      sender: sender,
+      chatId: chatId,
     },
   };
 }
