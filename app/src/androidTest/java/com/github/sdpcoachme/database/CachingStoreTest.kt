@@ -718,7 +718,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext()
         )
         cachingStore.retrieveData.get(1, SECONDS)
-        cachingStore.setCurrentEmail(defaultUser.email).get(1, SECONDS)
+        cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
 
         cachingStore.getCurrentEmail().thenAccept {
             println("current email is $it")
@@ -774,7 +774,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext()
         )
         cachingStore.retrieveData.get(1, SECONDS)
-        cachingStore.setCurrentEmail(defaultUser.email).get(1, SECONDS)
+        cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
         val nonCachedMessage = Message(
             "other@email.com",
             "Sender Name",
@@ -822,6 +822,8 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext()
         )
         cachingStore.retrieveData.get(1, SECONDS)
+        cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
+
         val isCorrect = cachingStore.getChat(defaultChat.id) // to place chat into the cache
             .thenCompose { chat ->
                 assertThat(wrappedDatabase.timesCalled(), `is`(1))
@@ -837,6 +839,7 @@ class CachingStoreTest {
 
                         true
                     }.exceptionally {
+                        println("error: ${it.cause}")
                         false
                     }
             }.get(5, SECONDS)
@@ -860,6 +863,8 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext()
         )
         cachingStore.retrieveData.get(1, SECONDS)
+        cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
+
         val isCorrect = cachingStore.sendMessage(defaultChat.id, newMessage)
             .thenCompose {
                 cachingStore.getChat(defaultChat.id)
