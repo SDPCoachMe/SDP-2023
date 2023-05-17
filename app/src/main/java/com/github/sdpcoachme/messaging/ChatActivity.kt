@@ -193,13 +193,10 @@ class ChatActivity : ComponentActivity() {
         var chat by remember { mutableStateOf(Chat()) }
         var toUser by remember { mutableStateOf(UserInfo()) }
         var currentUserEmail by remember { mutableStateOf("") }
-
-        // TODO: adapt to contain the group event!!!
         var groupEvent by remember { mutableStateOf(GroupEvent()) }
 
         LaunchedEffect(true) {
             if (isGroupChat) {
-                // TODO: get the group event
                 groupEvent = store.getGroupEvent(chatId).await()
             } else {
                 toUser = store.getUser(toUserEmail).await()
