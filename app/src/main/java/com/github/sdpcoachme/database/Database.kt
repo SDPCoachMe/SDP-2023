@@ -67,7 +67,7 @@ interface Database {
      * @param groupEventId The id of the group event to add the participant to
      * @return A future that will complete when the participant has been added.
      */
-    fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Void>
+    fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Schedule>
 
     /**
      * Get the schedule from the database

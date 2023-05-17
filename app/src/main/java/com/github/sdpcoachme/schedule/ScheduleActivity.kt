@@ -113,9 +113,7 @@ class ScheduleActivity : ComponentActivity() {
 
         val startMonday = getStartMonday()
 
-        val futureDBSchedule: CompletableFuture<Schedule> = store.getSchedule(startMonday).exceptionally {
-            null
-        }
+        val futureDBSchedule: CompletableFuture<Schedule> = store.getSchedule(startMonday).thenApply { println("Got cached schedule: $it"); it }
 
         setContent {
             CoachMeTheme {

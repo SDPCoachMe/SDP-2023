@@ -269,7 +269,9 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return a completable future that completes when the group event has been added
      */
     fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
-        return wrappedDatabase.addGroupEvent(groupEvent)
+        return wrappedDatabase.addGroupEvent(groupEvent).thenCompose {
+            registerForGroupEvent(groupEvent.groupEventId)
+        }
     }
 
     /**
@@ -282,7 +284,7 @@ class CachingStore(private val wrappedDatabase: Database,
             wrappedDatabase.registerForGroupEvent(email, groupEventId).thenCompose {
                 wrappedDatabase.getSchedule(email, currentShownMonday)
             }.thenAccept { schedule ->
-                cachedSchedule = schedule
+                cachedSchedule = schedule   // Update the cached schedule
             }
         }
     }
