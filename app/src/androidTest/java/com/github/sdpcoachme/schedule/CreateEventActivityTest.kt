@@ -17,6 +17,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.data.Address
 import com.github.sdpcoachme.data.GroupEvent
+import com.github.sdpcoachme.data.UserInfoSamples
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.data.schedule.EventType
@@ -53,13 +54,12 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.lang.Thread.sleep
 import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class CreateEventActivityTest {
     private lateinit var store: CachingStore
-    private val defaultEmail = "example@email.com"
+    private val coachEmail = UserInfoSamples.COACH_1.email
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), CreateEventActivity::class.java)
 
     private val currentWeekMonday = EventOps.getStartMonday()
@@ -78,7 +78,7 @@ class CreateEventActivityTest {
         (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
         store = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).store
         store.retrieveData.get(1, TimeUnit.SECONDS)
-        store.setCurrentEmail(defaultEmail)
+        store.setCurrentEmail(coachEmail)
         Intents.init()
     }
 
@@ -116,8 +116,9 @@ class CreateEventActivityTest {
 
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
             initiallyDisplayed.forEach { tag ->
-                composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).assertExists()
-                composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).assertIsDisplayed()
+                composeTestRule.onNodeWithTag(tag, useUnmergedTree = true)
+                    .assertExists()
+                    .assertIsDisplayed()
             }
         }
     }
@@ -155,6 +156,7 @@ class CreateEventActivityTest {
             }
         }
     }
+
 
     // Note: Pressing the cancel button on the date picker works, but pressing the ok button does not
     private fun openAndCancelDatePicker(

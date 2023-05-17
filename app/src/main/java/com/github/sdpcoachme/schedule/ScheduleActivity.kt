@@ -89,6 +89,8 @@ class ScheduleActivity : ComponentActivity() {
                 const val RIGHT_ARROW_BUTTON = "rightArrowButton"
                 const val BACK = "backButton"
                 const val ADD_EVENT_BUTTON = "addEventButton"
+                const val ADD_PRIVATE_EVENT_BUTTON = "addPrivateEventButton"
+                const val ADD_GROUP_EVENT_BUTTON = "addGroupEventButton"
             }
         }
         class TextFields {
@@ -246,7 +248,8 @@ fun Schedule(
         ) {
             DropdownMenuItem(
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally),
+                    .align(Alignment.CenterHorizontally)
+                    .testTag(ScheduleActivity.TestTags.Buttons.ADD_PRIVATE_EVENT_BUTTON),
                 onClick = {
                     isDropdownExpanded = false
                     launchCreateEventActivity(EventType.PRIVATE)
@@ -256,7 +259,8 @@ fun Schedule(
             }
             DropdownMenuItem(
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally),
+                    .align(Alignment.CenterHorizontally)
+                    .testTag(ScheduleActivity.TestTags.Buttons.ADD_GROUP_EVENT_BUTTON),
                 onClick = {
                     isDropdownExpanded = false
                     launchCreateEventActivity(EventType.GROUP)

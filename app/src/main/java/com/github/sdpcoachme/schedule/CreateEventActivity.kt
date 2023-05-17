@@ -56,8 +56,6 @@ import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.data.schedule.EventType
 import com.github.sdpcoachme.database.CachingStore
-import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
-import com.github.sdpcoachme.profile.SportsRow
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.maxkeppeker.sheets.core.models.base.Header
 import com.maxkeppeker.sheets.core.models.base.SheetState
@@ -162,20 +160,12 @@ class CreateEventActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         store = (application as CoachMeApplication).store
         email = store.getCurrentEmail().get(1000, TimeUnit.MILLISECONDS)
-        val eventTypeName = intent.getStringExtra("eventType")
-        if (email.isEmpty()) {
-            val errorMsg = "New event did not receive an email address.\n Please return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
-        } else if (eventTypeName == null) { // TODO: write test for this
-            val errorMsg = "New event did not receive an event type.\n Please return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
-        } else {
-            val eventType = EventType.fromString(eventTypeName)!!
-            setContent {
-                CoachMeTheme {
-                    Surface(color = MaterialTheme.colors.background) {
-                        NewEvent(store, eventType)
-                    }
+        val eventTypeName = intent.getStringExtra("eventType")!!
+        val eventType = EventType.fromString(eventTypeName)!!
+        setContent {
+            CoachMeTheme {
+                Surface(color = MaterialTheme.colors.background) {
+                    NewEvent(store, eventType)
                 }
             }
         }
