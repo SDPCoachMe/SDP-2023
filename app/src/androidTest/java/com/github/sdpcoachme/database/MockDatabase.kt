@@ -158,11 +158,11 @@ open class MockDatabase: Database {
         return errorPreventionFuture
     }
 
-    override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Void> {
+    override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Schedule> {
         return getGroupEvent(groupEventId).thenCompose { groupEvent ->
             val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
             if (!hasCapacity) {
-                val failingFuture = CompletableFuture<Void>()
+                val failingFuture = CompletableFuture<Schedule>()
                 failingFuture.completeExceptionally(Exception("Group event is full"))
                 failingFuture
             } else {

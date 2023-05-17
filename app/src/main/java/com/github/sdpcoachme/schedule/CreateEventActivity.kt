@@ -91,6 +91,7 @@ class CreateEventActivity : ComponentActivity() {
                 val START_TIME_TEXT = text("startTime")
                 val END_DATE_TEXT = text("endDate")
                 val END_TIME_TEXT = text("endTime")
+                val MAX_PARTICIPANTS_TEXT = text("maxParticipants")
                 val COLOR_TEXT = text("color")
 
                 val START_DATE_DIALOG_TITLE = text("startDateDialogTitle")
@@ -132,6 +133,7 @@ class CreateEventActivity : ComponentActivity() {
                 }
 
                 val EVENT_NAME = textField("eventName")
+                val MAX_PARTICIPANTS = textField("maxParticipants")
                 val DESCRIPTION = textField("description")
             }
         }
@@ -254,9 +256,15 @@ fun NewEvent(store: CachingStore, eventType: EventType) {
                                         organiser = organiser,
                                         maxParticipants = maxParticipants,
                                     )
-                                    EventOps.addGroupEvent(groupEvent, store).thenAccept {
-                                        goBackToScheduleActivity()
+                                    if (maxParticipants <= 0) {
+                                        val toast = Toast.makeText(context, "Max participants must be greater than 0", Toast.LENGTH_SHORT)
+                                        toast.show()
+                                    } else {
+                                        EventOps.addGroupEvent(groupEvent, store).thenAccept {
+                                            goBackToScheduleActivity()
+                                        }
                                     }
+
                                 }
                             }
                         },
@@ -576,7 +584,7 @@ fun MaxParticipantsRow(
             text = "Max Participants: ",
             modifier = Modifier
                 .weight(1f)
-                //.testTag(CreateEventActivity.TestTags.Texts.MAX_PARTICIPANTS_TEXT)
+                .testTag(CreateEventActivity.TestTags.Texts.MAX_PARTICIPANTS_TEXT)
         )
         val focusManager = LocalFocusManager.current
         TextField(
@@ -590,7 +598,7 @@ fun MaxParticipantsRow(
             ),*/
             modifier = Modifier
                 .weight(.8f)
-                //.testTag(CreateEventActivity.TestTags.Texts.MAX_PARTICIPANTS)
+                .testTag(CreateEventActivity.TestTags.TextFields.MAX_PARTICIPANTS)
         )
     }
 }
