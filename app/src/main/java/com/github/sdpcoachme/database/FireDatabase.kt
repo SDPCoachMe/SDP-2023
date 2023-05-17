@@ -119,33 +119,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
                 }
 
                 // Fetch the chat and create the corresponding ContactRowInfo
-                getChat(chatId).thenCompose { chat ->
-                    val lastMessage =
-                        if (chat.messages.isEmpty()) Message() else chat.messages.last()
-
-                    if (contactId.startsWith("@@event")) {
-                        getGroupEvent(contactId)
-                            .thenApply { groupEvent ->
-                                val row = ContactRowInfo(
-                                    chatId = chatId,
-                                    chatTitle = groupEvent.event.name,
-                                    lastMessage = lastMessage,
-                                    isGroupChat = true
-                                )
-                                row
-                            }.exceptionally { println("error in getgroup event"); null }
-                    } else {
-                        getUser(contactId).thenApply {
-                            val row = ContactRowInfo(
-                                chatId = chatId,
-                                chatTitle = "${it.firstName} ${it.lastName}",
-                                lastMessage = lastMessage,
-                                isGroupChat = false
-                            )
-                            row
-                        }.exceptionally { println("error in getuser"); println(it.cause); null }
-                    }
-                }.exceptionally { println("error in get chat"); null }
+                getContactRowInfoFromChat(chatId, contactId)
             }
             // done to make sure that all the futures are completed before calling join
             val allOf = CompletableFuture.allOf(*mappedF.toTypedArray())
@@ -156,6 +130,37 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             }
         }.exceptionally { println("error in get contact row info") ; println(it.cause); null}
     }
+
+    private fun getContactRowInfoFromChat(
+        chatId: String,
+        contactId: String
+    ): CompletableFuture<ContactRowInfo> =
+        getChat(chatId).thenCompose { chat ->
+            val lastMessage =
+                if (chat.messages.isEmpty()) Message()
+                else chat.messages.last()
+
+            if (contactId.startsWith("@@event")) {
+                getGroupEvent(contactId)
+                    .thenApply { groupEvent ->
+                        ContactRowInfo(
+                            chatId = chatId,
+                            chatTitle = groupEvent.event.name,
+                            lastMessage = lastMessage,
+                            isGroupChat = true
+                        )
+                    }
+            } else {
+                getUser(contactId).thenApply {
+                    ContactRowInfo(
+                        chatId = chatId,
+                        chatTitle = "${it.firstName} ${it.lastName}",
+                        lastMessage = lastMessage,
+                        isGroupChat = false
+                    )
+                }
+            }
+        }
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {
         val id = chatId.replace('.', ',')
