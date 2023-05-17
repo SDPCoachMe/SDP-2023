@@ -16,6 +16,7 @@ import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.schedule.EventOps
 import com.github.sdpcoachme.schedule.EventOps.Companion.getStartMonday
+import com.github.sdpcoachme.weather.WeatherForecast
 import com.google.android.gms.maps.model.LatLng
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -40,10 +41,12 @@ class CachingStore(private val wrappedDatabase: Database,
     val CONTACTS_KEY = stringPreferencesKey("contacts")
     val CHATS_KEY = stringPreferencesKey("chats")
     val CACHED_SCHEDULE_KEY = stringPreferencesKey("cached_schedules")
+    val WEATHER_FORECAST = stringPreferencesKey("weather_forecast")
 
     private val CACHED_SCHEDULE_WEEKS_AHEAD = 4L
     private val CACHED_SCHEDULE_WEEKS_BEHIND = 4L
 
+    // Database-wide stored values
     private val cachedUsers = mutableMapOf<String, UserInfo>()
     private val contacts = mutableMapOf<String, List<UserInfo>>()
     private val chats = mutableMapOf<String, Chat>()
@@ -54,7 +57,9 @@ class CachingStore(private val wrappedDatabase: Database,
     private var minCachedMonday = currentShownMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
     private var maxCachedMonday = currentShownMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
 
+    // Application-wide stored values
     private var currentEmail: String? = null
+    private var weatherForecast: WeatherForecast = WeatherForecast()
 
     private val gson = Gson()
 
@@ -99,12 +104,14 @@ class CachingStore(private val wrappedDatabase: Database,
             val serializedContacts = values[CONTACTS_KEY]
             val serializedChats = values[CHATS_KEY]
             val serializedSchedule = values[CACHED_SCHEDULE_KEY]
+            val serializedWeather = values[WEATHER_FORECAST]
 
             // Deserialize the caching maps from Json and put them in the caching maps
             processRetrievedCache(serializedUsers, cachedUsers)
             processRetrievedCache(serializedContacts, contacts)
             processRetrievedCache(serializedChats, chats)
             processRetrievedCache(serializedSchedule, cachedSchedule)
+            processRetrievedCache(serializedWeather, weatherForecast)
 
             localFuture.complete(null)
         }
@@ -121,12 +128,19 @@ class CachingStore(private val wrappedDatabase: Database,
             return
         }
         val type = object : TypeToken<T>() {}.type
-        if (cache is Schedule) {
-            val schedule = gson.fromJson<Schedule>(jsonString, type)
-            cachedSchedule = schedule
-        } else {
-            cache as MutableMap<*, *>
-            cache.putAll(gson.fromJson(jsonString, type))
+        when (cache) {
+            is Schedule -> {
+                val schedule = gson.fromJson<Schedule>(jsonString, type)
+                cachedSchedule = schedule
+            }
+            is WeatherForecast -> {
+                val forecast = gson.fromJson<WeatherForecast>(jsonString, type)
+                weatherForecast = forecast
+            }
+            else -> {
+                cache as MutableMap<*, *>
+                cache.putAll(gson.fromJson(jsonString, type))
+            }
         }
     }
 
@@ -164,6 +178,7 @@ class CachingStore(private val wrappedDatabase: Database,
                 storeCache(contacts, CONTACTS_KEY)
                 storeCache(chats, CHATS_KEY)
                 storeCache(cachedSchedule, CACHED_SCHEDULE_KEY)
+                storeCache(weatherForecast, WEATHER_FORECAST)
 
                 writeDatastoreFuture.complete(null)
             }
@@ -533,18 +548,19 @@ class CachingStore(private val wrappedDatabase: Database,
      * Clear the cache.
      * Also useful for testing
      */
-    fun clearCache() {
+    private fun clearCache() {
         cachedUsers.clear()
         cachedSchedule = Schedule()
         contacts.clear()
         chats.clear()
+        weatherForecast = WeatherForecast()
     }
 
     /**
      * Check if the device is connected to the internet
      * @return True if the device is connected to the internet, false otherwise
      */
-    fun isOnline(): Boolean {
+    private fun isOnline(): Boolean {
         val connectivityManager =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val capabilities =
