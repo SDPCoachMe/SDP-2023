@@ -11,9 +11,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
@@ -21,21 +18,25 @@ import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_2
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACH_2
+import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.autocomplete.MockAddressAutocompleteHandler.Companion.DEFAULT_ADDRESS
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.Buttons.Companion.CANCEL
 import com.github.sdpcoachme.profile.EditTextActivity.TestTags.Companion.TextFields.Companion.MAIN
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Buttons.Companion.MESSAGE_COACH
+import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.ADDRESS
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.COACH_SWITCH
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.LAST_NAME
-import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.ADDRESS
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PHONE
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.SPORTS
 import com.github.sdpcoachme.profile.SelectSportsActivity.TestTags.MultiSelectListTag.Companion.ROW_TEXT_LIST
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import junit.framework.TestCase
 import org.hamcrest.CoreMatchers
 import org.junit.After
@@ -168,6 +169,8 @@ class ProfileActivityTest {
         profileIntent.putExtra("email", email)
         profileIntent.putExtra("isViewingCoach", true)
 
+        val expectedChatId = Chat.chatIdForPersonalChats(email, NON_COACH_2.email)
+
         ActivityScenario.launch<ProfileActivity>(profileIntent).use {
             waitForUpdate(it)
 
@@ -176,7 +179,7 @@ class ProfileActivityTest {
             Intents.intended(
                 CoreMatchers.allOf(
                     IntentMatchers.hasComponent(ChatActivity::class.java.name),
-                    IntentMatchers.hasExtra("toUserEmail", COACH_1.email)
+                    IntentMatchers.hasExtra("chatId", expectedChatId)
                 )
             )
         }

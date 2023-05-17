@@ -3,6 +3,7 @@ package com.github.sdpcoachme.database
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
@@ -87,11 +88,15 @@ interface Database {
     fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent>
 
     /**
-     * Get the chat contacts for the given user
-     * @param email The email of the user to get the chat contacts for
-     * @return A future that will complete with the chat contacts
+     * Get the contact row info for the given user
+     * This will be used to display the user's contacts in the UI
+     * similar to other messaging services such as WhatsApp:
+     * The name of the chat / recipient and the last message will be displayed
+     *
+     * @param email The email of the user whose contacts should be retrieved
+     * @return A future that will complete with the contact row info
      */
-    fun getChatContacts(email: String): CompletableFuture<List<UserInfo>>
+    fun getContactRowInfos(email: String): CompletableFuture<List<ContactRowInfo>>
 
     /**
      * Get chat with the given id from the database
@@ -100,6 +105,17 @@ interface Database {
      * @return A future that will complete with the chat
      */
     fun getChat(chatId: String): CompletableFuture<Chat>
+
+    /**
+     * Update / create chat with the following participants
+     * If the chat already exists, it will be updated with the new participants
+     * If the chat does not exist, it will be created with the given participants
+     *
+     * @param chatId The id of the chat
+     * @param participants The participants of the chat
+     * @return A future that will complete when the user has been added
+     */
+    fun updateChatParticipants(chatId: String, participants: List<String>): CompletableFuture<Void>
 
     /**
      * Place the new message into the database

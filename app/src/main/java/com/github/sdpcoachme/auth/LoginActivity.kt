@@ -186,10 +186,10 @@ class LoginActivity : ComponentActivity() {
                 val pushNotificationIntent = intent
                 val action = pushNotificationIntent.action
                 if (action.equals("OPEN_CHAT_ACTIVITY")
-                    && pushNotificationIntent.getStringExtra("sender") != null) {
+                    && pushNotificationIntent.getStringExtra("chatId") != null) {
                     // If a notification was clicked, redirect to chat activity
                     Intent(this, ChatActivity::class.java)
-                        .putExtra("toUserEmail", pushNotificationIntent.getStringExtra("sender"))
+                        .putExtra("chatId", pushNotificationIntent.getStringExtra("chatId"))
                 } else {
                     // If no notification was clicked, redirect to map activity
                     Intent(this, MapActivity::class.java)

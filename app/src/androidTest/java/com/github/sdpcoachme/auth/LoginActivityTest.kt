@@ -14,11 +14,11 @@ import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.uiautomator.*
-import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.LOG_IN
 import com.github.sdpcoachme.data.UserAddressSamples
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.messaging.ChatActivity
@@ -154,8 +154,10 @@ open class LoginActivityTest {
         store.updateUser(currentUser).get(1000, TimeUnit.MILLISECONDS)
         store.updateUser(toUser).get(1000, TimeUnit.MILLISECONDS)
         store.setCurrentEmail(currentUser.email).get(1000, TimeUnit.MILLISECONDS)
+
+        val chatId = Chat.chatIdForPersonalChats(currentUser.email, toUser.email)
         val intent = Intent(ApplicationProvider.getApplicationContext(), LoginActivity::class.java)
-            .putExtra("sender", toUser.email)
+            .putExtra("chatId", chatId)
         intent.action = "OPEN_CHAT_ACTIVITY"
 
         ActivityScenario.launch<LoginActivity>(intent).use {
@@ -164,7 +166,7 @@ open class LoginActivityTest {
             // Assert that we launched the chat activity
             intended(allOf(
                 hasComponent(ChatActivity::class.java.name),
-                hasExtra("toUserEmail", toUser.email)
+                hasExtra("chatId", chatId)
             ))
         }
     }

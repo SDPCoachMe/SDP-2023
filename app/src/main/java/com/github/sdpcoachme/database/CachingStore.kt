@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
@@ -46,6 +47,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     private val cachedUsers = mutableMapOf<String, UserInfo>()
     private val contacts = mutableMapOf<String, List<UserInfo>>()
+    private val contactRowInfos = mutableMapOf<String, List<ContactRowInfo>>()
     private val chats = mutableMapOf<String, Chat>()
     private val cachedTokens = mutableMapOf<String, String>()
 
@@ -373,20 +375,19 @@ class CachingStore(private val wrappedDatabase: Database,
     }
 
     /**
-     * Get chat contacts for a user
-     * @param email the email of the user to get the chat contacts for
-     * @return a completable future that completes when the chat contacts have been retrieved
+     * Get the contact row info for the given user
+     * This will be used to display the user's contacts in the UI
+     * similar to other messaging services such as WhatsApp:
+     * The name of the chat / recipient and the last message will be displayed
+     *
+     * @param email The email of the user whose contacts should be retrieved
+     * @return A future that will complete with the contact row info
      */
-    fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
-        if (contacts.containsKey(email)) {
-            return CompletableFuture.completedFuture(contacts[email])
+    fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
+        if (contactRowInfos.containsKey(email)) {
+            return CompletableFuture.completedFuture(contactRowInfos[email])
         }
-        return wrappedDatabase.getChatContacts(email).thenApply {
-            it.also {
-                contacts[email] = it
-                storeLocalData()
-            }
-        }
+        return wrappedDatabase.getContactRowInfos(email).thenApply { it.also { contactRowInfos[email] = it } }
     }
 
     /**
@@ -407,6 +408,23 @@ class CachingStore(private val wrappedDatabase: Database,
     }
 
     /**
+     * Update / create chat with the following participants
+     * If the chat already exists, it will be updated with the new participants
+     * If the chat does not exist, it will be created with the given participants
+     *
+     * @param chatId The id of the chat
+     * @param participants The participants of the chat
+     * @return A future that will complete when the user has been added
+     */
+    fun updateChatParticipants(chatId: String, participants: List<String>): CompletableFuture<Void> {
+        // if not already cached, we don't cache the chat
+        if (chats.containsKey(chatId)) {
+            chats[chatId] = chats[chatId]!!.copy(participants = participants)
+        }
+        return wrappedDatabase.updateChatParticipants(chatId, participants)
+    }
+
+    /**
      * Send a message
      * @param chatId the id of the chat to send the message to
      * @param message the message to send
@@ -418,7 +436,41 @@ class CachingStore(private val wrappedDatabase: Database,
             chats[chatId] = chats[chatId]!!.copy(messages = chats[chatId]!!.messages + message)
             storeLocalData()
         }
-        return wrappedDatabase.sendMessage(chatId, message) // we only the chat with the new message if the chat is already cached
+        return updateCachedContactRowInfo(chatId, message)
+            .thenCompose {
+                wrappedDatabase.sendMessage(chatId, message)
+            }
+    }
+
+    private fun updateCachedContactRowInfo(chatId: String, message: Message): CompletableFuture<Void> {
+        return getCurrentEmail().thenAccept { currEmail ->
+            // update the contact's last message
+            if (!contactRowInfos.containsKey(currEmail)) {
+                return@thenAccept
+            }
+
+            var newContacts = listOf<ContactRowInfo>()
+            // we need to find the contact with the given chatId and update it
+            var wantedContact: ContactRowInfo? = null
+            for (contact in contactRowInfos[currEmail]!!) {
+                // if the contact is the one we are looking for, we update it
+                // but only if the last message has changed (if, e.g.,new members entered the chat,
+                // we don't want to place the chat at the top of the list)
+                if (contact.chatId == chatId) {
+                    wantedContact = contact.copy(lastMessage = message)
+                } else {
+                    newContacts = newContacts + contact
+                }
+            }
+            // Iff the contact is found, we can assume that the cache is
+            // up-to-date and return without clearing the cache
+            if (wantedContact != null) {
+                contactRowInfos[currEmail] = listOf(wantedContact) + newContacts
+                return@thenAccept
+            }
+            // to signal that the cache is not up to date
+            contactRowInfos.remove(currEmail)
+        }
     }
 
     /**
@@ -538,6 +590,8 @@ class CachingStore(private val wrappedDatabase: Database,
         cachedSchedule = Schedule()
         contacts.clear()
         chats.clear()
+        cachedTokens.clear()
+        contactRowInfos.clear()
     }
 
     /**
