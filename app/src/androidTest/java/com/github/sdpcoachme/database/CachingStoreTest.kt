@@ -208,6 +208,7 @@ class CachingStoreTest {
         assertThat(wrappedDatabase.timesCalled, `is`(7))
     }
 
+    // TODO: fix this failing test
     @Test
     fun addGroupEventAddsItToWrappedDatabase() {
         var timesCalled = 0
@@ -221,7 +222,6 @@ class CachingStoreTest {
             override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
                 timesCalled++
                 addedGroupEvents.add(groupEvent)
-                println("Added group event: $groupEvent")
                 return CompletableFuture.completedFuture(null)
             }
 
@@ -232,7 +232,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-        cachingStore.setCurrentEmail(exampleEmail)
+        cachingStore.setCurrentEmail(MockDatabase.getDefaultEmail())
         val isCorrect = cachingStore.addGroupEvent(groupEvents[0])
             .thenCompose {
                 println("timesCalled: $timesCalled")
@@ -261,10 +261,10 @@ class CachingStoreTest {
                 assertThat(wrappedDatabase.getAddedGroupEvents()[5], `is`(groupEvents[5]))
                 cachingStore.addGroupEvent(groupEvents[6])*/
             }.thenApply {
-                println("timesCalled: $timesCalled")
                 assertThat(timesCalled, `is`(2))
                 true
             }.exceptionally {
+                println("Exception: $it")
                 false
             }.get(5, SECONDS)
 
@@ -992,7 +992,7 @@ class CachingStoreTest {
         GroupEvent(
             event.copy(name = "${event.name} (group event)", start = event.end, end = LocalDateTime.parse(event.end).plusHours(1).format(EventOps.getEventDateFormatter())),
             MockDatabase.getDefaultEmail(),
-            3,
+            5,
         )
     }
 }
