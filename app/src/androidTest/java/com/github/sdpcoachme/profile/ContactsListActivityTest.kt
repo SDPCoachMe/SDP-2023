@@ -27,7 +27,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.lang.Thread.sleep
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -97,7 +96,6 @@ class ContactsListTest {
         store.sendMessage("chatId", othersMessage).get(1000, TimeUnit.MILLISECONDS)
         startActivity()
 
-        sleep(5000)
         composeTestRule.onNodeWithText("${othersMessage.senderName}: ${othersMessage.content}")
             .assertIsDisplayed()
     }

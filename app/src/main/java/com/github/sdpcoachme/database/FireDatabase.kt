@@ -117,7 +117,6 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
                     if (contactId < email) contactId + email
                     else email + contactId
                 }
-                println("firedatabase chatId: $chatId")
 
                 // Fetch the chat and create the corresponding ContactRowInfo
                 getChat(chatId).thenCompose { chat ->

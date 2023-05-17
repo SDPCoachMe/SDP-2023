@@ -30,9 +30,6 @@ data class Chat(
                     val newReadByUsers = message.readByUsers.plus(Pair(currentUserEmail.replace(".", ","), true))
                     val newReadState = if (newReadByUsers.size == chat.participants.size - 1) Message.ReadState.READ else message.readState
 
-                    println(message.content)
-                    println("readstate: $newReadState")
-
                     message.copy(readState = newReadState, readByUsers = newReadByUsers)
                 }
             })

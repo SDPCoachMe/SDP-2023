@@ -454,8 +454,8 @@ class ChatActivityTest {
                 .assertIsDisplayed()
 
             for (userMail in groupEvent.participants) {
-                store.getUser(userMail).thenApply { it.chatContacts[0] }.get(1000, TimeUnit.MILLISECONDS).let {
-                    assertThat(it, `is`(groupEvent.groupEventId))
+                store.getUser(userMail).thenApply { u -> u.chatContacts[0] }.get(1000, TimeUnit.MILLISECONDS).let {
+                    id -> assertThat(id, `is`(groupEvent.groupEventId))
                 }
             }
         }

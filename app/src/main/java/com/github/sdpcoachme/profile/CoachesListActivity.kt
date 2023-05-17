@@ -211,7 +211,6 @@ class CoachesListActivity : ComponentActivity() {
                 .fillMaxWidth()
                 .clickable {
                     if (isViewingContacts) {
-                        println("currentUserEmail: $currentUserEmail")
                         val displayChatIntent = Intent(context, ChatActivity::class.java)
                         displayChatIntent.putExtra("chatId", contactRowInfo.chatId)
                         context.startActivity(displayChatIntent)

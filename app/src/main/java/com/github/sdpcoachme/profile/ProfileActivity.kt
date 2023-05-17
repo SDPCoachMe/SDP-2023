@@ -10,10 +10,31 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.material.Button
+import androidx.compose.material.Divider
+import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.material.Switch
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,11 +48,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
-import com.github.sdpcoachme.data.Address
-import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
@@ -48,9 +66,6 @@ import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.SPORTS
 import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.future.await
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.temporal.TemporalAdjusters
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -91,36 +106,6 @@ class ProfileActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         stateUpdated = CompletableFuture()
         store = (application as CoachMeApplication).store
-
-
-
-        val groupEvent = GroupEvent(
-            Event(
-                name = "Google I/O Keynote",
-                color = Color(0xFFAFBBF2).value.toString(),
-                start = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(13, 0, 0).toString(),
-                end = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atTime(15, 0, 0).toString(),
-                sport = Sports.TENNIS,
-                address = Address(),
-                description = "Tune in to find out about how we're furthering our mission to organize the world’s information and make it universally accessible and useful.",
-            ),
-            "lucaengu@gmail.com",
-            5,
-            listOf("luca.aengu@gmail.com", "lucaengu@gmail.com", "luca.engel@epfl.ch"),
-            "@@event group event",
-        )
-        println("groupEvent: $groupEvent")
-        store.addGroupEvent(groupEvent)
-            .thenAccept { println("worked: $it") }
-            .exceptionally { println("didnt work: ${it.cause}"); null }
-        store.updateChatParticipants(groupEvent.groupEventId, listOf("luca.aengu@gmail.com", "lucaengu@gmail.com", "luca.engel@epfl.ch"))
-        val list = listOf("luca.aengu@gmail.com", "lucaengu@gmail.com", "luca.engel@epfl.ch")
-        list.forEach {
-            store.getUser(it).thenCompose { userInfo ->
-                store.updateUser(userInfo.copy(chatContacts = userInfo.chatContacts.filter { c -> c != groupEvent.groupEventId } + groupEvent.groupEventId)  ) }
-        }
-
-
 
         val isViewingCoach = intent.getBooleanExtra("isViewingCoach", false)
         emailFuture = if (isViewingCoach) {
@@ -379,8 +364,6 @@ class ProfileActivity : ComponentActivity() {
                         .testTag(MESSAGE_COACH),
                     onClick = {
                         store.getCurrentEmail().thenApply {
-                            println("emailFuture: $it")
-                            println("userInfo mail: ${userInfo.email}")
                             val userEmail = userInfo.email
                             val intent = Intent(context, ChatActivity::class.java)
                             val chatId = if (userEmail < it) "$userEmail$it" else "$it$userEmail"

@@ -605,8 +605,6 @@ class ChatActivity : ComponentActivity() {
                                         participantMail,
                                         ""
                                     )
-                                println("contact to update: $contact")
-                                println("user whos contact list is being updated: ${it.email}")
                                 store.updateUser(
                                     it.copy(
                                         chatContacts = listOf(contact) + it.chatContacts.filter { e -> e != contact })
