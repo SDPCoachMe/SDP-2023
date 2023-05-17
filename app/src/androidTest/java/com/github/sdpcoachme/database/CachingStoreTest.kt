@@ -692,7 +692,6 @@ class CachingStoreTest {
 
         var onChangeChat = Chat()
         override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
-            println("adding chat listener and on change called $onChange")
             onChange(onChangeChat)
         }
 
@@ -720,9 +719,7 @@ class CachingStoreTest {
         cachingStore.retrieveData.get(1, SECONDS)
         cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
 
-        cachingStore.getCurrentEmail().thenAccept {
-            println("current email is $it")
-        }.get(1, SECONDS)
+        cachingStore.getCurrentEmail().get(1, SECONDS)
 
         val expectedMessage = Message(
             "other@email.com",
@@ -732,26 +729,18 @@ class CachingStoreTest {
             ReadState.SENT
         )
 
-        println("startingMessage")
-
         val isCorrect = cachingStore.getContactRowInfo(defaultUser.email) // place contact row into cache
             .thenCompose {
-                println("got contact row info once: ${wrappedDatabase.nbCallsToGetContactRowInfo}")
                 MatcherAssert.assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
                 MatcherAssert.assertThat(it[0], `is`(rowInfo))
-                println("sending message first time")
                 cachingStore.sendMessage(rowInfo.chatId, expectedMessage) // this is supposed to update the contact row in the cache
             }.thenCompose {
-                println("11111")
                 assert(wrappedDatabase.sentMessage == expectedMessage)
                 cachingStore.getContactRowInfo(defaultUser.email)
             }.thenApply {
                 // should not have called the wrapped database again as it is cached
-                println("22222")
                 MatcherAssert.assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
-                println("33333")
                 MatcherAssert.assertThat(it[0], `is`(rowInfo.copy(lastMessage = expectedMessage)))
-                println("sending message second time")
                 true
             }.exceptionally { println(it.cause); false }.get(5, SECONDS)
 
@@ -1036,6 +1025,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext()
         )
         cachingStore.retrieveData.get(1, SECONDS)
+        cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
         val noError = cachingDatabase.getFCMToken(testEmail)
             .thenCompose {
                 assertThat(it, `is`(token))
@@ -1064,6 +1054,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext()
         )
         cachingStore.retrieveData.get(1, SECONDS)
+        cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
         val noError = cachingStore.setFCMToken(testEmail, token)
             .thenCompose {
                 assertThat(wrappedDatabase.timesCalled(), `is`(0))
@@ -1090,6 +1081,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext())
         cachingStore.retrieveData.get(1, SECONDS)
+        cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
         val noError = cachingDatabase.getFCMToken(testEmail)
             .thenCompose {
                 assertThat(wrappedDatabase.timesCalled(), `is`(1))
@@ -1116,6 +1108,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext()
         )
         cachingStore.retrieveData.get(1, SECONDS)
+        cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
         val noError = cachingStore.setFCMToken(testEmail, token)
             .thenCompose {
                 assertThat(wrappedDatabase.timesCalled(), `is`(0))

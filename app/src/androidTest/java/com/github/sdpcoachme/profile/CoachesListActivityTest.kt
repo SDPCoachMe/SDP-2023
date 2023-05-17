@@ -234,14 +234,14 @@ open class CoachesListActivityTest {
     companion object {
         fun populateDatabase(store: CachingStore): CompletableFuture<Void> {
 
-            store.setCurrentEmail("example@email.com")
+            val emailFuture = store.setCurrentEmail("example@email.com")
             // Add a few coaches to the database
             val futures1 = COACHES.map { store.updateUser(it) }
 
             // Add non-coach user to the database
             val futures2 = NON_COACHES.map { store.updateUser(it) }
 
-            return CompletableFuture.allOf(*futures1.toTypedArray(), *futures2.toTypedArray())
+            return CompletableFuture.allOf(*futures1.toTypedArray(), *futures2.toTypedArray(), emailFuture)
         }
     }
 }
