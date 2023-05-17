@@ -17,15 +17,18 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.data.Address
 import com.github.sdpcoachme.data.GroupEvent
+import com.github.sdpcoachme.data.UserAddressSamples
 import com.github.sdpcoachme.data.UserInfoSamples
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.data.schedule.EventType
 import com.github.sdpcoachme.database.CachingStore
+import com.github.sdpcoachme.location.autocomplete.MockAddressAutocompleteHandler
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.CANCEL
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.COLOR_BOX
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.END_DATE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.END_TIME
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.LOCATION
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.SAVE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.START_DATE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.START_TIME
@@ -42,6 +45,7 @@ import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Compani
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.END_DATE_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.END_TIME_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.END_TIME_TEXT
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.LOCATION_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.MAX_PARTICIPANTS_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_DATE_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_DATE_TEXT
@@ -106,7 +110,9 @@ class CreateEventActivityTest {
             START_TIME,
             END_DATE,
             END_TIME,
-            // TODO: Location and sport
+            // TODO: sport
+            LOCATION_TEXT,
+            LOCATION,
             COLOR_TEXT,
             COLOR_BOX,
             DESCRIPTION,
@@ -141,7 +147,9 @@ class CreateEventActivityTest {
             END_TIME,
             MAX_PARTICIPANTS_TEXT,
             MAX_PARTICIPANTS,
-            // TODO: Location and sport
+            // TODO: sport
+            LOCATION_TEXT,
+            LOCATION,
             COLOR_TEXT,
             COLOR_BOX,
             DESCRIPTION,
@@ -151,8 +159,9 @@ class CreateEventActivityTest {
 
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
             initiallyDisplayed.forEach { tag ->
-                composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).assertExists()
-                composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).assertIsDisplayed()
+                composeTestRule.onNodeWithTag(tag, useUnmergedTree = true)
+                    .assertExists()
+                    .assertIsDisplayed()
             }
         }
     }
@@ -251,6 +260,19 @@ class CreateEventActivityTest {
         defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
             openAndCancelTimePicker(END_TIME, END_TIME_DIALOG_TITLE)
+        }
+    }
+
+    @Test
+    fun changeLocationWorks() {
+        defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
+        ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(LOCATION)
+                .assertExists()
+                .performClick() // changes address to default (Lausanne)
+
+            composeTestRule.onNodeWithTag(LOCATION)
+                .assertTextEquals(MockAddressAutocompleteHandler.DEFAULT_ADDRESS.name)
         }
     }
 
@@ -409,6 +431,8 @@ class CreateEventActivityTest {
             openAndCancelDatePicker(START_DATE, START_DATE_DIALOG_TITLE)
             openAndCancelDatePicker(END_DATE, END_DATE_DIALOG_TITLE)
             openAndCancelTimePicker(START_TIME, START_TIME_DIALOG_TITLE)
+            composeTestRule.onNodeWithTag(LOCATION)
+                .performClick()
             openAndCloseColorPicker()
             openAndCancelTimePicker(END_TIME, END_TIME_DIALOG_TITLE)
             composeTestRule.onNodeWithTag(MAX_PARTICIPANTS)
@@ -422,14 +446,14 @@ class CreateEventActivityTest {
                 start = defaultEventStart.format(eventDateFormatter),
                 end = defaultEventEnd.format(eventDateFormatter),
                 //sport = ???,
-                address = Address(),   // adapt this when location choosing is added
+                address = MockAddressAutocompleteHandler.DEFAULT_ADDRESS,
                 description = defaultEventDescription
             )
 
             val expectedGroupEvent = GroupEvent(
                 organiser = organiser,
                 maxParticipants = maxParticipants,
-                participants = listOf(),
+                participants = listOf(organiser),
                 event = expectedEvent
             )
 
