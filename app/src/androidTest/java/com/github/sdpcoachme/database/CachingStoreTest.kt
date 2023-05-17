@@ -19,6 +19,7 @@ import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserAddressSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.Message.*
 import com.github.sdpcoachme.data.schedule.Event
@@ -29,6 +30,7 @@ import kotlinx.coroutines.runBlocking
 import org.hamcrest.CoreMatchers.hasItem
 import org.hamcrest.CoreMatchers.hasItems
 import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.MatcherAssert
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -496,7 +498,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-        cachingStore.setCurrentEmail(exampleEmail)
+        cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
 
         val isCorrect = cachingStore.getSchedule(currentMonday)
             .thenCompose {
@@ -510,40 +512,52 @@ class CachingStoreTest {
         assertThat(wrappedDatabase.getTimesCalled(), `is`(0))
         assertTrue(isCorrect)
     }
-//TODO: remove this test
-//    class ContactsDB: MockDatabase() {
-//        var timesCalled = 0
-//        override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
-//            timesCalled++
-//            return CompletableFuture.completedFuture(userList)
-//        }
-//    }
-//     //TODO: remove this test
-//    @Test
-//    fun getChatContactsCachesContacts() {
-//        val wrappedDatabase = ContactsDB()
-//        cachingStore = CachingStore(wrappedDatabase,
-//            ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
-//            ApplicationProvider.getApplicationContext()
-//        )
-//        cachingStore.retrieveData.get(1, SECONDS)
-//        val isCorrect = cachingStore.getChatContacts(exampleEmail)
-//            .thenCompose {
-//                assertThat(wrappedDatabase.timesCalled, `is`(1))
-//                assertThat(it, `is`(userList))
-//
-//                cachingStore.getChatContacts(exampleEmail)
-//            }.thenApply {
-//                assertThat(wrappedDatabase.timesCalled, `is`(1))
-//                assertThat(it, `is`(userList))
-//
-//                true
-//            }.exceptionally {
-//                false
-//            }.get(5, SECONDS)
-//
-//        assertTrue(isCorrect)
-//    }
+
+    @Test
+    fun getChatContactsCachesContacts() {
+        var timesCalled = 0
+
+        val rowInfo = ContactRowInfo(
+            "chatiId",
+            "chatiName",
+            Message("sender@email.com", "Sender Name", "Test Message", LocalDateTime.now().toString(), ReadState.SENT, mapOf()),
+            false,
+        )
+
+        val rowInfo2 = rowInfo.copy(chatId = "chatiId2", chatTitle = "chatiName2", isGroupChat = true)
+        val expectedRowInfo = listOf(rowInfo, rowInfo2)
+        class ContactsDB: MockDatabase() {
+            override fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
+                timesCalled++
+                MatcherAssert.assertThat(email, `is`(exampleEmail))
+                return CompletableFuture.completedFuture(expectedRowInfo)
+            }
+        }
+
+        val wrappedDatabase = ContactsDB()
+        cachingStore = CachingStore(wrappedDatabase,
+            ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
+            ApplicationProvider.getApplicationContext()
+        )
+        cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
+        val isCorrect = cachingStore.getContactRowInfo(exampleEmail)
+            .thenCompose {
+                MatcherAssert.assertThat(timesCalled, `is`(1))
+                MatcherAssert.assertThat(it, `is`(expectedRowInfo))
+
+                cachingStore.getContactRowInfo(exampleEmail)
+            }.thenApply {
+                MatcherAssert.assertThat(timesCalled, `is`(1))
+                MatcherAssert.assertThat(it, `is`(expectedRowInfo))
+
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(isCorrect)
+    }
+
 
     @Test
     fun getChatCachesTheChat() {
@@ -592,6 +606,205 @@ class CachingStoreTest {
             return CompletableFuture.completedFuture(defaultChat)
         }
     }
+
+    class ParticipantsDb: MockDatabase() {
+        var chat = Chat()
+        var nbCallsToUpdateParticipants = 0
+        var nbCallsToGetChat = 0
+
+        override fun updateChatParticipants(chatId: String, participants: List<String>): CompletableFuture<Void> {
+            chat = chat.copy(id = chatId, participants = participants)
+            nbCallsToUpdateParticipants++
+            return CompletableFuture.completedFuture(null)
+        }
+
+        override fun getChat(chatId: String): CompletableFuture<Chat> {
+            nbCallsToGetChat++
+            if (chatId == chat.id) {
+                return CompletableFuture.completedFuture(chat)
+            }
+            return CompletableFuture.completedFuture(Chat())
+        }
+    }
+    @Test
+    fun updateChatParticipantsUpdatesTheWrappedDatabaseBothWhenCachedAndWhenNot() {
+        val wrappedDatabase = ParticipantsDb()
+        cachingStore = CachingStore(wrappedDatabase,
+            ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
+            ApplicationProvider.getApplicationContext()
+        )
+        cachingStore.setCurrentEmail(exampleEmail)
+
+        val chatId = "chatId"
+        val participants = listOf("user1@email.com", "user2@email")
+
+        val isCorrect = cachingStore.updateChatParticipants(chatId, participants)
+            .thenCompose { // update when not cached
+                MatcherAssert.assertThat(wrappedDatabase.nbCallsToUpdateParticipants, `is`(1))
+                MatcherAssert.assertThat(wrappedDatabase.chat.id, `is`(chatId))
+                MatcherAssert.assertThat(wrappedDatabase.chat.participants, `is`(participants))
+
+                cachingStore.getChat(chatId)
+            }.thenCompose {
+
+                MatcherAssert.assertThat(
+                    wrappedDatabase.nbCallsToGetChat,
+                    `is`(1)
+                ) // sinced not cached before
+                MatcherAssert.assertThat(it.participants, `is`(participants))
+                MatcherAssert.assertThat(it.id, `is`(chatId))
+
+                cachingStore.updateChatParticipants(chatId, emptyList())
+            }.thenApply { // update when cached
+                MatcherAssert.assertThat(wrappedDatabase.nbCallsToUpdateParticipants, `is`(2))
+                MatcherAssert.assertThat(wrappedDatabase.chat.participants, `is`(emptyList()))
+
+                true
+            }.exceptionally {
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(isCorrect)
+    }
+
+    class ContactRowDB(private val defaultUser: UserInfo, private val rowInfos: List<ContactRowInfo>): MockDatabase() {
+        var chat = Chat()
+        var nbCallsToUpdateParticipants = 0
+        var nbCallsToGetContactRowInfo = 0
+        var sentMessage = Message()
+
+        override fun updateChatParticipants(chatId: String, participants: List<String>): CompletableFuture<Void> {
+            chat = chat.copy(id = chatId, participants = participants)
+            nbCallsToUpdateParticipants++
+            return CompletableFuture.completedFuture(null)
+        }
+
+        override fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
+            nbCallsToGetContactRowInfo++
+            MatcherAssert.assertThat(email, `is`(defaultUser.email))
+            return CompletableFuture.completedFuture(rowInfos)
+        }
+
+        override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
+            sentMessage = message
+            return CompletableFuture.completedFuture(null)
+        }
+
+        var onChangeChat = Chat()
+        override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
+            println("adding chat listener and on change called $onChange")
+            onChange(onChangeChat)
+        }
+
+        fun chatToCallOnChange(chat: Chat) {
+            onChangeChat = chat
+        }
+    }
+
+    @Test
+    fun sendingMessageInChatWhoseContactRowIsCachedUpdatesThatContactRowInCache() {
+
+        val rowInfo = ContactRowInfo(
+            "chatiId",
+            "chatiName",
+            Message("sender@email.com", "Sender Name", "Test Message", LocalDateTime.now().toString(), ReadState.SENT, mapOf()),
+            false,
+        )
+        val unusedRowInfo = rowInfo.copy(chatId = "chatiId2", chatTitle = "chatiName2", isGroupChat = true)
+
+        val wrappedDatabase = ContactRowDB(defaultUser, listOf(rowInfo, unusedRowInfo))
+        cachingStore = CachingStore(wrappedDatabase,
+            ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
+            ApplicationProvider.getApplicationContext()
+        )
+        cachingStore.retrieveData.get(1, SECONDS)
+        cachingStore.setCurrentEmail(defaultUser.email).get(1, SECONDS)
+
+        cachingStore.getCurrentEmail().thenAccept {
+            println("current email is $it")
+        }.get(1, SECONDS)
+
+        val expectedMessage = Message(
+            "other@email.com",
+            "Sender Name",
+            "New Message!",
+            LocalDateTime.now().toString(),
+            ReadState.SENT
+        )
+
+        println("startingMessage")
+
+        val isCorrect = cachingStore.getContactRowInfo(defaultUser.email) // place contact row into cache
+            .thenCompose {
+                println("got contact row info once: ${wrappedDatabase.nbCallsToGetContactRowInfo}")
+                MatcherAssert.assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
+                MatcherAssert.assertThat(it[0], `is`(rowInfo))
+                println("sending message first time")
+                cachingStore.sendMessage(rowInfo.chatId, expectedMessage) // this is supposed to update the contact row in the cache
+            }.thenCompose {
+                println("11111")
+                assert(wrappedDatabase.sentMessage == expectedMessage)
+                cachingStore.getContactRowInfo(defaultUser.email)
+            }.thenApply {
+                // should not have called the wrapped database again as it is cached
+                println("22222")
+                MatcherAssert.assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
+                println("33333")
+                MatcherAssert.assertThat(it[0], `is`(rowInfo.copy(lastMessage = expectedMessage)))
+                println("sending message second time")
+                true
+            }.exceptionally { println(it.cause); false }.get(5, SECONDS)
+
+        assertTrue(isCorrect)
+    }
+
+    @Test
+    fun sendingMessageForUncachedChatClearsStaleChat() {
+        val rowInfo = ContactRowInfo(
+            "chatiId",
+            "chatiName",
+            Message("sender@email.com", "Sender Name", "Test Message", LocalDateTime.now().toString(), ReadState.SENT, mapOf()),
+            false,
+        )
+        val uncachedRowInfo = rowInfo.copy(chatId = "chatiId2", chatTitle = "chatiName2", isGroupChat = true)
+
+        val wrappedDatabase = ContactRowDB(defaultUser, listOf(rowInfo))
+        cachingStore = CachingStore(wrappedDatabase,
+            ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
+            ApplicationProvider.getApplicationContext()
+        )
+        cachingStore.retrieveData.get(1, SECONDS)
+        cachingStore.setCurrentEmail(defaultUser.email).get(1, SECONDS)
+        val nonCachedMessage = Message(
+            "other@email.com",
+            "Sender Name",
+            "New Message!",
+            LocalDateTime.now().toString(),
+            ReadState.SENT
+        )
+
+        val isCorrect = cachingStore.getContactRowInfo(defaultUser.email) // place contact row into cache
+            .thenCompose {
+                MatcherAssert.assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
+                MatcherAssert.assertThat(it[0], `is`(rowInfo))
+                cachingStore.sendMessage(uncachedRowInfo.chatId, nonCachedMessage) // this is supposed to update the contact row in the cache
+            }.thenCompose {
+                assert(wrappedDatabase.sentMessage == nonCachedMessage)
+                cachingStore.getContactRowInfo(defaultUser.email)
+            }.thenApply {
+                // should have called the wrapped database again since the stale cache should be cleared
+                MatcherAssert.assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(2))
+
+                true
+            }.exceptionally { println(it.cause); false }.get(5, SECONDS)
+
+        assertTrue(isCorrect)
+    }
+
+
+
+
+
     @Test
     fun sendingMessageForCachedChatUpdatesThatChatInsideTheCache() {
         val newMessage = Message(
