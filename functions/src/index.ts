@@ -60,9 +60,9 @@ export const sendPushNotification = functions.database
     const message = change.after.val();
     const sender = message.sender;
     const readState = message.readState;
+    const readByUsers = message.readByUsers;
 
     const senderWithCommas = sender.replace(/\./g, ",");
-    const recipient = chatId.replace(senderWithCommas, "");
 
     // if recipient has already read the message or
     // received a push notification for it, no need for push notification
@@ -74,7 +74,7 @@ export const sendPushNotification = functions.database
       participantsSnapshot,
       firstNameSenderSnapshot,
       lastNameSenderSnapshot]: DataSnapshot[] =
-        await fetchSnapshotValues(change, chatId, senderWithCommas, recipient);
+        await fetchSnapshotValues(change, chatId, senderWithCommas);
 
     // if no participants found for given chatId (i.e., .val() returns null)
     // return without sending push notification
@@ -84,7 +84,7 @@ export const sendPushNotification = functions.database
 
     const recipientsTokenSnapshot: DataSnapshot[] =
       await fetchRecipientsTokensSnapshotValues(
-        change, participantsSnapshot.val(), sender);
+        change, participantsSnapshot.val(), sender, readByUsers);
 
     const payload = createPayload(
       firstNameSenderSnapshot.val(), lastNameSenderSnapshot.val(),
@@ -96,7 +96,8 @@ export const sendPushNotification = functions.database
         continue;
       }
       // send push notification
-      await admin.messaging().sendToDevice(recipientTokenSnapshot.val(), payload);
+      await admin.messaging()
+        .sendToDevice(recipientTokenSnapshot.val(), payload);
     }
     // update readState to RECEIVED
     await change.after.ref.update({readState: "RECEIVED"});
@@ -106,9 +107,10 @@ export const sendPushNotification = functions.database
 /**
  * Helper function that fetches snapshot values for the recipient tokens
  *
- * @param change - the database write event that triggered the function
- * @param participants - the context of the function
- * @param sender - the sender of the message
+ * @param {Change<DataSnapshot>} change - db event that triggered the function
+ * @param {string[]} participants - the context of the function
+ * @param {string} sender - the sender of the message
+ * @param {string[]} readByUsers - the users that have already read the message
  * @return {Promise<DataSnapshot[]>} An object containing the tokens
  *   snapshot for each recipient.
  */
@@ -116,6 +118,7 @@ async function fetchRecipientsTokensSnapshotValues(
   change: Change<DataSnapshot>,
   participants: string[],
   sender: string,
+  readByUsers: string[],
 ): Promise<DataSnapshot[]> {
   const recipientsTokensSnapshotPromises: Promise<DataSnapshot>[] = [];
   for (const participant of participants) {
@@ -123,10 +126,13 @@ async function fetchRecipientsTokensSnapshotValues(
       continue;
     }
     const recipientWithCommas = participant.replace(/\./g, ",");
+    if (readByUsers != null && readByUsers.includes(recipientWithCommas)) {
+      continue; // If already read by this user, no push notification needed
+    }
     recipientsTokensSnapshotPromises.push(
-    change.after.ref.root
-      .child("/coachme/fcmTokens/" + recipientWithCommas)
-      .once("value"),
+      change.after.ref.root
+        .child("/coachme/fcmTokens/" + recipientWithCommas)
+        .once("value"),
     );
   }
   return Promise.all(recipientsTokensSnapshotPromises);
@@ -150,7 +156,6 @@ async function fetchSnapshotValues(
   change: Change<DataSnapshot>,
   chatId: string,
   senderWithCommas: string,
-  recipientWithCommas: string,
 ): Promise<DataSnapshot[]> {
   const [dotChatIdSnapshot,
     participantsSnapshot,
