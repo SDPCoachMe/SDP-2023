@@ -135,7 +135,10 @@ fun Dashboard(title: String? = null,
                         }
                         LOGOUT -> {
                             (context.applicationContext as CoachMeApplication).authenticator.signOut(context) {
-                                context.startActivity(Intent(context, LoginActivity::class.java))
+                                (context.applicationContext as CoachMeApplication).store.setCurrentEmail("")
+                                    .thenApply {
+                                        context.startActivity(Intent(context, LoginActivity::class.java))
+                                    }
                             }
                         }
                         SCHEDULE -> {

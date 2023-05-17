@@ -83,7 +83,7 @@ class EventOps {
         )
 
 
-        private val eventList = oneDayEvents + multiDayEvent + multiWeekEvent + nextWeekEvent
+        private val eventList = oneDayEvents + multiDayEvent + multiWeekEvent + nextWeekEvent + previousWeekEvent
 
         fun getOneDayEvents(): List<Event> {
             return oneDayEvents
