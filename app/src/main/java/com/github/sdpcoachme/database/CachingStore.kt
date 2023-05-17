@@ -308,7 +308,7 @@ class CachingStore(private val wrappedDatabase: Database,
     /**
      * Gets the schedule for the current user
      * @param currentWeekMonday the monday of the current week
-     * @return a completable future that completes when the schedule has been retrieved
+     * @return a completable future that completes when the schedule has been retrieved (containing the newly cached schedule)
      */
     fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         currentShownMonday = currentWeekMonday
