@@ -58,8 +58,6 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
 
         if (groupEvent.participants.size > groupEvent.maxParticipants) {
             errorPreventionFuture.completeExceptionally(Exception("Group event should not be full, initially"))
-        } else if (groupEvent.participants.isEmpty()) {
-            errorPreventionFuture.completeExceptionally(Exception("Group event must have at least 1 participants"))
         } else if (LocalDateTime.parse(groupEvent.event.start).isBefore(LocalDateTime.now())) {
             errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
         } else {

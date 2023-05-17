@@ -248,17 +248,13 @@ fun NewEvent(store: CachingStore, eventType: EventType) {
                                         goBackToScheduleActivity()
                                     }
                                 } else if (eventType == EventType.GROUP) {
-                                    val organiser = store.getCurrentEmail().exceptionally { println("Did not get email"); null }.get(1000, TimeUnit.MILLISECONDS).replace('.', ',')
+                                    val organiser = store.getCurrentEmail().get(1000, TimeUnit.MILLISECONDS).replace('.', ',')
                                     val groupEvent = GroupEvent(
-                                        event = event.copy(
-                                            name = "Test Group Event",
-                                            start = event.start,
-                                            end = event.end,
-                                        ),
+                                        event = event,
                                         organiser = organiser,
                                         maxParticipants = maxParticipants,
                                     )
-                                    store.addGroupEvent(groupEvent).thenAccept {
+                                    EventOps.addGroupEvent(groupEvent, store).thenAccept {
                                         goBackToScheduleActivity()
                                     }
                                 }

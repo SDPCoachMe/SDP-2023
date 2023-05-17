@@ -238,6 +238,14 @@ class EventOps {
             return store.addEvent(event, startMonday)
         }
 
+        fun addGroupEvent(groupEvent: GroupEvent, store: CachingStore): CompletableFuture<Void> {
+            val shownEvent = wrapEvent(groupEvent.event)
+            if (shownEvent.size > 1) {
+                multiDayEventMap[groupEvent.event] = shownEvent
+            }
+            return store.addGroupEvent(groupEvent)
+        }
+
         fun groupEventsToEvents(groupEvents: List<GroupEvent>): List<Event> {
             val events = mutableListOf<Event>()
             groupEvents.forEach {
