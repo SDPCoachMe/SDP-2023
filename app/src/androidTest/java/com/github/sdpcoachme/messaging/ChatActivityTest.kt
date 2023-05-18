@@ -100,7 +100,7 @@ class ChatActivityTest {
         store.updateUser(toUser).get(1000, TimeUnit.MILLISECONDS)
         store.updateUser(currentUser).get(1000, TimeUnit.MILLISECONDS)
         store.updateUser(toUser2).join()
-        store.addGroupEvent(groupEvent).join()
+        store.updateGroupEvent(groupEvent).join()
         store.updateChatParticipants(groupChatId, listOf(currentUser.email, toUser.email, toUser2.email)).join()
     }
 
@@ -410,10 +410,9 @@ class ChatActivityTest {
         }
     }
 
-    // TODO: complete this test once the event displaying activity is implemented
     @Test
     fun whenClickingOnTheContactFieldOfAnEventGroupChatTheEventIsDisplayed() {
-        store.addGroupEvent(groupEvent).get(1000, TimeUnit.MILLISECONDS)
+        store.updateGroupEvent(groupEvent).get(1000, TimeUnit.MILLISECONDS)
 
         ActivityScenario.launch<ChatActivity>(groupChatDefaultIntent).use {
             waitForLoading(it)

@@ -13,7 +13,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.R
-import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.data.AddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1

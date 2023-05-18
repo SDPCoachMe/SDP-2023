@@ -62,7 +62,7 @@ class GroupEventsListActivityTest {
             getStore().updateUser(user).get(1000, TimeUnit.MILLISECONDS)
         }
         for (groupEvent in GroupEventSamples.ALL) {
-            getStore().addGroupEvent(groupEvent).get(1000, TimeUnit.MILLISECONDS)
+            getStore().updateGroupEvent(groupEvent).get(1000, TimeUnit.MILLISECONDS)
         }
         Intents.init()
     }
@@ -147,7 +147,7 @@ class GroupEventsListActivityTest {
         ActivityScenario.launch<GroupEventsListActivity>(intent).use {
             waitForLoading(it)
             for (groupEvent in GroupEventSamples.ALL.filter { e ->
-                e.organiser == COACH_2.email
+                e.organizer == COACH_2.email
             }) {
                 groupEventDisplayedCorrectly(groupEvent)
             }
@@ -190,8 +190,7 @@ class GroupEventsListActivityTest {
         if (startDate.isBefore(LocalDateTime.now())) {
             composeTestRule.onNodeWithTag(tags.PAST_EVENT).assertExists()
             composeTestRule.onNodeWithTag(tags.FULLY_BOOKED).assertDoesNotExist()
-        // TODO: +1 is temporary until we stop considering the organizer as a participant
-        } else if (groupEvent.participants.size + 1 >= groupEvent.maxParticipants) {
+        } else if (groupEvent.participants.size >= groupEvent.maxParticipants) {
             composeTestRule.onNodeWithTag(tags.FULLY_BOOKED).assertExists()
             composeTestRule.onNodeWithTag(tags.PAST_EVENT).assertDoesNotExist()
         } else {

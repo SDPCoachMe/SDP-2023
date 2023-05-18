@@ -7,6 +7,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
@@ -28,15 +30,21 @@ import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Compa
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.EVENT_TIME
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.ORGANIZER_NAME
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Tabs.Companion.PARTICIPANTS
+import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.ProfileActivity
 import org.hamcrest.CoreMatchers
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.*
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.DayOfWeek
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
@@ -56,12 +64,16 @@ class GroupEventDetailsActivityTest {
 
     private val allUsers = COACHES + NON_COACHES
 
-    private fun waitForLoading(scenario: ActivityScenario<GroupEventDetailsActivity>) {
-        lateinit var stateLoading: CompletableFuture<Void>
+    private fun waitForUpdate(scenario: ActivityScenario<GroupEventDetailsActivity>) {
+        lateinit var stateUpdated: CompletableFuture<Void>
         scenario.onActivity { activity ->
-            stateLoading = activity.stateLoading
+            stateUpdated = activity.stateUpdated
         }
-        stateLoading.get(3, TimeUnit.SECONDS)
+        stateUpdated.get(3, TimeUnit.SECONDS)
+        scenario.onActivity { activity ->
+            // Reset the future so that we can wait for the next update
+            activity.stateUpdated = CompletableFuture()
+        }
     }
 
     @Before
@@ -71,7 +83,7 @@ class GroupEventDetailsActivityTest {
             getStore().updateUser(user).get(1000, TimeUnit.MILLISECONDS)
         }
         for (groupEvent in ALL) {
-            getStore().addGroupEvent(groupEvent).get(1000, TimeUnit.MILLISECONDS)
+            getStore().updateGroupEvent(groupEvent).get(1000, TimeUnit.MILLISECONDS)
         }
         Intents.init()
     }
@@ -85,8 +97,8 @@ class GroupEventDetailsActivityTest {
     fun allFieldsAreDisplayedCorrectly() {
         val groupEvent = AVAILABLE
         val participants = groupEvent.participants.map { getStore().getUser(it).get(1000, TimeUnit.MILLISECONDS) }
-        val organizer = getStore().getUser(groupEvent.organiser).get(1000, TimeUnit.MILLISECONDS)
-        val nonParticipantUser = allUsers.filterNot { it.email in groupEvent.participants + groupEvent.organiser }.first()
+        val organizer = getStore().getUser(groupEvent.organizer).get(1000, TimeUnit.MILLISECONDS)
+        val nonParticipantUser = allUsers.filterNot { it.email in groupEvent.participants + groupEvent.organizer }.first()
         val eventStart = LocalDateTime.parse(groupEvent.event.start)
         val eventEnd = LocalDateTime.parse(groupEvent.event.end)
         val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -97,7 +109,7 @@ class GroupEventDetailsActivityTest {
             groupEvent.groupEventId
         )
         ActivityScenario.launch<GroupEventDetailsActivity>(intent).use {
-            waitForLoading(it)
+            waitForUpdate(it)
             composeTestRule.onNodeWithTag(EVENT_NAME).assertIsDisplayed().assertTextEquals(
                 groupEvent.event.name
             )
@@ -133,8 +145,7 @@ class GroupEventDetailsActivityTest {
 
             composeTestRule
                 .onNodeWithText(
-                    // TODO: +1 is temporary since the database adds the organizer to the participants list
-                    "${groupEvent.participants.size + 1}/${groupEvent.maxParticipants} participants",
+                    "${groupEvent.participants.size}/${groupEvent.maxParticipants} participants",
                     substring = true,
                     ignoreCase = true
                 )
@@ -145,7 +156,7 @@ class GroupEventDetailsActivityTest {
     @Test
     fun nonParticipantCanJoinOnAvailableEvent() {
         val groupEvent = AVAILABLE
-        val nonParticipantUser = allUsers.filterNot { it.email in groupEvent.participants + groupEvent.organiser }.first()
+        val nonParticipantUser = allUsers.filterNot { it.email in groupEvent.participants + groupEvent.organizer }.first()
 
         getStore().setCurrentEmail(nonParticipantUser.email).get(1000, TimeUnit.MILLISECONDS)
         val intent = GroupEventDetailsActivity.getIntent(
@@ -153,19 +164,30 @@ class GroupEventDetailsActivityTest {
             groupEvent.groupEventId
         )
         ActivityScenario.launch<GroupEventDetailsActivity>(intent).use {
-            waitForLoading(it)
+            waitForUpdate(it)
             composeTestRule.onNodeWithTag(CHAT).assertDoesNotExist()
             composeTestRule.onNodeWithTag(JOIN_EVENT)
                 .assertTextContains("JOIN EVENT", ignoreCase = true, substring = true)
                 .assertIsDisplayed().performClick()
-            // TODO: assert that correct intent is sent and database is updated correctly
+            // First wait for UI to update, meaning database has received the update
+            waitForUpdate(it)
+            // Then check the database
+            val updatedGroupEvent = getStore().getGroupEvent(groupEvent.groupEventId).get(1000, TimeUnit.MILLISECONDS)
+            assertThat(updatedGroupEvent.participants, contains(nonParticipantUser.email))
+            val updatedSchedule = getStore().getSchedule(
+                LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+            ).get(1000, TimeUnit.MILLISECONDS)
+            assertThat(updatedSchedule.groupEvents, contains(updatedGroupEvent.groupEventId))
+            val updatedChat = getStore().getChat(groupEvent.groupEventId).get(1000, TimeUnit.MILLISECONDS)
+            assertThat(updatedChat.participants, contains(nonParticipantUser.email))
+            // Do not check that the group is added to the contacts, as this is an implementation detail
         }
     }
 
     @Test
     fun nonParticipantCannotJoinOnFullEvent() {
         val groupEvent = FULLY_BOOKED
-        val nonParticipantUser = allUsers.filterNot { it.email in groupEvent.participants + groupEvent.organiser }.first()
+        val nonParticipantUser = allUsers.filterNot { it.email in groupEvent.participants + groupEvent.organizer }.first()
 
         getStore().setCurrentEmail(nonParticipantUser.email).get(1000, TimeUnit.MILLISECONDS)
         val intent = GroupEventDetailsActivity.getIntent(
@@ -173,7 +195,7 @@ class GroupEventDetailsActivityTest {
             groupEvent.groupEventId
         )
         ActivityScenario.launch<GroupEventDetailsActivity>(intent).use {
-            waitForLoading(it)
+            waitForUpdate(it)
             composeTestRule.onNodeWithTag(CHAT).assertDoesNotExist()
             composeTestRule.onNodeWithTag(JOIN_EVENT)
                 .assertTextContains("FULLY BOOKED", ignoreCase = true, substring = true)
@@ -192,10 +214,16 @@ class GroupEventDetailsActivityTest {
             groupEvent.groupEventId
         )
         ActivityScenario.launch<GroupEventDetailsActivity>(intent).use {
-            waitForLoading(it)
+            waitForUpdate(it)
             composeTestRule.onNodeWithTag(JOIN_EVENT).assertDoesNotExist()
             composeTestRule.onNodeWithTag(CHAT).assertIsDisplayed().performClick()
-            // TODO: assert that correct intent is sent
+            // Check that correct intent is sent
+            Intents.intended(
+                allOf(
+                    hasComponent(ChatActivity::class.java.name),
+                    hasExtra("chatId", groupEvent.groupEventId)
+                )
+            )
         }
     }
 
@@ -210,7 +238,7 @@ class GroupEventDetailsActivityTest {
             groupEvent.groupEventId
         )
         ActivityScenario.launch<GroupEventDetailsActivity>(intent).use {
-            waitForLoading(it)
+            waitForUpdate(it)
             composeTestRule.onNodeWithTag(EVENT_LOCATION).performClick()
             Intents.intended(IntentMatchers.hasAction(ACTION_VIEW))
         }
@@ -219,8 +247,8 @@ class GroupEventDetailsActivityTest {
     @Test
     fun openOrganizerProfile() {
         val groupEvent = FULLY_BOOKED
-        val nonParticipantUser = allUsers.filterNot { it.email in groupEvent.participants + groupEvent.organiser }.first()
-        val organizer = getStore().getUser(groupEvent.organiser).get(1000, TimeUnit.MILLISECONDS)
+        val nonParticipantUser = allUsers.filterNot { it.email in groupEvent.participants + groupEvent.organizer }.first()
+        val organizer = getStore().getUser(groupEvent.organizer).get(1000, TimeUnit.MILLISECONDS)
 
         getStore().setCurrentEmail(nonParticipantUser.email).get(1000, TimeUnit.MILLISECONDS)
         val intent = GroupEventDetailsActivity.getIntent(
@@ -228,15 +256,15 @@ class GroupEventDetailsActivityTest {
             groupEvent.groupEventId
         )
         ActivityScenario.launch<GroupEventDetailsActivity>(intent).use {
-            waitForLoading(it)
+            waitForUpdate(it)
             composeTestRule.onNodeWithTag(ORGANIZER_NAME).performClick()
 
             // Check that the ProfileActivity is launched with the correct extras
             Intents.intended(
                 CoreMatchers.allOf(
-                    IntentMatchers.hasComponent(ProfileActivity::class.java.name),
-                    IntentMatchers.hasExtra("email", organizer.email),
-                    IntentMatchers.hasExtra("isViewingCoach", true)
+                    hasComponent(ProfileActivity::class.java.name),
+                    hasExtra("email", organizer.email),
+                    hasExtra("isViewingCoach", true)
                 )
             )
         }
@@ -245,7 +273,7 @@ class GroupEventDetailsActivityTest {
     @Test
     fun openParticipantProfile() {
         val groupEvent = FULLY_BOOKED
-        val nonParticipantUser = allUsers.filterNot { it.email in groupEvent.participants + groupEvent.organiser }.first()
+        val nonParticipantUser = allUsers.filterNot { it.email in groupEvent.participants + groupEvent.organizer }.first()
         val participantUser = allUsers.first { it.email in groupEvent.participants }
 
         getStore().setCurrentEmail(nonParticipantUser.email).get(1000, TimeUnit.MILLISECONDS)
@@ -254,7 +282,7 @@ class GroupEventDetailsActivityTest {
             groupEvent.groupEventId
         )
         ActivityScenario.launch<GroupEventDetailsActivity>(intent).use {
-            waitForLoading(it)
+            waitForUpdate(it)
 
             composeTestRule.onNodeWithTag(PARTICIPANTS).performClick()
 
@@ -265,9 +293,9 @@ class GroupEventDetailsActivityTest {
             // Check that the ProfileActivity is launched with the correct extras
             Intents.intended(
                 CoreMatchers.allOf(
-                    IntentMatchers.hasComponent(ProfileActivity::class.java.name),
-                    IntentMatchers.hasExtra("email", participantUser.email),
-                    IntentMatchers.hasExtra("isViewingCoach", true)
+                    hasComponent(ProfileActivity::class.java.name),
+                    hasExtra("email", participantUser.email),
+                    hasExtra("isViewingCoach", true)
                 )
             )
         }

@@ -1,6 +1,6 @@
 package com.github.sdpcoachme.data
 
-class UserAddressSamples {
+class AddressSamples {
     companion object {
         val PARIS = Address(
             placeId = "ChIJD7fiBh9u5kcRYJSMaMOCCwQ",

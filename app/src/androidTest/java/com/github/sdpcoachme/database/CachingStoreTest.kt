@@ -13,10 +13,10 @@ import androidx.datastore.preferences.preferencesDataStore
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.matcher.ViewMatchers.assertThat
 import com.github.sdpcoachme.data.Address
+import com.github.sdpcoachme.data.AddressSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.data.AddressSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.ChatSample
 import com.github.sdpcoachme.data.GroupEvent
-import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
-import com.github.sdpcoachme.data.UserAddressSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.ContactRowInfo
@@ -178,7 +178,7 @@ class CachingStoreTest {
 
     class ScheduleDBSingleEvent: MockDatabase() {
         var timesCalled = 0
-        override fun addEvent(email: String, event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        override fun addEventToSchedule(email: String, event: Event): CompletableFuture<Schedule> {
             timesCalled++
             return CompletableFuture.completedFuture(Schedule(listOf(event)))
         }
@@ -194,13 +194,13 @@ class CachingStoreTest {
         cachingStore.retrieveData.get(1, SECONDS)
         cachingStore.setCurrentEmail(exampleEmail).get(1000, MILLISECONDS)
         cachingStore.getCurrentEmail().get(1000, MILLISECONDS)
-        cachingStore.addEvent(eventList[0], currentMonday)
-            .thenCompose { cachingStore.addEvent(eventList[1], currentMonday) }
-            .thenCompose { cachingStore.addEvent(eventList[2], currentMonday) }
-            .thenCompose { cachingStore.addEvent(eventList[3], currentMonday) }
-            .thenCompose { cachingStore.addEvent(eventList[4], currentMonday) }
-            .thenCompose { cachingStore.addEvent(eventList[5], currentMonday) }
-            .thenCompose { cachingStore.addEvent(eventList[6], currentMonday) }
+        cachingStore.addEventToSchedule(eventList[0])
+            .thenCompose { cachingStore.addEventToSchedule(eventList[1]) }
+            .thenCompose { cachingStore.addEventToSchedule(eventList[2]) }
+            .thenCompose { cachingStore.addEventToSchedule(eventList[3]) }
+            .thenCompose { cachingStore.addEventToSchedule(eventList[4]) }
+            .thenCompose { cachingStore.addEventToSchedule(eventList[5]) }
+            .thenCompose { cachingStore.addEventToSchedule(eventList[6]) }
             .get(5, SECONDS)
 
         assertThat(wrappedDatabase.timesCalled, `is`(7))
@@ -217,13 +217,13 @@ class CachingStoreTest {
                 return addedGroupEvents
             }
 
-            override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
+            override fun updateGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
                 timesCalled++
                 addedGroupEvents[groupEvent.groupEventId] = groupEvent
                 return CompletableFuture.completedFuture(null)
             }
 
-            override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Schedule> {
+            override fun addGroupEventToSchedule(email: String, groupEventId: String): CompletableFuture<Schedule> {
                 val groupEvent = addedGroupEvents[groupEventId]
                 schedule = schedule.copy(
                     events = schedule.events + listOf(groupEvent!!.event),
@@ -241,43 +241,43 @@ class CachingStoreTest {
         cachingStore.retrieveData.get(1, SECONDS)
         cachingStore.setCurrentEmail(MockDatabase.getDefaultEmail())
         var checkEvent = groupEvents[0]
-        val isCorrect = cachingStore.addGroupEvent(checkEvent)
+        val isCorrect = cachingStore.updateGroupEvent(checkEvent)
             .thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(1))
                 assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
 
                 checkEvent = groupEvents[1]
-                cachingStore.addGroupEvent(checkEvent)
+                cachingStore.updateGroupEvent(checkEvent)
             }.thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(2))
                 assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
 
                 checkEvent = groupEvents[2]
-                cachingStore.addGroupEvent(checkEvent)
+                cachingStore.updateGroupEvent(checkEvent)
             }.thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(3))
                 assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
 
                 checkEvent = groupEvents[3]
-                cachingStore.addGroupEvent(checkEvent)
+                cachingStore.updateGroupEvent(checkEvent)
             }.thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(4))
                 assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
 
                 checkEvent = groupEvents[4]
-                cachingStore.addGroupEvent(checkEvent)
+                cachingStore.updateGroupEvent(checkEvent)
             }.thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(5))
                 assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
 
                 checkEvent = groupEvents[5]
-                cachingStore.addGroupEvent(checkEvent)
+                cachingStore.updateGroupEvent(checkEvent)
             }.thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(6))
                 assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
 
                 checkEvent = groupEvents[6]
-                cachingStore.addGroupEvent(checkEvent)
+                cachingStore.updateGroupEvent(checkEvent)
             }.thenApply {
                 assertThat(timesCalled, `is`(7))
                 true
@@ -300,7 +300,7 @@ class CachingStoreTest {
         fun getAvailableGroupEvents(): MutableMap<String, GroupEvent> {
             return availableGroupEvents
         }
-        override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Schedule> {
+        override fun addGroupEventToSchedule(email: String, groupEventId: String): CompletableFuture<Schedule> {
             timesCalled++
             if (availableGroupEvents.containsKey(groupEventId)) {
                 // register exampleEmail
@@ -315,7 +315,7 @@ class CachingStoreTest {
             return failFuture
         }
 
-        override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        override fun getSchedule(email: String): CompletableFuture<Schedule> {
             return CompletableFuture.completedFuture(schedule)
         }
     }
@@ -407,7 +407,7 @@ class CachingStoreTest {
             return groupEvents.map { it.groupEventId }
         }
 
-        override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        override fun getSchedule(email: String): CompletableFuture<Schedule> {
             timesCalled++
             // we also add an empty event to the schedule to make sure that the caching store doesn't cache empty events -> covers additional branch in caching store
             return CompletableFuture.completedFuture(Schedule(eventList, getGroupEventIds()))
@@ -478,7 +478,7 @@ class CachingStoreTest {
             return CompletableFuture.completedFuture(storedGroupEvent)
         }
 
-        override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+        override fun getSchedule(email: String): CompletableFuture<Schedule> {
             return CompletableFuture.completedFuture(storedSchedule)
         }
     }

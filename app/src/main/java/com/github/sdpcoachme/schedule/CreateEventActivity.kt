@@ -7,35 +7,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
-import androidx.compose.material.TopAppBar
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -79,7 +59,6 @@ import com.maxkeppeler.sheets.color.models.MultipleColors
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
 
 class CreateEventActivity : ComponentActivity() {
     class TestTags {
@@ -266,18 +245,28 @@ class CreateEventActivity : ComponentActivity() {
                                             goBackToScheduleActivity()
                                         }
                                     } else if (eventType == EventType.GROUP) {
-                                        val organiser = store.getCurrentEmail().get(1000, TimeUnit.MILLISECONDS).replace('.', ',')
-                                        val groupEvent = GroupEvent(
-                                            event = event,
-                                            organiser = organiser,
-                                            maxParticipants = maxParticipants,
-                                        )
-                                        if (maxParticipants <= 0) {
-                                            val toast = Toast.makeText(context, "Max participants must be greater than 0", Toast.LENGTH_SHORT)
+                                        // TODO: temporary, until we stop considering the organiser as a participant
+                                        //  an event must have at least 2 participants, since for now the organiser is
+                                        //  considered as a participant, and we don't want to have an event with only
+                                        //  the organiser as a participant
+                                        if (maxParticipants <= 2) {
+                                            val toast = Toast.makeText(context, "Max participants must be greater than 2", Toast.LENGTH_SHORT)
+                                            toast.show()
+                                        } else if (start.isBefore(LocalDateTime.now())) {
+                                            val toast = Toast.makeText(context, "You can't create a group event in the past", Toast.LENGTH_SHORT)
                                             toast.show()
                                         } else {
-                                            EventOps.addGroupEvent(groupEvent, store)
-                                            goBackToScheduleActivity()
+                                            store.getCurrentEmail().thenCompose { organiser ->
+                                                val groupEvent = GroupEvent(
+                                                    event = event,
+                                                    organizer = organiser,
+                                                    maxParticipants = maxParticipants,
+                                                    participants = listOf(organiser),
+                                                )
+                                                EventOps.addGroupEvent(groupEvent, store)
+                                            }.thenAccept {
+                                                goBackToScheduleActivity()
+                                            }
                                         }
                                     }
                                 }

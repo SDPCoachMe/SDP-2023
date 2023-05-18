@@ -2,8 +2,8 @@ package com.github.sdpcoachme.schedule
 
 import androidx.compose.ui.graphics.Color
 import com.github.sdpcoachme.data.Address
-import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.GroupEvent
+import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.database.CachingStore
@@ -235,7 +235,7 @@ class EventOps {
             if (shownEvents.size > 1) {
                 multiDayEventMap[event] = shownEvents
             }
-            return store.addEvent(event, startMonday)
+            return store.addEventToSchedule(event)
         }
 
         /**
@@ -251,7 +251,7 @@ class EventOps {
             if (shownEvent.size > 1) {
                 multiDayEventMap[groupEvent.event] = shownEvent
             }
-            return store.addGroupEvent(groupEvent)
+            return store.updateGroupEvent(groupEvent)
         }
 
         /**
@@ -272,7 +272,7 @@ class EventOps {
                     end = internalEvent.end,
                     sport = internalEvent.sport,
                     address = internalEvent.address,
-                    description = "Organiser: ${it.organiser}\n" +
+                    description = "Organiser: ${it.organizer}\n" +
                             "Max participants: ${it.maxParticipants}\n" +
                             internalEvent.description,
                 )

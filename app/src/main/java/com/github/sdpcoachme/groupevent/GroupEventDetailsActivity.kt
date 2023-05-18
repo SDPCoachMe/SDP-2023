@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.*
@@ -47,6 +48,7 @@ import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Compa
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.TITLE
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Tabs.Companion.ABOUT
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Tabs.Companion.PARTICIPANTS
+import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.future.await
@@ -108,35 +110,34 @@ class GroupEventDetailsActivity : ComponentActivity() {
     }
 
     // To notify tests that the activity is ready
-    lateinit var stateLoading: CompletableFuture<Void>
+    lateinit var stateUpdated: CompletableFuture<Void>
 
     private lateinit var store: CachingStore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         store = (application as CoachMeApplication).store
-        stateLoading = CompletableFuture()
+        stateUpdated = CompletableFuture()
 
         // do not allow the activity to launch without an id. (double bang)
         val groupEventId = intent.getStringExtra(GROUP_EVENT_ID_KEY)!!
 
-        val futureGroupEvent = store.getGroupEvent(groupEventId)
-
         setContent {
 
+            var refreshUI by remember { mutableStateOf(false) }
             var groupEvent by remember { mutableStateOf<GroupEvent?>(null) }
             var organizer by remember { mutableStateOf<UserInfo?>(null) }
             var participants by remember { mutableStateOf<List<UserInfo>?>(null) }
             var currentUser by remember { mutableStateOf<UserInfo?>(null) }
 
-            LaunchedEffect(true) {
-                groupEvent = futureGroupEvent.await()
-                organizer = store.getUser(groupEvent!!.organiser).await()
+            LaunchedEffect(refreshUI) {
+                groupEvent = store.getGroupEvent(groupEventId).await()
+                organizer = store.getUser(groupEvent!!.organizer).await()
                 participants = groupEvent!!.participants.map {
                     store.getUser(it).await()
                 }
                 currentUser = store.getUser(store.getCurrentEmail().await()).await()
-                stateLoading.complete(null)
+                stateUpdated.complete(null)
             }
 
             CoachMeTheme {
@@ -166,7 +167,21 @@ class GroupEventDetailsActivity : ComponentActivity() {
                                 groupEvent!!,
                                 organizer!!,
                                 currentUser!!,
-                                participants!!
+                                participants!!,
+                                onJoinEventClick = {
+                                    store.registerForGroupEvent(groupEvent!!.groupEventId).thenAccept {
+                                        // Will trigger the launched effect to refresh the UI
+                                        refreshUI = !refreshUI
+                                        // Tell the user that they have joined the event
+                                        val toast = Toast.makeText(
+                                            this@GroupEventDetailsActivity,
+                                            "You have succesfully joined the event!",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                        toast.show()
+                                    }
+                                    // TODO: print something if the registration fails ?
+                                }
                             )
                         }
                     }
@@ -184,7 +199,8 @@ fun GroupEventDetailsLayout(
     groupEvent: GroupEvent,
     organizer: UserInfo,
     currentUser: UserInfo,
-    participants: List<UserInfo>
+    participants: List<UserInfo>,
+    onJoinEventClick: () -> Unit,
 ) {
     val context = LocalContext.current
 
@@ -384,7 +400,7 @@ fun GroupEventDetailsLayout(
                 tabs[selectedTabIndex].content()
                 Spacer(modifier = Modifier.height(70.dp))
             }
-            if (currentUser.email == groupEvent.organiser || currentUser.email in groupEvent.participants) {
+            if (currentUser.email == groupEvent.organizer || currentUser.email in groupEvent.participants) {
                 DisablableExtendFloatingActionButton(
                     modifier = Modifier
                         .testTag(CHAT)
@@ -394,7 +410,10 @@ fun GroupEventDetailsLayout(
                     contentDescription = "Go to event chat",
                     text = { Text("CHAT") },
                     onClick = {
-                        // TODO : go to event chat
+                        // Open the chat activity
+                        val intent = Intent(context, ChatActivity::class.java)
+                        intent.putExtra("chatId", groupEvent.groupEventId)
+                        context.startActivity(intent)
                     }
                 )
             } else {
@@ -411,9 +430,7 @@ fun GroupEventDetailsLayout(
                         else
                             Text("THIS EVENT IS FULLY BOOKED")
                     },
-                    onClick = {
-                        // TODO : join event
-                    },
+                    onClick = onJoinEventClick,
                     enabled = groupEvent.participants.size < groupEvent.maxParticipants
                 )
             }

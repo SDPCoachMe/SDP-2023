@@ -1,7 +1,7 @@
 package com.github.sdpcoachme.database
 
+import com.github.sdpcoachme.data.AddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.GroupEvent
-import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserInfoSamples
 import com.github.sdpcoachme.data.messaging.Chat
@@ -9,8 +9,6 @@ import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
-import com.github.sdpcoachme.schedule.EventOps
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
@@ -99,50 +97,43 @@ open class MockDatabase: Database {
             .exceptionally { false }
     }
 
-    override fun addEvent(email: String, event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+    override fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
+        val future = CompletableFuture<GroupEvent>()
+        future.complete(groupEvents[groupEventId] ?: GroupEvent())
+        return future
+    }
+
+    override fun getAllGroupEvents(): CompletableFuture<List<GroupEvent>> {
+        return CompletableFuture.completedFuture(groupEvents.values.toList())
+    }
+
+    override fun updateGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
+        groupEvents[groupEvent.groupEventId] = groupEvent
+        return CompletableFuture.completedFuture(null)
+    }
+
+    override fun addEventToSchedule(email: String, event: Event): CompletableFuture<Schedule> {
         if (email == "throw@Exception.com") {
             val error = CompletableFuture<Schedule>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
             return error
         }
-        return getSchedule(email, currentWeekMonday).thenCompose { schedule ->
+        return getSchedule(email).thenCompose { schedule ->
             val newSchedule = schedule.copy(events = schedule.events + event)
             schedules[email] = newSchedule
-            val future = CompletableFuture<Schedule>()
-            future.complete(null)
-            future
+            CompletableFuture.completedFuture(newSchedule)
         }
     }
 
-    override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
-        // Do not test validity of event here (as opposed to what is done in the real database)
-        // since we might add events that are in the past or that are fully booked for
-        // testing purposes
-        groupEvents[groupEvent.groupEventId] = groupEvent
-        return registerForGroupEvent(groupEvent.organiser, groupEvent.groupEventId)
-    }
-
-    override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Schedule> {
-        return getGroupEvent(groupEventId).thenCompose { groupEvent ->
-            val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
-            if (!hasCapacity) {
-                val failingFuture = CompletableFuture<Schedule>()
-                failingFuture.completeExceptionally(Exception("Group event is full"))
-                failingFuture
-            } else {
-                val updatedGroupEvent = groupEvent.copy(participants = groupEvent.participants + email)
-                groupEvents[groupEventId] = updatedGroupEvent
-
-                getSchedule(email, EventOps.getStartMonday()).thenCompose { s ->
-                    val updatedSchedule = s.copy(groupEvents = s.groupEvents + groupEventId)
-                    schedules[email] = updatedSchedule
-                    CompletableFuture.completedFuture(updatedSchedule)
-                }
-            }
+    override fun addGroupEventToSchedule(email: String, groupEventId: String): CompletableFuture<Schedule> {
+        return getSchedule(email).thenCompose { s ->
+            val updatedSchedule = s.copy(groupEvents = s.groupEvents + groupEventId)
+            schedules[email] = updatedSchedule
+            CompletableFuture.completedFuture(updatedSchedule)
         }
     }
 
-    override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+    override fun getSchedule(email: String): CompletableFuture<Schedule> {
         if (email == "throwGetSchedule@Exception.com") {
             val error = CompletableFuture<Schedule>()
             error.completeExceptionally(IllegalArgumentException("Simulated DB error"))
@@ -150,12 +141,6 @@ open class MockDatabase: Database {
         }
         return schedules[email]?.let { CompletableFuture.completedFuture(it) }
             ?: CompletableFuture.completedFuture(Schedule())
-    }
-
-    override fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
-        val future = CompletableFuture<GroupEvent>()
-        future.complete(groupEvents[groupEventId] ?: GroupEvent())
-        return future
     }
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {

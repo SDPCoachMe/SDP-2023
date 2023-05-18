@@ -14,8 +14,6 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
-import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -28,8 +26,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private val chats: DatabaseReference = rootDatabase.child("coachme").child("messages")
     private val fcmTokens: DatabaseReference = rootDatabase.child("coachme").child("fcmTokens")
     private val schedule: DatabaseReference = rootDatabase.child("coachme").child("schedule")
-    // TODO: change this to be a child of rootDatabase
-    private val groupEvents: DatabaseReference = schedule.child("groupEvents")
+    private val groupEvents: DatabaseReference = rootDatabase.child("coachme").child("groupEvents")
     private var valueEventListener: ValueEventListener? = null
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
@@ -47,71 +44,54 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         return childExists(accounts, userID)
     }
 
-    override fun addEvent(email: String, event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        val id = email.replace('.', ',')
-        return getSchedule(email, currentWeekMonday).thenCompose {
-            val updatedSchedule = it.copy(events = it.events + event)  // Add new events to the schedule
-            setChild(schedule, id, updatedSchedule).thenApply { updatedSchedule }// Update DB
-        }
-    }
-
-    // TODO: fix addGroupEvent and registerForGroupEvent to not allow user to do bad things.
-
-    override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
-        var errorPreventionFuture = CompletableFuture<Void>()
-
-        if (groupEvent.participants.size > groupEvent.maxParticipants) {
-            errorPreventionFuture.completeExceptionally(Exception("Group event should not be full, initially"))
-        } else if (LocalDateTime.parse(groupEvent.event.start).isBefore(LocalDateTime.now())) {
-            errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
-        } else {
-            errorPreventionFuture = setChild(groupEvents, groupEvent.groupEventId, groupEvent)
-        }
-
-        return errorPreventionFuture
-    }
-
-    override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Schedule> {
-        val id = email.replace('.', ',')
-        // TODO for next sprint: check with bryan if we could refactor registerForGroupEvent to directly take in the groupEvent object (would be more efficient when creating a group event)
-        return getGroupEvent(groupEventId).thenCompose { groupEvent ->
-            val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
-            if (!hasCapacity) { // TODO for Bryan: this error prevention should be taken into the onclick of the register button
-                val failingFuture = CompletableFuture<Schedule>()
-                failingFuture.completeExceptionally(Exception("Group event is full"))
-                failingFuture
-            } else {
-                val updatedGroupEvent = groupEvent.copy(participants = groupEvent.participants + email)
-                setChild(groupEvents, groupEventId, updatedGroupEvent).thenCompose {
-                    getSchedule(email, EventOps.getStartMonday()).thenApply { s ->
-                        val updatedSchedule = s.copy(
-                            events = s.events + EventOps.groupEventsToEvents(listOf(updatedGroupEvent)),
-                            groupEvents = s.groupEvents + groupEventId
-                        )
-                        setChild(schedule, id, updatedSchedule)
-                        updatedSchedule
-                    }
-                }
-            }
-        }
-    }
-
-    override fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
-        val id = email.replace('.', ',')
-        return getChild(schedule, id).thenApply { it.getValue(Schedule::class.java)!! }
-            .exceptionally { Schedule() }
-    }
-
     override fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
         val id = groupEventId.replace('.', ',')
         return getChild(groupEvents, id).thenApply { it.getValue(GroupEvent::class.java)!! }
             .exceptionally { GroupEvent() }
     }
 
+    override fun getAllGroupEvents(): CompletableFuture<List<GroupEvent>> {
+        return getRef(groupEvents)
+            .thenApply { getAllChildren(it) }
+            .thenApply { events -> mapDStoList(events.values, GroupEvent::class.java) }
+    }
+
+    override fun updateGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
+        val id = groupEvent.groupEventId.replace('.', ',')
+        return setChild(groupEvents, id, groupEvent)
+    }
+
+    override fun addGroupEventToSchedule(email: String, groupEventId: String): CompletableFuture<Schedule> {
+        val id = email.replace('.', ',')
+
+        return getSchedule(email).thenCompose { s ->
+            getGroupEvent(groupEventId).thenCompose { groupEvent ->
+                val updatedSchedule = s.copy(
+                    events = s.events + EventOps.groupEventsToEvents(listOf(groupEvent)),
+                    groupEvents = s.groupEvents + groupEventId
+                )
+                setChild(schedule, id, updatedSchedule).thenApply { updatedSchedule }
+            }
+        }
+    }
+
+    override fun addEventToSchedule(email: String, event: Event): CompletableFuture<Schedule> {
+        val id = email.replace('.', ',')
+        return getSchedule(email).thenCompose {
+            val updatedSchedule = it.copy(events = it.events + event)  // Add new events to the schedule
+            setChild(schedule, id, updatedSchedule).thenApply { updatedSchedule }// Update DB
+        }
+    }
+
+    override fun getSchedule(email: String): CompletableFuture<Schedule> {
+        val id = email.replace('.', ',')
+        return getChild(schedule, id).thenApply { it.getValue(Schedule::class.java)!! }
+            .exceptionally { Schedule() }
+    }
+
     override fun getContactRowInfos(email: String): CompletableFuture<List<ContactRowInfo>> {
         return getUser(email).thenApply {
-            it.chatContacts.filterNotNull()
-
+            it.chatContacts
         }.thenCompose { contactList ->
             val mappedF = contactList.map { contactId ->
                 val isGroupChat = contactId.startsWith("@@event")

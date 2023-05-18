@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,6 +32,7 @@ import com.github.sdpcoachme.groupevent.GroupEventsListActivity.TestTags.Tabs.Co
 import com.github.sdpcoachme.ui.*
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.github.sdpcoachme.ui.theme.DarkOrange
+import kotlinx.coroutines.future.await
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
@@ -68,10 +70,15 @@ class GroupEventsListActivity : ComponentActivity() {
         stateLoading = CompletableFuture()
 
         setContent {
-            // TODO: sort by date
-            // TODO: in the "all" tab, do not show events that are already over
             var myEvents by remember { mutableStateOf<List<GroupEvent>>(emptyList()) }
             var allEvents by remember { mutableStateOf<List<GroupEvent>>(emptyList()) }
+
+            LaunchedEffect(true) {
+                allEvents = store.getUpcomingGroupEventsByDate().await()
+                val email = store.getCurrentEmail().await()
+                myEvents = store.getGroupEventsOfUserByDate(email).await().reversed() // To have the oldest last
+                stateLoading.complete(null)
+            }
 
             data class TabItem(
                 val title: String,
@@ -98,23 +105,27 @@ class GroupEventsListActivity : ComponentActivity() {
                     title = "Group events",
                     noElevation = true,
                 ) {
-                    TabRow(
-                        selectedTabIndex = selectedTabIndex
+                    Column(
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        tabs.forEachIndexed { index, tabItem ->
-                            Tab(
-                                modifier = Modifier.testTag(tabItem.tag),
-                                text = { Text(tabItem.title) },
-                                selected = selectedTabIndex == index,
-                                onClick = { selectedTabIndex = index }
-                            )
+                        TabRow(
+                            selectedTabIndex = selectedTabIndex
+                        ) {
+                            tabs.forEachIndexed { index, tabItem ->
+                                Tab(
+                                    modifier = Modifier.testTag(tabItem.tag),
+                                    text = { Text(tabItem.title) },
+                                    selected = selectedTabIndex == index,
+                                    onClick = { selectedTabIndex = index }
+                                )
+                            }
                         }
-                    }
-                    LazyColumn {
-                        items(displayedGroupEvents) { groupEvent ->
-                            GroupEventItem(
-                                groupEvent = groupEvent
-                            )
+                        LazyColumn {
+                            items(displayedGroupEvents) { groupEvent ->
+                                GroupEventItem(
+                                    groupEvent = groupEvent
+                                )
+                            }
                         }
                     }
                 }

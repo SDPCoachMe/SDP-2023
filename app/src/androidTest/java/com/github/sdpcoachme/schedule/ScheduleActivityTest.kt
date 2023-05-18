@@ -110,8 +110,8 @@ class ScheduleActivityTest {
     @Test
     fun eventsOfCurrentWeekAreDisplayedCorrectly() {
         store.setCurrentEmail(coachEmail)
-        store.addEvent(eventList[0], currentMonday).thenCompose {
-            store.addEvent(eventList[1], currentMonday)
+        store.addEventToSchedule(eventList[0]).thenCompose {
+            store.addEventToSchedule(eventList[1])
         }.thenRun {
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
@@ -130,7 +130,7 @@ class ScheduleActivityTest {
     fun multiDayEventOfCurrentWeekIsDisplayedCorrectly() {
         val multiDayEvent = EventOps.getMultiDayEvent()
 
-        store.addEvent(multiDayEvent, currentMonday).thenRun {
+        store.addEventToSchedule(multiDayEvent).thenRun {
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
 
@@ -177,7 +177,7 @@ class ScheduleActivityTest {
     fun multiWeekEventIsDisplayedCorrectly() {
         val multiWeekEvent = EventOps.getMultiWeekEvent()
 
-        store.addEvent(multiWeekEvent, currentMonday).thenRun {
+        store.addEventToSchedule(multiWeekEvent).thenRun {
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
 
@@ -239,7 +239,7 @@ class ScheduleActivityTest {
     fun eventsOfNextWeekAreDisplayedCorrectly() {
         val nextWeekEvent = EventOps.getNextWeekEvent()
 
-        store.addEvent(nextWeekEvent, currentMonday).thenRun {
+        store.addEventToSchedule(nextWeekEvent).thenRun {
             store.setCurrentEmail(coachEmail)
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
@@ -269,7 +269,7 @@ class ScheduleActivityTest {
     fun eventsOfPreviousWeekAreDisplayedCorrectly() {
         val previousWeekEvent = EventOps.getPreviousWeekEvent()
 
-        store.addEvent(previousWeekEvent, currentMonday).thenRun {
+        store.addEventToSchedule(previousWeekEvent).thenRun {
             store.setCurrentEmail(coachEmail).thenApply {
                 ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                     composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
