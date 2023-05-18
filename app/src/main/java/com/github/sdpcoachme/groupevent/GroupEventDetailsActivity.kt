@@ -271,6 +271,7 @@ fun GroupEventDetailsLayout(
                         val intent = Intent(context, ProfileActivity::class.java)
                         intent.putExtra("isViewingCoach", true)
                         intent.putExtra("email", organizer.email)
+                        context.startActivity(intent)
                     }
                 )
             }
@@ -331,9 +332,9 @@ fun GroupEventDetailsLayout(
                         SmallUserInfoListItem(
                             userInfo =
                                 if (it.email == currentUser.email)
-                                    it
+                                    it.copy(firstName = it.firstName, lastName = "${it.lastName} (me)")
                                 else
-                                    it.copy(firstName = it.firstName, lastName = "${it.lastName} (me)"),
+                                    it,
                             onClick = {
                                 // Open the user's profile
                                 // For the current user, this will open his profile, but not in edit mode
@@ -341,6 +342,7 @@ fun GroupEventDetailsLayout(
                                 val intent = Intent(context, ProfileActivity::class.java)
                                 intent.putExtra("isViewingCoach", true)
                                 intent.putExtra("email", it.email)
+                                context.startActivity(intent)
                             }
                         )
                     }
@@ -599,28 +601,10 @@ fun DefaultPreview() {
                         latitude = 46.5196535,
                         longitude = 6.6335972
                     ),
-                    description = "Lorem ipsum dolor sit amet. Ab fugit eveniet ut ipsam tenetur sed iure illum vel nemo maxime. Non ullam harum non obcaecati odio a voluptate facilis ex internos galisum non placeat sunt ad quaerat nobis aut maiores molestiae.\n" +
-                            "\n" +
-                            "Cum sunt nihil non aliquid fugiat aut exercitationem ullam et ipsum explicabo et officia provident quo accusantium ipsa ea voluptas dolorem. Ex officia culpa a aliquam nostrum sed exercitationem velit et praesentium exercitationem.\n" +
-                            "\n" +
-                            "Id rerum quam aut iusto ipsam aut repudiandae debitis. Est ullam libero in quasi nisi ut esse voluptatem ab quas ipsam et repellat voluptatum et incidunt odit et aliquam ipsam. Aut fugit laudantium in dolores similique ea rerum dolore.\n" +
-                            "\n" +
-                            "Quo aperiam esse cum natus iure et iure magnam! Sit voluptate quis 33 architecto laudantium nam dolorum officia aut consequatur quaerat quo odio voluptatem et numquam velit eos fugiat odio. Est dolorum quas ut consequuntur nostrum in velit quam eos omnis galisum sed nulla quod?\n" +
-                            "\n" +
-                            "Non soluta nisi sit voluptate quaerat et praesentium doloribus quo aspernatur ipsa aut incidunt atque At dolorem inventore. Qui ipsam commodi ea accusamus aliquid et atque unde et dolor blanditiis id internos sunt? Id excepturi illo qui praesentium similique qui velit tempora? 33 molestiae omnis et commodi optio aut deserunt distinctio 33 itaque magni.\n" +
-                            "\n" +
-                            "Qui deleniti tempore non neque asperiores aut minima laboriosam et amet fugiat qui voluptatum dolores aut sequi enim vel earum consequatur. Et ratione neque ad commodi mollitia non doloremque animi qui veritatis optio. Eum repudiandae eveniet et accusantium laborum vel assumenda magni sed esse deserunt sed veniam vero non minima ullam quo ratione corrupti?\n" +
-                            "\n" +
-                            "Ad excepturi incidunt ut iste blanditiis aut dolore itaque id consequatur magni hic laudantium facilis sed sint minima non consequuntur totam. Ut error internos non minima velit ex rerum ratione sit suscipit aliquid eos consectetur quia ea repellat dolor. At accusamus sapiente ad numquam iure nam tenetur accusamus ea excepturi blanditiis est aliquid quos sit maiores galisum.\n" +
-                            "\n" +
-                            "Non nemo consequatur in galisum nobis aut mollitia laboriosam sed rerum accusantium! Et quia maiores et enim explicabo a ipsa dicta et veniam incidunt aut accusantium omnis aut facere ratione eum quas minus.\n" +
-                            "\n" +
-                            "Qui voluptatum fuga et necessitatibus illum non suscipit cupiditate et rerum rerum 33 voluptatem porro. Vel voluptas magnam in officia voluptatem non reprehenderit reprehenderit est quia aperiam aut magni dicta. Eos asperiores nostrum non beatae ipsum quo soluta quod eos sunt illum ad voluptate cupiditate vel provident corporis. At asperiores culpa quo voluptatem voluptatem qui architecto minus et excepturi fuga et dolorem laboriosam.\n" +
-                            "\n" +
-                            "Quo nulla libero id animi incidunt et fuga eius sed nihil earum a quam magni. Et quibusdam commodi 33 unde distinctio id voluptas laborum vel eveniet dolores est commodi doloremque. Sed praesentium voluptas ad doloribus nihil a vitae adipisci quo inventore quaerat ut omnis natus est quisquam veniam non repudiandae impedit."
+                    description = "Lorem ipsum dolor sit amet. Ab fugit eveniet ut ipsam tenetur sed iure illum vel nemo maxime. Non ullam harum non obcaecati odio a voluptate facilis ex internos galisum non placeat sunt ad quaerat nobis aut maiores molestiae."
                 ),
                 organiser = "bry.gotti@outlook.com",
-                maxParticipants = 20,
+                maxParticipants = 2,
                 participants = listOf("jammy@email.com", "lolo@email.com")
             ),
             UserInfo(

@@ -1,13 +1,13 @@
 package com.github.sdpcoachme.database
 
-import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserInfoSamples
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Event
-import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.schedule.EventOps
 import java.time.LocalDate
@@ -67,23 +67,6 @@ open class MockDatabase: Database {
         }
     }
 
-    fun restoreDefaultChatSetup() {
-        chat = Chat(participants = listOf(DEFAULT_EMAIL, TO_EMAIL))
-        chatId = ""
-        onChange = {}
-
-        groupChat = Chat()
-    }
-
-    fun restoreDefaultAccountsSetup() {
-        accounts = hashMapOf(DEFAULT_EMAIL to defaultUserInfo)
-    }
-
-    fun restoreDefaultSchedulesSetup() {
-        schedules = hashMapOf()
-        groupEvents = hashMapOf()
-    }
-
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         if (user.email == "throw@Exception.com") {
@@ -132,23 +115,11 @@ open class MockDatabase: Database {
     }
 
     override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
-        val errorPreventionFuture = CompletableFuture<Void>()
-
-        if (groupEvent.participants.size > groupEvent.maxParticipants) {
-            errorPreventionFuture.completeExceptionally(Exception("Group event should not be full, initially"))
-        } else if (groupEvent.participants.isEmpty()) {
-            errorPreventionFuture.completeExceptionally(Exception("Group event must have at least 2 participants"))
-        } else if (LocalDateTime.parse(groupEvent.event.start).isBefore(LocalDateTime.now())) {
-            errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
-        } else {
-            groupEvents[groupEvent.groupEventId] = groupEvent
-            registerForGroupEvent(groupEvent.organiser, groupEvent.groupEventId).thenCompose {
-                errorPreventionFuture.complete(null)
-                errorPreventionFuture
-            }
-        }
-
-        return errorPreventionFuture
+        // Do not test validity of event here (as opposed to what is done in the real database)
+        // since we might add events that are in the past or that are fully booked for
+        // testing purposes
+        groupEvents[groupEvent.groupEventId] = groupEvent
+        return registerForGroupEvent(groupEvent.organiser, groupEvent.groupEventId)
     }
 
     override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Void> {

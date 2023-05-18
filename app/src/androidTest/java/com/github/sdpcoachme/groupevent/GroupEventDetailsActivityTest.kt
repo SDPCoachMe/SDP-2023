@@ -1,19 +1,23 @@
 package com.github.sdpcoachme.groupevent
 
+import android.content.Intent.ACTION_VIEW
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.matcher.IntentMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.data.GroupEventSamples.Companion.ALL
 import com.github.sdpcoachme.data.GroupEventSamples.Companion.AVAILABLE
+import com.github.sdpcoachme.data.GroupEventSamples.Companion.FULLY_BOOKED
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
 import com.github.sdpcoachme.database.CachingStore
+import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Buttons.Companion.CHAT
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Buttons.Companion.JOIN_EVENT
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.EVENT_DAY
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.EVENT_DESCRIPTION
@@ -24,6 +28,8 @@ import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Compa
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.EVENT_TIME
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.ORGANIZER_NAME
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Tabs.Companion.PARTICIPANTS
+import com.github.sdpcoachme.profile.ProfileActivity
+import org.hamcrest.CoreMatchers
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -122,8 +128,17 @@ class GroupEventDetailsActivityTest {
             composeTestRule.onNodeWithTag(PARTICIPANTS).assertIsDisplayed().performClick()
 
             participants.forEach { p ->
-                composeTestRule.onNodeWithText("${p.firstName} ${p.lastName}").assertExists()
+                composeTestRule.onNodeWithText("${p.firstName} ${p.lastName}", substring = true).assertExists()
             }
+
+            composeTestRule
+                .onNodeWithText(
+                    // TODO: temporary since the database adds the organizer to the participants list
+                    "${groupEvent.participants.size + 1}/${groupEvent.maxParticipants} participants",
+                    substring = true,
+                    ignoreCase = true
+                )
+                .assertExists()
         }
     }
 
@@ -139,8 +154,122 @@ class GroupEventDetailsActivityTest {
         )
         ActivityScenario.launch<GroupEventDetailsActivity>(intent).use {
             waitForLoading(it)
-            composeTestRule.onNodeWithTag(JOIN_EVENT).assertIsDisplayed().performClick()
+            composeTestRule.onNodeWithTag(CHAT).assertDoesNotExist()
+            composeTestRule.onNodeWithTag(JOIN_EVENT)
+                .assertTextContains("JOIN EVENT", ignoreCase = true, substring = true)
+                .assertIsDisplayed().performClick()
             // TODO: assert that correct intent is sent and database is updated correctly
+        }
+    }
+
+    @Test
+    fun nonParticipantCannotJoinOnFullEvent() {
+        val groupEvent = FULLY_BOOKED
+        val nonParticipantUser = allUsers.filterNot { it.email in groupEvent.participants + groupEvent.organiser }.first()
+
+        getStore().setCurrentEmail(nonParticipantUser.email).get(1000, TimeUnit.MILLISECONDS)
+        val intent = GroupEventDetailsActivity.getIntent(
+            getContext(),
+            groupEvent.groupEventId
+        )
+        ActivityScenario.launch<GroupEventDetailsActivity>(intent).use {
+            waitForLoading(it)
+            composeTestRule.onNodeWithTag(CHAT).assertDoesNotExist()
+            composeTestRule.onNodeWithTag(JOIN_EVENT)
+                .assertTextContains("FULLY BOOKED", ignoreCase = true, substring = true)
+                .assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun participantCanOpenChat() {
+        val groupEvent = FULLY_BOOKED
+        val participantUser = allUsers.first { it.email in groupEvent.participants }
+
+        getStore().setCurrentEmail(participantUser.email).get(1000, TimeUnit.MILLISECONDS)
+        val intent = GroupEventDetailsActivity.getIntent(
+            getContext(),
+            groupEvent.groupEventId
+        )
+        ActivityScenario.launch<GroupEventDetailsActivity>(intent).use {
+            waitForLoading(it)
+            composeTestRule.onNodeWithTag(JOIN_EVENT).assertDoesNotExist()
+            composeTestRule.onNodeWithTag(CHAT).assertIsDisplayed().performClick()
+            // TODO: assert that correct intent is sent
+        }
+    }
+
+    @Test
+    fun openLocationInGoogleMaps() {
+        val groupEvent = FULLY_BOOKED
+        val participantUser = allUsers.first { it.email in groupEvent.participants }
+
+        getStore().setCurrentEmail(participantUser.email).get(1000, TimeUnit.MILLISECONDS)
+        val intent = GroupEventDetailsActivity.getIntent(
+            getContext(),
+            groupEvent.groupEventId
+        )
+        ActivityScenario.launch<GroupEventDetailsActivity>(intent).use {
+            waitForLoading(it)
+            composeTestRule.onNodeWithTag(EVENT_LOCATION).performClick()
+            Intents.intended(IntentMatchers.hasAction(ACTION_VIEW))
+        }
+    }
+
+    @Test
+    fun openOrganizerProfile() {
+        val groupEvent = FULLY_BOOKED
+        val nonParticipantUser = allUsers.filterNot { it.email in groupEvent.participants + groupEvent.organiser }.first()
+        val organizer = getStore().getUser(groupEvent.organiser).get(1000, TimeUnit.MILLISECONDS)
+
+        getStore().setCurrentEmail(nonParticipantUser.email).get(1000, TimeUnit.MILLISECONDS)
+        val intent = GroupEventDetailsActivity.getIntent(
+            getContext(),
+            groupEvent.groupEventId
+        )
+        ActivityScenario.launch<GroupEventDetailsActivity>(intent).use {
+            waitForLoading(it)
+            composeTestRule.onNodeWithTag(ORGANIZER_NAME).performClick()
+
+            // Check that the ProfileActivity is launched with the correct extras
+            Intents.intended(
+                CoreMatchers.allOf(
+                    IntentMatchers.hasComponent(ProfileActivity::class.java.name),
+                    IntentMatchers.hasExtra("email", organizer.email),
+                    IntentMatchers.hasExtra("isViewingCoach", true)
+                )
+            )
+        }
+    }
+
+    @Test
+    fun openParticipantProfile() {
+        val groupEvent = FULLY_BOOKED
+        val nonParticipantUser = allUsers.filterNot { it.email in groupEvent.participants + groupEvent.organiser }.first()
+        val participantUser = allUsers.first { it.email in groupEvent.participants }
+
+        getStore().setCurrentEmail(nonParticipantUser.email).get(1000, TimeUnit.MILLISECONDS)
+        val intent = GroupEventDetailsActivity.getIntent(
+            getContext(),
+            groupEvent.groupEventId
+        )
+        ActivityScenario.launch<GroupEventDetailsActivity>(intent).use {
+            waitForLoading(it)
+
+            composeTestRule.onNodeWithTag(PARTICIPANTS).performClick()
+
+            composeTestRule
+                .onNodeWithText("${participantUser.firstName} ${participantUser.lastName}", substring = true)
+                .performClick()
+
+            // Check that the ProfileActivity is launched with the correct extras
+            Intents.intended(
+                CoreMatchers.allOf(
+                    IntentMatchers.hasComponent(ProfileActivity::class.java.name),
+                    IntentMatchers.hasExtra("email", participantUser.email),
+                    IntentMatchers.hasExtra("isViewingCoach", true)
+                )
+            )
         }
     }
 }
