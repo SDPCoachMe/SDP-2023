@@ -301,7 +301,7 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
-    // TODO: use a listener for easier readability of code :)
+    // TODO: use a listener of schedule for easier readability of code :)
     private var groupEventFuture: CompletableFuture<Void> = CompletableFuture.completedFuture(null)
     private var registerForGroupEventFuture: CompletableFuture<Void> = CompletableFuture.completedFuture(null)
 
@@ -343,7 +343,7 @@ class CachingStore(private val wrappedDatabase: Database,
                     updateChatParticipants(groupEvent.groupEventId, groupEvent.participants + email),
                     // Update the user contacts
                     getUser(email).thenApply {
-                        updateUser(it.copy(chatContacts = it.chatContacts + groupEvent.groupEventId))
+                        updateUser(it.copy(chatContacts = listOf(groupEvent.groupEventId) + it.chatContacts))
                     }
                 )
             }
@@ -385,16 +385,21 @@ class CachingStore(private val wrappedDatabase: Database,
     fun addGroupEventToSchedule(groupEventId: String): CompletableFuture<Schedule> {
         groupEventFuture = CompletableFuture()
         return getCurrentEmail().thenCompose { email ->
-            wrappedDatabase.addGroupEventToSchedule(groupEventId, email)
-        }.thenApply {
+            wrappedDatabase.addGroupEventToSchedule(email = email, groupEventId = groupEventId)
+        }.thenCompose {
+            wrappedDatabase.getGroupEvent(groupEventId)
+        }.thenApply { groupEvent ->
             // Update the cached schedule
-            cachedSchedule = cachedSchedule.copy(groupEvents = cachedSchedule.groupEvents + groupEventId)
+            cachedSchedule = cachedSchedule.copy(
+                events = cachedSchedule.events + EventOps.groupEventsToEvents(listOf(groupEvent)),
+                groupEvents = cachedSchedule.groupEvents + groupEventId
+            )
             cachedSchedule
         }.thenApply {
             groupEventFuture.complete(null)
             it
         }.exceptionally {
-            groupEventFuture.complete(null);
+            groupEventFuture.complete(null)
             null
         }
     }
