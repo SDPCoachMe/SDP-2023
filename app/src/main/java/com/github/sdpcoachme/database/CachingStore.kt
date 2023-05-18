@@ -160,6 +160,7 @@ class CachingStore(private val wrappedDatabase: Database,
         val writeDatastoreFuture = CompletableFuture<Void>()
         GlobalScope.launch {
             dataStore.edit { preferences ->
+                preferences[USER_EMAIL_KEY] = currentEmail ?: ""
                 storeCache(cachedUsers, CACHED_USERS_KEY)
                 storeCache(contacts, CONTACTS_KEY)
                 storeCache(chats, CHATS_KEY)
@@ -514,7 +515,7 @@ class CachingStore(private val wrappedDatabase: Database,
      */
     fun setCurrentEmail(email: String): CompletableFuture<Void> {
         currentEmail = email
-        return CompletableFuture.completedFuture(null)
+        return storeLocalData()
     }
 
 
