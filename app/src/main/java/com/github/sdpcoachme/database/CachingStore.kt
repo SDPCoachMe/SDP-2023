@@ -301,8 +301,9 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
-    // TODO: this should be fixed, we should not be using a global variable for this
-    private var addGroupEventFuture: CompletableFuture<Void> = CompletableFuture.completedFuture(null)
+    // TODO: use a listener for easier readability of code :)
+    private var groupEventFuture: CompletableFuture<Void> = CompletableFuture.completedFuture(null)
+    private var registerForGroupEventFuture: CompletableFuture<Void> = CompletableFuture.completedFuture(null)
 
     /**
      * Updates the value of a group event in the caching store (adds it if it does not exist)
@@ -311,11 +312,7 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return A future that will complete when the group event has been updated.
      */
     fun updateGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
-        addGroupEventFuture = CompletableFuture()
-        return wrappedDatabase.updateGroupEvent(groupEvent).thenApply {
-            addGroupEventFuture.complete(null)
-            it
-        }
+        return wrappedDatabase.updateGroupEvent(groupEvent)
     }
 
     /**
@@ -327,6 +324,7 @@ class CachingStore(private val wrappedDatabase: Database,
      * event. The future will complete exceptionally if the group event is full.
      */
     fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
+        registerForGroupEventFuture = CompletableFuture()
         return getGroupEvent(groupEventId).thenApply { groupEvent ->
             // Check that event is not full
             if (groupEvent.participants.size >= groupEvent.maxParticipants) {
@@ -349,6 +347,12 @@ class CachingStore(private val wrappedDatabase: Database,
                     }
                 )
             }
+        }.thenApply {
+            registerForGroupEventFuture.complete(null)
+            it
+        }.exceptionally {
+            registerForGroupEventFuture.complete(null)
+            null
         }
     }
 
@@ -359,7 +363,6 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return a completable future that completes when the events have been added, containing the cached schedule
      */
     fun addEventToSchedule(event: Event): CompletableFuture<Schedule> {
-        addGroupEventFuture = CompletableFuture()
         return getCurrentEmail().thenCompose { email ->
             wrappedDatabase.addEventToSchedule(email, event).thenApply {
                 // Update the cached schedule
@@ -370,9 +373,6 @@ class CachingStore(private val wrappedDatabase: Database,
                 }
                 cachedSchedule
             }
-        }.thenApply {
-            addGroupEventFuture.complete(null)
-            it
         }
     }
 
@@ -383,7 +383,7 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return a completable future that completes when the group event has been added, containing the cached schedule
      */
     fun addGroupEventToSchedule(groupEventId: String): CompletableFuture<Schedule> {
-        addGroupEventFuture = CompletableFuture()
+        groupEventFuture = CompletableFuture()
         return getCurrentEmail().thenCompose { email ->
             wrappedDatabase.addGroupEventToSchedule(groupEventId, email)
         }.thenApply {
@@ -391,8 +391,11 @@ class CachingStore(private val wrappedDatabase: Database,
             cachedSchedule = cachedSchedule.copy(groupEvents = cachedSchedule.groupEvents + groupEventId)
             cachedSchedule
         }.thenApply {
-            addGroupEventFuture.complete(null)
+            groupEventFuture.complete(null)
             it
+        }.exceptionally {
+            groupEventFuture.complete(null);
+            null
         }
     }
 
@@ -421,7 +424,7 @@ class CachingStore(private val wrappedDatabase: Database,
     fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         currentShownMonday = currentWeekMonday
 
-        return addGroupEventFuture.thenCompose {
+        return CompletableFuture.allOf(registerForGroupEventFuture, groupEventFuture).thenCompose {
             getCurrentEmail().thenCompose { email ->
                 if (cachedSchedule.events.isEmpty() && cachedSchedule.groupEvents.isEmpty()) {  // If no cached schedule for that account, we fetch the schedule from the db
                     wrappedDatabase.getSchedule(email).thenApply { schedule ->

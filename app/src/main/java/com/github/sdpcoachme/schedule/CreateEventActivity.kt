@@ -255,6 +255,9 @@ class CreateEventActivity : ComponentActivity() {
                                         } else if (start.isBefore(LocalDateTime.now())) {
                                             val toast = Toast.makeText(context, "You can't create a group event in the past", Toast.LENGTH_SHORT)
                                             toast.show()
+                                        } else if (start <= LocalDateTime.now() || end <= LocalDateTime.now()) {
+                                            val toast = Toast.makeText(context, "Start and end dates must be in the future", Toast.LENGTH_SHORT)
+                                            toast.show()
                                         } else {
                                             store.getCurrentEmail().thenCompose { organiser ->
                                                 val groupEvent = GroupEvent(

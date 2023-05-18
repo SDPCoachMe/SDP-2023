@@ -26,7 +26,7 @@ class EventOps {
         private val DayFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
         private val startMonday: LocalDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
-        private val defaultEventStart: LocalDateTime = LocalDateTime.now().withHour(8).withMinute(0)
+        private val defaultEventStart: LocalDateTime = LocalDateTime.now().plusMinutes(15)
         private val defaultEventEnd: LocalDateTime = defaultEventStart.plusHours(2)
 
         private val oneDayEvents = listOf(
