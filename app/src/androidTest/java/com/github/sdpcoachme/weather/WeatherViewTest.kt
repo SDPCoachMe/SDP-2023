@@ -6,6 +6,8 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.sdpcoachme.R.drawable.*
+import com.github.sdpcoachme.weather.MockWeatherRepository.Companion.MOCK_FORECAST
+import com.github.sdpcoachme.weather.MockWeatherRepository.Companion.MOCK_WEATHER
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -25,9 +27,6 @@ class WeatherViewTest {
 
         val NOW_DATE: LocalDate = LocalDate.now()
         val RANDOM_DATE: LocalDate = LocalDate.of(2056, 5, 16)
-
-        val MOCK_WEATHER = Weather(weather_sunny, 20.0, 10.0)
-        val MOCK_FORECAST = List(14) { MOCK_WEATHER }
 
     }
 

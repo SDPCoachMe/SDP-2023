@@ -2,18 +2,18 @@ package com.github.sdpcoachme.weather.repository
 
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.weather.Weather
-import com.github.sdpcoachme.weather.api.RetrofitClient
+import com.github.sdpcoachme.weather.api.WeatherApi
 import com.github.sdpcoachme.weather.api.WeatherData
-import java.util.TimeZone
+import java.util.*
 
-class OpenMeteoRepository : WeatherRepository {
+class OpenMeteoRepository(private var api: WeatherApi) : WeatherRepository {
 
     companion object {
         const val BASE_URL = "https://api.open-meteo.com/"
     }
 
     override suspend fun loadWeatherForecast(lat: Double, long: Double): List<Weather> {
-        val weatherData = RetrofitClient.api.getWeatherData(lat, long, TimeZone.getDefault().id)
+        val weatherData = api.getWeatherData(lat, long, TimeZone.getDefault().id)
         return weatherData.parseWeatherData()
     }
 

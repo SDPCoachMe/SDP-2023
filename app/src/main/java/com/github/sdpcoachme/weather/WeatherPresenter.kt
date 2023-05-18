@@ -24,8 +24,9 @@ class WeatherPresenter {
         val weatherForecastFuture = CompletableFuture<WeatherForecast>()
 
         CoroutineScope(Job()).launch {
-            observableWeatherForecast.value = WeatherForecast(loadWeatherForecast(lat, long))
-            weatherForecastFuture.complete(observableWeatherForecast.value)
+            val newWeatherForecast = WeatherForecast(loadWeatherForecast(lat, long))
+            observableWeatherForecast.value = newWeatherForecast
+            weatherForecastFuture.complete(newWeatherForecast)
             cancel()
         }
         return weatherForecastFuture

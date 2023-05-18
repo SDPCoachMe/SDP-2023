@@ -21,6 +21,7 @@ import com.github.sdpcoachme.schedule.EventOps
 import com.github.sdpcoachme.schedule.EventOps.Companion.getStartMonday
 import com.github.sdpcoachme.weather.WeatherForecast
 import com.github.sdpcoachme.weather.WeatherPresenter
+import com.github.sdpcoachme.weather.api.RetrofitClient
 import com.github.sdpcoachme.weather.repository.OpenMeteoRepository
 import com.google.android.gms.maps.model.LatLng
 import com.google.gson.Gson
@@ -335,8 +336,8 @@ class CachingStore(private val wrappedDatabase: Database,
         return EventOps.groupEventsToEvents(groupEvents)
     }
 
-    private var groupEventFuture: CompletableFuture<Void> = CompletableFuture.completedFuture(null)
-    private var registerToGroupEventFuture: CompletableFuture<Void> = CompletableFuture.completedFuture(null)
+    private var groupEventFuture: CompletableFuture<Void> = completedFuture(null)
+    private var registerToGroupEventFuture: CompletableFuture<Void> = completedFuture(null)
 
     // Note: checks if it is time to prefetch
     /**
@@ -556,7 +557,7 @@ class CachingStore(private val wrappedDatabase: Database,
         return if (isOnline()) {
             // The WeatherPresenter will launch a weather request and return a future that if
             // completed normally will update the cache.
-            val weatherPresenter = WeatherPresenter().bind(OpenMeteoRepository())
+            val weatherPresenter = WeatherPresenter().bind(OpenMeteoRepository(RetrofitClient.api))
             weatherPresenter.getWeatherForecast(target.latitude, target.longitude).thenApply {
                 weatherForecast = it
                 storeLocalData()
