@@ -24,6 +24,7 @@ import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
+import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.BACK
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SCROLL_TO_BOTTOM
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SEND
@@ -422,7 +423,9 @@ class ChatActivityTest {
                 .assertTextEquals(groupEvent.event.name)
                 .performClick()
 
-            // assert that the correct activity is launched here:
+            Intents.intended(
+                hasComponent(GroupEventDetailsActivity::class.java.name)
+            )
         }
     }
 

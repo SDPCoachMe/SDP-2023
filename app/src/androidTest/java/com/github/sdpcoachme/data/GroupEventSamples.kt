@@ -84,9 +84,5 @@ class GroupEventSamples {
         )
 
         val ALL = listOf(IN_THE_PAST, FULLY_BOOKED, AVAILABLE, AVAILABLE_2)
-
-        fun eventsWithParticipant(email: String) {
-            ALL.filter { email in it.participants }
-        }
     }
 }

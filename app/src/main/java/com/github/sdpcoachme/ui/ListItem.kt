@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
@@ -24,6 +25,7 @@ import androidx.compose.ui.unit.dp
 fun ListItem(
     image: ImageData? = null,
     title: String,
+    titleTag: String? = null,
     firstRow: (@Composable () -> Unit)? = null,
     secondRow: (@Composable () -> Unit)? = null,
     secondColumn: (@Composable () -> Unit)? = null,
@@ -64,6 +66,7 @@ fun ListItem(
             verticalArrangement = Arrangement.SpaceEvenly
         ) {
             Text(
+                modifier = titleTag?.let { Modifier.testTag(titleTag) } ?: Modifier,
                 text = title,
                 style = MaterialTheme.typography.h6,
                 maxLines = 1,
@@ -94,6 +97,7 @@ fun ListItem(
 fun IconTextRow(
     icon: IconData,
     text: String,
+    textTag: String? = null
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically
@@ -107,6 +111,7 @@ fun IconTextRow(
         Spacer(modifier = Modifier.width(4.dp))
         // Temporary, until we implement proper location handling
         Text(
+            modifier = textTag?.let { Modifier.testTag(textTag) } ?: Modifier,
             text = text,
             color = Color.Gray,
             style = MaterialTheme.typography.body2,
@@ -138,6 +143,7 @@ fun IconsRow(
 @Composable
 fun Label(
     text: String,
+    textTag: String? = null,
     icon: IconData? = null,
     backgroundColor: Color,
     contentColor: Color
@@ -158,6 +164,7 @@ fun Label(
             Spacer(modifier = Modifier.width(4.dp))
         }
         Text(
+            modifier = textTag?.let { Modifier.testTag(textTag) } ?: Modifier,
             text = text,
             color = contentColor,
             style = MaterialTheme.typography.overline,

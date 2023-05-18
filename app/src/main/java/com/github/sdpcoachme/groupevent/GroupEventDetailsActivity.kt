@@ -26,17 +26,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
-import com.github.sdpcoachme.data.Address
 import com.github.sdpcoachme.data.GroupEvent
-import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.schedule.Event
-import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Buttons.Companion.BACK
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Buttons.Companion.CHAT
@@ -576,96 +571,5 @@ fun DisablableExtendFloatingActionButton(
         icon?.let {
             Spacer(Modifier.size(2.dp))
         }
-    }
-}
-
-// TODO: remove this
-@Preview(
-    showBackground = true,
-    backgroundColor = 0xFFFFFFFF,
-)
-@Composable
-fun DefaultPreview() {
-    CoachMeTheme {
-        GroupEventDetailsLayout(
-            GroupEvent(
-                event = Event(
-                    name = "My first event",
-                    color = EventColors.ORANGE.color.value.toString(),
-                    start = "2023-05-19T13:00",
-                    end = "2023-05-19T15:00",
-                    sport = Sports.RUNNING,
-                    address = Address(
-                        placeId = "ChIJ5aeJzT4pjEcRXu7iysk_F-s",
-                        name = "Lausanne, Switzerland",
-                        latitude = 46.5196535,
-                        longitude = 6.6335972
-                    ),
-                    description = "Lorem ipsum dolor sit amet. Ab fugit eveniet ut ipsam tenetur sed iure illum vel nemo maxime. Non ullam harum non obcaecati odio a voluptate facilis ex internos galisum non placeat sunt ad quaerat nobis aut maiores molestiae."
-                ),
-                organiser = "bry.gotti@outlook.com",
-                maxParticipants = 2,
-                participants = listOf("jammy@email.com", "lolo@email.com")
-            ),
-            UserInfo(
-                firstName = "Bryan",
-                lastName = "Gotti",
-                email = "bry.gotti@outlook.com",
-                address = Address(
-                    placeId = "ChIJ5aeJzT4pjEcRXu7iysk_F-s",
-                    name = "Lausanne, Switzerland",
-                    latitude = 46.5196535,
-                    longitude = 6.6335972
-                ),
-                phone = "0123456789",
-                sports = listOf(Sports.SKI, Sports.SWIMMING),
-                coach = true
-            ),
-            UserInfo(
-                firstName = "Michel",
-                lastName = "Sardoux",
-                email = "michou@email.com",
-                address = Address(
-                    placeId = "ChIJ5aeJzT4pjEcRXu7iysk_F-s",
-                    name = "Lausanne, Switzerland",
-                    latitude = 46.5196535,
-                    longitude = 6.6335972
-                ),
-                phone = "0123456789",
-                sports = listOf(Sports.SKI, Sports.SWIMMING),
-                coach = false
-            ),
-            listOf(
-                UserInfo(
-                    firstName = "James",
-                    lastName = "Dolorian",
-                    email = "jammy@email.com",
-                    address = Address(
-                        placeId = "ChIJ5aeJzT4pjEcRXu7iysk_F-s",
-                        name = "Lausanne, Switzerland",
-                        latitude = 46.5196535,
-                        longitude = 6.6335972
-                    ),
-                    phone = "0123456789",
-                    sports = listOf(Sports.SKI, Sports.SWIMMING),
-                    coach = false
-                ),
-                UserInfo(
-                    firstName = "Loris",
-                    lastName = "Pinaclio",
-                    email = "lolo@email.com",
-                    address = Address(
-                        placeId = "ChIJ5aeJzT4pjEcRXu7iysk_F-s",
-                        name = "Lausanne, Switzerland",
-                        latitude = 46.5196535,
-                        longitude = 6.6335972
-                    ),
-                    phone = "0123456789",
-                    sports = listOf(Sports.TENNIS),
-                    coach = false
-                )
-            )
-
-        )
     }
 }

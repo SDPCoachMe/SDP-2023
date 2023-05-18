@@ -2,42 +2,19 @@ package com.github.sdpcoachme.messaging
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
-import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -59,6 +36,7 @@ import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.Message.ReadState
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
+import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.BACK
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SCROLL_TO_BOTTOM
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Buttons.Companion.SEND
@@ -265,10 +243,8 @@ class ChatActivity : ComponentActivity() {
 
                     // if it is a group chat, chatId is the event id
                     if (isGroupChat) {
-                        // TODO: show the event
-                        Toast
-                            .makeText(context, "Show the event: $chatId", Toast.LENGTH_LONG)
-                            .show()
+                        val intent = GroupEventDetailsActivity.getIntent(context, chatId)
+                        context.startActivity(intent)
                     } else {
                         // go to the profile of the other user
                         val coachProfileIntent = Intent(context, ProfileActivity::class.java)

@@ -78,6 +78,7 @@ class Dashboard {
 @Composable
 fun Dashboard(title: String? = null,
               UIDisplayed: CompletableFuture<Void> = CompletableFuture<Void>(),
+              noElevation: Boolean = false,
               appContent: @Composable (Modifier) -> Unit) {
 
     val context = LocalContext.current
@@ -92,7 +93,8 @@ fun Dashboard(title: String? = null,
         topBar = {
             AppBar(
                 title = title ?: stringResource(id = R.string.app_name),
-                onNavigationIconClick = { coroutineScope.launch {scaffoldState.drawerState.open()} }
+                onNavigationIconClick = { coroutineScope.launch {scaffoldState.drawerState.open()} },
+                noElevation = noElevation
             )},
         drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
         drawerContent = {
@@ -110,13 +112,13 @@ fun Dashboard(title: String? = null,
                         icon = Default.Groups),
                     MenuItem(tag = SCHEDULE, title = "Schedule",
                         contentDescription = "See schedule",
-                        icon = Default.CheckCircle),
+                        icon = Default.Today),
                     MenuItem(tag = MESSAGING, title = "Messaging",
                         contentDescription = "Go to Messaging section",
                         icon = Default.Chat),
                     MenuItem(tag = PROFILE, title = "My profile",
                         contentDescription = "Go to profile",
-                        icon = Default.AccountCircle),
+                        icon = Default.ManageAccounts),
                     MenuItem(tag = LOGOUT, title = "Log out",
                             contentDescription = "User logs out",
                             icon = Default.Logout)
@@ -166,7 +168,7 @@ fun Dashboard(title: String? = null,
 }
 
 @Composable
-fun AppBar(title: String, onNavigationIconClick: () -> Unit) {
+fun AppBar(title: String, onNavigationIconClick: () -> Unit, noElevation: Boolean = false) {
     TopAppBar(
         title = { Text(text = title, modifier = Modifier.testTag(BAR_TITLE)) },
         backgroundColor = MaterialTheme.colors.primary,
@@ -180,7 +182,8 @@ fun AppBar(title: String, onNavigationIconClick: () -> Unit) {
                     contentDescription = "Toggle drawer"
                 )
             }
-        }
+        },
+        elevation = if (noElevation) 0.dp else AppBarDefaults.TopAppBarElevation
     )
 }
 

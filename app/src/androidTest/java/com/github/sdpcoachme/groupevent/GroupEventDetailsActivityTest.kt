@@ -133,7 +133,7 @@ class GroupEventDetailsActivityTest {
 
             composeTestRule
                 .onNodeWithText(
-                    // TODO: temporary since the database adds the organizer to the participants list
+                    // TODO: +1 is temporary since the database adds the organizer to the participants list
                     "${groupEvent.participants.size + 1}/${groupEvent.maxParticipants} participants",
                     substring = true,
                     ignoreCase = true
