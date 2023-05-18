@@ -53,6 +53,7 @@ import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Compani
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_DATE_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_TIME_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_TIME_TEXT
+import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.SCHEDULE_COLUMN
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.`is`
 import org.junit.After
@@ -409,10 +410,10 @@ class CreateEventActivityTest {
                 .performClick()
 
 
-            // TODO: the following checks fail because scheduleActivity is not launched fast enough (would pass)
-            /*composeTestRule.onNodeWithTag(SCHEDULE_COLUMN)
+            // following checks fail locally
+            composeTestRule.onNodeWithTag(SCHEDULE_COLUMN)
                 .assertExists()
-            intended(hasComponent(ScheduleActivity::class.java.name))*/
+            intended(hasComponent(ScheduleActivity::class.java.name))
 
         }
     }
@@ -520,8 +521,5 @@ class CreateEventActivityTest {
             }
         }
     }
-
-
-
 }
 
