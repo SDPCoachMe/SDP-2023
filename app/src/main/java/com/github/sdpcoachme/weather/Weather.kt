@@ -7,7 +7,7 @@ data class Weather(
 )
 
 data class WeatherForecast(
-    val weathers: List<Weather>
+    val forecast: List<Weather>
 ) {
     // Constructor needed to make the data class serializable
     constructor() : this(emptyList())

@@ -2,6 +2,7 @@ package com.github.sdpcoachme.weather
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.weather.repository.WeatherRepository
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.CoroutineScope
@@ -9,16 +10,17 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
-class WeatherPresenter {
+class WeatherPresenter(private val cachingStore: CachingStore) {
 
     private lateinit var weatherRepository: WeatherRepository
 
     private val scope = CoroutineScope(Job())
-    var weatherState: MutableState<List<Weather>> = mutableStateOf(listOf())
+    var observableWeatherForecast: MutableState<WeatherForecast> = mutableStateOf(WeatherForecast())
 
-    fun bind(weatherRepository: WeatherRepository, target: LatLng) {
+    fun bind(weatherRepository: WeatherRepository, target: LatLng): WeatherPresenter {
         this.weatherRepository = weatherRepository
         getWeatherForecast(target.latitude, target.longitude)
+        return this
     }
 
     fun unbind() {
@@ -27,8 +29,8 @@ class WeatherPresenter {
 
     private fun getWeatherForecast(lat: Double, long: Double) {
         scope.launch {
-            weatherState.value = loadWeatherForecast(lat, long)
-            // TODO handle return here
+            observableWeatherForecast.value = WeatherForecast(loadWeatherForecast(lat, long))
+            cachingStore.setWeatherForecast(observableWeatherForecast.value)
         }
     }
 

@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 
 @Composable
-fun WeatherView(weatherState: MutableState<List<Weather>>) {
+fun WeatherView(weatherForecast: MutableState<WeatherForecast>) {
 
     if (weatherState.value.isNotEmpty()) {
         Text(
