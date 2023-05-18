@@ -52,7 +52,7 @@ fun WeatherView(weatherForecast: MutableState<WeatherForecast>, day: LocalDate) 
 @Composable
 private fun WeatherColumn(weatherText: String, weatherCode: Int) {
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("WEATHER_COLUMN"),
         horizontalAlignment = CenterHorizontally
     ) {
         Image(
