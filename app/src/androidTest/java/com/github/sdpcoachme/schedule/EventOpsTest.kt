@@ -3,6 +3,7 @@ package com.github.sdpcoachme.schedule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.sdpcoachme.CoachMeTestApplication
+import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.database.CachingStore
@@ -101,8 +102,64 @@ class EventOpsTest {
     }
 
     @Test
+    fun addGroupEventUpdatesMultiDayEventMap() {
+        val multiDayEvent = EventOps.getMultiDayEvent()
+        val multiDayGroupEvent = GroupEvent(
+            event = multiDayEvent,
+            organiser = defaultEmail,
+            maxParticipants = 10,
+            participants = mutableListOf(defaultEmail),
+            groupEventId = "@@event" + defaultEmail.replace(".", ",") + multiDayEvent.start
+        )
+
+        EventOps.addGroupEvent(multiDayGroupEvent, store).thenRun {
+            val actualMap = EventOps.getMultiDayEventMap()
+            val expectedMap = mutableMapOf<Event, List<ShownEvent>>()
+
+            val shownEvents = mutableListOf<ShownEvent>()
+            val start = LocalDateTime.parse(multiDayEvent.start)
+            val end = LocalDateTime.parse(multiDayEvent.end)
+            val daysBetween = ChronoUnit.DAYS.between(start.toLocalDate(), end.toLocalDate()).toInt()
+            if (daysBetween >= 1) {
+                for (i in 0..daysBetween) {
+                    val shownEvent = ShownEvent(
+                        name = multiDayEvent.name,
+                        color = multiDayEvent.color,
+                        start = if (i == 0) multiDayEvent.start else start.plusDays(i.toLong()).withHour(0).withMinute(0).withSecond(0).toString(),
+                        startText = multiDayEvent.start,
+                        end = if (i == daysBetween) multiDayEvent.end else start.plusDays(i.toLong()).withHour(23).withMinute(59).withSecond(59).toString(),
+                        endText = multiDayEvent.end,
+                        description = multiDayEvent.description,
+                    )
+                    shownEvents.add(shownEvent)
+                }
+                expectedMap[multiDayEvent] = shownEvents
+            }
+            TestCase.assertEquals(expectedMap, actualMap)
+        }
+    }
+
+    @Test
     fun addEventDoesNotUpdateMultiDayEventMapForOnedayEvents() {
         EventOps.addEvent(EventOps.getOneDayEvents()[0], store).thenRun {
+            val actualMap = EventOps.getMultiDayEventMap()
+            val expectedMap = mutableMapOf<Event, List<ShownEvent>>()
+            TestCase.assertEquals(expectedMap, actualMap)
+        }
+    }
+
+    @Test
+    fun addGroupEventDoesNotUpdateMultiDayEventMapForOnedayEvents() {
+        val oneDayEvent = EventOps.getOneDayEvents()[0]
+        val oneDayGroupEvent = GroupEvent(
+            event = oneDayEvent,
+            organiser = defaultEmail,
+            maxParticipants = 10,
+            participants = mutableListOf(defaultEmail),
+            groupEventId = "@@event" + defaultEmail.replace(".", ",") + oneDayEvent.start
+        )
+
+        EventOps.addGroupEvent(oneDayGroupEvent, store).thenRun {
             val actualMap = EventOps.getMultiDayEventMap()
             val expectedMap = mutableMapOf<Event, List<ShownEvent>>()
             TestCase.assertEquals(expectedMap, actualMap)

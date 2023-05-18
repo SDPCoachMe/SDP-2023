@@ -213,17 +213,27 @@ class CachingStoreTest {
     fun addGroupEventAddsItToWrappedDatabase() {
         var timesCalled = 0
         class ScheduleDB: MockDatabase() {
-            private var addedGroupEvents = mutableListOf<GroupEvent>()
+            private var addedGroupEvents = mutableMapOf<String, GroupEvent>()
+            private var schedule = Schedule(listOf(), listOf())
 
-            fun getAddedGroupEvents(): List<GroupEvent> {
+            fun getAddedGroupEvents(): Map<String, GroupEvent> {
                 return addedGroupEvents
             }
 
             override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
                 timesCalled++
-                addedGroupEvents.add(groupEvent)
+                addedGroupEvents[groupEvent.groupEventId] = groupEvent
                 return CompletableFuture.completedFuture(null)
             }
+
+            override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Schedule> {
+                val groupEvent = addedGroupEvents[groupEventId]
+                schedule = schedule.copy(
+                    events = schedule.events + listOf(groupEvent!!.event),
+                    groupEvents = schedule.groupEvents + listOf(groupEvent.groupEventId))
+                return CompletableFuture.completedFuture(schedule)
+            }
+
         }
 
         val wrappedDatabase = ScheduleDB()
@@ -231,33 +241,46 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
-        cachingStore.setCurrentEmail(exampleEmail)
-        val isCorrect = cachingStore.addGroupEvent(groupEvents[0])
+        cachingStore.retrieveData.get(1, SECONDS)
+        cachingStore.setCurrentEmail(MockDatabase.getDefaultEmail())
+        var checkEvent = groupEvents[0]
+        val isCorrect = cachingStore.addGroupEvent(checkEvent)
             .thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(1))
-                assertThat(wrappedDatabase.getAddedGroupEvents()[0], `is`(groupEvents[0]))
-                cachingStore.addGroupEvent(groupEvents[1])
+                assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
+
+                checkEvent = groupEvents[1]
+                cachingStore.addGroupEvent(checkEvent)
             }.thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(2))
-                assertThat(wrappedDatabase.getAddedGroupEvents()[1], `is`(groupEvents[1]))
-                cachingStore.addGroupEvent(groupEvents[2])
+                assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
+
+                checkEvent = groupEvents[2]
+                cachingStore.addGroupEvent(checkEvent)
             }.thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(3))
-                assertThat(wrappedDatabase.getAddedGroupEvents()[2], `is`(groupEvents[2]))
-                cachingStore.addGroupEvent(groupEvents[3])
+                assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
+
+                checkEvent = groupEvents[3]
+                cachingStore.addGroupEvent(checkEvent)
             }.thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(4))
-                assertThat(wrappedDatabase.getAddedGroupEvents()[3], `is`(groupEvents[3]))
-                cachingStore.addGroupEvent(groupEvents[4])
+                assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
+
+                checkEvent = groupEvents[4]
+                cachingStore.addGroupEvent(checkEvent)
             }.thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(5))
-                assertThat(wrappedDatabase.getAddedGroupEvents()[4], `is`(groupEvents[4]))
-                cachingStore.addGroupEvent(groupEvents[5])
-            }
-            .thenCompose {
+                assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
+
+                checkEvent = groupEvents[5]
+                cachingStore.addGroupEvent(checkEvent)
+            }.thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(6))
-                assertThat(wrappedDatabase.getAddedGroupEvents()[5], `is`(groupEvents[5]))
-                cachingStore.addGroupEvent(groupEvents[6])
+                assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
+
+                checkEvent = groupEvents[6]
+                cachingStore.addGroupEvent(checkEvent)
             }.thenApply {
                 assertThat(timesCalled, `is`(7))
                 true
@@ -280,7 +303,7 @@ class CachingStoreTest {
         fun getAvailableGroupEvents(): MutableMap<String, GroupEvent> {
             return availableGroupEvents
         }
-        override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Void> {
+        override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Schedule> {
             timesCalled++
             if (availableGroupEvents.containsKey(groupEventId)) {
                 // register exampleEmail
@@ -290,7 +313,7 @@ class CachingStoreTest {
                 schedule = schedule.copy(events = schedule.events + availableGroupEvents[groupEventId]!!.event, groupEvents = schedule.groupEvents + availableGroupEvents[groupEventId]!!.groupEventId)
                 return CompletableFuture.completedFuture(null)
             }
-            val failFuture = CompletableFuture<Void>()
+            val failFuture = CompletableFuture<Schedule>()
             failFuture.completeExceptionally(NoSuchElementException())
             return failFuture
         }
@@ -509,6 +532,80 @@ class CachingStoreTest {
             }.get(5, SECONDS)
 
         assertThat(wrappedDatabase.getTimesCalled(), `is`(0))
+        assertTrue(isCorrect)
+    }
+
+    @Test
+    fun groupEventFutureRecoversFromAddGroupEventDBError() {
+        class AddGroupEventDB: MockDatabase() {
+            private var timesCalled = 0
+
+            fun getTimesCalled(): Int {
+                return timesCalled
+            }
+
+            override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
+                timesCalled++
+                val failingFuture = CompletableFuture<Void>()
+                failingFuture.completeExceptionally(Exception())
+                return failingFuture
+            }
+        }
+
+        val wrappedDatabase = AddGroupEventDB()
+        cachingStore = CachingStore(wrappedDatabase,
+            ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
+            ApplicationProvider.getApplicationContext()
+        )
+        cachingStore.retrieveData.get(1, SECONDS)
+        cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
+
+        val isCorrect = cachingStore.addGroupEvent(groupEvents[0])
+            .thenApply {
+                assertThat(wrappedDatabase.getTimesCalled(), `is`(1))
+                true
+            }.exceptionally {
+                // should have recovered before reaching here
+                false
+            }.get(5, SECONDS)
+
+        assertTrue(isCorrect)
+    }
+
+    @Test
+    fun groupEventFutureRecoversFromRegisterForEventDBError() {
+        class AddGroupEventDB: MockDatabase() {
+            private var timesCalled = 0
+
+            fun getTimesCalled(): Int {
+                return timesCalled
+            }
+
+            override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Schedule> {
+                timesCalled++
+                val failingFuture = CompletableFuture<Schedule>()
+                failingFuture.completeExceptionally(Exception())
+                return failingFuture
+            }
+        }
+
+        val wrappedDatabase = AddGroupEventDB()
+        cachingStore = CachingStore(wrappedDatabase,
+            ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
+            ApplicationProvider.getApplicationContext()
+        )
+        cachingStore.retrieveData.get(1, SECONDS)
+        cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
+
+        val isCorrect = cachingStore.registerForGroupEvent(groupEvents[0].groupEventId)
+            .thenApply {
+                assertThat(wrappedDatabase.getTimesCalled(), `is`(1))
+                true
+            }.exceptionally {
+                // should have recovered before reaching here
+                false
+            }.get(5, SECONDS)
+
         assertTrue(isCorrect)
     }
 
@@ -737,7 +834,7 @@ class CachingStoreTest {
                 assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
                 assertThat(it[0], `is`(rowInfo.copy(lastMessage = expectedMessage)))
                 true
-            }.exceptionally { println(it.cause); false }.get(5, SECONDS)
+            }.exceptionally { false }.get(5, SECONDS)
 
         assertTrue(isCorrect)
     }
@@ -780,7 +877,7 @@ class CachingStoreTest {
                 assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(2))
 
                 true
-            }.exceptionally { println(it.cause); false }.get(5, SECONDS)
+            }.exceptionally { false }.get(5, SECONDS)
 
         assertTrue(isCorrect)
     }
@@ -823,7 +920,6 @@ class CachingStoreTest {
 
                         true
                     }.exceptionally {
-                        println("error: ${it.cause}")
                         false
                     }
             }.get(5, SECONDS)
@@ -1190,7 +1286,7 @@ class CachingStoreTest {
         GroupEvent(
             event.copy(name = "${event.name} (group event)", start = event.end, end = LocalDateTime.parse(event.end).plusHours(1).format(EventOps.getEventDateFormatter())),
             MockDatabase.getDefaultEmail(),
-            3,
+            5,
         )
     }
 }
