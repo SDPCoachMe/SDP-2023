@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -53,8 +55,10 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.schedule.EventType
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.database.CachingStore
@@ -85,6 +89,8 @@ class ScheduleActivity : ComponentActivity() {
                 const val RIGHT_ARROW_BUTTON = "rightArrowButton"
                 const val BACK = "backButton"
                 const val ADD_EVENT_BUTTON = "addEventButton"
+                const val ADD_PRIVATE_EVENT_BUTTON = "addPrivateEventButton"
+                const val ADD_GROUP_EVENT_BUTTON = "addGroupEventButton"
             }
         }
         class TextFields {
@@ -109,9 +115,7 @@ class ScheduleActivity : ComponentActivity() {
 
         val startMonday = getStartMonday()
 
-        val futureDBSchedule: CompletableFuture<Schedule> = store.getSchedule(startMonday).exceptionally {
-            null
-        }
+        val futureDBSchedule: CompletableFuture<Schedule> = store.getSchedule(startMonday)
 
         setContent {
             CoachMeTheme {
@@ -127,7 +131,7 @@ private class EventDataModifier(val event: ShownEvent) : ParentDataModifier {
     override fun Density.modifyParentData(parentData: Any?) = event
 }
 
-private const val ColumnsPerWeek = 7
+private const val COLUMNS_PER_WEEK = 7
 @Composable
 fun Schedule(
     futureDBSchedule: CompletableFuture<Schedule>,
@@ -157,9 +161,8 @@ fun Schedule(
         }
     }
 
-    val dayWidth = LocalConfiguration.current.screenWidthDp.dp / ColumnsPerWeek
+    val dayWidth = LocalConfiguration.current.screenWidthDp.dp / COLUMNS_PER_WEEK
     val verticalScrollState = rememberScrollState()
-
 
     fun updateCurrentWeekMonday(weeksToAdd: Int) {
         shownWeekMonday = shownWeekMonday.plusWeeks(weeksToAdd.toLong())
@@ -186,7 +189,7 @@ fun Schedule(
 
             // filter events to only show events in the current week
             val eventsToShow = EventOps.eventsToWrappedEvents(events)
-            // TODO: add function (+call) to transform GroupedEvents to ShownEvents
+
             BasicSchedule(
                 events = eventsToShow.filter { event ->
                     val eventDate = LocalDateTime.parse(event.start).toLocalDate()
@@ -201,19 +204,70 @@ fun Schedule(
             )
         }
 
+        fun launchCreateEventActivity(eventType: EventType) {
+            val intent = Intent(context, CreateEventActivity::class.java)
+            intent.putExtra("eventType", eventType.eventTypeName)
+            context.startActivity(intent)
+        }
+
+        var isDropdownExpanded by remember { mutableStateOf(false) }
+
         FloatingActionButton(
             onClick = {
-                val intent = Intent(context, CreateEventActivity::class.java)
-                context.startActivity(intent) },
+                val isCoachFuture = store.getCurrentEmail().thenCompose { email ->
+                    store.getUser(email)
+                }.thenApply { user ->
+                    user.coach
+                }
+                // if user is coach, let them choose between private and group event
+                isCoachFuture.thenAccept { isCoach ->
+                    if (isCoach) {
+                        isDropdownExpanded = !isDropdownExpanded
+                    } else {
+                        launchCreateEventActivity(EventType.PRIVATE)
+                    }
+                }
+            },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
                 .testTag(ScheduleActivity.TestTags.Buttons.ADD_EVENT_BUTTON),
-            backgroundColor = Purple500) {
+            backgroundColor = Purple500
+        ) {
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Add Event"
             )
+        }
+
+        // TODO: align the dropdown menu with the add event button
+        DropdownMenu(
+            expanded = isDropdownExpanded,
+            onDismissRequest = { isDropdownExpanded = false },
+            properties = PopupProperties(clippingEnabled = false),
+        ) {
+            DropdownMenuItem(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .testTag(ScheduleActivity.TestTags.Buttons.ADD_PRIVATE_EVENT_BUTTON),
+                onClick = {
+                    isDropdownExpanded = false
+                    launchCreateEventActivity(EventType.PRIVATE)
+                }
+            ) {
+                Text(text = "Private Event")
+            }
+            DropdownMenuItem(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .testTag(ScheduleActivity.TestTags.Buttons.ADD_GROUP_EVENT_BUTTON),
+                onClick = {
+                    isDropdownExpanded = false
+                    launchCreateEventActivity(EventType.GROUP)
+                }
+            ) {
+                Text(text = "Group Event")
+            }
         }
     }
 }
@@ -323,7 +377,7 @@ fun WeekHeader(
         modifier = modifier
             .testTag(ScheduleActivity.TestTags.WEEK_HEADER)
     ) {
-        repeat(ColumnsPerWeek) {i ->
+        repeat(COLUMNS_PER_WEEK) { i ->
             val day = shownWeekMonday.plusDays(i.toLong())
             Box(modifier = Modifier.width(dayWidth)) {
                 dayHeader(day)
@@ -378,7 +432,7 @@ fun BasicSchedule(
                         strokeWidth = 1.dp.toPx()
                     )
                 }
-                repeat(ColumnsPerWeek - 1) {
+                repeat(COLUMNS_PER_WEEK - 1) {
                     drawLine(
                         dividerColor,
                         start = Offset((it + 1) * dayWidth.toPx(), 0f),
@@ -389,7 +443,7 @@ fun BasicSchedule(
             },
     ) { measureables, constraints ->
         val height = hourHeight.roundToPx() * 24
-        val width = dayWidth.roundToPx() * ColumnsPerWeek
+        val width = dayWidth.roundToPx() * COLUMNS_PER_WEEK
         // This part measures the events and ensures that the event size corresponds to the event duration
         val placeablesWithEvents = measureables.map { measurable ->
             val event = measurable.parentData as ShownEvent

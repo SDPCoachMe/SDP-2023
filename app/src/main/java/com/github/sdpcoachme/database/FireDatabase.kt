@@ -62,33 +62,34 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
 
         if (groupEvent.participants.size > groupEvent.maxParticipants) {
             errorPreventionFuture.completeExceptionally(Exception("Group event should not be full, initially"))
-        } else if (groupEvent.participants.isEmpty()) {
-            errorPreventionFuture.completeExceptionally(Exception("Group event must have at least 1 participants"))
         } else if (LocalDateTime.parse(groupEvent.event.start).isBefore(LocalDateTime.now())) {
             errorPreventionFuture.completeExceptionally(Exception("Group event cannot be in the past"))
         } else {
-            errorPreventionFuture = setChild(groupEvents, groupEvent.groupEventId, groupEvent).thenCompose {
-                registerForGroupEvent(groupEvent.organiser, groupEvent.groupEventId)
-            }
+            errorPreventionFuture = setChild(groupEvents, groupEvent.groupEventId, groupEvent)
         }
 
         return errorPreventionFuture
     }
 
-    override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Void> {
+    override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Schedule> {
         val id = email.replace('.', ',')
+        // TODO for next sprint: check with bryan if we could refactor registerForGroupEvent to directly take in the groupEvent object (would be more efficient when creating a group event)
         return getGroupEvent(groupEventId).thenCompose { groupEvent ->
             val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
-            if (!hasCapacity) {
-                val failingFuture = CompletableFuture<Void>()
+            if (!hasCapacity) { // TODO for Bryan: this error prevention should be taken into the onclick of the register button
+                val failingFuture = CompletableFuture<Schedule>()
                 failingFuture.completeExceptionally(Exception("Group event is full"))
                 failingFuture
             } else {
                 val updatedGroupEvent = groupEvent.copy(participants = groupEvent.participants + email)
                 setChild(groupEvents, groupEventId, updatedGroupEvent).thenCompose {
-                    getSchedule(email, EventOps.getStartMonday()).thenCompose { s ->
-                        val updatedSchedule = s.copy(groupEvents = s.groupEvents + groupEventId)
-                        setChild(schedule, id, updatedSchedule) // Return updated schedule?
+                    getSchedule(email, EventOps.getStartMonday()).thenApply { s ->
+                        val updatedSchedule = s.copy(
+                            events = s.events + EventOps.groupEventsToEvents(listOf(updatedGroupEvent)),
+                            groupEvents = s.groupEvents + groupEventId
+                        )
+                        setChild(schedule, id, updatedSchedule)
+                        updatedSchedule
                     }
                 }
             }

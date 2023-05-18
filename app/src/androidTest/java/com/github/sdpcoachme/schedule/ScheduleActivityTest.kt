@@ -6,15 +6,21 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
+import com.github.sdpcoachme.data.UserInfoSamples
+import com.github.sdpcoachme.data.schedule.EventType
 import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.database.CachingStore
-import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.MapActivity
+import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Buttons.Companion.ADD_EVENT_BUTTON
+import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Buttons.Companion.ADD_GROUP_EVENT_BUTTON
+import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Buttons.Companion.ADD_PRIVATE_EVENT_BUTTON
 import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Buttons.Companion.LEFT_ARROW_BUTTON
 import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Buttons.Companion.RIGHT_ARROW_BUTTON
 import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.BASIC_SCHEDULE
@@ -37,7 +43,8 @@ import java.util.concurrent.TimeUnit.SECONDS
 @RunWith(AndroidJUnit4::class)
 class ScheduleActivityTest {
     private lateinit var store: CachingStore
-    private val defaultEmail = MockDatabase.getDefaultEmail()
+    private val coachEmail = UserInfoSamples.COACH_1.email
+    private val nonCoachEmail = UserInfoSamples.NON_COACH_1.email
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), ScheduleActivity::class.java)
 
     private val currentMonday = EventOps.getStartMonday()
@@ -51,7 +58,7 @@ class ScheduleActivityTest {
         (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
         store = (ApplicationProvider.getApplicationContext() as CoachMeApplication).store
         store.retrieveData.get(1, SECONDS)
-        store.setCurrentEmail(defaultEmail).get(1000, MILLISECONDS)
+        store.setCurrentEmail(coachEmail).get(1000, MILLISECONDS)
     }
 
     @After
@@ -102,7 +109,7 @@ class ScheduleActivityTest {
 
     @Test
     fun eventsOfCurrentWeekAreDisplayedCorrectly() {
-        store.setCurrentEmail(defaultEmail)
+        store.setCurrentEmail(coachEmail)
         store.addEvent(eventList[0], currentMonday).thenCompose {
             store.addEvent(eventList[1], currentMonday)
         }.thenRun {
@@ -233,7 +240,7 @@ class ScheduleActivityTest {
         val nextWeekEvent = EventOps.getNextWeekEvent()
 
         store.addEvent(nextWeekEvent, currentMonday).thenRun {
-            store.setCurrentEmail(defaultEmail)
+            store.setCurrentEmail(coachEmail)
             ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
                 composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
 
@@ -263,27 +270,28 @@ class ScheduleActivityTest {
         val previousWeekEvent = EventOps.getPreviousWeekEvent()
 
         store.addEvent(previousWeekEvent, currentMonday).thenRun {
-            store.setCurrentEmail(defaultEmail)
-            ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
-                composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
+            store.setCurrentEmail(coachEmail).thenApply {
+                ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+                    composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
 
-                val schedule = store.getSchedule(currentMonday)
-                val nonnull = schedule.thenAccept {
-                    val expectedShownEvents = listOf(
-                        ShownEvent(
-                            name = previousWeekEvent.name,
-                            color = previousWeekEvent.color,
-                            start = previousWeekEvent.start,
-                            startText = previousWeekEvent.start,
-                            end = previousWeekEvent.end,
-                            endText = previousWeekEvent.end,
-                            description = previousWeekEvent.description,
-                        ),
-                    )
-                    val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)
-                    assertTrue(expectedShownEvents == actualShownEvents)
-                }.exceptionally { null }.get(5, SECONDS)
-                assertNotNull(nonnull)
+                    val schedule = store.getSchedule(currentMonday)
+                    val nonnull = schedule.thenAccept {
+                        val expectedShownEvents = listOf(
+                            ShownEvent(
+                                name = previousWeekEvent.name,
+                                color = previousWeekEvent.color,
+                                start = previousWeekEvent.start,
+                                startText = previousWeekEvent.start,
+                                end = previousWeekEvent.end,
+                                endText = previousWeekEvent.end,
+                                description = previousWeekEvent.description,
+                            ),
+                        )
+                        val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)
+                        assertTrue(expectedShownEvents == actualShownEvents)
+                    }.exceptionally { null }.get(5, SECONDS)
+                    assertNotNull(nonnull)
+                }
             }
         }
     }
@@ -313,6 +321,65 @@ class ScheduleActivityTest {
             composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).performClick()  // switch 1 week backward
             composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(14).format(formatter)} - \n${currentMonday.minusDays(8).format(formatter)}")
         }
+    }
+
+    @Test
+    fun clickOnAddEventButtonTakesClientToCreateEventActivity() {
+        Intents.init()
+        store.setCurrentEmail(nonCoachEmail).thenApply {
+            ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+                composeTestRule.onNodeWithTag(ADD_EVENT_BUTTON)
+                    .assertExists()
+                    .performClick()
+
+                Intents.intended(hasExtra("eventType", EventType.PRIVATE.eventTypeName))
+                Intents.intended(hasComponent(CreateEventActivity::class.java.name))
+            }
+        }
+
+        Intents.release()
+    }
+
+    @Test
+    fun clickOnAddEventButtonLetsCoachRedirectToCreatePrivateEventActivity() {
+        Intents.init()
+        store.setCurrentEmail(coachEmail).thenApply {
+            ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+
+                composeTestRule.onNodeWithTag(ADD_EVENT_BUTTON)
+                    .assertExists()
+                    .performClick() // should open a dropdown menu
+
+                composeTestRule.onNodeWithTag(ADD_PRIVATE_EVENT_BUTTON)
+                    .assertExists()
+                    .performClick()
+
+                Intents.intended(hasExtra("eventType", EventType.PRIVATE.eventTypeName))
+                Intents.intended(hasComponent(CreateEventActivity::class.java.name))
+            }
+        }
+        Intents.release()
+    }
+
+    @Test
+    fun clickOnAddEventButtonLetsCoachRedirectToCreateGroupEventActivity() {
+        Intents.init()
+        store.setCurrentEmail(coachEmail).thenApply {
+            ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+
+                composeTestRule.onNodeWithTag(ADD_EVENT_BUTTON)
+                    .assertExists()
+                    .performClick() // should open a dropdown menu
+
+                composeTestRule.onNodeWithTag(ADD_GROUP_EVENT_BUTTON)
+                    .assertExists()
+                    .performClick()
+
+                Intents.intended(hasExtra("eventType", EventType.GROUP.eventTypeName))
+                Intents.intended(hasComponent(CreateEventActivity::class.java.name))
+            }
+        }
+        Intents.release()
     }
 
 
