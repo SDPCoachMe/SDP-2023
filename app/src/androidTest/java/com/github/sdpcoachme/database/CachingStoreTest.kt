@@ -354,7 +354,6 @@ class CachingStoreTest {
                 eventsToRegisterFor.forEach { assertThat(wrappedDatabase.getAvailableGroupEvents()[it.groupEventId]!!.participants, hasItem(exampleEmail)) }
                 true
             }.exceptionally {
-                println("erroe: ${it.cause}")
                 false
             }.get(5, SECONDS)
 
@@ -535,6 +534,43 @@ class CachingStoreTest {
             }.get(5, SECONDS)
 
         assertThat(wrappedDatabase.getTimesCalled(), `is`(0))
+        assertTrue(isCorrect)
+    }
+
+    @Test
+    fun addGroupEventFutureRecoversFromDBError() {
+        class AddGroupEventDB: MockDatabase() {
+            private var timesCalled = 0
+
+            fun getTimesCalled(): Int {
+                return timesCalled
+            }
+
+            override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
+                timesCalled++
+                val failingFuture = CompletableFuture<Void>()
+                failingFuture.completeExceptionally(Exception())
+                return failingFuture
+            }
+        }
+
+        val wrappedDatabase = AddGroupEventDB()
+        cachingStore = CachingStore(wrappedDatabase,
+            ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
+            ApplicationProvider.getApplicationContext()
+        )
+        cachingStore.retrieveData.get(1, SECONDS)
+        cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
+
+        val isCorrect = cachingStore.addGroupEvent(groupEvents[0])
+            .thenApply {
+                assertThat(wrappedDatabase.getTimesCalled(), `is`(1))
+                true
+            }.exceptionally {
+                // should have recovered before reaching here
+                false
+            }.get(5, SECONDS)
+
         assertTrue(isCorrect)
     }
 
@@ -763,7 +799,7 @@ class CachingStoreTest {
                 assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
                 assertThat(it[0], `is`(rowInfo.copy(lastMessage = expectedMessage)))
                 true
-            }.exceptionally { println(it.cause); false }.get(5, SECONDS)
+            }.exceptionally { false }.get(5, SECONDS)
 
         assertTrue(isCorrect)
     }
@@ -806,7 +842,7 @@ class CachingStoreTest {
                 assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(2))
 
                 true
-            }.exceptionally { println(it.cause); false }.get(5, SECONDS)
+            }.exceptionally { false }.get(5, SECONDS)
 
         assertTrue(isCorrect)
     }
@@ -849,7 +885,6 @@ class CachingStoreTest {
 
                         true
                     }.exceptionally {
-                        println("error: ${it.cause}")
                         false
                     }
             }.get(5, SECONDS)
