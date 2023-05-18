@@ -283,12 +283,15 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return a completable future that completes when the user has been registered for the group event
      */
     fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
+        addGroupEventFuture = CompletableFuture()
         return getCurrentEmail().thenCompose { email ->
             wrappedDatabase.registerForGroupEvent(email, groupEventId)
-                .thenAccept { schedule ->
+                .thenCompose {
+                    wrappedDatabase.getSchedule(email, currentShownMonday)
+                }.thenAccept { schedule ->
                     cachedSchedule = schedule   // Update the cached schedule
                 }
-        }
+        }.thenApply { addGroupEventFuture.complete(null); it }
     }
 
     private fun fetchGroupEventsAsEvents(schedule: Schedule): List<Event> {
@@ -306,7 +309,7 @@ class CachingStore(private val wrappedDatabase: Database,
         return EventOps.groupEventsToEvents(groupEvents)
     }
 
-    var addGroupEventFuture = CompletableFuture.completedFuture(null)
+    private var addGroupEventFuture: CompletableFuture<Void> = CompletableFuture.completedFuture(null)
 
     // Note: checks if it is time to prefetch
     /**
@@ -317,7 +320,7 @@ class CachingStore(private val wrappedDatabase: Database,
     fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         currentShownMonday = currentWeekMonday
 
-        return addGroupEventFuture.thenCompose {
+        val future = addGroupEventFuture.thenCompose {
             getCurrentEmail().thenCompose { email ->
                 if (cachedSchedule.events.isEmpty() && cachedSchedule.groupEvents.isEmpty()) {  // If no cached schedule for that account, we fetch the schedule from the db
                     wrappedDatabase.getSchedule(email, currentWeekMonday).thenApply { schedule ->
@@ -372,6 +375,7 @@ class CachingStore(private val wrappedDatabase: Database,
                 }
             }
         }
+        return future
     }
 
     /**

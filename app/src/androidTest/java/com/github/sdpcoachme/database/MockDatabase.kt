@@ -165,7 +165,7 @@ open class MockDatabase: Database {
                 getSchedule(email, EventOps.getStartMonday()).thenCompose { s ->
                     val updatedSchedule = s.copy(groupEvents = s.groupEvents + groupEventId)
                     schedules[email] = updatedSchedule
-                    CompletableFuture.completedFuture(null)
+                    CompletableFuture.completedFuture(updatedSchedule)
                 }
             }
         }

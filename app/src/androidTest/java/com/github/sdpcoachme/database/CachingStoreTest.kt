@@ -354,6 +354,7 @@ class CachingStoreTest {
                 eventsToRegisterFor.forEach { assertThat(wrappedDatabase.getAvailableGroupEvents()[it.groupEventId]!!.participants, hasItem(exampleEmail)) }
                 true
             }.exceptionally {
+                println("erroe: ${it.cause}")
                 false
             }.get(5, SECONDS)
 
