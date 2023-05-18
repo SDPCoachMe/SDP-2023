@@ -279,9 +279,8 @@ class CreateEventActivity : ComponentActivity() {
                                             val toast = Toast.makeText(context, "Start and end dates must be in the future", Toast.LENGTH_SHORT)
                                             toast.show()
                                         } else {
-                                            EventOps.addGroupEvent(groupEvent, store).thenAccept {
-                                                goBackToScheduleActivity()
-                                            }
+                                            EventOps.addGroupEvent(groupEvent, store)
+                                            goBackToScheduleActivity()
                                         }
                                     }
                                 }
