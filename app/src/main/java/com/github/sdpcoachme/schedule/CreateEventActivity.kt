@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -52,11 +53,13 @@ import androidx.compose.ui.window.DialogProperties
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.Address
 import com.github.sdpcoachme.data.GroupEvent
+import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.data.schedule.EventType
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
+import com.github.sdpcoachme.profile.SelectSportsActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.maxkeppeker.sheets.core.models.base.Header
 import com.maxkeppeker.sheets.core.models.base.SheetState
@@ -75,6 +78,7 @@ import com.maxkeppeler.sheets.color.models.ColorSelectionMode
 import com.maxkeppeler.sheets.color.models.MultipleColors
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 class CreateEventActivity : ComponentActivity() {
@@ -91,6 +95,7 @@ class CreateEventActivity : ComponentActivity() {
                 val END_DATE_TEXT = text("endDate")
                 val END_TIME_TEXT = text("endTime")
                 val MAX_PARTICIPANTS_TEXT = text("maxParticipants")
+                val SPORT_TEXT = text("sport")
                 val LOCATION_TEXT = text("location")
                 val COLOR_TEXT = text("color")
 
@@ -120,6 +125,7 @@ class CreateEventActivity : ComponentActivity() {
                 val START_TIME = clickableText("startTime")
                 val END_DATE = clickableText("endDate")
                 val END_TIME = clickableText("endTime")
+                val SPORT = clickableText("sport")
                 val LOCATION = clickableText("location")
                 val SAVE = button("save")
                 val CANCEL = button("cancel")
@@ -147,7 +153,12 @@ class CreateEventActivity : ComponentActivity() {
 
                 val SAVE_ICON = icon("save")
                 val CANCEL_ICON = icon("cancel")
+
             }
+        }
+
+        class SportElement(sport: Sports) {
+            val ICON = "${sport.sportName}Icon"
         }
 
 
@@ -159,6 +170,7 @@ class CreateEventActivity : ComponentActivity() {
     private lateinit var store: CachingStore
     private lateinit var email: String
     private lateinit var addressAutocompleteHandler: AddressAutocompleteHandler
+    private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -168,7 +180,8 @@ class CreateEventActivity : ComponentActivity() {
         // Set up handler for calls to location autocomplete
         addressAutocompleteHandler = (application as CoachMeApplication).addressAutocompleteHandler(this, this)
 
-
+        // Set up handler for calls to select sports activity
+        selectSportsHandler = SelectSportsActivity.getHandler(this)
 
         val eventTypeName = intent.getStringExtra("eventType")!!
         val eventType = EventType.fromString(eventTypeName)!!
@@ -197,6 +210,7 @@ class CreateEventActivity : ComponentActivity() {
         var start by remember { mutableStateOf(EventOps.getDefaultEventStart()) }
         var end by remember { mutableStateOf(EventOps.getDefaultEventEnd()) }
         var maxParticipants by remember { mutableStateOf(0) }
+        var sports by remember { mutableStateOf(listOf(Sports.RUNNING)) }
         var location by remember { mutableStateOf(Address(
             placeId = "ChIJD7fiBh9u5kcRYJSMaMOCCwQ",
             name = "Paris, France",
@@ -339,7 +353,10 @@ class CreateEventActivity : ComponentActivity() {
                     )
                 }
 
-                //EventSportRow()
+                EventSportRow(
+                    sport = sports,
+                    onSportChange = { sports = it }
+                )
 
                 EventLocationRow(
                     location = location,
@@ -611,6 +628,58 @@ class CreateEventActivity : ComponentActivity() {
     }
 
     @Composable
+    fun EventSportRow(
+        sport: List<Sports>,
+        onSportChange: (List<Sports>) -> Unit,
+    ) {
+        val context = LocalContext.current
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Text(
+                text = "Sport: ",
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag(TestTags.Texts.SPORT_TEXT)
+            )
+
+            Box(
+                modifier = Modifier
+                    .clickable {
+                        selectSportsHandler(
+                            SelectSportsActivity.getIntent(
+                                context = context,
+                                initialValue = sport
+                            )
+                        ).thenApply {
+                            // only update the sport if the user selected only one
+                            if (it.size == 1) {
+                                onSportChange(it)
+                            }
+                        }
+                    }
+                    .weight(.8f)
+                    .testTag(TestTags.Clickables.SPORT)
+            ) {
+                sport.forEach {
+                    Spacer(modifier = Modifier.padding(0.dp, 0.dp, 6.dp, 0.dp))
+                    Icon(
+                        imageVector = it.sportIcon,
+                        contentDescription = it.sportName,
+                        modifier = Modifier
+                            .padding(0.dp, 0.dp, 6.dp, 0.dp)
+                            .size(16.dp)
+                            .testTag(TestTags.SportElement(it).ICON)
+                    )
+                }
+            }
+        }
+    }
+
+    @Composable
     fun EventLocationRow(
         location: Address,
         onLocationChange: (Address) -> Unit,
@@ -630,9 +699,11 @@ class CreateEventActivity : ComponentActivity() {
             ClickableText(
                 text = AnnotatedString(location.name),
                 onClick = {
-                    val future = addressAutocompleteHandler.launch().thenApply {
+                    addressAutocompleteHandler.launch(
+                    ).thenApply {
                         onLocationChange(it)
-                    } },
+                    }
+                },
                 style = MaterialTheme.typography.body1,
                 modifier = Modifier
                     .weight(.8f)

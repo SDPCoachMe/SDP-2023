@@ -15,21 +15,22 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
-import com.github.sdpcoachme.data.Address
 import com.github.sdpcoachme.data.GroupEvent
-import com.github.sdpcoachme.data.UserAddressSamples
+import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfoSamples
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.data.schedule.EventType
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.autocomplete.MockAddressAutocompleteHandler
+import com.github.sdpcoachme.profile.SelectSportsActivity
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.CANCEL
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.COLOR_BOX
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.END_DATE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.END_TIME
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.LOCATION
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.SAVE
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.SPORT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.START_DATE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.START_TIME
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Companion.SCAFFOLD
@@ -47,6 +48,7 @@ import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Compani
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.END_TIME_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.LOCATION_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.MAX_PARTICIPANTS_TEXT
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.SPORT_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_DATE_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_DATE_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_TIME_DIALOG_TITLE
@@ -66,13 +68,18 @@ class CreateEventActivityTest {
     private val coachEmail = UserInfoSamples.COACH_1.email
     private val defaultIntent = Intent(ApplicationProvider.getApplicationContext(), CreateEventActivity::class.java)
 
-    private val currentWeekMonday = EventOps.getStartMonday()
-    private val defaultEventName = "Test Event"
-    private val defaultEventStart = EventOps.getDefaultEventStart()
-    private val defaultEventEnd = EventOps.getDefaultEventEnd()
-    private val defaultEventDescription = "Test Description"
-
     private val eventDateFormatter = EventOps.getEventDateFormatter()
+    private val currentWeekMonday = EventOps.getStartMonday()
+
+    private val defaultEvent = Event(
+        name = "Test Event",
+        color = EventColors.DEFAULT.color.value.toString(),
+        start = EventOps.getDefaultEventStart().format(eventDateFormatter),
+        end = EventOps.getDefaultEventEnd().format(eventDateFormatter),
+        sport = Sports.SWIMMING,
+        address = MockAddressAutocompleteHandler.DEFAULT_ADDRESS,
+        description = "Test Description",
+    )
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
@@ -110,7 +117,8 @@ class CreateEventActivityTest {
             START_TIME,
             END_DATE,
             END_TIME,
-            // TODO: sport
+            SPORT_TEXT,
+            SPORT,
             LOCATION_TEXT,
             LOCATION,
             COLOR_TEXT,
@@ -147,7 +155,8 @@ class CreateEventActivityTest {
             END_TIME,
             MAX_PARTICIPANTS_TEXT,
             MAX_PARTICIPANTS,
-            // TODO: sport
+            SPORT_TEXT,
+            SPORT,
             LOCATION_TEXT,
             LOCATION,
             COLOR_TEXT,
@@ -264,6 +273,52 @@ class CreateEventActivityTest {
     }
 
     @Test
+    fun changeSportWorks() {
+        defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
+        ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(SPORT)
+                .assertExists()
+                .performClick() // launches SelectSportsActivity
+
+            val runTag = SelectSportsActivity.TestTags.ListRowTag(Sports.RUNNING).ROW
+            composeTestRule.onNodeWithTag(runTag, useUnmergedTree = true).performClick()   // unchoose running
+
+            val swimTag = SelectSportsActivity.TestTags.ListRowTag(Sports.SWIMMING).ROW
+            composeTestRule.onNodeWithTag(swimTag, useUnmergedTree = true).performClick()   // choose swimming
+
+            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.DONE, useUnmergedTree = true).performClick() // go back to CreateEventActivity
+
+            val swimIconTag = CreateEventActivity.TestTags.SportElement(Sports.SWIMMING).ICON
+            composeTestRule.onNodeWithTag(swimIconTag, useUnmergedTree = true).assertExists()
+            val runIconTag = CreateEventActivity.TestTags.SportElement(Sports.RUNNING).ICON
+            composeTestRule.onNodeWithTag(runIconTag, useUnmergedTree = true).assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun changeSportThenCancelDoesNothing() {
+        defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
+        ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
+            composeTestRule.onNodeWithTag(SPORT)
+                .assertExists()
+                .performClick() // launches SelectSportsActivity
+
+            val runTag = SelectSportsActivity.TestTags.ListRowTag(Sports.RUNNING).ROW
+            composeTestRule.onNodeWithTag(runTag, useUnmergedTree = true).performClick()   // unchoose running
+
+            val swimTag = SelectSportsActivity.TestTags.ListRowTag(Sports.SWIMMING).ROW
+            composeTestRule.onNodeWithTag(swimTag, useUnmergedTree = true).performClick()   // choose swimming
+
+            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.CANCEL, useUnmergedTree = true).performClick() // go back to CreateEventActivity
+
+            val swimIconTag = CreateEventActivity.TestTags.SportElement(Sports.SWIMMING).ICON
+            composeTestRule.onNodeWithTag(swimIconTag, useUnmergedTree = true).assertDoesNotExist()
+            val runIconTag = CreateEventActivity.TestTags.SportElement(Sports.RUNNING).ICON
+            composeTestRule.onNodeWithTag(runIconTag, useUnmergedTree = true).assertExists()
+        }
+    }
+
+    @Test
     fun changeLocationWorks() {
         defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
@@ -321,8 +376,8 @@ class CreateEventActivityTest {
         defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
 
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            fillAndCheckFocus(defaultEventName, EVENT_NAME)
-            fillAndCheckFocus(defaultEventDescription, DESCRIPTION)
+            fillAndCheckFocus(defaultEvent.name, EVENT_NAME)
+            fillAndCheckFocus(defaultEvent.description, DESCRIPTION)
 
             val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
             device.waitForIdle()
@@ -345,8 +400,8 @@ class CreateEventActivityTest {
             composeTestRule.onNodeWithTag(MAX_PARTICIPANTS)
                 .performTextInput("5")
 
-            fillAndCheckFocus(defaultEventName, EVENT_NAME)
-            fillAndCheckFocus(defaultEventDescription, DESCRIPTION)
+            fillAndCheckFocus(defaultEvent.name, EVENT_NAME)
+            fillAndCheckFocus(defaultEvent.description, DESCRIPTION)
 
             composeTestRule.onNodeWithTag(SAVE)
                 .assertExists()
@@ -391,20 +446,15 @@ class CreateEventActivityTest {
         defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
             composeTestRule.onNodeWithTag(EVENT_NAME)
-                .performTextInput(defaultEventName)
+                .performTextInput(defaultEvent.name)
             composeTestRule.onNodeWithTag(DESCRIPTION)
-                .performTextInput(defaultEventDescription)
+                .performTextInput(defaultEvent.description)
             composeTestRule.onNodeWithTag(SAVE)
                 .performClick()
 
-            val expectedEvent = Event(
-                name = defaultEventName,
-                color = EventColors.DEFAULT.color.value.toString(),
-                start = defaultEventStart.format(eventDateFormatter),
-                end = defaultEventEnd.format(eventDateFormatter),
-                //sport = ???,
-                address = Address(),   // adapt this when location choosing is added
-                description = defaultEventDescription
+            val expectedEvent = defaultEvent.copy(
+                sport = Sports.RUNNING,
+                address = MockAddressAutocompleteHandler.DEFAULT_ADDRESS,
             )
 
             store.getSchedule(currentWeekMonday).thenAccept {
@@ -425,12 +475,22 @@ class CreateEventActivityTest {
 
             // since tested with private event, we directly fill in the whole form
             composeTestRule.onNodeWithTag(EVENT_NAME)
-                .performTextInput(defaultEventName)
+                .performTextInput(defaultEvent.name)
             composeTestRule.onNodeWithTag(DESCRIPTION)
-                .performTextInput(defaultEventDescription)
+                .performTextInput(defaultEvent.description)
             openAndCancelDatePicker(START_DATE, START_DATE_DIALOG_TITLE)
             openAndCancelDatePicker(END_DATE, END_DATE_DIALOG_TITLE)
             openAndCancelTimePicker(START_TIME, START_TIME_DIALOG_TITLE)
+
+            // Select sport
+            composeTestRule.onNodeWithTag(SPORT).performClick() // launches SelectSportsActivity
+            val runTag = SelectSportsActivity.TestTags.ListRowTag(Sports.RUNNING).ROW
+            composeTestRule.onNodeWithTag(runTag, useUnmergedTree = true).performClick()   // unchoose running
+            val swimTag = SelectSportsActivity.TestTags.ListRowTag(Sports.SWIMMING).ROW
+            composeTestRule.onNodeWithTag(swimTag, useUnmergedTree = true).performClick()   // choose swimming
+            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.CANCEL, useUnmergedTree = true).performClick() // go back to CreateEventActivity
+
+            // fill in remaining fields
             composeTestRule.onNodeWithTag(LOCATION)
                 .performClick()
             openAndCloseColorPicker()
@@ -440,16 +500,7 @@ class CreateEventActivityTest {
             composeTestRule.onNodeWithTag(SAVE)
                 .performClick()
 
-            val expectedEvent = Event(
-                name = defaultEventName,
-                color = EventColors.DEFAULT.color.value.toString(),
-                start = defaultEventStart.format(eventDateFormatter),
-                end = defaultEventEnd.format(eventDateFormatter),
-                //sport = ???,
-                address = MockAddressAutocompleteHandler.DEFAULT_ADDRESS,
-                description = defaultEventDescription
-            )
-
+            val expectedEvent = defaultEvent
             val expectedGroupEvent = GroupEvent(
                 organiser = organiser,
                 maxParticipants = maxParticipants,
@@ -457,7 +508,7 @@ class CreateEventActivityTest {
                 event = expectedEvent
             )
 
-            val eventId = "@@event" + organiser + defaultEventStart.format(eventDateFormatter)
+            val eventId = "@@event" + organiser + defaultEvent.start.format(eventDateFormatter)
 
             store.getSchedule(currentWeekMonday).thenCompose {
                 val actualEvents = it.events
