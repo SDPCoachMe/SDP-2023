@@ -9,6 +9,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.github.sdpcoachme.auth.Authenticator
 import com.github.sdpcoachme.auth.MockAuthenticator
 import com.github.sdpcoachme.database.CachingStore
+import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
 import com.github.sdpcoachme.location.autocomplete.MockAddressAutocompleteHandler
