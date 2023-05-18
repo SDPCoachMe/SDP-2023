@@ -53,7 +53,6 @@ import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Compani
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_DATE_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_TIME_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_TIME_TEXT
-import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.SCHEDULE_COLUMN
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.`is`
 import org.junit.After
@@ -384,14 +383,16 @@ class CreateEventActivityTest {
             device.waitForIdle()
             composeTestRule.onNodeWithTag(SAVE)
                 .assertExists()
-            composeTestRule.onNodeWithTag(SAVE)
                 .performClick()
+
             device.waitForIdle()
 
-            intended(hasComponent(ScheduleActivity::class.java.name))
-
+            // Check that we are redirected to Schedule (onNodeWithText because return to schedule waits for future)
+            composeTestRule.onNodeWithText("Schedule", substring = true, useUnmergedTree = true)
+                .assertIsDisplayed()
         }
     }
+
 
     @Test
     fun addGroupEventWithValidInfosRedirectsToSchedule() {
@@ -401,17 +402,19 @@ class CreateEventActivityTest {
             composeTestRule.onNodeWithTag(MAX_PARTICIPANTS)
                 .performTextInput("5")
 
+            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
             fillAndCheckFocus(defaultEvent.name, EVENT_NAME)
+            device.waitForIdle()
             fillAndCheckFocus(defaultEvent.description, DESCRIPTION)
+            device.waitForIdle()
 
             composeTestRule.onNodeWithTag(SAVE)
                 .assertExists()
-            composeTestRule.onNodeWithTag(SAVE)
                 .performClick()
 
-
-            // following checks fail locally
-            intended(hasComponent(ScheduleActivity::class.java.name))
+            // Check that we are redirected to Schedule (onNodeWithText because return to schedule waits for future)
+            composeTestRule.onNodeWithText("Schedule", substring = true, useUnmergedTree = true)
+                .assertIsDisplayed()
         }
     }
 

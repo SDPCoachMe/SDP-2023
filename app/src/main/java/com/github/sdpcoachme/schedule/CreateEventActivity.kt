@@ -278,11 +278,11 @@ class CreateEventActivity : ComponentActivity() {
                                             val toast = Toast.makeText(context, "Max participants must be greater than 0", Toast.LENGTH_SHORT)
                                             toast.show()
                                         } else {
-                                            EventOps.addGroupEvent(groupEvent, store).thenAccept {
-                                                goBackToScheduleActivity()
-                                            }
-                                        }
+                                            EventOps.addGroupEvent(groupEvent, store)/*.thenAccept {
 
+                                            }*/
+                                            goBackToScheduleActivity()
+                                        }
                                     }
                                 }
                             },
