@@ -55,13 +55,14 @@ admin.initializeApp({
 export const sendPushNotification = functions.database
   .ref("/coachme/messages/{chatId}/messages/{messageId}")
   .onWrite(async (change, context) => {
+    functions.logger.log("sendPushNotification function started");
     const chatId = context.params.chatId;
     const message = change.after.val();
     const sender = message.sender;
     const readState = message.readState;
+    const readByUsers = message.readByUsers;
 
     const senderWithCommas = sender.replace(/\./g, ",");
-    const recipient = chatId.replace(senderWithCommas, "");
 
     // if recipient has already read the message or
     // received a push notification for it, no need for push notification
@@ -69,52 +70,103 @@ export const sendPushNotification = functions.database
       return;
     }
 
-    const [recipientTokenSnapshot,
+    const [dotChatIdSnapshot, // needed since the key chatId above has commas
+      participantsSnapshot,
       firstNameSenderSnapshot,
       lastNameSenderSnapshot]: DataSnapshot[] =
-        await fetchSnapshotValues(change, senderWithCommas, recipient);
+        await fetchSnapshotValues(change, chatId, senderWithCommas);
 
-    // if no token found for given recipient (i.e., .val() returns null)
+    // if no participants found for given chatId (i.e., .val() returns null)
     // return without sending push notification
-    if (!recipientTokenSnapshot.val()) {
+    if (!participantsSnapshot.val()) {
       return;
     }
 
+    const recipientsTokenSnapshot: DataSnapshot[] =
+      await fetchRecipientsTokensSnapshotValues(
+        change, participantsSnapshot.val(), sender, readByUsers);
+
     const payload = createPayload(
       firstNameSenderSnapshot.val(), lastNameSenderSnapshot.val(),
-      message.content, sender);
+      message.content, dotChatIdSnapshot.val());
 
-    // send push notification
-    await admin.messaging().sendToDevice(recipientTokenSnapshot.val(), payload);
-
+    for (const recipientTokenSnapshot of recipientsTokenSnapshot) {
+      // if recipient has not registered a token, no need for push notification
+      if (!recipientTokenSnapshot.val()) {
+        continue;
+      }
+      // send push notification
+      await admin.messaging()
+        .sendToDevice(recipientTokenSnapshot.val(), payload);
+    }
     // update readState to RECEIVED
     await change.after.ref.update({readState: "RECEIVED"});
   });
 
 
 /**
- * Helper function that fetches snapshot values for the recipient token,
+ * Helper function that fetches snapshot values for the recipient tokens
+ *
+ * @param {Change<DataSnapshot>} change - db event that triggered the function
+ * @param {string[]} participants - the context of the function
+ * @param {string} sender - the sender of the message
+ * @param {string[]} readByUsers - the users that have already read the message
+ * @return {Promise<DataSnapshot[]>} An object containing the tokens
+ *   snapshot for each recipient.
+ */
+async function fetchRecipientsTokensSnapshotValues(
+  change: Change<DataSnapshot>,
+  participants: string[],
+  sender: string,
+  readByUsers: string[],
+): Promise<DataSnapshot[]> {
+  const recipientsTokensSnapshotPromises: Promise<DataSnapshot>[] = [];
+  for (const participant of participants) {
+    if (participant == sender) { // sender doesn't need push notification
+      continue;
+    }
+    const recipientWithCommas = participant.replace(/\./g, ",");
+    if (readByUsers != null && readByUsers.includes(recipientWithCommas)) {
+      continue; // If already read by this user, no push notification needed
+    }
+    recipientsTokensSnapshotPromises.push(
+      change.after.ref.root
+        .child("/coachme/fcmTokens/" + recipientWithCommas)
+        .once("value"),
+    );
+  }
+  return Promise.all(recipientsTokensSnapshotPromises);
+}
+
+
+/**
+ * Helper function that fetches snapshot values for the chat participants,
  * sender's first name, and sender's last name from the database in parallel.
  *
  * @param {Change<DataSnapshot>} change The database change object.
+ * @param {string} chatId The ID of the chat.
  * @param {string} senderWithCommas The sender ID with dots replaced by commas.
  * @param {string} recipientWithCommas The ID of the recipient with
  *   dots replaced by commas.
  * @return {Promise<DataSnapshot[]>} An object containing the
- *   recipient token snapshot,
- * sender's first name snapshot, and sender's last name snapshot.
+ *   participants snapshot, sender's first name snapshot,
+ *   and sender's last name snapshot.
  */
 async function fetchSnapshotValues(
   change: Change<DataSnapshot>,
+  chatId: string,
   senderWithCommas: string,
-  recipientWithCommas: string,
 ): Promise<DataSnapshot[]> {
-  const [recipientTokenSnapshot,
+  const [dotChatIdSnapshot,
+    participantsSnapshot,
     firstNameSenderSnapshot,
     lastNameSenderSnapshot] =
       await Promise.all([
         change.after.ref.root
-          .child("/coachme/fcmTokens/" + recipientWithCommas)
+          .child("/coachme/messages/" + chatId + "/id")
+          .once("value"),
+        change.after.ref.root
+          .child("/coachme/messages/" + chatId + "/participants")
           .once("value"),
         change.after.ref.root
           .child("/coachme/accounts/" + senderWithCommas + "/firstName")
@@ -124,7 +176,8 @@ async function fetchSnapshotValues(
           .once("value"),
       ]);
 
-  return [recipientTokenSnapshot,
+  return [dotChatIdSnapshot,
+    participantsSnapshot,
     firstNameSenderSnapshot,
     lastNameSenderSnapshot];
 }
@@ -136,14 +189,14 @@ async function fetchSnapshotValues(
  * @param {string} firstNameSender - The first name of the sender.
  * @param {string} lastNameSender - The last name of the sender.
  * @param {string} bodyContent - The message content.
- * @param {string} sender - The ID of the sender.
+ * @param {string} chatId - The ID of the chat.
  * @return {admin.messaging.MessagingPayload} - The payload object.
  */
 function createPayload(
   firstNameSender: string,
   lastNameSender: string,
   bodyContent: string,
-  sender: string): admin.messaging.MessagingPayload {
+  chatId: string): admin.messaging.MessagingPayload {
   return {
     notification: {
       title: `${firstNameSender} ${lastNameSender}`,
@@ -155,7 +208,7 @@ function createPayload(
       // needed to tell the app what type of notification this is
       // (to enable different types of push notifications in the future)
       notificationType: "messaging",
-      sender: sender,
+      chatId: chatId,
     },
   };
 }

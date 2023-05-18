@@ -2,6 +2,7 @@ package com.github.sdpcoachme.messaging
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -43,11 +44,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Message
@@ -93,6 +98,7 @@ class ChatActivity : ComponentActivity() {
             val MESSAGES_BOX = "${tag}Box"
             val MESSAGES_COLUMN = "${tag}Column"
         }
+
         class ChatMessageRow(tag: String) {
             val ROW = "${tag}Row"
             val LABEL = "${tag}Label"
@@ -108,6 +114,7 @@ class ChatActivity : ComponentActivity() {
                 const val BACK = "backButton"
             }
         }
+
         companion object {
             val CONTACT_FIELD = ContactFieldRow("contactField")
             val CHAT_FIELD = ChatFieldRow("chatField")
@@ -117,7 +124,7 @@ class ChatActivity : ComponentActivity() {
     }
 
     var stateLoading = CompletableFuture<Void>()
-    private lateinit var store : CachingStore
+    private lateinit var store: CachingStore
     private lateinit var emailFuture: CompletableFuture<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -125,44 +132,48 @@ class ChatActivity : ComponentActivity() {
 
         store = (application as CoachMeApplication).store
         emailFuture = store.getCurrentEmail()
-        val toUserEmail = intent.getStringExtra("toUserEmail")
+        val chatId = intent.getStringExtra("chatId")
+        val isGroupChat: Boolean
+        var contact = ""
 
-        if (toUserEmail == null) {
+        if (chatId == null) {
             val errorMsg =
-                "The Chat Interface did not receive both needed users.\nPlease return to the login page and try again."
+                "The Chat Interface did not receive the needed information for the chat.\nPlease return to the login page and try again."
             ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
+            stateLoading.complete(null)
         } else {
+            isGroupChat = chatId.startsWith("@@event")
+
             emailFuture.thenCompose { email ->
                 store.getUser(email).thenAccept() { user ->
+                    contact =
+                        if (chatId.startsWith("@@event")) chatId
+                        else chatId.replace(email, "")
+
                     // Add the other user to the current user's chat contacts
-                    if (!user.chatContacts.contains(toUserEmail)) {
-                        val newUser = user.copy(chatContacts = user.chatContacts + toUserEmail)
+                    if (!user.chatContacts.contains(contact)) {
+                        val newUser = user.copy(chatContacts = user.chatContacts + contact)
                         store.updateUser(newUser)
                     }
                 }
             }
 
-            val chatIdFuture = emailFuture.thenApply { currentUserEmail ->
-                if (currentUserEmail < toUserEmail) "$currentUserEmail$toUserEmail" else "$toUserEmail$currentUserEmail"
-            }
-
-            chatIdFuture.thenAccept {chatId ->
-                // needed to remove the chat listener from the db so that
-                // messages are only marked as read when ins the chat
-                onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-                    override fun handleOnBackPressed() {
-                        store.removeChatListener(chatId)
-                        finish()
-                    }
-                })
-            }
+            // needed to remove the chat listener from the db so that
+            // messages are only marked as read when in the chat
+            onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    store.removeChatListener(chatId)
+                    finish()
+                }
+            })
 
             setContent {
 
                 ChatView(
-                    chatIdFuture,
-                    toUserEmail,
-                    stateLoading
+                    chatId,
+                    contact,
+                    stateLoading,
+                    isGroupChat
                 )
             }
         }
@@ -174,19 +185,23 @@ class ChatActivity : ComponentActivity() {
      */
     @Composable
     fun ChatView(
-        chatIdFuture: CompletableFuture<String>,
+        chatId: String,
         toUserEmail: String,
-        stateLoading: CompletableFuture<Void>
+        stateLoading: CompletableFuture<Void>,
+        isGroupChat: Boolean
     ) {
         var chat by remember { mutableStateOf(Chat()) }
         var toUser by remember { mutableStateOf(UserInfo()) }
         var currentUserEmail by remember { mutableStateOf("") }
-        var chatId by remember { mutableStateOf("") }
+        var groupEvent by remember { mutableStateOf(GroupEvent()) }
 
         LaunchedEffect(true) {
+            if (isGroupChat) {
+                groupEvent = store.getGroupEvent(chatId).await()
+            } else {
+                toUser = store.getUser(toUserEmail).await()
+            }
             currentUserEmail = emailFuture.await()
-            chatId = chatIdFuture.await()
-            toUser = store.getUser(toUserEmail).await()
             chat = store.getChat(chatId).await()
             store.addChatListener(chatId) { newChat ->
                 chat = newChat
@@ -200,11 +215,12 @@ class ChatActivity : ComponentActivity() {
             stateLoading.complete(null)
         }
 
-        Column(modifier = Modifier
-            .fillMaxHeight()
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
         ) {
 
-            ContactField(toUser, chatId)
+            ContactField(toUser, chatId, isGroupChat, groupEvent)
 
             ChatBoxContainer(
                 chat = chat,
@@ -217,11 +233,12 @@ class ChatActivity : ComponentActivity() {
 
             ChatField(
                 currentUserEmail = currentUserEmail,
-                chatId = chatId,
+                chat = chat,
                 onSend = {
                     store.getChat(chatId).thenAccept { chat = it }
                 },
-                toUser = toUser
+                isGroupChat,
+                groupEvent,
             )
         }
     }
@@ -230,7 +247,12 @@ class ChatActivity : ComponentActivity() {
      * Composable responsible for displaying the Contact Field
      */
     @Composable
-    fun ContactField(toUser: UserInfo, chatId: String) {
+    fun ContactField(
+        toUser: UserInfo,
+        chatId: String,
+        isGroupChat: Boolean,
+        groupEvent: GroupEvent
+    ) {
         val context = LocalContext.current
         Row(
             modifier = Modifier
@@ -238,15 +260,24 @@ class ChatActivity : ComponentActivity() {
                 .fillMaxWidth()
                 .height(56.dp) // matches the built-in app bar height
                 .background(color = Purple500)
-                .clickable {
+                .clickable { // go to the profile of the other user or show the event
                     store.removeChatListener(chatId)
-                    // go to the profile of the other user
-                    val coachProfileIntent = Intent(context, ProfileActivity::class.java)
-                    coachProfileIntent.putExtra("email", toUser.email)
-                    // once users can also message other users and not just coaches,
-                    // this should be adapted to also work for users
-                    coachProfileIntent.putExtra("isViewingCoach", true)
-                    context.startActivity(coachProfileIntent)
+
+                    // if it is a group chat, chatId is the event id
+                    if (isGroupChat) {
+                        // TODO: show the event
+                        Toast
+                            .makeText(context, "Show the event: $chatId", Toast.LENGTH_LONG)
+                            .show()
+                    } else {
+                        // go to the profile of the other user
+                        val coachProfileIntent = Intent(context, ProfileActivity::class.java)
+                        coachProfileIntent.putExtra("email", toUser.email)
+                        // once users can also message other users and not just coaches,
+                        // this should be adapted to also work for users
+                        coachProfileIntent.putExtra("isViewingCoach", true)
+                        context.startActivity(coachProfileIntent)
+                    }
                 },
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.Center
@@ -274,7 +305,7 @@ class ChatActivity : ComponentActivity() {
             }
 
             Text(
-                text = toUser.firstName + " " + toUser.lastName,
+                text = if (isGroupChat) groupEvent.event.name else toUser.firstName + " " + toUser.lastName,
                 fontSize = 20.sp,
                 modifier = Modifier
                     .testTag(CONTACT_FIELD.LABEL)
@@ -321,7 +352,8 @@ class ChatActivity : ComponentActivity() {
                 // Chat Messages
                 ChatMessages(
                     messages = chat.messages,
-                    currentUserEmail = currentUserEmail
+                    currentUserEmail = currentUserEmail,
+                    nbParticipants = chat.participants.size
                 )
             }
 
@@ -349,7 +381,8 @@ class ChatActivity : ComponentActivity() {
     @Composable
     fun ChatMessages(
         messages: List<Message>,
-        currentUserEmail: String
+        currentUserEmail: String,
+        nbParticipants: Int
     ) {
         val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy")
 
@@ -358,9 +391,10 @@ class ChatActivity : ComponentActivity() {
                 .testTag(CHAT_BOX.MESSAGES_BOX)
                 .fillMaxSize()
         ) {
-            Column(modifier = Modifier
-                .padding(20.dp)
-                .testTag(CHAT_BOX.MESSAGES_COLUMN)
+            Column(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .testTag(CHAT_BOX.MESSAGES_COLUMN)
             ) {
                 // Chat Messages
                 var lastDate: LocalDateTime = LocalDateTime.MIN
@@ -389,7 +423,8 @@ class ChatActivity : ComponentActivity() {
                     MessageRow(
                         message = message,
                         currentUserEmail = currentUserEmail,
-                        isFromCurrentUser = isFromCurrentUser
+                        isFromCurrentUser = isFromCurrentUser,
+                        nbParticipants = nbParticipants
                     )
                 }
             }
@@ -400,9 +435,12 @@ class ChatActivity : ComponentActivity() {
      * Displays a single message in the chat
      */
     @Composable
-    fun MessageRow(message: Message,
-                   currentUserEmail: String,
-                   isFromCurrentUser: Boolean) {
+    fun MessageRow(
+        message: Message,
+        currentUserEmail: String,
+        isFromCurrentUser: Boolean,
+        nbParticipants: Int
+    ) {
         val timestampFormatter = DateTimeFormatter.ofPattern("HH:mm")
         val timeAndUnreadMarkColor = Color(0xFF6C6C6D)
         val readMarkColor = Color(0xFF0027FF)
@@ -418,9 +456,16 @@ class ChatActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = if (isFromCurrentUser) Alignment.BottomEnd else Alignment.BottomStart
             ) {
-                // message content
+                // message content (if the sender is not clear from the context
+                // (i.e., if it is a group chat with > 2 participants), display the sender's name)
+                val msgContent = buildAnnotatedString {
+                    withStyle(
+                        style = SpanStyle(fontWeight = FontWeight.Bold)
+                    ) { if (!isFromCurrentUser && nbParticipants > 2) append(message.senderName + "\n") }
+                    append(message.content.trim() + "\n")
+                }
                 Text(
-                    text = message.content.trim() + "\n",
+                    text = msgContent,
                     modifier = Modifier
                         .testTag(CHAT_MESSAGE.LABEL)
                         .fillMaxWidth(0.7f)
@@ -439,7 +484,8 @@ class ChatActivity : ComponentActivity() {
 
                 // timestamp for message
                 Text(
-                    text = LocalDateTime.parse(message.timestamp).toLocalTime().format(timestampFormatter),
+                    text = LocalDateTime.parse(message.timestamp).toLocalTime()
+                        .format(timestampFormatter),
                     color = timeAndUnreadMarkColor,
                     modifier = Modifier
                         .testTag(CHAT_MESSAGE.TIMESTAMP)
@@ -461,11 +507,13 @@ class ChatActivity : ComponentActivity() {
                             contentDescr = "message sent icon"
                             color = timeAndUnreadMarkColor
                         }
+
                         ReadState.RECEIVED -> {
                             imgVector = Icons.Default.DoneAll
                             contentDescr = "message received icon"
                             color = timeAndUnreadMarkColor
                         }
+
                         ReadState.READ -> {
                             imgVector = Icons.Default.DoneAll
                             contentDescr = "message read icon"
@@ -493,10 +541,13 @@ class ChatActivity : ComponentActivity() {
      * Chat field where user can type and send messages
      */
     @Composable
-    fun ChatField(currentUserEmail: String,
-                  chatId: String,
-                  onSend: () -> Unit = {},
-                  toUser: UserInfo) {
+    fun ChatField(
+        currentUserEmail: String,
+        chat: Chat,
+        onSend: () -> Unit,
+        isGroupChat: Boolean,
+        groupEvent: GroupEvent,
+    ) {
         var message by remember { mutableStateOf("") }
 
         Row(
@@ -530,24 +581,36 @@ class ChatActivity : ComponentActivity() {
             if (message.trim().isNotEmpty()) {
                 IconButton(
                     onClick = {
-                        store.sendMessage(
-                            chatId,
-                            Message(currentUserEmail, message.trim(), LocalDateTime.now().toString(), ReadState.SENT)
-                        ).thenAccept {
-                            onSend()
+                        store.getUser(currentUserEmail).thenCompose {
+                            store.sendMessage(
+                                chat.id,
+                                Message(
+                                    currentUserEmail,
+                                    "${it.firstName} ${it.lastName}",
+                                    message.trim(),
+                                    LocalDateTime.now().toString(),
+                                    ReadState.SENT
+                                )
+                            ).thenAccept {
+                                onSend()
+                            }
                         }
                         message = ""
-                        // place this chat at the top of the users chat list whenever they send a message
-                        emailFuture
-                            .thenCompose { store.getUser(it) }
-                            .thenCompose { store.updateUser(it.copy(chatContacts = listOf(toUser.email) + it.chatContacts.filter { e -> e != toUser.email })) }
-                        //same for the toUser
-                        store.getUser(toUser.email)
-                            .thenCompose { toUser ->
-                                emailFuture.thenCompose {currUserEmail ->
-                                    store.updateUser(toUser.copy(chatContacts = listOf(currUserEmail) + toUser.chatContacts.filter { e -> e != currUserEmail }))
-                                }
+
+                        // Place this chat at the top of the users' chat list whenever a message is sent
+                        for (participantMail in chat.participants) {
+                            store.getUser(participantMail).thenCompose {
+                                val contact =
+                                    if (isGroupChat) groupEvent.groupEventId else chat.id.replace(
+                                        participantMail,
+                                        ""
+                                    )
+                                store.updateUser(
+                                    it.copy(
+                                        chatContacts = listOf(contact) + it.chatContacts.filter { e -> e != contact })
+                                )
                             }
+                        }
                     },
                     modifier = Modifier
                         .padding(start = 8.dp)

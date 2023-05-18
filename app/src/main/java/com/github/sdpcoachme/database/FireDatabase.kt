@@ -3,6 +3,7 @@ package com.github.sdpcoachme.database
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.Chat.Companion.markOtherUsersMessagesAsRead
+import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.messaging.Message.*
 import com.github.sdpcoachme.data.schedule.Event
@@ -28,7 +29,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private val fcmTokens: DatabaseReference = rootDatabase.child("coachme").child("fcmTokens")
     private val schedule: DatabaseReference = rootDatabase.child("coachme").child("schedule")
     private val groupEvents: DatabaseReference = schedule.child("groupEvents")
-    var valueEventListener: ValueEventListener? = null
+    private var valueEventListener: ValueEventListener? = null
 
     override fun updateUser(user: UserInfo): CompletableFuture<Void> {
         val userID = user.email.replace('.', ',')
@@ -104,26 +105,76 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             .exceptionally { GroupEvent() }
     }
 
-    override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
+    override fun getContactRowInfos(email: String): CompletableFuture<List<ContactRowInfo>> {
         return getUser(email).thenApply {
-            it.chatContacts
-        }.thenCompose { list ->
-            val mappedF = list.map { email ->
-                getUser(email)
+            it.chatContacts.filterNotNull()
+
+        }.thenCompose { contactList ->
+            val mappedF = contactList.map { contactId ->
+                val isGroupChat = contactId.startsWith("@@event")
+                val chatId = if (isGroupChat) contactId
+                else { // since, here, the contactId is the email of the recipient
+                    Chat.chatIdForPersonalChats(email, contactId)
+                    if (contactId < email) contactId + email
+                    else email + contactId
+                }
+
+                // Fetch the chat and create the corresponding ContactRowInfo
+                getContactRowInfoFromChat(chatId, contactId)
             }
             // done to make sure that all the futures are completed before calling join
             val allOf = CompletableFuture.allOf(*mappedF.toTypedArray())
+                .exceptionally { println("error in all of") ; null }
 
             allOf.thenApply {
                 mappedF.map { it.join() }
             }
-        }
+        }.exceptionally { println("error in get contact row info") ; println(it.cause); null}
     }
+
+    private fun getContactRowInfoFromChat(
+        chatId: String,
+        contactId: String
+    ): CompletableFuture<ContactRowInfo> =
+        getChat(chatId).thenCompose { chat ->
+            val lastMessage =
+                if (chat.messages.isEmpty()) Message()
+                else chat.messages.last()
+
+            if (contactId.startsWith("@@event")) {
+                getGroupEvent(contactId)
+                    .thenApply { groupEvent ->
+                        ContactRowInfo(
+                            chatId = chatId,
+                            chatTitle = groupEvent.event.name,
+                            lastMessage = lastMessage,
+                            isGroupChat = true
+                        )
+                    }
+            } else {
+                getUser(contactId).thenApply {
+                    ContactRowInfo(
+                        chatId = chatId,
+                        chatTitle = "${it.firstName} ${it.lastName}",
+                        lastMessage = lastMessage,
+                        isGroupChat = false
+                    )
+                }
+            }
+        }
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {
         val id = chatId.replace('.', ',')
         return getChild(chats, id).thenApply { it.getValue(Chat::class.java)!! }
             .exceptionally { Chat() }
+    }
+
+    override fun updateChatParticipants(chatId: String, participants: List<String>): CompletableFuture<Void> {
+        val id = chatId.replace('.', ',')
+        return getChat(id).thenCompose { chat ->
+            val updatedChat = chat.copy(id = chatId, participants = participants)
+            setChild(chats, id, updatedChat)
+        }
     }
 
     override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
@@ -140,18 +191,22 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
             val readStates = chat.messages.filter { it.sender != email }.map { it.readState }
 
             if (!readStates.all { it == ReadState.READ }) { // check if update is needed
-                setChild(chats, id, markOtherUsersMessagesAsRead(
-                        chat,
-                        email
-                    )
+                val newChat = markOtherUsersMessagesAsRead(
+                    chat,
+                    email
                 )
+                setChild(chats, id, newChat
+                ).exceptionally { println("exception... in set child") ; null}
             } else {
                 CompletableFuture.completedFuture(null)
             }
-        }
+        }.exceptionally { println("exception... in get chat of mark messages as read") ; println(it.cause); null}
     }
 
     override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
+        // make sure we don't have 2 listeners for the same chat
+        removeChatListener(chatId)
+
         val id = chatId.replace('.', ',')
         val chatRef = chats.child(id)
         val valueEventListener = object : ValueEventListener {
