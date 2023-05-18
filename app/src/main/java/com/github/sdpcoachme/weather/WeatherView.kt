@@ -12,15 +12,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.github.sdpcoachme.R.drawable.weather_cloud_done
+import com.github.sdpcoachme.R.drawable.weather_cloud_off
 import java.time.LocalDate
 
 @Composable
 fun WeatherView(weatherForecast: MutableState<WeatherForecast>, day: LocalDate) {
 
-    val localDate = LocalDate.now()
+    val now = LocalDate.now()
     var dayId = -1
+
+    var weatherText = Pair("?", "?").toWeatherText()
+    var weatherCode = weather_cloud_off
+
     for (i in 0..13) {
-        if (day == localDate.plusDays(i.toLong())) {
+        if (day == now.plusDays(i.toLong())) {
             dayId = i
         }
     }
@@ -28,23 +34,36 @@ fun WeatherView(weatherForecast: MutableState<WeatherForecast>, day: LocalDate) 
     if (dayId != -1 && weatherForecast.value.forecast.isNotEmpty() &&
         weatherForecast.value.forecast.size > dayId) {
 
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = CenterHorizontally
-        ) {
-            Image(
-                painter = painterResource(id = weatherForecast.value.forecast[dayId].weatherCode),
-                contentDescription = "Weather icon",
-                modifier = Modifier.size(35.dp)
-            )
-            Text(text = weatherForecast.value.forecast[dayId].maxTemperature.toString() + " | " +
-                    weatherForecast.value.forecast[dayId].minTemperature.toString(),
-                fontSize = 10f.sp)
-        }
+        weatherCode = weatherForecast.value.forecast[dayId].weatherCode
+        weatherText = Pair(
+            weatherForecast.value.forecast[dayId].maxTemperature.toString(),
+            weatherForecast.value.forecast[dayId].minTemperature.toString()
+        ).toWeatherText()
 
-    } else {
-        Text(text = "-")
-        // TODO handle here
+    } else if (day.isBefore(now)) {
+        weatherCode = weather_cloud_done
+        weatherText = Pair("-", "-").toWeatherText()
     }
 
+    WeatherColumn(weatherText, weatherCode)
 }
+
+@Composable
+private fun WeatherColumn(weatherText: String, weatherCode: Int) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = CenterHorizontally
+    ) {
+        Image(
+            painter = painterResource(id = weatherCode),
+            contentDescription = "Weather icon",
+            modifier = Modifier.size(35.dp)
+        )
+        Text(text = weatherText, fontSize = 10f.sp)
+    }
+}
+
+private fun Pair<String, String>.toWeatherText(): String {
+    return "$first | $second"
+}
+
