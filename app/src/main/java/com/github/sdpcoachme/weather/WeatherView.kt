@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,13 +58,17 @@ private fun WeatherColumn(weatherText: String, weatherCode: Int) {
         Image(
             painter = painterResource(id = weatherCode),
             contentDescription = "Weather icon",
-            modifier = Modifier.size(35.dp)
+            modifier = Modifier.size(35.dp).testTag(weatherCode.toString())
         )
-        Text(text = weatherText, fontSize = 10f.sp)
+        Text(
+            text = weatherText,
+            fontSize = 10f.sp,
+            modifier = Modifier.testTag(weatherText)
+        )
     }
 }
 
-private fun Pair<String, String>.toWeatherText(): String {
+fun Pair<String, String>.toWeatherText(): String {
     return "$first | $second"
 }
 
