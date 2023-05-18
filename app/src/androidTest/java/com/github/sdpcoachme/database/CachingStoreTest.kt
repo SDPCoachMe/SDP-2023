@@ -25,13 +25,11 @@ import com.github.sdpcoachme.data.messaging.Message.ReadState
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.schedule.EventOps
-import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertFalse
-import junit.framework.TestCase.assertTrue
+import com.google.android.gms.maps.model.LatLng
+import junit.framework.TestCase.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.hamcrest.CoreMatchers.hasItem
-import org.hamcrest.CoreMatchers.hasItems
-import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.CoreMatchers.*
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -1121,9 +1119,24 @@ class CachingStoreTest {
         assertTrue(noError)
     }
 
+    @Test
+    fun getWeatherForecastRetrievesTwoWeeksForecast() {
 
-
-
+        val cachingStore = CachingStore(MockDatabase(),
+            ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
+            ApplicationProvider.getApplicationContext()
+        )
+        val target = LatLng(LAUSANNE.latitude, LAUSANNE.longitude)
+        cachingStore.getWeatherForecast(target).thenApply {
+            runBlocking {
+                while (it.value.forecast.isEmpty()) {
+                    delay(100)
+                }
+            }
+            assertThat(it.value.forecast, not(`is`(emptyList())))
+            assertThat(it.value.forecast.size, `is`(14))
+        }
+    }
 
     private val exampleEmail = "example@email.com"
 

@@ -534,7 +534,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     fun getWeatherForecast(target: LatLng): CompletableFuture<MutableState<WeatherForecast>> {
 
-        if (isOnline()) {
+        return if (isOnline()) {
             // The WeatherPresenter will launch a weather request and return a future that if
             // completed normally will update the cache.
             val weatherPresenter = WeatherPresenter().bind(OpenMeteoRepository())
@@ -543,14 +543,9 @@ class CachingStore(private val wrappedDatabase: Database,
                 storeLocalData()
             }
             // we return an observable weather forecast state for the view here
-            return completedFuture(weatherPresenter.observableWeatherForecast)
+            completedFuture(weatherPresenter.observableWeatherForecast)
         } else {
-            if (weatherForecast.forecast.isEmpty()) {
-                // TODO return a List of weather with no connection icons
-                return completedFuture(mutableStateOf(weatherForecast))
-            } else {
-                return completedFuture(mutableStateOf(weatherForecast))
-            }
+            completedFuture(mutableStateOf(weatherForecast))
         }
     }
 
@@ -609,8 +604,6 @@ class CachingStore(private val wrappedDatabase: Database,
         currentEmail = email
         return completedFuture(null)
     }
-
-
 
     /**
      * Check if a user is cached
