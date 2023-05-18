@@ -270,27 +270,28 @@ class ScheduleActivityTest {
         val previousWeekEvent = EventOps.getPreviousWeekEvent()
 
         store.addEvent(previousWeekEvent, currentMonday).thenRun {
-            store.setCurrentEmail(coachEmail)
-            ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
-                composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
+            store.setCurrentEmail(coachEmail).thenApply {
+                ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+                    composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
 
-                val schedule = store.getSchedule(currentMonday)
-                val nonnull = schedule.thenAccept {
-                    val expectedShownEvents = listOf(
-                        ShownEvent(
-                            name = previousWeekEvent.name,
-                            color = previousWeekEvent.color,
-                            start = previousWeekEvent.start,
-                            startText = previousWeekEvent.start,
-                            end = previousWeekEvent.end,
-                            endText = previousWeekEvent.end,
-                            description = previousWeekEvent.description,
-                        ),
-                    )
-                    val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)
-                    assertTrue(expectedShownEvents == actualShownEvents)
-                }.exceptionally { null }.get(5, SECONDS)
-                assertNotNull(nonnull)
+                    val schedule = store.getSchedule(currentMonday)
+                    val nonnull = schedule.thenAccept {
+                        val expectedShownEvents = listOf(
+                            ShownEvent(
+                                name = previousWeekEvent.name,
+                                color = previousWeekEvent.color,
+                                start = previousWeekEvent.start,
+                                startText = previousWeekEvent.start,
+                                end = previousWeekEvent.end,
+                                endText = previousWeekEvent.end,
+                                description = previousWeekEvent.description,
+                            ),
+                        )
+                        val actualShownEvents = EventOps.eventsToWrappedEvents(it.events)
+                        assertTrue(expectedShownEvents == actualShownEvents)
+                    }.exceptionally { null }.get(5, SECONDS)
+                    assertNotNull(nonnull)
+                }
             }
         }
     }

@@ -168,14 +168,12 @@ class CreateEventActivity : ComponentActivity() {
     }
 
     private lateinit var store: CachingStore
-    private lateinit var email: String
     private lateinit var addressAutocompleteHandler: AddressAutocompleteHandler
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         store = (application as CoachMeApplication).store
-        email = store.getCurrentEmail().get(1000, TimeUnit.MILLISECONDS)
 
         // Set up handler for calls to location autocomplete
         addressAutocompleteHandler = (application as CoachMeApplication).addressAutocompleteHandler(this, this)
@@ -278,9 +276,7 @@ class CreateEventActivity : ComponentActivity() {
                                             val toast = Toast.makeText(context, "Max participants must be greater than 0", Toast.LENGTH_SHORT)
                                             toast.show()
                                         } else {
-                                            EventOps.addGroupEvent(groupEvent, store)/*.thenAccept {
-
-                                            }*/
+                                            EventOps.addGroupEvent(groupEvent, store)
                                             goBackToScheduleActivity()
                                         }
                                     }
@@ -612,14 +608,18 @@ class CreateEventActivity : ComponentActivity() {
             )
             val focusManager = LocalFocusManager.current
             TextField(
-                value = maxParticipants.toString(),
+                value = if (maxParticipants != 0) {
+                    maxParticipants.toString()
+                } else {
+                    ""
+                },
                 onValueChange = {
-                    onMaxParticipantsChange(it.toInt())
+                    onMaxParticipantsChange(it.toIntOrNull() ?: 0)
                 },
                 keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next, keyboardType = KeyboardType.Number),
-                /*keyboardActions = KeyboardActions(
+                keyboardActions = KeyboardActions(
                     onNext = { focusManager.clearFocus() }
-                ),*/
+                ),
                 modifier = Modifier
                     .weight(.8f)
                     .testTag(TestTags.TextFields.MAX_PARTICIPANTS)
