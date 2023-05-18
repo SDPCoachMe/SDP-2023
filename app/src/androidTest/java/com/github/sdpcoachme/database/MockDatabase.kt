@@ -2,7 +2,9 @@ package com.github.sdpcoachme.database
 
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.data.UserInfoSamples
 import com.github.sdpcoachme.data.messaging.Chat
+import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.GroupEvent
@@ -22,8 +24,8 @@ open class MockDatabase: Database {
     private var chat = Chat(participants = listOf(DEFAULT_EMAIL, TO_EMAIL))
     private var chatId = ""
     private var onChange: (Chat) -> Unit = {}
-    private var numberOfAddChatListenerCalls = 0
-    private var numberOfRemovedChatListenerCalls = 0
+
+    private var groupChat = Chat()
 
     // TODO: type any is not ideal, needs refactoring
     private var accounts = hashMapOf<String, Any>(DEFAULT_EMAIL to defaultUserInfo)
@@ -44,17 +46,8 @@ open class MockDatabase: Database {
             emptyList()
         )
 
-        private const val TO_EMAIL = "to@email.com"
-        private val toUser = UserInfo(
-            "Jane",
-            "Doe",
-            TO_EMAIL,
-            "0987654321",
-            LAUSANNE,
-            false,
-            emptyList(),
-            emptyList()
-        )
+        private val TO_EMAIL = "to@email.com"
+        private val toUser = UserInfoSamples.COACH_1
 
         // Those functions are going to be used in the CacheStore tests
         fun getDefaultEmail(): String {
@@ -78,8 +71,8 @@ open class MockDatabase: Database {
         chat = Chat(participants = listOf(DEFAULT_EMAIL, TO_EMAIL))
         chatId = ""
         onChange = {}
-        numberOfRemovedChatListenerCalls = 0
-        numberOfAddChatListenerCalls = 0
+
+        groupChat = Chat()
     }
 
     fun restoreDefaultAccountsSetup() {
@@ -195,12 +188,22 @@ open class MockDatabase: Database {
     }
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {
-            return CompletableFuture.completedFuture(chat)
+        if (chatId.startsWith("@@event")) {
+            return CompletableFuture.completedFuture(groupChat)
+        }
+        return CompletableFuture.completedFuture(chat)
     }
 
     override fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
-        chat = chat.copy(id = chatId, messages = chat.messages + message)
-        this.onChange(chat)
+        if (chatId.startsWith("@@event")) {
+            groupChat = groupChat.copy(id = chatId, messages = groupChat.messages + message)
+            this.onChange(groupChat)
+        } else {
+            chat = chat.copy(id = chatId, messages = chat.messages + message)
+            this.onChange(chat)
+        }
+
+
         return CompletableFuture.completedFuture(null)
     }
 
@@ -209,39 +212,53 @@ open class MockDatabase: Database {
             val msg = Message(sender = chat.participants[0], content = "test onChange method", timestamp = LocalDateTime.now().toString())
             chat = chat.copy(id = this.chatId , messages = chat.messages + msg)
         } else {
-            this.chatId = chatId
-            chat = chat.copy(id = chatId)
-            this.onChange = onChange
-            numberOfAddChatListenerCalls++
+            if (chatId.startsWith("@@event")) {
+                groupChat = groupChat.copy(id = chatId)
+                this.onChange(groupChat)
+                return
+            } else {
+                this.chatId = chatId
+                chat = chat.copy(id = chatId)
+                this.onChange = onChange
+            }
         }
         this.onChange(chat)
     }
 
-    override fun getChatContacts(email: String): CompletableFuture<List<UserInfo>> {
-        return CompletableFuture.completedFuture(listOf(toUser))
+    override fun getContactRowInfos(email: String): CompletableFuture<List<ContactRowInfo>> {
+        val id = if (email < toUser.email) email+toUser.email else toUser.email+email
+        return CompletableFuture.completedFuture(listOf(
+            ContactRowInfo(id, toUser.firstName + " " + toUser.lastName, if (chat.messages.isEmpty()) Message() else chat.messages.last()),
+            ContactRowInfo(groupChat.id, "Group Chat", if (groupChat.messages.isEmpty()) Message() else groupChat.messages.last(), true)
+        ))
     }
 
+    override fun updateChatParticipants(
+        chatId: String,
+        participants: List<String>
+    ): CompletableFuture<Void> {
+        if (chatId.startsWith("@@event")) { // only group chats can be updated
+            groupChat = groupChat.copy(id = chatId, participants = participants)
+        }
+        return CompletableFuture.completedFuture(null)
+    }
 
     override fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
-        chat = Chat.markOtherUsersMessagesAsRead(chat, email)
+        if (chatId.startsWith("@@event")) {
+            groupChat = Chat.markOtherUsersMessagesAsRead(groupChat, email)
+        } else {
+            chat = Chat.markOtherUsersMessagesAsRead(chat, email)
+        }
 
         return CompletableFuture.completedFuture(null)
     }
 
     override fun removeChatListener(chatId: String) {
-        numberOfRemovedChatListenerCalls++
+        // Not necessary
     }
 
     override fun addUsersListeners(onChange: (List<UserInfo>) -> Unit) {
         // Not necessary
-    }
-
-    fun numberOfRemovedChatListenerCalls(): Int {
-        return numberOfRemovedChatListenerCalls
-    }
-
-    fun numberOfAddChatListenerCalls(): Int {
-        return numberOfAddChatListenerCalls
     }
 
     override fun getFCMToken(email: String): CompletableFuture<String> {

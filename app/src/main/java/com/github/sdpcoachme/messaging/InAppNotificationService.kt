@@ -34,7 +34,7 @@ class InAppNotificationService : FirebaseMessagingService() {
         if (remoteMessage.notification != null) {
             val notificationTitle = remoteMessage.notification
             val notificationBody = remoteMessage.notification
-            val sender = remoteMessage.data["sender"]
+            val chatId = remoteMessage.data["chatId"]
             val notificationType = remoteMessage.data["notificationType"]
 
             // Since it does not seem to be possible to create RemoteMessages containing a notification,
@@ -43,7 +43,7 @@ class InAppNotificationService : FirebaseMessagingService() {
                 .sendNotification(
                     title = notificationTitle!!.title,
                     body = notificationBody!!.body,
-                    senderEmail = sender,
+                    chatId = chatId,
                     notificationType = notificationType
             )
         }

@@ -10,10 +10,31 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.material.Button
+import androidx.compose.material.Divider
+import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.material.Switch
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,7 +47,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
@@ -35,14 +55,15 @@ import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Buttons.Companion.MESSAGE_COACH
+import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.ADDRESS
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.COACH_SWITCH
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.EMAIL
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.LAST_NAME
-import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.ADDRESS
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PHONE
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.SPORTS
+import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
@@ -85,6 +106,7 @@ class ProfileActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         stateUpdated = CompletableFuture()
         store = (application as CoachMeApplication).store
+
         val isViewingCoach = intent.getBooleanExtra("isViewingCoach", false)
         emailFuture = if (isViewingCoach) {
             val email = intent.getStringExtra("email").toString()
@@ -133,7 +155,6 @@ class ProfileActivity : ComponentActivity() {
     fun Profile(futureUserInfo: CompletableFuture<UserInfo>, isViewingCoach: Boolean) {
 
         val context = LocalContext.current
-
         var userInfo by remember { mutableStateOf(UserInfo()) }
 
         // Make sure the userInfo variable is updated when the futureUserInfo completes
@@ -342,18 +363,20 @@ class ProfileActivity : ComponentActivity() {
                         .align(Alignment.CenterHorizontally)
                         .testTag(MESSAGE_COACH),
                     onClick = {
-                        // For the moment, nothing happens
-                        // but in the future this could open the in app messenger with the coach
-                        //TODO: get own email!!!
-                        emailFuture.thenApply {
+                        store.getCurrentEmail().thenApply {
+                            val userEmail = userInfo.email
                             val intent = Intent(context, ChatActivity::class.java)
-                            intent.putExtra("currentUserEmail", it)
-                            intent.putExtra("toUserEmail", userInfo.email)
+                            val chatId = if (userEmail < it) "$userEmail$it" else "$it$userEmail"
+
+                            // Add the user to the chat participants and instantiate the chat if not already done
+                            store.updateChatParticipants(chatId, listOf(userEmail, it))
+
+                            intent.putExtra("chatId", chatId)
                             context.startActivity(intent)
                         }
                     }
                 ) {
-                    Text(text = "MESSAGE COACH")
+                    Text(text = "Message Coach")
                 }
             } else {
                 Divider(startIndent = 20.dp)

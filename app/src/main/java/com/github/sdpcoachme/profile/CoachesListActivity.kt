@@ -7,15 +7,35 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.*
+import androidx.compose.material.Divider
+import androidx.compose.material.FloatingActionButton
+import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons.Default
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +50,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.CAMPUS
 import com.github.sdpcoachme.messaging.ChatActivity
@@ -38,7 +59,7 @@ import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.github.sdpcoachme.ui.theme.Purple200
 import kotlinx.coroutines.future.await
-import java.util.*
+import java.util.Collections
 import java.util.concurrent.CompletableFuture
 
 class CoachesListActivity : ComponentActivity() {
@@ -80,20 +101,10 @@ class CoachesListActivity : ComponentActivity() {
 
         selectSportsHandler = SelectSportsActivity.getHandler(this)
 
-        val futureListOfCoaches = emailFuture.thenCompose { email ->
-            if (isViewingContacts) {
-                store.getChatContacts(email = email)
-            } else {
-                store.getAllUsersByNearest(
-                    latitude = userLatLng.latitude,
-                    longitude = userLatLng.longitude
-                ).thenApply {
-                    it.filter { user -> user.coach }
-                }
-            }
-        }
         setContent {
             var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
+            var contactRowInfos by remember { mutableStateOf(listOf<ContactRowInfo>()) }
+            var email by remember { mutableStateOf("") }
 
             // Proper way to handle result of a future in a Composable.
             // This makes sure the listOfCoaches state is updated only ONCE, when the future is complete
@@ -102,7 +113,20 @@ class CoachesListActivity : ComponentActivity() {
             // be executed on every recomposition.
             // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
             LaunchedEffect(true) {
-                listOfCoaches = futureListOfCoaches.await()
+                email = emailFuture.await()
+                if (isViewingContacts) {
+                    contactRowInfos = store
+                        .getContactRowInfo(email = email)
+                        .await()
+                } else {
+                    listOfCoaches = store
+                        .getAllUsersByNearest(
+                            latitude = userLatLng.latitude,
+                            longitude = userLatLng.longitude
+                        ).thenApply {
+                            it.filter { user -> user.coach }
+                        }.await()
+                }
 
                 // Activity is now ready for testing
                 stateLoading.complete(null)
@@ -110,9 +134,10 @@ class CoachesListActivity : ComponentActivity() {
 
             val title = if (isViewingContacts) stringResource(R.string.contacts)
             else stringResource(R.string.title_activity_coaches_list)
+
             CoachMeTheme {
                 Dashboard(title) {
-                    CoachesList(it, listOfCoaches, isViewingContacts)
+                    CoachesList(it, email, listOfCoaches, isViewingContacts, contactRowInfos)
                 }
             }
         }
@@ -124,8 +149,10 @@ class CoachesListActivity : ComponentActivity() {
     @Composable
     fun CoachesList(
         modifier: Modifier,
+        currentUserEmail: String,
         listOfCoaches: List<UserInfo>,
-        isViewingContacts: Boolean
+        isViewingContacts: Boolean,
+        contactRowInfos: List<ContactRowInfo>,
     ) {
         val context = LocalContext.current
         // initially all sports are selected
@@ -133,11 +160,18 @@ class CoachesListActivity : ComponentActivity() {
 
         Box(modifier = modifier.fillMaxSize()) {
             LazyColumn {
-                items(listOfCoaches) {user ->
-                    // Filtering should not influence the coaches list in contacts view
-                    // We still show user with no favourite sports, especially for testing purposes
-                    if (user.sports.isEmpty() || !Collections.disjoint(user.sports, sportsFilter)) {
-                        UserInfoListItem(user, isViewingContacts)
+                if (isViewingContacts) {
+                    items(contactRowInfos) { contactRowInfo ->
+                        UserInfoListItem(currentUserEmail = currentUserEmail, isViewingContacts = true, contactRowInfo = contactRowInfo)
+                    }
+                } else {
+                    items(listOfCoaches) { user ->
+                        // Filtering should not influence the coaches list in contacts view
+                        // We still show user with no favourite sports, especially for testing purposes
+                        if (user.sports.isEmpty()
+                            || !Collections.disjoint(user.sports, sportsFilter)) {
+                            UserInfoListItem(currentUserEmail = currentUserEmail, user = user, isViewingContacts = false)
+                        }
                     }
                 }
             }
@@ -170,7 +204,7 @@ class CoachesListActivity : ComponentActivity() {
     }
 
     @Composable
-    fun UserInfoListItem(user: UserInfo, isViewingContacts: Boolean) {
+    fun UserInfoListItem(currentUserEmail: String, user: UserInfo = UserInfo(), isViewingContacts: Boolean = false, contactRowInfo: ContactRowInfo = ContactRowInfo()) {
         val context = LocalContext.current
         Row(
             modifier = Modifier
@@ -178,7 +212,7 @@ class CoachesListActivity : ComponentActivity() {
                 .clickable {
                     if (isViewingContacts) {
                         val displayChatIntent = Intent(context, ChatActivity::class.java)
-                        displayChatIntent.putExtra("toUserEmail", user.email)
+                        displayChatIntent.putExtra("chatId", contactRowInfo.chatId)
                         context.startActivity(displayChatIntent)
                     } else {
                         val displayCoachIntent = Intent(context, ProfileActivity::class.java)
@@ -206,45 +240,66 @@ class CoachesListActivity : ComponentActivity() {
                 verticalArrangement = Arrangement.SpaceEvenly
             ) {
                 Text(
-                    text = "${user.firstName} ${user.lastName}",
+                    text = if (isViewingContacts) contactRowInfo.chatTitle else "${user.firstName} ${user.lastName}",
                     style = MaterialTheme.typography.h6,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Default.Place,
-                        tint = Color.Gray,
-                        contentDescription = "${user.firstName} ${user.lastName}'s location",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    // Temporary, until we implement proper location handling
+
+                if (isViewingContacts) {
+                    val senderName = if (contactRowInfo.lastMessage.sender == currentUserEmail) "You" else contactRowInfo.lastMessage.senderName
                     Text(
-                        text = user.address.name,
+                        text = if (senderName.isNotEmpty()) "$senderName: ${contactRowInfo.lastMessage.content}" else "Tap to write a message",
                         color = Color.Gray,
                         style = MaterialTheme.typography.body2,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
+                } else {
+                    UserViewBody(user)
                 }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    user.sports.map {
-                        Icon(
-                            imageVector = it.sportIcon,
-                            tint = Color.Gray,
-                            contentDescription = it.sportName,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                    }
-                }
+
             }
         }
         Divider()
     }
+
+    @Composable
+    fun UserViewBody(user: UserInfo) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Default.Place,
+                tint = Color.Gray,
+                contentDescription = "${user.firstName} ${user.lastName}'s location",
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            // Temporary, until we implement proper location handling
+            Text(
+                text = user.address.name,
+                color = Color.Gray,
+                style = MaterialTheme.typography.body2,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            user.sports.map {
+                Icon(
+                    imageVector = it.sportIcon,
+                    tint = Color.Gray,
+                    contentDescription = it.sportName,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+            }
+        }
+    }
 }
+
+
+
