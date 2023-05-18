@@ -21,6 +21,7 @@ import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_2
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_3
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACH_1
 import com.github.sdpcoachme.database.CachingStore
+import com.github.sdpcoachme.groupevent.GroupEventsListActivity.TestTags.Tabs.Companion.MY_EVENTS
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -99,7 +100,7 @@ class GroupEventsListActivityTest {
                 LocalDateTime.parse(e.event.start).isBefore(LocalDateTime.now())
             }.first()
             val tag = GroupEventsListActivity.TestTags.GroupEventItemTags(event).TITLE
-            composeTestRule.onNodeWithTag(tag).performClick()
+            composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).performClick()
             // Assert that the correct intent has been launched
             Intents.intended(
                 IntentMatchers.hasComponent(GroupEventDetailsActivity::class.java.name)
@@ -131,8 +132,9 @@ class GroupEventsListActivityTest {
         getStore().setCurrentEmail(COACH_2.email).get(1000, TimeUnit.MILLISECONDS)
         ActivityScenario.launch<GroupEventsListActivity>(intent).use {
             waitForLoading(it)
+            composeTestRule.onNodeWithTag(MY_EVENTS).performClick()
             for (groupEvent in GroupEventSamples.ALL.filter { e ->
-                e.participants.contains(COACH_2.email)
+                COACH_2.email in e.participants
             }) {
                 groupEventDisplayedCorrectly(groupEvent)
             }
@@ -146,6 +148,7 @@ class GroupEventsListActivityTest {
         getStore().setCurrentEmail(COACH_2.email).get(1000, TimeUnit.MILLISECONDS)
         ActivityScenario.launch<GroupEventsListActivity>(intent).use {
             waitForLoading(it)
+            composeTestRule.onNodeWithTag(MY_EVENTS).performClick()
             for (groupEvent in GroupEventSamples.ALL.filter { e ->
                 e.organizer == COACH_2.email
             }) {
@@ -161,6 +164,7 @@ class GroupEventsListActivityTest {
         getStore().setCurrentEmail(COACH_3.email).get(1000, TimeUnit.MILLISECONDS)
         ActivityScenario.launch<GroupEventsListActivity>(intent).use {
             waitForLoading(it)
+            composeTestRule.onNodeWithTag(MY_EVENTS).performClick()
             for (groupEvent in GroupEventSamples.ALL.filterNot { e ->
                 e.participants.contains(COACH_3.email)
             }) {
@@ -176,26 +180,27 @@ class GroupEventsListActivityTest {
         val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
         val startDate = LocalDateTime.parse(groupEvent.event.start)
+        val endDate = LocalDateTime.parse(groupEvent.event.end)
 
-        composeTestRule.onNodeWithTag(tags.TITLE).assertTextEquals(groupEvent.event.name)
-        composeTestRule.onNodeWithTag(tags.SPORT)
+        composeTestRule.onNodeWithTag(tags.TITLE, useUnmergedTree = true).assertTextEquals(groupEvent.event.name)
+        composeTestRule.onNodeWithTag(tags.SPORT, useUnmergedTree = true)
             .assertTextContains(groupEvent.event.sport.sportName, ignoreCase = true, substring = true)
-        composeTestRule.onNodeWithTag(tags.LOCATION)
+        composeTestRule.onNodeWithTag(tags.LOCATION, useUnmergedTree = true)
             .assertTextEquals(groupEvent.event.address.name)
-        composeTestRule.onNodeWithTag(tags.DATE)
+        composeTestRule.onNodeWithTag(tags.DATE, useUnmergedTree = true)
             .assertTextEquals(startDate.format(dateFormatter))
-        composeTestRule.onNodeWithTag(tags.TIME)
-            .assertTextEquals(startDate.format(timeFormatter))
+        composeTestRule.onNodeWithTag(tags.TIME, useUnmergedTree = true)
+            .assertTextEquals("${startDate.format(timeFormatter)}–${endDate.format(timeFormatter)}")
 
         if (startDate.isBefore(LocalDateTime.now())) {
-            composeTestRule.onNodeWithTag(tags.PAST_EVENT).assertExists()
-            composeTestRule.onNodeWithTag(tags.FULLY_BOOKED).assertDoesNotExist()
+            composeTestRule.onNodeWithTag(tags.PAST_EVENT, useUnmergedTree = true).assertExists()
+            composeTestRule.onNodeWithTag(tags.FULLY_BOOKED, useUnmergedTree = true).assertDoesNotExist()
         } else if (groupEvent.participants.size >= groupEvent.maxParticipants) {
-            composeTestRule.onNodeWithTag(tags.FULLY_BOOKED).assertExists()
-            composeTestRule.onNodeWithTag(tags.PAST_EVENT).assertDoesNotExist()
+            composeTestRule.onNodeWithTag(tags.FULLY_BOOKED, useUnmergedTree = true).assertExists()
+            composeTestRule.onNodeWithTag(tags.PAST_EVENT, useUnmergedTree = true).assertDoesNotExist()
         } else {
-            composeTestRule.onNodeWithTag(tags.FULLY_BOOKED).assertDoesNotExist()
-            composeTestRule.onNodeWithTag(tags.PAST_EVENT).assertDoesNotExist()
+            composeTestRule.onNodeWithTag(tags.FULLY_BOOKED, useUnmergedTree = true).assertDoesNotExist()
+            composeTestRule.onNodeWithTag(tags.PAST_EVENT, useUnmergedTree = true).assertDoesNotExist()
         }
 
     }

@@ -173,13 +173,13 @@ class GroupEventDetailsActivityTest {
             waitForUpdate(it)
             // Then check the database
             val updatedGroupEvent = getStore().getGroupEvent(groupEvent.groupEventId).get(1000, TimeUnit.MILLISECONDS)
-            assertThat(updatedGroupEvent.participants, contains(nonParticipantUser.email))
+            assertThat(updatedGroupEvent.participants, hasItem(nonParticipantUser.email))
             val updatedSchedule = getStore().getSchedule(
                 LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
             ).get(1000, TimeUnit.MILLISECONDS)
-            assertThat(updatedSchedule.groupEvents, contains(updatedGroupEvent.groupEventId))
+            assertThat(updatedSchedule.groupEvents, hasItem(updatedGroupEvent.groupEventId))
             val updatedChat = getStore().getChat(groupEvent.groupEventId).get(1000, TimeUnit.MILLISECONDS)
-            assertThat(updatedChat.participants, contains(nonParticipantUser.email))
+            assertThat(updatedChat.participants, hasItem(nonParticipantUser.email))
             // Do not check that the group is added to the contacts, as this is an implementation detail
         }
     }

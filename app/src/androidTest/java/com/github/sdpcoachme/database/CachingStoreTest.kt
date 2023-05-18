@@ -541,7 +541,7 @@ class CachingStoreTest {
                 return timesCalled
             }
 
-            override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
+            override fun updateGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
                 timesCalled++
                 val failingFuture = CompletableFuture<Void>()
                 failingFuture.completeExceptionally(Exception())
@@ -557,7 +557,7 @@ class CachingStoreTest {
         cachingStore.retrieveData.get(1, SECONDS)
         cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
 
-        val isCorrect = cachingStore.addGroupEvent(groupEvents[0])
+        val isCorrect = cachingStore.updateGroupEvent(groupEvents[0])
             .thenApply {
                 assertThat(wrappedDatabase.getTimesCalled(), `is`(1))
                 true
@@ -578,7 +578,7 @@ class CachingStoreTest {
                 return timesCalled
             }
 
-            override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Schedule> {
+            override fun addGroupEventToSchedule(email: String, groupEventId: String): CompletableFuture<Schedule> {
                 timesCalled++
                 val failingFuture = CompletableFuture<Schedule>()
                 failingFuture.completeExceptionally(Exception())

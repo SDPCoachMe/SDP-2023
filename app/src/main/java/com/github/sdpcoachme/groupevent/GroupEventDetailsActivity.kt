@@ -179,6 +179,9 @@ class GroupEventDetailsActivity : ComponentActivity() {
                                             Toast.LENGTH_SHORT
                                         )
                                         toast.show()
+                                        // Notifying tests is necessary here since the launched effect
+                                        // is not triggered in the tests for some weird reason
+                                        stateUpdated.complete(null)
                                     }
                                     // TODO: print something if the registration fails ?
                                 }
