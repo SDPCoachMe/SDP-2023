@@ -26,7 +26,7 @@ class EventOps {
         private val DayFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
         private val startMonday: LocalDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
-        private val defaultEventStart: LocalDateTime = LocalDateTime.now().plusDays(1).withHour(8).withMinute(0)
+        private val defaultEventStart: LocalDateTime = LocalDateTime.now().withHour(8).withMinute(0)
         private val defaultEventEnd: LocalDateTime = defaultEventStart.plusHours(2)
 
         private val oneDayEvents = listOf(
@@ -238,6 +238,29 @@ class EventOps {
             return store.addEvent(event, startMonday)
         }
 
+        /**
+         * Function to add a group event to the database and update multiDayEventMap accordingly.
+         * If the event spans multiple days, it will be split into multiple events of type ShownEvent, one for each day.
+         *
+         * @param groupEvent The group event to add
+         * @param store The database to add the event to
+         * @return A completable future that will be completed when the event has been added to the database
+         */
+        fun addGroupEvent(groupEvent: GroupEvent, store: CachingStore): CompletableFuture<Void> {
+            val shownEvent = wrapEvent(groupEvent.event)
+            if (shownEvent.size > 1) {
+                multiDayEventMap[groupEvent.event] = shownEvent
+            }
+            return store.addGroupEvent(groupEvent)
+        }
+
+        /**
+         * Function to convert a list of group events to a list of events that can be shown on the schedule.
+         * The additional information of the group event will be added to the description of the event.
+         *
+         * @param groupEvents The list of group events to convert
+         * @return The list of events that can be shown on the schedule
+         */
         fun groupEventsToEvents(groupEvents: List<GroupEvent>): List<Event> {
             val events = mutableListOf<Event>()
             groupEvents.forEach {
