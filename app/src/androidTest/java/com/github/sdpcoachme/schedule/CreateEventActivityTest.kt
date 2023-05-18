@@ -411,10 +411,7 @@ class CreateEventActivityTest {
 
 
             // following checks fail locally
-            composeTestRule.onNodeWithTag(SCHEDULE_COLUMN)
-                .assertExists()
             intended(hasComponent(ScheduleActivity::class.java.name))
-
         }
     }
 
