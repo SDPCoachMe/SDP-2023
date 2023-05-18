@@ -20,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -122,6 +123,8 @@ class GroupEventsListActivity : ComponentActivity() {
 fun GroupEventItem(
     groupEvent: GroupEvent
 ) {
+    val context = LocalContext.current
+
     val eventStart = LocalDateTime.parse(groupEvent.event.start)
     val eventEnd = LocalDateTime.parse(groupEvent.event.end)
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
@@ -187,7 +190,9 @@ fun GroupEventItem(
         },
         firstColumnMaxWidth = 0.6f,
         onClick = {
-            // TODO: open event details
+            // Open event details activity
+            val intent = GroupEventDetailsActivity.getIntent(context, groupEvent.groupEventId)
+            context.startActivity(intent)
         }
     )
 }

@@ -25,13 +25,9 @@ import com.github.sdpcoachme.data.messaging.Message.ReadState
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.schedule.EventOps
-import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertFalse
-import junit.framework.TestCase.assertTrue
+import junit.framework.TestCase.*
 import kotlinx.coroutines.runBlocking
-import org.hamcrest.CoreMatchers.hasItem
-import org.hamcrest.CoreMatchers.hasItems
-import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.CoreMatchers.*
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -43,8 +39,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
 
-val CACHINGSTORE_TEST_PREFERENCES_NAME = "cachingStore_test_preferences"
-val Context.dataStoreTest: DataStore<Preferences> by preferencesDataStore(name = CACHINGSTORE_TEST_PREFERENCES_NAME)
+val Context.dataStoreTest: DataStore<Preferences> by preferencesDataStore(name = "caching_store_test_preferences")
 
 class CachingStoreTest {
 

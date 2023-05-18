@@ -1,6 +1,11 @@
 package com.github.sdpcoachme.groupevent
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.*
@@ -17,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
@@ -33,8 +39,12 @@ import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Buttons.Companion.BACK
+import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Buttons.Companion.CHAT
+import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Buttons.Companion.JOIN_EVENT
+import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.EVENT_DAY
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.EVENT_DESCRIPTION
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.EVENT_LOCATION
+import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.EVENT_MONTH
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.EVENT_NAME
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.EVENT_SPORT
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.EVENT_TIME
@@ -42,6 +52,7 @@ import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Compa
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.TITLE
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Tabs.Companion.ABOUT
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Tabs.Companion.PARTICIPANTS
+import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.future.await
 import java.time.LocalDateTime
@@ -60,11 +71,15 @@ class GroupEventDetailsActivity : ComponentActivity() {
             const val EVENT_LOCATION = "eventLocation"
             const val EVENT_TIME = "eventTime"
             const val EVENT_DESCRIPTION = "eventDescription"
+            const val EVENT_MONTH = "eventMonth"
+            const val EVENT_DAY = "eventDay"
         }
 
         class Buttons {
             companion object {
                 const val BACK = "back"
+                const val JOIN_EVENT = "joinEvent"
+                const val CHAT = "chat"
             }
         }
 
@@ -73,6 +88,27 @@ class GroupEventDetailsActivity : ComponentActivity() {
                 const val ABOUT = "about"
                 const val PARTICIPANTS = "participants"
             }
+        }
+    }
+
+    companion object {
+
+        private const val GROUP_EVENT_ID_KEY = "initialValue"
+
+        /**
+         * Creates an Intent that can be used to launch this activity.
+         *
+         * @param context The context of the caller activity.
+         * @param groupEventId The id of the group event to display.
+         * @return An Intent that can be used to launch this activity.
+         */
+        fun getIntent(
+            context: Context,
+            groupEventId: String
+        ): Intent {
+            val intent = Intent(context, GroupEventDetailsActivity::class.java)
+            intent.putExtra(GROUP_EVENT_ID_KEY, groupEventId)
+            return intent
         }
     }
 
@@ -87,7 +123,7 @@ class GroupEventDetailsActivity : ComponentActivity() {
         stateLoading = CompletableFuture()
 
         // do not allow the activity to launch without an id. (double bang)
-        val groupEventId = intent.getStringExtra("groupEventId")!!
+        val groupEventId = intent.getStringExtra(GROUP_EVENT_ID_KEY)!!
 
         val futureGroupEvent = store.getGroupEvent(groupEventId)
 
@@ -123,19 +159,6 @@ class GroupEventDetailsActivity : ComponentActivity() {
                                     Icon(Icons.Filled.ArrowBack, "Back")
                                 }
                             }
-                            // TODO
-                            //                            actions = {
-                            //                                IconButton(
-                            //                                    onClick = {
-                            //                                        onSubmit(value)
-                            //                                    },
-                            //                                    modifier = Modifier.testTag(EditTextActivity.TestTags.Companion.Buttons.DONE)
-                            //                                ) {
-                            //                                    Icon(
-                            //                                        Icons.Filled.Done, "Done",
-                            //                                        tint = MaterialTheme.colors.onPrimary)
-                            //                                }
-                            //                            }
                         )
                     }
                 ) { padding ->
@@ -168,6 +191,8 @@ fun GroupEventDetailsLayout(
     currentUser: UserInfo,
     participants: List<UserInfo>
 ) {
+    val context = LocalContext.current
+
     val eventStart = LocalDateTime.parse(groupEvent.event.start)
     val eventEnd = LocalDateTime.parse(groupEvent.event.end)
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -240,7 +265,12 @@ fun GroupEventDetailsLayout(
                     text = AnnotatedString("${organizer.firstName} ${organizer.lastName}"),
                     style = MaterialTheme.typography.body1,
                     onClick = {
-                        // TODO : open organizer profile
+                        // Open organizer profile
+                        // If the organizer is the current user, open the profile activity, but not in edit mode
+                        // TODO : temporary until we update the way intents are handled in profile activity
+                        val intent = Intent(context, ProfileActivity::class.java)
+                        intent.putExtra("isViewingCoach", true)
+                        intent.putExtra("email", organizer.email)
                     }
                 )
             }
@@ -251,7 +281,17 @@ fun GroupEventDetailsLayout(
                 text = groupEvent.event.address.name,
                 tag = EVENT_LOCATION,
                 onClick = {
-                    // TODO : open map
+                    // Open google maps with the location of the event
+                    val uri = Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(groupEvent.event.address.name)}&query_place_id=${groupEvent.event.address.placeId}")
+                    val intent = Intent(Intent.ACTION_VIEW, uri)
+                    intent.setPackage("com.google.android.apps.maps")
+                    try {
+                        context.startActivity(intent)
+                    } catch (e: ActivityNotFoundException) {
+                        // No google maps app found on device.
+                        // For now, do nothing.
+                        Log.e("GroupEventDetailsActivity", "Google Maps app not found")
+                    }
                 }
             )
             Spacer(modifier = Modifier.height(10.dp))
@@ -287,16 +327,23 @@ fun GroupEventDetailsLayout(
                 PARTICIPANTS
             ) {
                 Column {
-                    // TODO: should we filter the current user out?
-                    participants.filter { it.email != currentUser.email }
-                        .map {
-                            SmallUserInfoListItem(
-                                userInfo = it,
-                                onClick = {
-                                    // TODO : open user profile
-                                }
-                            )
-                        }
+                    participants.map {
+                        SmallUserInfoListItem(
+                            userInfo =
+                                if (it.email == currentUser.email)
+                                    it
+                                else
+                                    it.copy(firstName = it.firstName, lastName = "${it.lastName} (me)"),
+                            onClick = {
+                                // Open the user's profile
+                                // For the current user, this will open his profile, but not in edit mode
+                                // TODO : temporary until we update the way intents are handled in profile activity
+                                val intent = Intent(context, ProfileActivity::class.java)
+                                intent.putExtra("isViewingCoach", true)
+                                intent.putExtra("email", it.email)
+                            }
+                        )
+                    }
                     Row(
                         modifier = Modifier
                             .defaultMinSize(minHeight = 60.dp)
@@ -343,6 +390,7 @@ fun GroupEventDetailsLayout(
             if (currentUser.email == groupEvent.organiser || currentUser.email in groupEvent.participants) {
                 DisablableExtendFloatingActionButton(
                     modifier = Modifier
+                        .testTag(CHAT)
                         .align(Alignment.BottomCenter)
                         .padding(20.dp),
                     icon = Icons.Filled.Chat,
@@ -355,6 +403,7 @@ fun GroupEventDetailsLayout(
             } else {
                 DisablableExtendFloatingActionButton(
                     modifier = Modifier
+                        .testTag(JOIN_EVENT)
                         .align(Alignment.BottomCenter)
                         .padding(20.dp),
                     icon = if (groupEvent.participants.size < groupEvent.maxParticipants) Icons.Filled.RocketLaunch else null,
@@ -392,6 +441,7 @@ private fun DayBox(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
+            modifier = Modifier.testTag(EVENT_MONTH),
             text = month.getDisplayName(
                 java.time.format.TextStyle.SHORT,
                 java.util.Locale.US).uppercase(),
@@ -399,6 +449,7 @@ private fun DayBox(
             color = MaterialTheme.colors.onPrimary
         )
         Text(
+            modifier = Modifier.testTag(EVENT_DAY),
             text = dayOfMonth.toString(),
             style = MaterialTheme.typography.h6,
             color = MaterialTheme.colors.onPrimary
