@@ -63,8 +63,8 @@ class WeatherTest {
     @Test
     @OptIn(DelicateCoroutinesApi::class)
     fun openMeteoRepositoryMapsWeatherCodeToWeatherIcon() {
-        GlobalScope.launch {
-            for (i in 0..7) {
+        for (i in 0..7) {
+            GlobalScope.launch {
                 val data = WeatherData(WeatherDataObject(
                     MOCK_DAYS,
                     (i*14..((i+1)*14)).toList(),
@@ -86,8 +86,8 @@ class WeatherTest {
                         `is`(weather_thunderstorm)
                     ))
                 }
+                cancel()
             }
-            cancel()
         }
     }
 

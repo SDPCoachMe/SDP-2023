@@ -1,6 +1,6 @@
 package com.github.sdpcoachme.weather.repository
 
-import com.github.sdpcoachme.R
+import com.github.sdpcoachme.R.drawable.*
 import com.github.sdpcoachme.weather.Weather
 import com.github.sdpcoachme.weather.api.WeatherApi
 import com.github.sdpcoachme.weather.api.WeatherData
@@ -38,18 +38,18 @@ class OpenMeteoRepository(private var api: WeatherApi) : WeatherRepository {
     private fun Int.toWeatherIcon(): Int {
         return when (this) {
             // clear, mainly clear
-            0, 1 -> R.drawable.weather_sunny
+            0, 1 -> weather_sunny
             // partly cloudy
-            2 -> R.drawable.weather_cloud_sunny
+            2 -> weather_cloud_sunny
             // overcast, fog
-            3, 45, 48 -> R.drawable.weather_cloudy
+            3, 45, 48 -> weather_cloudy
             // drizzle, rain, freezing rain, rain showers
-            51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82  -> R.drawable.weather_rainy
+            51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82  -> weather_rainy
             // snow fall, snow grains, snow showers
-            71, 73, 75, 77, 85, 86 -> R.drawable.weather_snowing
+            71, 73, 75, 77, 85, 86 -> weather_snowing
             // slight to heavy thunderstorm
-            95, 96, 99 -> R.drawable.weather_thunderstorm
-            else ->  R.drawable.weather_sunny
+            95, 96, 99 -> weather_thunderstorm
+            else ->  weather_sunny
 
         }
     }
