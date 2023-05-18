@@ -275,6 +275,9 @@ class CreateEventActivity : ComponentActivity() {
                                         if (maxParticipants <= 0) {
                                             val toast = Toast.makeText(context, "Max participants must be greater than 0", Toast.LENGTH_SHORT)
                                             toast.show()
+                                        } else if (start <= LocalDateTime.now() || end <= LocalDateTime.now()) {
+                                            val toast = Toast.makeText(context, "Start and end dates must be in the future", Toast.LENGTH_SHORT)
+                                            toast.show()
                                         } else {
                                             EventOps.addGroupEvent(groupEvent, store)
                                             goBackToScheduleActivity()
