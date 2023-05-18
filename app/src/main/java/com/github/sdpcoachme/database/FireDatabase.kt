@@ -72,7 +72,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         // TODO for next sprint: check with bryan if we could refactor registerForGroupEvent to directly take in the groupEvent object (would be more efficient when creating a group event)
         return getGroupEvent(groupEventId).thenCompose { groupEvent ->
             val hasCapacity = groupEvent.participants.size < groupEvent.maxParticipants
-            if (!hasCapacity) {
+            if (!hasCapacity) { // TODO for Bryan: this error prevention should be taken into the onclick of the register button
                 val failingFuture = CompletableFuture<Schedule>()
                 failingFuture.completeExceptionally(Exception("Group event is full"))
                 failingFuture

@@ -208,21 +208,29 @@ class CachingStoreTest {
         assertThat(wrappedDatabase.timesCalled, `is`(7))
     }
 
-    // TODO: fix this failing test
     @Test
     fun addGroupEventAddsItToWrappedDatabase() {
         var timesCalled = 0
         class ScheduleDB: MockDatabase() {
-            private var addedGroupEvents = mutableListOf<GroupEvent>()
+            private var addedGroupEvents = mutableMapOf<String, GroupEvent>()
+            private var schedule = Schedule(listOf(), listOf())
 
-            fun getAddedGroupEvents(): List<GroupEvent> {
+            fun getAddedGroupEvents(): Map<String, GroupEvent> {
                 return addedGroupEvents
             }
 
             override fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
                 timesCalled++
-                addedGroupEvents.add(groupEvent)
+                addedGroupEvents[groupEvent.groupEventId] = groupEvent
                 return CompletableFuture.completedFuture(null)
+            }
+
+            override fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Schedule> {
+                val groupEvent = addedGroupEvents[groupEventId]
+                schedule = schedule.copy(
+                    events = schedule.events + listOf(groupEvent!!.event),
+                    groupEvents = schedule.groupEvents + listOf(groupEvent.groupEventId))
+                return CompletableFuture.completedFuture(schedule)
             }
 
         }
@@ -232,39 +240,50 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
+        cachingStore.retrieveData.get(1, SECONDS)
         cachingStore.setCurrentEmail(MockDatabase.getDefaultEmail())
-        val isCorrect = cachingStore.addGroupEvent(groupEvents[0])
+        var checkEvent = groupEvents[0]
+        val isCorrect = cachingStore.addGroupEvent(checkEvent)
             .thenCompose {
-                println("timesCalled: $timesCalled")
-                println("groupEvents: ${wrappedDatabase.getAddedGroupEvents()}")
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(1))
-                assertThat(wrappedDatabase.getAddedGroupEvents()[0], `is`(groupEvents[0]))
-                cachingStore.addGroupEvent(groupEvents[1])
-/*            }.thenCompose {
+                assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
+
+                checkEvent = groupEvents[1]
+                cachingStore.addGroupEvent(checkEvent)
+            }.thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(2))
-                assertThat(wrappedDatabase.getAddedGroupEvents()[1], `is`(groupEvents[1]))
-                cachingStore.addGroupEvent(groupEvents[2])
+                assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
+
+                checkEvent = groupEvents[2]
+                cachingStore.addGroupEvent(checkEvent)
             }.thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(3))
-                assertThat(wrappedDatabase.getAddedGroupEvents()[2], `is`(groupEvents[2]))
-                cachingStore.addGroupEvent(groupEvents[3])
+                assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
+
+                checkEvent = groupEvents[3]
+                cachingStore.addGroupEvent(checkEvent)
             }.thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(4))
-                assertThat(wrappedDatabase.getAddedGroupEvents()[3], `is`(groupEvents[3]))
-                cachingStore.addGroupEvent(groupEvents[4])
+                assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
+
+                checkEvent = groupEvents[4]
+                cachingStore.addGroupEvent(checkEvent)
             }.thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(5))
-                assertThat(wrappedDatabase.getAddedGroupEvents()[4], `is`(groupEvents[4]))
-                cachingStore.addGroupEvent(groupEvents[5])
+                assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
+
+                checkEvent = groupEvents[5]
+                cachingStore.addGroupEvent(checkEvent)
             }.thenCompose {
                 assertThat(wrappedDatabase.getAddedGroupEvents().size, `is`(6))
-                assertThat(wrappedDatabase.getAddedGroupEvents()[5], `is`(groupEvents[5]))
-                cachingStore.addGroupEvent(groupEvents[6])*/
+                assertThat(wrappedDatabase.getAddedGroupEvents().get(checkEvent.groupEventId), `is`(checkEvent))
+
+                checkEvent = groupEvents[6]
+                cachingStore.addGroupEvent(checkEvent)
             }.thenApply {
-                assertThat(timesCalled, `is`(2))
+                assertThat(timesCalled, `is`(7))
                 true
             }.exceptionally {
-                println("Exception: $it")
                 false
             }.get(5, SECONDS)
 
