@@ -1,59 +1,50 @@
 package com.github.sdpcoachme.weather
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.ui.Alignment.Companion.CenterHorizontally
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import java.time.LocalDate
 
 @Composable
-fun WeatherView(weatherForecast: MutableState<WeatherForecast>) {
+fun WeatherView(weatherForecast: MutableState<WeatherForecast>, day: LocalDate) {
 
-    if (weatherState.value.isNotEmpty()) {
-        Text(
-            text = "weatherCodes = ${weatherState.value[0].weatherCode} " +
-                    "${weatherState.value[1].weatherCode} " +
-                    "${weatherState.value[2].weatherCode} " +
-                    "${weatherState.value[3].weatherCode} " +
-                    "${weatherState.value[4].weatherCode} " +
-                    "${weatherState.value[5].weatherCode} " +
-                    "${weatherState.value[6].weatherCode} " +
-                    "${weatherState.value[7].weatherCode} " +
-                    "${weatherState.value[8].weatherCode} " +
-                    "${weatherState.value[9].weatherCode} " +
-                    "${weatherState.value[10].weatherCode} " +
-                    "${weatherState.value[11].weatherCode} " +
-                    "${weatherState.value[12].weatherCode} " +
-                    "${weatherState.value[13].weatherCode} " +
-                    "maxTemperatures = ${weatherState.value[0].maxTemperature} " +
-                    "${weatherState.value[1].maxTemperature} " +
-                    "${weatherState.value[2].maxTemperature} " +
-                    "${weatherState.value[3].maxTemperature} " +
-                    "${weatherState.value[4].maxTemperature} " +
-                    "${weatherState.value[5].maxTemperature} " +
-                    "${weatherState.value[6].maxTemperature} " +
-                    "${weatherState.value[7].maxTemperature} " +
-                    "${weatherState.value[8].maxTemperature} " +
-                    "${weatherState.value[9].maxTemperature} " +
-                    "${weatherState.value[10].maxTemperature} " +
-                    "${weatherState.value[11].maxTemperature} " +
-                    "${weatherState.value[12].maxTemperature} " +
-                    "${weatherState.value[13].maxTemperature} " +
-                    "minTemperatures = ${weatherState.value[0].minTemperature} " +
-                    "${weatherState.value[1].minTemperature} " +
-                    "${weatherState.value[2].minTemperature} " +
-                    "${weatherState.value[3].minTemperature} " +
-                    "${weatherState.value[4].minTemperature} " +
-                    "${weatherState.value[5].minTemperature} " +
-                    "${weatherState.value[6].minTemperature} " +
-                    "${weatherState.value[7].minTemperature} " +
-                    "${weatherState.value[8].minTemperature} " +
-                    "${weatherState.value[9].minTemperature} " +
-                    "${weatherState.value[10].minTemperature} " +
-                    "${weatherState.value[11].minTemperature} " +
-                    "${weatherState.value[12].minTemperature} " +
-                    "${weatherState.value[13].minTemperature} "
-        )
+    val localDate = LocalDate.now()
+    var dayId = -1
+    for (i in 0..13) {
+        if (day == localDate.plusDays(i.toLong())) {
+            dayId = i
+        }
+    }
+
+    if (dayId != -1 && weatherForecast.value.forecast.isNotEmpty() &&
+        weatherForecast.value.forecast.size > dayId) {
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = CenterHorizontally
+        ) {
+            Image(
+                painter = painterResource(id = weatherForecast.value.forecast[dayId].weatherCode),
+                contentDescription = "Weather icon",
+                modifier = Modifier.size(35.dp)
+            )
+            Text(text = weatherForecast.value.forecast[dayId].maxTemperature.toString() + " | " +
+                    weatherForecast.value.forecast[dayId].minTemperature.toString(),
+                fontSize = 10f.sp)
+        }
+
     } else {
-        Text(text = "LOADING....")
+        Text(text = "-")
+        // TODO handle here
     }
 
 }

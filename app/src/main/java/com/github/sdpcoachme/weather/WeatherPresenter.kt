@@ -2,36 +2,33 @@ package com.github.sdpcoachme.weather
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.weather.repository.WeatherRepository
-import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import java.util.concurrent.CompletableFuture
 
-class WeatherPresenter(private val cachingStore: CachingStore) {
+class WeatherPresenter {
 
     private lateinit var weatherRepository: WeatherRepository
 
-    private val scope = CoroutineScope(Job())
     var observableWeatherForecast: MutableState<WeatherForecast> = mutableStateOf(WeatherForecast())
 
-    fun bind(weatherRepository: WeatherRepository, target: LatLng): WeatherPresenter {
+    fun bind(weatherRepository: WeatherRepository): WeatherPresenter {
         this.weatherRepository = weatherRepository
-        getWeatherForecast(target.latitude, target.longitude)
         return this
     }
 
-    fun unbind() {
-        scope.cancel()
-    }
+    fun getWeatherForecast(lat: Double, long: Double): CompletableFuture<WeatherForecast> {
+        val weatherForecastFuture = CompletableFuture<WeatherForecast>()
 
-    private fun getWeatherForecast(lat: Double, long: Double) {
-        scope.launch {
+        CoroutineScope(Job()).launch {
             observableWeatherForecast.value = WeatherForecast(loadWeatherForecast(lat, long))
-            cachingStore.setWeatherForecast(observableWeatherForecast.value)
+            weatherForecastFuture.complete(observableWeatherForecast.value)
+            cancel()
         }
+        return weatherForecastFuture
     }
 
     private suspend fun loadWeatherForecast(lat: Double, long: Double): List<Weather> {

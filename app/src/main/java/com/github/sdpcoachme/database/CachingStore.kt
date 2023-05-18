@@ -483,10 +483,14 @@ class CachingStore(private val wrappedDatabase: Database,
     fun getWeatherForecast(target: LatLng): CompletableFuture<MutableState<WeatherForecast>> {
 
         if (isOnline()) {
-            // The WeatherPresenter will launch a weather request and call setWeatherForecast when
-            // a weatherList has been retrieved. Here we just return the weatherForecast as an
-            // observable for composable functions.
-            val weatherPresenter = WeatherPresenter(this).bind(OpenMeteoRepository(), target)
+            // The WeatherPresenter will launch a weather request and return a future that if
+            // completed normally will update the cache.
+            val weatherPresenter = WeatherPresenter().bind(OpenMeteoRepository())
+            weatherPresenter.getWeatherForecast(target.latitude, target.longitude).thenApply {
+                weatherForecast = it
+                storeLocalData()
+            }
+            // we return an observable weather forecast state for the view here
             return completedFuture(weatherPresenter.observableWeatherForecast)
         } else {
             if (weatherForecast.forecast.isEmpty()) {
@@ -497,12 +501,6 @@ class CachingStore(private val wrappedDatabase: Database,
             }
         }
     }
-
-    fun setWeatherForecast(weatherForecast: WeatherForecast) {
-        this.weatherForecast = weatherForecast
-        storeLocalData()
-    }
-
 
     // No cache here, method just used for testing to fetch from database
     /**
@@ -581,6 +579,9 @@ class CachingStore(private val wrappedDatabase: Database,
         cachedSchedule = Schedule()
         contacts.clear()
         chats.clear()
+        // we don't clear the weather cache here as getWeatherForecast already makes the
+        // isOnline check and updates the cache accordingly.
+        // todo do the same for the other caches
     }
 
     /**

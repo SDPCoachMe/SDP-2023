@@ -194,7 +194,6 @@ class CreateEventActivityTest {
     ) {
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         val testDay = 15
-        val expectedDate = currentWeekMonday.withDayOfMonth(testDay)
 
         // Open date picker
         composeTestRule.onNodeWithTag(dateTag)
