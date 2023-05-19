@@ -6,7 +6,7 @@ import com.github.sdpcoachme.data.schedule.Event
  * Group event data class
  *
  * @property event
- * @property organiser email of the organiser
+ * @property organizer email of the organiser
  * @property maxParticipants
  * @property participants email of the participants
  * @property groupEventId
@@ -14,11 +14,11 @@ import com.github.sdpcoachme.data.schedule.Event
  */
 data class GroupEvent(
     val event: Event,
-    val organiser: String,
+    val organizer: String,
     val maxParticipants: Int,
     val participants: List<String> = emptyList(),
-    val groupEventId: String = "@@event" + organiser + event.start,
+    val groupEventId: String = "@@event" + organizer + event.start,
 ) {
     // Constructor needed to make the data class serializable
-    constructor() : this(event = Event(), groupEventId = "", organiser = "", maxParticipants = 0, participants = emptyList())
+    constructor() : this(event = Event(), groupEventId = "", organizer = "", maxParticipants = 0, participants = emptyList())
 }

@@ -11,7 +11,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.UserAddressSamples.Companion.PARIS
+import com.github.sdpcoachme.data.AddressSamples.Companion.PARIS
 import com.github.sdpcoachme.profile.SelectSportsActivity.*
 import com.github.sdpcoachme.profile.SelectSportsActivity.Companion.DEFAULT_TITLE
 import com.github.sdpcoachme.profile.SelectSportsActivity.TestTags.Buttons.*

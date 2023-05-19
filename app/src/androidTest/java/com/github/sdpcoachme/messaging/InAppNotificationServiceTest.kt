@@ -11,7 +11,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.database.CachingStore
-import com.github.sdpcoachme.data.UserAddressSamples
+import com.github.sdpcoachme.data.AddressSamples
 import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.FIRST_NAME
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.LAST_NAME
@@ -36,7 +36,7 @@ class InAppNotificationServiceTest {
         "Doe",
         "example@email.com",
         "0123456789",
-        UserAddressSamples.NEW_YORK,
+        AddressSamples.NEW_YORK,
         false,
         emptyList(),
         emptyList()

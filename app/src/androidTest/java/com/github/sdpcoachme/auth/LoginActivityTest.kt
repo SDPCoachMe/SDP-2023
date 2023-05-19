@@ -16,7 +16,7 @@ import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.uiautomator.*
 import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.LOG_IN
-import com.github.sdpcoachme.data.UserAddressSamples
+import com.github.sdpcoachme.data.AddressSamples
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.database.CachingStore
@@ -89,7 +89,7 @@ open class LoginActivityTest {
         "Doe",
         "to@email.com",
         "0987654321",
-        UserAddressSamples.LAUSANNE,
+        AddressSamples.LAUSANNE,
         true,
         emptyList(),
         emptyList()
@@ -100,7 +100,7 @@ open class LoginActivityTest {
         "Doe",
         "example@email.com",
         "0123456789",
-        UserAddressSamples.NEW_YORK,
+        AddressSamples.NEW_YORK,
         false,
         emptyList(),
         emptyList()
@@ -111,7 +111,7 @@ open class LoginActivityTest {
         "",
         "nonexisting@email.com",
         "",
-        UserAddressSamples.NEW_YORK,
+        AddressSamples.NEW_YORK,
         false,
         emptyList(),
         emptyList()

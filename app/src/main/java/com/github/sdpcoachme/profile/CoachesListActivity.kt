@@ -203,6 +203,7 @@ class CoachesListActivity : ComponentActivity() {
         }
     }
 
+    // TODO: make this composable use new ListItem composable in package ui
     @Composable
     fun UserInfoListItem(currentUserEmail: String, user: UserInfo = UserInfo(), isViewingContacts: Boolean = false, contactRowInfo: ContactRowInfo = ContactRowInfo()) {
         val context = LocalContext.current
