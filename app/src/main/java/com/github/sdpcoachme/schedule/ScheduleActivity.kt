@@ -6,38 +6,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.FloatingActionButton
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowLeft
 import androidx.compose.material.icons.filled.ArrowRight
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -64,11 +43,14 @@ import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity
+import com.github.sdpcoachme.location.provider.FusedLocationProvider
 import com.github.sdpcoachme.schedule.EventOps.Companion.getDayFormatter
-import com.github.sdpcoachme.schedule.EventOps.Companion.getTimeFormatter
 import com.github.sdpcoachme.schedule.EventOps.Companion.getStartMonday
+import com.github.sdpcoachme.schedule.EventOps.Companion.getTimeFormatter
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.github.sdpcoachme.ui.theme.Purple500
+import com.github.sdpcoachme.weather.WeatherForecast
+import com.github.sdpcoachme.weather.WeatherView
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -117,10 +99,16 @@ class ScheduleActivity : ComponentActivity() {
 
         val futureDBSchedule: CompletableFuture<Schedule> = store.getSchedule(startMonday)
 
+        // todo move this into caching store
+        val locationProvider = (application as CoachMeApplication).locationProvider
+        locationProvider.updateContext(this, CompletableFuture.completedFuture(null))
+        val userLatLng = locationProvider.getLastLocation().value?: FusedLocationProvider.CAMPUS
+        val weatherState = store.getWeatherForecast(userLatLng).get()
+
         setContent {
             CoachMeTheme {
                 Surface(color = MaterialTheme.colors.background) {
-                    Schedule(futureDBSchedule, store)
+                    Schedule(futureDBSchedule, store, weatherState)
                 }
             }
         }
@@ -136,8 +124,9 @@ private const val COLUMNS_PER_WEEK = 7
 fun Schedule(
     futureDBSchedule: CompletableFuture<Schedule>,
     store: CachingStore,
-    modifier: Modifier = Modifier,
-) {
+    weatherState: MutableState<WeatherForecast>,
+    modifier: Modifier = Modifier
+    ) {
     // the starting day is always the monday of the current week
     var shownWeekMonday by remember { mutableStateOf(getStartMonday()) }
     var events by remember { mutableStateOf(emptyList<Event>()) }
@@ -185,6 +174,7 @@ fun Schedule(
             WeekHeader(
                 shownWeekMonday = shownWeekMonday,
                 dayWidth = dayWidth,
+                weatherState = weatherState
             )
 
             // filter events to only show events in the current week
@@ -371,6 +361,7 @@ fun WeekHeader(
     shownWeekMonday: LocalDate,
     dayWidth: Dp,
     modifier: Modifier = Modifier,
+    weatherState: MutableState<WeatherForecast>,
     dayHeader: @Composable (day: LocalDate) -> Unit = { BasicDayHeader(day = it) }
 ) {
     Row(
@@ -379,8 +370,9 @@ fun WeekHeader(
     ) {
         repeat(COLUMNS_PER_WEEK) { i ->
             val day = shownWeekMonday.plusDays(i.toLong())
-            Box(modifier = Modifier.width(dayWidth)) {
+            Column(modifier = Modifier.width(dayWidth)) {
                 dayHeader(day)
+                WeatherView(weatherState, day)
             }
         }
     }

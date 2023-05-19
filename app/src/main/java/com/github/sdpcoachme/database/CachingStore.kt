@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -17,6 +19,10 @@ import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.schedule.EventOps
 import com.github.sdpcoachme.schedule.EventOps.Companion.getStartMonday
+import com.github.sdpcoachme.weather.WeatherForecast
+import com.github.sdpcoachme.weather.WeatherPresenter
+import com.github.sdpcoachme.weather.api.RetrofitClient
+import com.github.sdpcoachme.weather.repository.OpenMeteoRepository
 import com.google.android.gms.maps.model.LatLng
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -29,6 +35,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletableFuture.completedFuture
 
 /**
  * A caching database that wraps another database
@@ -42,10 +49,12 @@ class CachingStore(private val wrappedDatabase: Database,
     val CONTACTS_KEY = stringPreferencesKey("contacts")
     val CHATS_KEY = stringPreferencesKey("chats")
     val CACHED_SCHEDULE_KEY = stringPreferencesKey("cached_schedules")
+    val WEATHER_FORECAST = stringPreferencesKey("weather_forecast")
 
     private val CACHED_SCHEDULE_WEEKS_AHEAD = 4L
     private val CACHED_SCHEDULE_WEEKS_BEHIND = 4L
 
+    // Database-wide stored values
     private val cachedUsers = mutableMapOf<String, UserInfo>()
     private val contacts = mutableMapOf<String, List<UserInfo>>()
     private val contactRowInfos = mutableMapOf<String, List<ContactRowInfo>>()
@@ -57,7 +66,9 @@ class CachingStore(private val wrappedDatabase: Database,
     private var minCachedMonday = currentShownMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
     private var maxCachedMonday = currentShownMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
 
+    // Application-wide stored values
     private var currentEmail: String? = null
+    private var weatherForecast: WeatherForecast = WeatherForecast()
 
     private val gson = Gson()
 
@@ -77,7 +88,6 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Check whether the user is logged in
-     *
      * @return a boolean indicating whether the user is logged in
      */
     fun isLoggedIn(): CompletableFuture<Boolean> {
@@ -104,12 +114,14 @@ class CachingStore(private val wrappedDatabase: Database,
             val serializedContacts = values[CONTACTS_KEY]
             val serializedChats = values[CHATS_KEY]
             val serializedSchedule = values[CACHED_SCHEDULE_KEY]
+            val serializedWeather = values[WEATHER_FORECAST]
 
             // Deserialize the caching maps from Json and put them in the caching maps
             processRetrievedCache(serializedUsers, cachedUsers)
             processRetrievedCache(serializedContacts, contacts)
             processRetrievedCache(serializedChats, chats)
             processRetrievedCache(serializedSchedule, cachedSchedule)
+            processRetrievedCache(serializedWeather, weatherForecast)
 
             localFuture.complete(null)
         }
@@ -127,12 +139,19 @@ class CachingStore(private val wrappedDatabase: Database,
             return
         }
         val type = object : TypeToken<T>() {}.type
-        if (cache is Schedule) {
-            val schedule = gson.fromJson<Schedule>(jsonString, type)
-            cachedSchedule = schedule
-        } else {
-            cache as MutableMap<*, *>
-            cache.putAll(gson.fromJson(jsonString, type))
+        when (cache) {
+            is Schedule -> {
+                val schedule = gson.fromJson<Schedule>(jsonString, type)
+                cachedSchedule = schedule
+            }
+            is WeatherForecast -> {
+                val forecast = gson.fromJson<WeatherForecast>(jsonString, type)
+                weatherForecast = forecast
+            }
+            else -> {
+                cache as MutableMap<*, *>
+                cache.putAll(gson.fromJson(jsonString, type))
+            }
         }
     }
 
@@ -167,11 +186,13 @@ class CachingStore(private val wrappedDatabase: Database,
     fun storeLocalData(): CompletableFuture<Void> {
         val writeDatastoreFuture = CompletableFuture<Void>()
         GlobalScope.launch {
-            dataStore.edit {
+            dataStore.edit { preferences ->
+                preferences[USER_EMAIL_KEY] = currentEmail ?: ""
                 storeCache(cachedUsers, CACHED_USERS_KEY)
                 storeCache(contacts, CONTACTS_KEY)
                 storeCache(chats, CHATS_KEY)
                 storeCache(cachedSchedule, CACHED_SCHEDULE_KEY)
+                storeCache(weatherForecast, WEATHER_FORECAST)
 
                 writeDatastoreFuture.complete(null)
             }
@@ -200,7 +221,7 @@ class CachingStore(private val wrappedDatabase: Database,
      */
     fun getUser(email: String): CompletableFuture<UserInfo> {
         if (isCached(email)) {
-            return CompletableFuture.completedFuture(cachedUsers[email])
+            return completedFuture(cachedUsers[email])
         }
         return wrappedDatabase.getUser(email).thenCompose {user ->
             cachedUsers[email] = user
@@ -221,7 +242,7 @@ class CachingStore(private val wrappedDatabase: Database,
                 storeLocalData().thenApply { userList }
             }
         } else {
-            CompletableFuture.completedFuture(cachedUsers.values.toList())
+            completedFuture(cachedUsers.values.toList())
         }
     }
 
@@ -249,7 +270,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     fun userExists(email: String): CompletableFuture<Boolean> {
         if (isCached(email)) {
-            return CompletableFuture.completedFuture(true)
+            return completedFuture(true)
         }
         return wrappedDatabase.userExists(email)
     }
@@ -479,7 +500,7 @@ class CachingStore(private val wrappedDatabase: Database,
                     } else {
                         // If no need to prefetch, we return the cached schedule
                         currentShownMonday = currentWeekMonday
-                        CompletableFuture.completedFuture(cachedSchedule)
+                        completedFuture(cachedSchedule)
                     }
                 }
             }
@@ -497,7 +518,7 @@ class CachingStore(private val wrappedDatabase: Database,
      */
     fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
         if (contactRowInfos.containsKey(email)) {
-            return CompletableFuture.completedFuture(contactRowInfos[email])
+            return completedFuture(contactRowInfos[email])
         }
         return wrappedDatabase.getContactRowInfos(email).thenApply { it.also { contactRowInfos[email] = it } }
     }
@@ -510,7 +531,7 @@ class CachingStore(private val wrappedDatabase: Database,
      */
     fun getChat(chatId: String): CompletableFuture<Chat> {
         if (chats.containsKey(chatId)) {
-            return CompletableFuture.completedFuture(chats[chatId]!!)
+            return completedFuture(chats[chatId]!!)
         }
         return wrappedDatabase.getChat(chatId).thenApply {
             it.also {
@@ -629,6 +650,29 @@ class CachingStore(private val wrappedDatabase: Database,
         wrappedDatabase.removeChatListener(chatId)
     }
 
+    /**
+     * If the device is online, creates a WeatherPresenter and launch the weather forecast pipeline.
+     * Cached forecast is updated if the request completes normally.
+     * If not, simply returns the cached weather forecast.
+     *
+     * @param target The target location for the weather forecast
+     */
+    fun getWeatherForecast(target: LatLng): CompletableFuture<MutableState<WeatherForecast>> {
+
+        return if (isOnline()) {
+            // The WeatherPresenter will launch a weather request and return a future that if
+            // completed normally will update the cache.
+            val weatherPresenter = WeatherPresenter().bind(OpenMeteoRepository(RetrofitClient.api))
+            weatherPresenter.getWeatherForecast(target.latitude, target.longitude).thenApply {
+                weatherForecast = it
+                storeLocalData()
+            }
+            // we return an observable weather forecast state for the view here
+            completedFuture(weatherPresenter.observableWeatherForecast)
+        } else {
+            completedFuture(mutableStateOf(weatherForecast))
+        }
+    }
 
     // No cache here, method just used for testing to fetch from database
     /**
@@ -639,7 +683,7 @@ class CachingStore(private val wrappedDatabase: Database,
      */
     fun getFCMToken(email: String): CompletableFuture<String> {
         if (cachedTokens.containsKey(email)) {
-            return CompletableFuture.completedFuture(cachedTokens[email])
+            return completedFuture(cachedTokens[email])
         }
         return wrappedDatabase.getFCMToken(email).thenApply {
             it.also {
@@ -687,10 +731,8 @@ class CachingStore(private val wrappedDatabase: Database,
      */
     fun setCurrentEmail(email: String): CompletableFuture<Void> {
         currentEmail = email
-        return CompletableFuture.completedFuture(null)
+        return completedFuture(null)
     }
-
-
 
     /**
      * Check if a user is cached
@@ -714,6 +756,9 @@ class CachingStore(private val wrappedDatabase: Database,
         chats.clear()
         cachedTokens.clear()
         contactRowInfos.clear()
+        // we don't clear the weather cache here as getWeatherForecast already makes the
+        // isOnline check and updates the cache accordingly.
+        // todo do the same for the other caches
     }
 
     /**
@@ -729,7 +774,7 @@ class CachingStore(private val wrappedDatabase: Database,
         if (capabilities != null) {
             if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
                 Log.i("Internet", "NetworkCapabilities.TRANSPORT_CELLULAR")
-                //return true
+                return true
             } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
                 Log.i("Internet", "NetworkCapabilities.TRANSPORT_WIFI")
                 return true
