@@ -504,7 +504,7 @@ class CreateEventActivityTest {
 
             val expectedEvent = defaultEvent
             val expectedGroupEvent = GroupEvent(
-                organiser = organiser,
+                organizer = organiser,
                 maxParticipants = maxParticipants,
                 participants = listOf(organiser),
                 event = expectedEvent

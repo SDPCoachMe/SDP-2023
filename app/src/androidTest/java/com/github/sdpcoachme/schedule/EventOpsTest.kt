@@ -106,7 +106,7 @@ class EventOpsTest {
         val multiDayEvent = EventOps.getMultiDayEvent()
         val multiDayGroupEvent = GroupEvent(
             event = multiDayEvent,
-            organiser = defaultEmail,
+            organizer = defaultEmail,
             maxParticipants = 10,
             participants = mutableListOf(defaultEmail),
             groupEventId = "@@event" + defaultEmail.replace(".", ",") + multiDayEvent.start
@@ -153,7 +153,7 @@ class EventOpsTest {
         val oneDayEvent = EventOps.getOneDayEvents()[0]
         val oneDayGroupEvent = GroupEvent(
             event = oneDayEvent,
-            organiser = defaultEmail,
+            organizer = defaultEmail,
             maxParticipants = 10,
             participants = mutableListOf(defaultEmail),
             groupEventId = "@@event" + defaultEmail.replace(".", ",") + oneDayEvent.start

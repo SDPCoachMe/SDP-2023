@@ -4,6 +4,8 @@ import android.app.Application
 import android.content.Context
 import androidx.activity.result.ActivityResultCaller
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import com.github.sdpcoachme.auth.Authenticator
 import com.github.sdpcoachme.auth.GoogleAuthenticator
 import com.github.sdpcoachme.database.CachingStore
@@ -16,14 +18,10 @@ import com.google.android.libraries.places.api.Places
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.*
+
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "coachme_preferences")
 
 open class CoachMeApplication : Application() {
-
-    private val USER_PREFERENCES_NAME = "coachme_preferences"
-
-    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = USER_PREFERENCES_NAME)
 
     // For DI in testing, add reference to dependencies here
     open lateinit var store: CachingStore

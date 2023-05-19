@@ -7,15 +7,12 @@
     so not anymore at installation
     -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-
-    <!-- Used only for testing purposes, not required for Firebase Storage -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> <!-- Used only for testing purposes, not required for Firebase Storage -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Internet also needed for open-meteo API request-->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
-
 
     <application
         android:name=".CoachMeApplication"
@@ -27,6 +24,16 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CoachMe"
         tools:targetApi="31">
+        <activity
+            android:name=".groupevent.GroupEventsListActivity"
+            android:exported="false"
+            android:label="@string/title_activity_group_events_list"
+            android:theme="@style/Theme.CoachMe" />
+        <activity
+            android:name=".groupevent.GroupEventDetailsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_group_event_details"
+            android:theme="@style/Theme.CoachMe" />
         <activity
             android:name=".profile.EditTextActivity"
             android:exported="false"
@@ -56,6 +63,7 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="OPEN_CHAT_ACTIVITY" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
@@ -93,13 +101,14 @@
             android:name=".messaging.ChatActivity"
             android:exported="true"
             android:label="@string/title_activity_chat"
-            android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.CoachMe" />
+            android:theme="@style/Theme.CoachMe"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".location.MapActivity"
             android:exported="false"
             android:label="@string/title_activity_map"
             android:theme="@style/Theme.CoachMe" />
+
         <service
             android:name=".messaging.InAppNotificationService"
             android:exported="false">
@@ -107,20 +116,20 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
-        <!-- Set custom default icon. This is used when no icon is set for incoming notification messages.
-     See README(https://goo.gl/l4GJaQ) for more. -->
-<!--        <meta-data-->
-<!--            android:name="com.google.firebase.messaging.default_notification_icon"-->
-<!--            android:resource="@drawable/ic_stat_ic_notification" />-->
-
-        <!-- Set color used with incoming notification messages. This is used when no color is set for the incoming
-             notification message. See README(https://goo.gl/6BKBk7) for more. -->
+        <!--
+ Set custom default icon. This is used when no icon is set for incoming notification messages.
+     See README(https://goo.gl/l4GJaQ) for more.
+        -->
+        <!-- <meta-data -->
+        <!-- android:name="com.google.firebase.messaging.default_notification_icon" -->
+        <!-- android:resource="@drawable/ic_stat_ic_notification" /> -->
+        <!--
+ Set color used with incoming notification messages. This is used when no color is set for the incoming
+             notification message. See README(https://goo.gl/6BKBk7) for more.
+        -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/colorAccent" />
-<!--        <meta-data-->
-<!--            android:name="com.google.firebase.messaging.default_notification_channel_id"-->
-<!--            android:value="@string/default_notification_channel_id" />-->
     </application>
 
 </manifest>

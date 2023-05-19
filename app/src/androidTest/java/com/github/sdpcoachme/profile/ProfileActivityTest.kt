@@ -199,7 +199,7 @@ class ProfileActivityTest {
     @Test
     fun dashboardHasRightTitleForIsViewingCoach() {
         val title = (InstrumentationRegistry.getInstrumentation()
-            .targetContext.applicationContext as CoachMeApplication).getString(R.string.coach_profile)
+            .targetContext.applicationContext as CoachMeApplication).getString(R.string.profile_details)
         getStore().setCurrentEmail(NON_COACH_2.email)
         val profileIntent = defaultIntent
         val email = COACH_1.email

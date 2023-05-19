@@ -9,21 +9,18 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.github.sdpcoachme.auth.Authenticator
 import com.github.sdpcoachme.auth.MockAuthenticator
 import com.github.sdpcoachme.database.CachingStore
-import com.github.sdpcoachme.database.Database
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
 import com.github.sdpcoachme.location.autocomplete.MockAddressAutocompleteHandler
 import com.github.sdpcoachme.location.provider.MockLocationProvider
 import kotlinx.coroutines.runBlocking
 
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "coachme_test_preferences")
+
 class CoachMeTestApplication : CoachMeApplication() {
     // For DI in testing, add reference to mocks here
     // todo for emulator testing
     //override var database: Database = FireDatabase(Firebase.database.reference)
-
-    private val TEST_PREFERENCES_NAME = "coachme_test_preferences"
-
-    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = TEST_PREFERENCES_NAME)
 
     override fun onCreate() {
         super.onCreate()

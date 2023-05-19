@@ -1,13 +1,12 @@
 package com.github.sdpcoachme.database
 
-import com.github.sdpcoachme.data.schedule.Event
+import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
-import com.github.sdpcoachme.data.GroupEvent
+import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
-import java.time.LocalDate
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -46,46 +45,49 @@ interface Database {
     fun userExists(email: String): CompletableFuture<Boolean>
 
     /**
-     * Add event to the database
+     * Get the group event from the database
+     * @param groupEventId The id of the group event to get
+     * @return A future that will complete with the group event. If the group event does not exist,
+     * the future will complete exceptionally with a NoSuchKeyException.
+     */
+    fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent>
+
+    /**
+     * Get all group events from the database
+     * @return A future that will complete with a list of all group events in the database
+     */
+    fun getAllGroupEvents(): CompletableFuture<List<GroupEvent>>
+
+    /**
+     * Updates the value of a group event in the database (adds it if it does not exist)
+     * @param groupEvent The group event to update
+     * @return A future that will complete when the group event has been updated.
+     */
+    fun updateGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void>
+
+    /**
+     * Add the group event to the schedule of the given user
+     * @param email The email of the user whose schedule should be updated
+     * @param groupEventId The id of the group event to add
+     * @return A future with currently stored schedule that will complete when the group event has been added.
+     */
+    fun addGroupEventToSchedule(email: String, groupEventId: String): CompletableFuture<Schedule>
+
+    /**
+     * Add an event to the schedule of a given user
      * @param event The event to add
-     * @param currentWeekMonday The monday of the current week
+     * @param email The email of the user whose schedule will be updated
      * @return A future with currently stored schedule that will complete when the event has been added.
-     * @param email The email of the user to add the events for
-     * @return A future with currently stored schedule that will complete when the events have been added.
      */
-    fun addEvent(email: String, event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule>
-
-    /**
-     * Add group event to the database
-     * @param groupEvent The group event to add
-     * @return A future that will complete when the group event has been added.
-     */
-    fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void>
-
-    /**
-     * Add new participant to the group event
-     * @param email The email of the user to add as a participant
-     * @param groupEventId The id of the group event to add the participant to
-     * @return A future that will complete when the participant has been added containing the updated schedule of the user.
-     */
-    fun registerForGroupEvent(email: String, groupEventId: String): CompletableFuture<Schedule>
+    fun addEventToSchedule(email: String, event: Event): CompletableFuture<Schedule>
 
     /**
      * Get the schedule from the database
-     * @param currentWeekMonday The monday of the current week
      * @param email The email of the user to get the schedule for
      * @return A future that will complete with the schedule. If the user does not exist,
      * the future will complete exceptionally with a NoSuchKeyException.
      */
-    fun getSchedule(email: String, currentWeekMonday: LocalDate): CompletableFuture<Schedule>
-
-    /**
-     * Get the group event from the database
-     * @param groupEventId The id of the group event to get
-     * @return A future that will complete with the group event. If the user does not exist,
-     * the future will complete exceptionally with a NoSuchKeyException.
-     */
-    fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent>
+    fun getSchedule(email: String): CompletableFuture<Schedule>
 
     /**
      * Get the contact row info for the given user

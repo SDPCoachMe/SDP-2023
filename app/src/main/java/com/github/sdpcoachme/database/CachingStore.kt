@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
 
@@ -97,6 +98,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Retrieves local data from the datastore
+     *
      * @return a completable future that completes when the local data has been retrieved
      */
     @OptIn(DelicateCoroutinesApi::class)
@@ -128,6 +130,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Processes a retrieved cache from Json
+     *
      * @param jsonString the Json string to process
      * @param cache the cache to put the processed Json into
      */
@@ -155,6 +158,7 @@ class CachingStore(private val wrappedDatabase: Database,
     /**
      * Stores the given cache in the Datatstore
      * The cache is serialized to Json using the Gson library before being stored
+     *
      * @param cache the cache to store
      * @param key the key to store the cache under
      * @param <T> the type of the cache
@@ -175,6 +179,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Stores the local data in the datastore
+     *
      * @return a completable future that completes when the background write has been launched
      */
     @OptIn(DelicateCoroutinesApi::class)
@@ -196,6 +201,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Updates the current user
+     *
      * @param user the user to update
      * @return a completable future that completes when the user has been updated
      */
@@ -208,6 +214,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Gets the current user
+     *
      * @param email the email of the user to get
      * @return a completable future that completes when the user has been retrieved
      */
@@ -223,6 +230,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Gets all users
+     *
      * @return a completable future that completes when all users have been retrieved
      */
     fun getAllUsers(): CompletableFuture<List<UserInfo>> {
@@ -240,6 +248,7 @@ class CachingStore(private val wrappedDatabase: Database,
     // todo refactor with userLocation inside CachingStore
     /**
      * Get all users from the database sorted by distance from a given location
+     *
      * @param latitude Latitude of the location
      * @param longitude Longitude of the location
      * @return A future that will complete with a list of all users in the database sorted by distance
@@ -266,59 +275,153 @@ class CachingStore(private val wrappedDatabase: Database,
     }
 
     /**
-     * Adds event to a user's schedule
+     * Gets the group event with the given id
+     */
+    fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
+        return wrappedDatabase.getGroupEvent(groupEventId)
+    }
+
+    /**
+     * Gets all group events
+     */
+    fun getAllGroupEvents(): CompletableFuture<List<GroupEvent>> {
+        return wrappedDatabase.getAllGroupEvents()
+    }
+
+    /**
+     * Gets all group events sorted by date
+     */
+    fun getAllGroupEventsByDate(): CompletableFuture<List<GroupEvent>> {
+        return getAllGroupEvents().thenApply { groupEvents ->
+            groupEvents.sortedBy { groupEvent ->
+                LocalDateTime.parse(groupEvent.event.start)
+            }
+        }
+    }
+
+    /**
+     * Gets all group events that have not yet occurred, sorted by date
+     */
+    fun getUpcomingGroupEventsByDate(): CompletableFuture<List<GroupEvent>> {
+        return getAllGroupEventsByDate().thenApply { groupEvents ->
+            groupEvents.filter { groupEvent ->
+                LocalDateTime.parse(groupEvent.event.start).isAfter(LocalDateTime.now())
+            }
+        }
+    }
+
+    /**
+     * Gets all group events from a given user, sorted by date
+     */
+    fun getGroupEventsOfUserByDate(email: String): CompletableFuture<List<GroupEvent>> {
+        return getAllGroupEventsByDate().thenApply { groupEvents ->
+            groupEvents.filter { groupEvent ->
+                email in groupEvent.participants || email == groupEvent.organizer
+            }
+        }
+    }
+
+    // TODO: use a listener of schedule for easier readability of code :)
+    private var groupEventFuture: CompletableFuture<Void> = CompletableFuture.completedFuture(null)
+    private var registerForGroupEventFuture: CompletableFuture<Void> = CompletableFuture.completedFuture(null)
+
+    /**
+     * Updates the value of a group event in the caching store (adds it if it does not exist)
+     *
+     * @param groupEvent The group event to update
+     * @return A future that will complete when the group event has been updated.
+     */
+    fun updateGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
+        return wrappedDatabase.updateGroupEvent(groupEvent)
+    }
+
+    /**
+     * Registers the current user for a group event. This updates the group event in the database,
+     * updates the schedule of the current user, and adds the current user to the group chat.
+     *
+     * @param groupEventId the id of the group event to register for
+     * @return a completable future that completes when the user has been registered for the group
+     * event. The future will complete exceptionally if the group event is full.
+     */
+    fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
+        registerForGroupEventFuture = CompletableFuture()
+        return getGroupEvent(groupEventId).thenApply { groupEvent ->
+            // Check that event is not full
+            if (groupEvent.participants.size >= groupEvent.maxParticipants) {
+                // TODO: should be a custom exception
+                throw Exception("Group event is full")
+            }
+            groupEvent
+        }.thenCompose { groupEvent ->
+            getCurrentEmail().thenCompose { email ->
+                CompletableFuture.allOf(
+                    // Update the group event in the database
+                    updateGroupEvent(groupEvent.copy(participants = groupEvent.participants + email)),
+                    // Update the schedule of the current user
+                    addGroupEventToSchedule(groupEventId),
+                    // Add the user to the group chat
+                    updateChatParticipants(groupEvent.groupEventId, groupEvent.participants + email),
+                    // Update the user contacts
+                    getUser(email).thenApply {
+                        updateUser(it.copy(chatContacts = listOf(groupEvent.groupEventId) + it.chatContacts))
+                    }
+                )
+            }
+        }.thenApply {
+            registerForGroupEventFuture.complete(null)
+            it
+        }.exceptionally {
+            registerForGroupEventFuture.complete(null)
+            null
+        }
+    }
+
+    /**
+     * Adds event to the current user's schedule
+     *
      * @param event the event to add
-     * @param currentWeekMonday the monday of the currently displayed week
      * @return a completable future that completes when the events have been added, containing the cached schedule
      */
-    fun addEvent(event: Event, currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
+    fun addEventToSchedule(event: Event): CompletableFuture<Schedule> {
         return getCurrentEmail().thenCompose { email ->
-            wrappedDatabase.addEvent(email, event, currentWeekMonday).thenApply {
+            wrappedDatabase.addEventToSchedule(email, event).thenApply {
                 // Update the cached schedule
                 val start = LocalDateTime.parse(event.start).toLocalDate()
                 val end = LocalDateTime.parse(event.end).toLocalDate()
                 if (start >= minCachedMonday && end < maxCachedMonday) {
                     cachedSchedule = cachedSchedule.copy(events = cachedSchedule.events.plus(event))
                 }
-
                 cachedSchedule
             }
         }
     }
 
     /**
-     * Adds group event to the database
-     * @param groupEvent the group event to add
-     * @return a completable future that completes when the group event has been added
+     * Adds a group event to the current user's schedule
+     *
+     * @param groupEventId the id of the group event to add
+     * @return a completable future that completes when the group event has been added, containing the cached schedule
      */
-    fun addGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
+    fun addGroupEventToSchedule(groupEventId: String): CompletableFuture<Schedule> {
         groupEventFuture = CompletableFuture()
-        return wrappedDatabase.addGroupEvent(groupEvent).thenCompose {
-            registerForGroupEvent(groupEvent.groupEventId)
-        }.thenApply { groupEventFuture.complete(null); it }
-            .exceptionally {
-                println("Failed to add group event: ${it.cause}")
-                groupEventFuture.complete(null); null }
-    }
-
-    /**
-     * Registers the current user for a group event
-     * @param groupEventId the id of the group event to register for
-     * @return a completable future that completes when the user has been registered for the group event
-     */
-    fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
-        registerToGroupEventFuture = CompletableFuture()
         return getCurrentEmail().thenCompose { email ->
-            wrappedDatabase.registerForGroupEvent(email, groupEventId)
-                .thenCompose {
-                    wrappedDatabase.getSchedule(email, currentShownMonday)
-                }.thenAccept { schedule ->
-                    cachedSchedule = schedule   // Update the cached schedule
-                }
-        }.thenApply { registerToGroupEventFuture.complete(null); it }
-            .exceptionally {
-                println("Failed to register for group event: ${it.cause}")
-                registerToGroupEventFuture.complete(null); null }
+            wrappedDatabase.addGroupEventToSchedule(email = email, groupEventId = groupEventId)
+        }.thenCompose {
+            wrappedDatabase.getGroupEvent(groupEventId)
+        }.thenApply { groupEvent ->
+            // Update the cached schedule
+            cachedSchedule = cachedSchedule.copy(
+                events = cachedSchedule.events + EventOps.groupEventsToEvents(listOf(groupEvent)),
+                groupEvents = cachedSchedule.groupEvents + groupEventId
+            )
+            cachedSchedule
+        }.thenApply {
+            groupEventFuture.complete(null)
+            it
+        }.exceptionally {
+            groupEventFuture.complete(null)
+            null
+        }
     }
 
     private fun fetchGroupEventsAsEvents(schedule: Schedule): List<Event> {
@@ -336,82 +439,71 @@ class CachingStore(private val wrappedDatabase: Database,
         return EventOps.groupEventsToEvents(groupEvents)
     }
 
-    private var groupEventFuture: CompletableFuture<Void> = completedFuture(null)
-    private var registerToGroupEventFuture: CompletableFuture<Void> = completedFuture(null)
-
     // Note: checks if it is time to prefetch
     /**
      * Gets the schedule for the current user
+     *
      * @param currentWeekMonday the monday of the current week
      * @return a completable future that completes when the schedule has been retrieved (containing the newly cached schedule)
      */
     fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         currentShownMonday = currentWeekMonday
 
-        return groupEventFuture.thenCompose {
-            registerToGroupEventFuture.thenCompose{
-                getCurrentEmail().thenCompose { email ->
-                    if (cachedSchedule.events.isEmpty() && cachedSchedule.groupEvents.isEmpty()) {  // If no cached schedule for that account, we fetch the schedule from the db
-                        wrappedDatabase.getSchedule(email, currentWeekMonday).thenApply { schedule ->
-                            val events =
-                                schedule.events.filter {   // We only cache the events that are in the current week or close to it
-                                    if (it != Event()) {
-                                        val start = LocalDateTime.parse(it.start).toLocalDate()
-                                        val end = LocalDateTime.parse(it.end).toLocalDate()
-                                        start >= minCachedMonday && end <= maxCachedMonday
-                                    } else {
-                                        false
-                                    }
+        return CompletableFuture.allOf(registerForGroupEventFuture, groupEventFuture).thenCompose {
+            getCurrentEmail().thenCompose { email ->
+                if (cachedSchedule.events.isEmpty() && cachedSchedule.groupEvents.isEmpty()) {  // If no cached schedule for that account, we fetch the schedule from the db
+                    wrappedDatabase.getSchedule(email).thenApply { schedule ->
+                        val events =
+                            schedule.events.filter {   // We only cache the events that are in the current week or close to it
+                                if (it != Event()) {
+                                    val start = LocalDateTime.parse(it.start).toLocalDate()
+                                    val end = LocalDateTime.parse(it.end).toLocalDate()
+                                    start >= minCachedMonday && end <= maxCachedMonday
+                                } else {
+                                    false
+                                }
+                            }
+
+                        val transformedGroupEvents = fetchGroupEventsAsEvents(schedule)
+
+                        schedule.copy(events = events + transformedGroupEvents)
+                            .also {   // Update the cache
+                                cachedSchedule = it
+                                storeLocalData()
+                            }
+                    }
+                } else {
+                    // If it is time to prefetch (because displayed week is too close to the edge of the cached schedule), we fetch the schedule from the db
+                    if (currentWeekMonday <= minCachedMonday || currentWeekMonday >= maxCachedMonday) {
+
+                        // Update the cached schedule's prefetch boundaries
+                        minCachedMonday = currentWeekMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
+                        maxCachedMonday = currentWeekMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
+
+                        wrappedDatabase.getSchedule(email)
+                            .thenApply { schedule ->
+                                val events = schedule.events.filter {
+                                    val start = LocalDateTime.parse(it.start).toLocalDate()
+                                    val end = LocalDateTime.parse(it.end).toLocalDate()
+                                    start >= minCachedMonday && end <= maxCachedMonday
                                 }
 
-                            val transformedGroupEvents = fetchGroupEventsAsEvents(schedule)
+                                // Transform of groupEvents to a list of Events
+                                val transformedGroupEvents = fetchGroupEventsAsEvents(schedule)
 
-                            schedule.copy(events = events + transformedGroupEvents)
-                                .also {   // Update the cache
-                                    cachedSchedule = it
+                                schedule.copy(events = events + transformedGroupEvents).also {
+                                    cachedSchedule = it  // Update the cache
                                     storeLocalData()
                                 }
-                        }
+                            }
                     } else {
-                        // If it is time to prefetch (because displayed week is too close to the edge of the cached schedule), we fetch the schedule from the db
-                        if (currentWeekMonday <= minCachedMonday || currentWeekMonday >= maxCachedMonday) {
-
-                            // Update the cached schedule's prefetch boundaries
-                            minCachedMonday = currentWeekMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
-                            maxCachedMonday = currentWeekMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
-
-                            wrappedDatabase.getSchedule(email, currentWeekMonday)
-                                .thenApply { schedule ->
-                                    val events = schedule.events.filter {
-                                        val start = LocalDateTime.parse(it.start).toLocalDate()
-                                        val end = LocalDateTime.parse(it.end).toLocalDate()
-                                        start >= minCachedMonday && end <= maxCachedMonday
-                                    }
-
-                                    // Transform of groupEvents to a list of Events
-                                    val transformedGroupEvents = fetchGroupEventsAsEvents(schedule)
-
-                                    schedule.copy(events = events + transformedGroupEvents).also {
-                                        cachedSchedule = it  // Update the cache
-                                        storeLocalData()
-                                    }
-                                }
-                        } else {
-                            // If no need to prefetch, we return the cached schedule
-                            currentShownMonday = currentWeekMonday
-                            completedFuture(cachedSchedule)
-                        }
+                        // If no need to prefetch, we return the cached schedule
+                        currentShownMonday = currentWeekMonday
+                        completedFuture(cachedSchedule)
                     }
                 }
             }
         }
-    }
-
-    /**
-     * Gets the group event with the given id
-     */
-    fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
-        return wrappedDatabase.getGroupEvent(groupEventId)
     }
 
     /**
@@ -432,6 +524,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Get a chat
+     *
      * @param chatId the id of the chat to get
      * @return a completable future that completes when the chat has been retrieved
      */
@@ -466,6 +559,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Send a message
+     *
      * @param chatId the id of the chat to send the message to
      * @param message the message to send
      * @return a completable future that completes when the message has been sent
@@ -515,6 +609,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Mark messages as read
+     *
      * @param chatId the id of the chat to mark the messages as read
      * @param email the email of the user to mark the messages as read
      * @return a completable future that completes when the messages have been marked as read
@@ -532,6 +627,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Add a chat listener
+     *
      * @param chatId the id of the chat to add the listener to
      * @param onChange the function to call when the chat changes
      */
@@ -546,6 +642,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Remove a chat listener
+     *
      * @param chatId the id of the chat to remove the listener from
      */
     fun removeChatListener(chatId: String) {
@@ -572,6 +669,7 @@ class CachingStore(private val wrappedDatabase: Database,
     // No cache here, method just used for testing to fetch from database
     /**
      * Get the FCM token for a user
+     *
      * @param email The email of the user to get the FCM token for
      * @return A completable future that completes when the FCM token has been retrieved
      */
@@ -589,6 +687,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Set the FCM token for a user
+     *
      * @param email The email of the user to set the FCM token for
      * @param token The FCM token to set
      * @return A completable future that completes when the FCM token has been set
@@ -601,6 +700,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Get the current email
+     *
      * Note: this method needs to return a future as the email is retrieved asynchronously from
      * the local storage (datastore).
      * @return A completable future that completes when the current email has been retrieved
@@ -617,6 +717,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Set the current email
+     *
      * @param email The email to set as current
      * @return A completable future that completes when the email has been set
      */
@@ -628,6 +729,7 @@ class CachingStore(private val wrappedDatabase: Database,
     /**
      * Check if a user is cached
      * Useful for testing
+     *
      * @param email The email of the user to check
      * @return True if the user is cached, false otherwise
      */
@@ -653,6 +755,7 @@ class CachingStore(private val wrappedDatabase: Database,
 
     /**
      * Check if the device is connected to the internet
+     *
      * @return True if the device is connected to the internet, false otherwise
      */
     fun isOnline(): Boolean {

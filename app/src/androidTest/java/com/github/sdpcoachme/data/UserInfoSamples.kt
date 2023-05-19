@@ -6,7 +6,7 @@ class UserInfoSamples {
             firstName = "John",
             lastName = "Doe",
             email = "john.doe@email.com",
-            address = UserAddressSamples.PARIS,
+            address = AddressSamples.PARIS,
             phone = "0123456789",
             sports = listOf(Sports.SKI, Sports.SWIMMING),
             coach = true
@@ -15,7 +15,7 @@ class UserInfoSamples {
             firstName = "Marc",
             lastName = "Delémont",
             email = "marc@email.com",
-            address = UserAddressSamples.LAUSANNE,
+            address = AddressSamples.LAUSANNE,
             phone = "0123456789",
             sports = listOf(Sports.WORKOUT),
             coach = true
@@ -24,7 +24,7 @@ class UserInfoSamples {
             firstName = "Kate",
             lastName = "Senior",
             email = "katy@email.com",
-            address = UserAddressSamples.LONDON,
+            address = AddressSamples.LONDON,
             phone = "0123456789",
             sports = listOf(Sports.TENNIS, Sports.SWIMMING),
             coach = true
@@ -35,7 +35,7 @@ class UserInfoSamples {
             firstName = "James",
             lastName = "Dolorian",
             email = "jammy@email.com",
-            address = UserAddressSamples.TOKYO,
+            address = AddressSamples.TOKYO,
             phone = "0123456789",
             sports = listOf(Sports.SKI, Sports.SWIMMING),
             coach = false
@@ -44,7 +44,7 @@ class UserInfoSamples {
             firstName = "Loris",
             lastName = "Gotti",
             email = "lolo@email.com",
-            address = UserAddressSamples.SYDNEY,
+            address = AddressSamples.SYDNEY,
             phone = "0123456789",
             sports = listOf(Sports.TENNIS),
             coach = false

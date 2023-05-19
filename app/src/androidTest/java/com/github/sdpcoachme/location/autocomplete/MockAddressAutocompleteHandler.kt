@@ -1,7 +1,7 @@
 package com.github.sdpcoachme.location.autocomplete
 
 import com.github.sdpcoachme.data.Address
-import com.github.sdpcoachme.data.UserAddressSamples.Companion.LAUSANNE
+import com.github.sdpcoachme.data.AddressSamples.Companion.LAUSANNE
 import java.util.concurrent.CompletableFuture
 
 class MockAddressAutocompleteHandler : AddressAutocompleteHandler {

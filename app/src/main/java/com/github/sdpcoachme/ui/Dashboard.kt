@@ -23,19 +23,19 @@ import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.auth.LoginActivity
+import com.github.sdpcoachme.groupevent.GroupEventsListActivity
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.profile.CoachesListActivity
 import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.schedule.ScheduleActivity
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.COACHES_LIST
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.GROUP_EVENTS_LIST
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HELP
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.LOGOUT
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.MESSAGING
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.PLAN
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.PROFILE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.SCHEDULE
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.SETTINGS
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
@@ -61,10 +61,9 @@ class Dashboard {
                 const val PLAN = "plan"
                 const val SCHEDULE = "schedule"
                 const val PROFILE = "profile"
-                const val COACHES_LIST = "coacheslist"
-                const val MESSAGING = "Messaging"
-                const val SETTINGS = "settings"
-                const val HELP = "help"
+                const val COACHES_LIST = "coachesList"
+                const val MESSAGING = "messaging"
+                const val GROUP_EVENTS_LIST = "groupEventsList"
                 const val LOGOUT = "logout"
             }
         }
@@ -79,6 +78,7 @@ class Dashboard {
 @Composable
 fun Dashboard(title: String? = null,
               UIDisplayed: CompletableFuture<Void> = CompletableFuture<Void>(),
+              noElevation: Boolean = false,
               appContent: @Composable (Modifier) -> Unit) {
 
     val context = LocalContext.current
@@ -93,7 +93,8 @@ fun Dashboard(title: String? = null,
         topBar = {
             AppBar(
                 title = title ?: stringResource(id = R.string.app_name),
-                onNavigationIconClick = { coroutineScope.launch {scaffoldState.drawerState.open()} }
+                onNavigationIconClick = { coroutineScope.launch {scaffoldState.drawerState.open()} },
+                noElevation = noElevation
             )},
         drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
         drawerContent = {
@@ -102,28 +103,25 @@ fun Dashboard(title: String? = null,
                 items = listOf(
                     MenuItem(tag = PLAN, title = "Map",
                         contentDescription = "Return to main map",
-                        icon = Default.LocationOn),
-                    MenuItem(tag = SCHEDULE, title = "Schedule",
-                        contentDescription = "See schedule",
-                        icon = Default.CheckCircle),
-                    MenuItem(tag = PROFILE, title = "My profile",
-                        contentDescription = "Go to profile",
-                        icon = Default.AccountCircle),
+                        icon = Default.Map),
                     MenuItem(tag = COACHES_LIST, title = "Nearby coaches",
                         contentDescription = "See a list of coaches available close to you",
                         icon = Default.People),
+                    MenuItem(tag = GROUP_EVENTS_LIST, title = "Group events",
+                        contentDescription = "See a list of events organized by coaches close to you",
+                        icon = Default.Groups),
+                    MenuItem(tag = SCHEDULE, title = "Schedule",
+                        contentDescription = "See schedule",
+                        icon = Default.Today),
                     MenuItem(tag = MESSAGING, title = "Messaging",
                         contentDescription = "Go to Messaging section",
-                        icon = Default.Message),
-                    MenuItem(tag = SETTINGS, title = "Settings",
-                        contentDescription = "Go to settings",
-                        icon = Default.Settings),
-                    MenuItem(tag = HELP, title = "Help",
-                        contentDescription = "Get help",
-                        icon = Default.Info),
+                        icon = Default.Chat),
+                    MenuItem(tag = PROFILE, title = "My profile",
+                        contentDescription = "Go to profile",
+                        icon = Default.ManageAccounts),
                     MenuItem(tag = LOGOUT, title = "Log out",
                             contentDescription = "User logs out",
-                            icon = Default.Close)
+                            icon = Default.Logout)
                 ),
                 onItemClick = {
                     when (it.tag) {
@@ -152,10 +150,11 @@ fun Dashboard(title: String? = null,
                             intent.putExtra("isViewingContacts", true)
                             context.startActivity(intent)
                         }
+                        GROUP_EVENTS_LIST -> {
+                            context.startActivity(Intent(context, GroupEventsListActivity::class.java))
+                        }
                         else -> {
-                            // TODO replace the print by a call to the corresponding item activity
-                            println("Clicked on ${it.title}")
-
+                            throw IllegalStateException("Unknown tab clicked: ${it.tag}")
                         }
                     }
                 }
@@ -169,7 +168,7 @@ fun Dashboard(title: String? = null,
 }
 
 @Composable
-fun AppBar(title: String, onNavigationIconClick: () -> Unit) {
+fun AppBar(title: String, onNavigationIconClick: () -> Unit, noElevation: Boolean = false) {
     TopAppBar(
         title = { Text(text = title, modifier = Modifier.testTag(BAR_TITLE)) },
         backgroundColor = MaterialTheme.colors.primary,
@@ -183,7 +182,8 @@ fun AppBar(title: String, onNavigationIconClick: () -> Unit) {
                     contentDescription = "Toggle drawer"
                 )
             }
-        }
+        },
+        elevation = if (noElevation) 0.dp else AppBarDefaults.TopAppBarElevation
     )
 }
 
