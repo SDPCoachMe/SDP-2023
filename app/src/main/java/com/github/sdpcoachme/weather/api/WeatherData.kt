@@ -2,6 +2,9 @@ package com.github.sdpcoachme.weather.api
 
 import com.google.gson.annotations.SerializedName
 
+/**
+ * Data type to parse a JSON object to a Weather object.
+ */
 data class WeatherData(
     @SerializedName("daily")
     val weatherDataObject: WeatherDataObject

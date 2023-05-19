@@ -6,17 +6,33 @@ import com.github.sdpcoachme.weather.api.WeatherApi
 import com.github.sdpcoachme.weather.api.WeatherData
 import java.util.*
 
+/**
+ * open-meteo implementation of a WeatherRepository. For further documentation, see
+ * WeatherRepository.
+ *
+ * @param api the weather api to use (open-meteo or MockWeatherApi)
+ */
 class OpenMeteoRepository(private var api: WeatherApi) : WeatherRepository {
 
     companion object {
         const val BASE_URL = "https://api.open-meteo.com/"
     }
 
+    /**
+     * Fetches a forecast from the api given a location target.
+     *
+     * @param lat latitude of the target location
+     * @param long longitude of the target location
+     */
     override suspend fun loadWeatherForecast(lat: Double, long: Double): List<Weather> {
         val weatherData = api.getWeatherData(lat, long, TimeZone.getDefault().id)
         return weatherData.parseWeatherData()
     }
 
+    /**
+     * Parses a WeatherData to a List<Weather> which will the compose a WeatherForecast.
+     * Each weather code of the WeatherData is mapped to a weather icon id.
+     */
     private fun WeatherData.parseWeatherData(): List<Weather> {
         val maxTemperatures = weatherDataObject.maxTemperatures
         val minTemperatures = weatherDataObject.minTemperatures
@@ -35,6 +51,9 @@ class OpenMeteoRepository(private var api: WeatherApi) : WeatherRepository {
         }
     }
 
+    /**
+     * Maps a weather code to a weather icon id.
+     */
     private fun Int.toWeatherIcon(): Int {
         return when (this) {
             // clear, mainly clear

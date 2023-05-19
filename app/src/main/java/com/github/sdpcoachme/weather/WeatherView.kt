@@ -17,6 +17,12 @@ import com.github.sdpcoachme.R.drawable.weather_cloud_done
 import com.github.sdpcoachme.R.drawable.weather_cloud_off
 import java.time.LocalDate
 
+/**
+ * Displays a WeatherIcon with the maximal and minimal temperature of a given day.
+ *
+ * @param weatherForecast the weatherForecast to display
+ * @param day the day to display
+ */
 @Composable
 fun WeatherView(weatherForecast: MutableState<WeatherForecast>, day: LocalDate) {
 

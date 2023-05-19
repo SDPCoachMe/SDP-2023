@@ -3,6 +3,10 @@ package com.github.sdpcoachme.weather.api
 import retrofit2.http.GET
 import retrofit2.http.Query
 
+/**
+ * Weather api to retreive a weather forecast.
+ * Sends a https GET request and returns a JSON object.
+ */
 interface WeatherApi {
 
     /**

@@ -649,6 +649,13 @@ class CachingStore(private val wrappedDatabase: Database,
         wrappedDatabase.removeChatListener(chatId)
     }
 
+    /**
+     * If the device is online, creates a WeatherPresenter and launch the weather forecast pipeline.
+     * Cached forecast is updated if the request completes normally.
+     * If not, simply returns the cached weather forecast.
+     *
+     * @param target The target location for the weather forecast
+     */
     fun getWeatherForecast(target: LatLng): CompletableFuture<MutableState<WeatherForecast>> {
 
         return if (isOnline()) {
