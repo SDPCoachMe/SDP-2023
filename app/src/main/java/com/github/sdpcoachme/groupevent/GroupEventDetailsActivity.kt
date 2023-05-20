@@ -50,6 +50,8 @@ import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Tabs.
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Tabs.Companion.PARTICIPANTS
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.ProfileActivity
+import com.github.sdpcoachme.ui.ImageData
+import com.github.sdpcoachme.ui.SmallListItem
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.future.await
 import java.time.LocalDateTime
@@ -57,6 +59,9 @@ import java.time.Month
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
 
+/**
+ * Activity that displays the details of a group event.
+ */
 class GroupEventDetailsActivity : ComponentActivity() {
 
     class TestTags {
@@ -515,7 +520,6 @@ private fun IconTextRow(
     }
 }
 
-// TODO: might be a way to modularize with UserInfoListItem from CoachesListActivity
 /**
  * Composable that displays a row with a user's profile picture and name.
  */
@@ -524,33 +528,14 @@ fun SmallUserInfoListItem(
     userInfo: UserInfo,
     onClick: (() -> Unit)? = null
 ) {
-    Row(
-        modifier =
-        if (onClick != null) {
-            Modifier.clickable(onClick = onClick)
-        } else {
-            Modifier
-        }
-            .padding(10.dp)
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Image(
+    SmallListItem(
+        image = ImageData(
             painter = painterResource(id = R.drawable.ic_launcher_background),
-            contentDescription = "${userInfo.firstName} ${userInfo.lastName}'s profile picture",
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .border(2.dp, Color.Gray, CircleShape)
-                .padding(0.dp, 0.dp, 0.dp, 0.dp)
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = "${userInfo.firstName} ${userInfo.lastName}",
-            style = MaterialTheme.typography.body1
-        )
-    }
-    Divider()
+            contentDescription = "${userInfo.firstName} ${userInfo.lastName}'s profile picture"
+        ),
+        title = "${userInfo.firstName} ${userInfo.lastName}",
+        onClick = onClick
+    )
 }
 
 // Needed because of https://stackoverflow.com/questions/68847231/jetpack-compose-how-to-disable-floatingaction-button

@@ -37,6 +37,9 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
 
+/**
+ * The activity that displays the list of group events.
+ */
 class GroupEventsListActivity : ComponentActivity() {
 
     class TestTags {
@@ -134,6 +137,9 @@ class GroupEventsListActivity : ComponentActivity() {
     }
 }
 
+/**
+ * A group event item in the list of group events.
+ */
 @Composable
 fun GroupEventItem(
     groupEvent: GroupEvent,
