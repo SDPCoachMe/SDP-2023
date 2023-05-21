@@ -10,7 +10,8 @@ import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -265,20 +266,19 @@ class SelectSportsActivity : ComponentActivity() {
      */
     @Composable
     fun MultiSelectList(items: List<ListItem<Sports>>, toggleSelectSport: (Sports) -> Unit) {
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag(TestTags.MultiSelectListTag.LAZY_SELECT_COLUMN)
+                .verticalScroll(rememberScrollState()),
         ) {
-            item {
-                Divider()
-            }
-            items(items.size) { i ->
+            Divider()
+            List(items.size) { i ->
                 Row (
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            toggleSelectSport(Sports.values()[i])
+                            toggleSelectSport(items[i].element)
                         }
                         .padding(vertical = 20.dp, horizontal = 30.dp)
                         .testTag(TestTags.MultiSelectListTag.ROW_TEXT_LIST[i].ROW),
@@ -303,7 +303,7 @@ class SelectSportsActivity : ComponentActivity() {
                         contentDescription = "Selected",
                         tint = MaterialTheme.colors.primary,
                         modifier = if (items[i].selected) Modifier.size(20.dp).testTag(TestTags.MultiSelectListTag.ROW_TEXT_LIST[i].ICON)
-                                    else Modifier.size(20.dp)
+                        else Modifier.size(20.dp)
                     )
                 }
                 Divider()
