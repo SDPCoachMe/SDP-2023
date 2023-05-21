@@ -14,9 +14,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Button
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -39,8 +37,12 @@ import java.util.concurrent.CompletableFuture
 
 
 class LoginActivity : ComponentActivity() {
+
+    // Used to make sure the activity does not display its content if it will be redirected
+    private var displayUI: CompletableFuture<Boolean> = CompletableFuture()
+
     // Allows to notice testing framework that the activity is ready
-    var stateLoading = CompletableFuture<Void>()
+    var stateLoading: CompletableFuture<Void> = displayUI.thenAccept {} // To have Void type
 
     class TestTags {
         class Buttons {
@@ -103,25 +105,30 @@ class LoginActivity : ComponentActivity() {
                 store.getCurrentEmail().thenAccept {
                     launchNextActivity(it)
                     // Notify tests
-                    stateLoading.complete(null)
+                    displayUI.complete(false)
                 }
             } else {
                 // If the user is not logged in, we can start loading the activity
                 // Also notify tests
-                stateLoading.complete(null)
+                displayUI.complete(true)
             }
         }
 
         setContent {
             CoachMeTheme {
-                Scaffold(
-                    // Enables for all composables in the hierarchy.
-                    modifier = Modifier.semantics {
-                        testTagsAsResourceId = true
-                    }
+                Surface(
+                    color = MaterialTheme.colors.background,
                 ) {
-                    // Need to pass padding to child node
-                    innerPadding -> AuthenticationForm(modifier = Modifier.padding(innerPadding))
+                    Scaffold(
+                        // Enables for all composables in the hierarchy.
+                        modifier = Modifier.semantics {
+                            testTagsAsResourceId = true
+                        }
+                    ) {
+                        // Need to pass padding to child node
+                            innerPadding ->
+                        AuthenticationForm(modifier = Modifier.padding(innerPadding))
+                    }
                 }
             }
         }
@@ -133,8 +140,7 @@ class LoginActivity : ComponentActivity() {
         var showUI by remember { mutableStateOf(false) }
 
         LaunchedEffect(true) {
-            stateLoading.await()
-            showUI = true
+            showUI = displayUI.await()
         }
 
         Column(
@@ -150,6 +156,9 @@ class LoginActivity : ComponentActivity() {
                         authenticator.signIn(signInLauncher)
                     })
                 { Text("LOG IN") }
+            } else {
+                // While we are waiting for the next activity to launch, we display a loading
+                CircularProgressIndicator()
             }
         }
     }

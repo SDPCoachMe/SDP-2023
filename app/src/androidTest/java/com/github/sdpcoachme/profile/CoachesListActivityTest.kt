@@ -212,7 +212,7 @@ open class CoachesListActivityTest {
         @Test
         fun dashboardHasRightTitleOnContactsList() {
             val title = (InstrumentationRegistry.getInstrumentation()
-                .targetContext.applicationContext as CoachMeApplication).getString(R.string.contacts)
+                .targetContext.applicationContext as CoachMeApplication).getString(R.string.chats)
             composeTestRule.onNodeWithTag(BAR_TITLE).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(BAR_TITLE).assert(hasText(title))
         }

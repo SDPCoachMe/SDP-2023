@@ -164,18 +164,20 @@ class SelectSportsActivity : ComponentActivity() {
 
         setContent {
             CoachMeTheme {
-                SelectSportsLayout(
-                    onSubmit = {
-                        setResult(RESULT_OK, Intent().putExtra(RETURN_VALUE_KEY, it.toTypedArray()))
-                        finish()
-                    },
-                    onCancel = {
-                        setResult(RESULT_CANCELED)
-                        finish()
-                    },
-                    initialValue = initialValue,
-                    title = title
-                )
+                Surface(color = MaterialTheme.colors.background) {
+                    SelectSportsLayout(
+                        onSubmit = {
+                            setResult(RESULT_OK, Intent().putExtra(RETURN_VALUE_KEY, it.toTypedArray()))
+                            finish()
+                        },
+                        onCancel = {
+                            setResult(RESULT_CANCELED)
+                            finish()
+                        },
+                        initialValue = initialValue,
+                        title = title
+                    )
+                }
             }
         }
     }
@@ -228,24 +230,29 @@ class SelectSportsActivity : ComponentActivity() {
                             modifier = Modifier.testTag(DONE)
                         ) {
                             Icon(Icons.Filled.Done, "Done",
-                                tint = MaterialTheme.colors.onPrimary)
+                                tint = if (MaterialTheme.colors.isLight)
+                                    MaterialTheme.colors.onPrimary
+                                else
+                                    MaterialTheme.colors.onSurface
+                            )
                         }
                     })
             }
         ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 20.dp)
-                    .testTag(TestTags.COLUMN),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                MultiSelectList(
-                    items = sportItems,
-                    toggleSelectSport = toggleSelectSport
-                )
+            Surface(color = MaterialTheme.colors.background) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .testTag(TestTags.COLUMN),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    MultiSelectList(
+                        items = sportItems,
+                        toggleSelectSport = toggleSelectSport
+                    )
+                }
             }
         }
     }
@@ -263,6 +270,9 @@ class SelectSportsActivity : ComponentActivity() {
                 .fillMaxWidth()
                 .testTag(TestTags.MultiSelectListTag.LAZY_SELECT_COLUMN)
         ) {
+            item {
+                Divider()
+            }
             items(items.size) { i ->
                 Row (
                     modifier = Modifier
@@ -270,14 +280,24 @@ class SelectSportsActivity : ComponentActivity() {
                         .clickable {
                             toggleSelectSport(Sports.values()[i])
                         }
-                        .padding(16.dp)
+                        .padding(vertical = 20.dp, horizontal = 30.dp)
                         .testTag(TestTags.MultiSelectListTag.ROW_TEXT_LIST[i].ROW),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = items[i].element.sportName,
-                        modifier = Modifier.testTag(
-                            TestTags.MultiSelectListTag.ROW_TEXT_LIST[i].TEXT))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = items[i].element.sportIcon,
+                            contentDescription = items[i].element.sportName,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(text = items[i].element.sportName,
+                            modifier = Modifier.testTag(
+                                TestTags.MultiSelectListTag.ROW_TEXT_LIST[i].TEXT))
+                    }
                     Icon(
                         imageVector = if (items[i].selected) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
                         contentDescription = "Selected",
@@ -286,6 +306,7 @@ class SelectSportsActivity : ComponentActivity() {
                                     else Modifier.size(20.dp)
                     )
                 }
+                Divider()
             }
         }
     }

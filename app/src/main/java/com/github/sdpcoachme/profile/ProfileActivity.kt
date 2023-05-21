@@ -43,7 +43,6 @@ import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PHONE
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PROFILE_LABEL
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.SPORTS
 import com.github.sdpcoachme.ui.Dashboard
-import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
@@ -114,15 +113,8 @@ class ProfileActivity : ComponentActivity() {
                 if (isViewingCoach) stringResource(R.string.profile_details)
                 else stringResource(R.string.my_profile)
 
-            CoachMeTheme {
-                Dashboard(title) {
-                    Surface(
-                        modifier = it.fillMaxSize(),
-                        color = MaterialTheme.colors.background
-                    ) {
-                        Profile(futureUserInfo, isViewingCoach)
-                    }
-                }
+            Dashboard(title) {
+                Profile(futureUserInfo, isViewingCoach)
             }
         }
     }

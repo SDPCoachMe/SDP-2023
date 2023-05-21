@@ -1,9 +1,9 @@
 package com.github.sdpcoachme.weather
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -61,7 +61,7 @@ private fun WeatherColumn(weatherText: String, weatherCode: Int) {
         modifier = Modifier.fillMaxWidth().testTag("WEATHER_COLUMN"),
         horizontalAlignment = CenterHorizontally
     ) {
-        Image(
+        Icon(
             painter = painterResource(id = weatherCode),
             contentDescription = "Weather icon",
             modifier = Modifier.size(35.dp).testTag(weatherCode.toString())

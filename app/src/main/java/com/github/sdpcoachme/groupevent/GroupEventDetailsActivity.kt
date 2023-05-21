@@ -146,51 +146,61 @@ class GroupEventDetailsActivity : ComponentActivity() {
             }
 
             CoachMeTheme {
-                Scaffold(
-                    topBar = {
-                        TopAppBar(
-                            title = {
-                                Text("Event details", modifier = Modifier.testTag(TITLE))
-                            },
-                            navigationIcon = {
-                                IconButton(
-                                    onClick = { finish() },
-                                    modifier = Modifier.testTag(BACK)
-                                ) {
-                                    Icon(Icons.Filled.ArrowBack, "Back")
-                                }
-                            }
-                        )
-                    }
-                ) { padding ->
-                    Column(
-                        modifier = Modifier.padding(padding)
-                    ) {
-                        if (groupEvent != null && currentUser != null
-                            && organizer != null && participants != null) {
-                            GroupEventDetailsLayout(
-                                groupEvent!!,
-                                organizer!!,
-                                currentUser!!,
-                                participants!!,
-                                onJoinEventClick = {
-                                    store.registerForGroupEvent(groupEvent!!.groupEventId).thenAccept {
-                                        // Will trigger the launched effect to refresh the UI
-                                        refreshUI = !refreshUI
-                                        // Tell the user that they have joined the event
-                                        val toast = Toast.makeText(
-                                            this@GroupEventDetailsActivity,
-                                            "You have succesfully joined the event!",
-                                            Toast.LENGTH_SHORT
-                                        )
-                                        toast.show()
-                                        // Notifying tests is necessary here since the launched effect
-                                        // is not triggered in the tests for some weird reason
-                                        stateUpdated.complete(null)
+                Surface(
+                    color = MaterialTheme.colors.background
+                ) {
+                    Scaffold(
+                        topBar = {
+                            TopAppBar(
+                                title = {
+                                    Text("Event details", modifier = Modifier.testTag(TITLE))
+                                },
+                                navigationIcon = {
+                                    IconButton(
+                                        onClick = { finish() },
+                                        modifier = Modifier.testTag(BACK)
+                                    ) {
+                                        Icon(Icons.Filled.ArrowBack, "Back")
                                     }
-                                    // TODO: print something if the registration fails ?
                                 }
                             )
+                        }
+                    ) { padding ->
+                        Surface(
+                            color = MaterialTheme.colors.background
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(padding)
+                            ) {
+                                if (groupEvent != null && currentUser != null
+                                    && organizer != null && participants != null
+                                ) {
+                                    GroupEventDetailsLayout(
+                                        groupEvent!!,
+                                        organizer!!,
+                                        currentUser!!,
+                                        participants!!,
+                                        onJoinEventClick = {
+                                            store.registerForGroupEvent(groupEvent!!.groupEventId)
+                                                .thenAccept {
+                                                    // Will trigger the launched effect to refresh the UI
+                                                    refreshUI = !refreshUI
+                                                    // Tell the user that they have joined the event
+                                                    val toast = Toast.makeText(
+                                                        this@GroupEventDetailsActivity,
+                                                        "You have succesfully joined the event!",
+                                                        Toast.LENGTH_SHORT
+                                                    )
+                                                    toast.show()
+                                                    // Notifying tests is necessary here since the launched effect
+                                                    // is not triggered in the tests for some weird reason
+                                                    stateUpdated.complete(null)
+                                                }
+                                            // TODO: print something if the registration fails ?
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -282,7 +292,9 @@ fun GroupEventDetailsLayout(
                 ClickableText(
                     modifier = Modifier.testTag(ORGANIZER_NAME),
                     text = AnnotatedString("${organizer.firstName} ${organizer.lastName}"),
-                    style = MaterialTheme.typography.body1,
+                    style = MaterialTheme.typography.body1.copy(
+                        color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
+                    ),
                     onClick = {
                         // Open organizer profile
                         // If the organizer is the current user, open the profile activity, but not in edit mode
@@ -506,7 +518,9 @@ private fun IconTextRow(
             ClickableText(
                 modifier = Modifier.testTag(tag),
                 text = AnnotatedString(text),
-                style = MaterialTheme.typography.body1,
+                style = MaterialTheme.typography.body1.copy(
+                    color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
+                ),
                 onClick = { onClick() }
             )
         } else {

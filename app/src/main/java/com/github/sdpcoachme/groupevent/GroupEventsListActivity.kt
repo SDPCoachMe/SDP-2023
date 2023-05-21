@@ -30,8 +30,8 @@ import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.groupevent.GroupEventsListActivity.TestTags.Tabs.Companion.ALL
 import com.github.sdpcoachme.groupevent.GroupEventsListActivity.TestTags.Tabs.Companion.MY_EVENTS
 import com.github.sdpcoachme.ui.*
-import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import com.github.sdpcoachme.ui.theme.DarkOrange
+import com.github.sdpcoachme.ui.theme.label
+import com.github.sdpcoachme.ui.theme.onLabel
 import kotlinx.coroutines.future.await
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -103,32 +103,33 @@ class GroupEventsListActivity : ComponentActivity() {
                     throw IllegalStateException("Unknown tab ${selectedTab.tag}")
             }
 
-            CoachMeTheme {
-                Dashboard(
-                    title = "Group events",
-                    noElevation = true,
+            Dashboard(
+                title = "Group events",
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize()
+                    TabRow(
+                        selectedTabIndex = selectedTabIndex,
+                        backgroundColor = MaterialTheme.colors.background,
+                        contentColor = MaterialTheme.colors.primary
                     ) {
-                        TabRow(
-                            selectedTabIndex = selectedTabIndex
-                        ) {
-                            tabs.forEachIndexed { index, tabItem ->
-                                Tab(
-                                    modifier = Modifier.testTag(tabItem.tag),
-                                    text = { Text(tabItem.title) },
-                                    selected = selectedTabIndex == index,
-                                    onClick = { selectedTabIndex = index }
-                                )
-                            }
+                        tabs.forEachIndexed { index, tabItem ->
+                            Tab(
+                                modifier = Modifier.testTag(tabItem.tag),
+                                text = { Text(tabItem.title) },
+                                selected = selectedTabIndex == index,
+                                onClick = { selectedTabIndex = index },
+                                selectedContentColor = MaterialTheme.colors.primary,
+                                unselectedContentColor = Color.Gray,
+                            )
                         }
-                        LazyColumn {
-                            items(displayedGroupEvents) { groupEvent ->
-                                GroupEventItem(
-                                    groupEvent = groupEvent
-                                )
-                            }
+                    }
+                    LazyColumn {
+                        items(displayedGroupEvents) { groupEvent ->
+                            GroupEventItem(
+                                groupEvent = groupEvent
+                            )
                         }
                     }
                 }
@@ -201,8 +202,8 @@ fun GroupEventItem(
                         icon = Icons.Default.History,
                         contentDescription = "Event already took place"
                     ),
-                    backgroundColor = DarkOrange,
-                    contentColor = Color.White
+                    backgroundColor = MaterialTheme.colors.label,
+                    contentColor = MaterialTheme.colors.onLabel
                 )
             } else if (groupEvent.participants.size >= groupEvent.maxParticipants) {
                 Label(
@@ -212,8 +213,8 @@ fun GroupEventItem(
                         icon = Icons.Default.EventBusy,
                         contentDescription = "Event is fully booked"
                     ),
-                    backgroundColor = DarkOrange,
-                    contentColor = Color.White
+                    backgroundColor = MaterialTheme.colors.label,
+                    contentColor = MaterialTheme.colors.onLabel
                 )
             }
         },

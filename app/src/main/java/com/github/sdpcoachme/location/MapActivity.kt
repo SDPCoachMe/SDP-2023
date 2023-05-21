@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MAP
@@ -28,10 +29,10 @@ import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.C
 import com.github.sdpcoachme.location.provider.LocationProvider
 import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.ui.Dashboard
-import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
@@ -89,15 +90,13 @@ class MapActivity : ComponentActivity() {
         // Note: this is absolutely not scalable, but we can change this later on.
         val futureUsers = store.getAllUsers().thenApply { users -> users.filter { it.coach } }
         setContent {
-            CoachMeTheme {
-                Dashboard {
-                    Map(
-                        modifier = it,
-                        lastUserLocation = locationProvider.getLastLocation(),
-                        futureCoachesToDisplay = futureUsers,
-                        markerLoading = markerLoading,
-                        mapLoading = mapLoading)
-                }
+            Dashboard {
+                Map(
+                    modifier = it,
+                    lastUserLocation = locationProvider.getLastLocation(),
+                    futureCoachesToDisplay = futureUsers,
+                    markerLoading = markerLoading,
+                    mapLoading = mapLoading)
             }
         }
     }
@@ -140,7 +139,8 @@ fun Map(
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
             isMyLocationEnabled = lastUserLocation.value != null,
-            mapType = MapType.NORMAL
+            mapType = MapType.NORMAL,
+            mapStyleOptions = if (MaterialTheme.colors.isLight) null else MapStyleOptions.loadRawResourceStyle(context, R.raw.google_maps_dark_theme),
         ),
         onMapLoaded = {
             // For testing purposes, we need to know when the map is ready

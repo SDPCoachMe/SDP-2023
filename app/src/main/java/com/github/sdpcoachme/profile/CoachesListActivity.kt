@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons.Default
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Tune
@@ -32,8 +33,6 @@ import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.C
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.CoachesListActivity.TestTags.Buttons.Companion.FILTER
 import com.github.sdpcoachme.ui.*
-import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import com.github.sdpcoachme.ui.theme.Purple200
 import kotlinx.coroutines.future.await
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -108,13 +107,11 @@ class CoachesListActivity : ComponentActivity() {
                 stateLoading.complete(null)
             }
 
-            val title = if (isViewingContacts) stringResource(R.string.contacts)
+            val title = if (isViewingContacts) stringResource(R.string.chats)
             else stringResource(R.string.title_activity_coaches_list)
 
-            CoachMeTheme {
-                Dashboard(title) {
-                    CoachesList(it, email, listOfCoaches, isViewingContacts, contactRowInfos)
-                }
+            Dashboard(title) {
+                CoachesList(it, email, listOfCoaches, isViewingContacts, contactRowInfos)
             }
         }
     }
@@ -168,7 +165,8 @@ class CoachesListActivity : ComponentActivity() {
                         .align(Alignment.BottomEnd)
                         .padding(16.dp)
                         .testTag(FILTER),
-                    backgroundColor = Purple200
+                    backgroundColor = MaterialTheme.colors.primary,
+                    contentColor = MaterialTheme.colors.onPrimary
                 ) {
                     Icon(
                         imageVector = Default.Tune,

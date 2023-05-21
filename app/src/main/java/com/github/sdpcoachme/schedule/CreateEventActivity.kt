@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.github.sdpcoachme.schedule
 
 import android.content.Intent
@@ -13,11 +15,11 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -40,6 +42,7 @@ import com.github.sdpcoachme.data.schedule.EventType
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
 import com.github.sdpcoachme.profile.SelectSportsActivity
+import com.github.sdpcoachme.ui.theme.CoachMeMaterial3Theme
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.maxkeppeker.sheets.core.models.base.Header
 import com.maxkeppeker.sheets.core.models.base.SheetState
@@ -188,12 +191,8 @@ class CreateEventActivity : ComponentActivity() {
         var end by remember { mutableStateOf(EventOps.getDefaultEventEnd()) }
         var maxParticipants by remember { mutableStateOf(0) }
         var sports by remember { mutableStateOf(listOf(Sports.RUNNING)) }
-        var location by remember { mutableStateOf(Address(
-            placeId = "ChIJD7fiBh9u5kcRYJSMaMOCCwQ",
-            name = "Paris, France",
-            latitude = 48.856614,
-            longitude = 2.3522219
-            ))
+        var location by remember {
+            mutableStateOf(Address())
         }
         var selectedColor by remember { mutableStateOf(EventColors.DEFAULT.color) }
         var description by remember { mutableStateOf("") }
@@ -201,10 +200,6 @@ class CreateEventActivity : ComponentActivity() {
         Scaffold(
             modifier = Modifier.testTag(TestTags.SCAFFOLD),
             topBar = {
-                fun goBackToScheduleActivity() {
-                    val intent = Intent(context, ScheduleActivity::class.java)
-                    context.startActivity(intent)
-                }
                 val event = Event(
                     name = eventName,
                     color = selectedColor.value.toString(),
@@ -222,13 +217,14 @@ class CreateEventActivity : ComponentActivity() {
                     },
                     navigationIcon = {
                         IconButton(
-                            onClick = { goBackToScheduleActivity() },
+                            onClick = {
+                                finish() // Go back to previous activity (removes itself from activity stack)
+                            },
                             modifier = Modifier.testTag(TestTags.Clickables.CANCEL),
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.Cancel,
+                                imageVector = Icons.Filled.ArrowBack,
                                 contentDescription = "Cancel",
-                                tint = MaterialTheme.colors.onPrimary,
                                 modifier = Modifier.testTag(TestTags.Icons.CANCEL_ICON),
                             )
                         }
@@ -242,7 +238,7 @@ class CreateEventActivity : ComponentActivity() {
                                 } else {
                                     if (eventType == EventType.PRIVATE) {
                                         EventOps.addEvent(event, store).thenAccept {
-                                            goBackToScheduleActivity()
+                                            finish() // Go back to previous activity (removes itself from activity stack)
                                         }
                                     } else if (eventType == EventType.GROUP) {
                                         // TODO: temporary, until we stop considering the organiser as a participant
@@ -268,7 +264,7 @@ class CreateEventActivity : ComponentActivity() {
                                                     store.registerForGroupEvent(groupEventId = groupEvent.groupEventId)
                                                 }
                                             }.thenAccept {
-                                                goBackToScheduleActivity()
+                                                finish() // Go back to previous activity (removes itself from activity stack)
                                             }
                                         }
                                     }
@@ -279,95 +275,105 @@ class CreateEventActivity : ComponentActivity() {
                             Icon(
                                 imageVector = Icons.Filled.Done,
                                 contentDescription = "Done",
-                                tint = MaterialTheme.colors.onPrimary,
+                                tint = if (MaterialTheme.colors.isLight)
+                                    MaterialTheme.colors.onPrimary
+                                else
+                                    MaterialTheme.colors.onSurface,
                                 modifier = Modifier.testTag(TestTags.Icons.SAVE_ICON),
                             )
                         }
                     })
             }
         ) { padding ->
-            Column (
+            Surface(
+                color = MaterialTheme.colors.background,
                 modifier = Modifier
-                    .padding(start = 10.dp, end = 10.dp)
+                    .fillMaxSize()
+                    .padding(padding)
             ) {
-                val focusManager = LocalFocusManager.current
-                TextField(
-                    value = eventName,
-                    onValueChange = { eventName = it },
-                    label = { Text("Event Title") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(
-                        onNext = { focusManager.clearFocus() }
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp)
-                        .testTag(TestTags.TextFields.EVENT_NAME)
-                )
+                CoachMeMaterial3Theme {
+                    Column (
+                        modifier = Modifier.padding(horizontal = 10.dp)
+                    ) {
+                        val focusManager = LocalFocusManager.current
+                        TextField(
+                            value = eventName,
+                            onValueChange = { eventName = it },
+                            label = { Text("Event Title") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+                            keyboardActions = KeyboardActions(
+                                onNext = { focusManager.clearFocus() }
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 10.dp)
+                                .testTag(TestTags.TextFields.EVENT_NAME)
+                        )
 
-                // Start date
-                StartDateRow(
-                    startDateSheet = startDateSheet,
-                    start = start,
-                    formatter = formatterUserDate,
-                    onDateChange = { start = it },
-                )
-                StartTimeRow(
-                    startTimeSheet = startTimeSheet,
-                    start = start,
-                    formatter = formatterUserTime,
-                    onTimeChange = { start = it }
-                )
+                        // Start date
+                        StartDateRow(
+                            startDateSheet = startDateSheet,
+                            start = start,
+                            formatter = formatterUserDate,
+                            onDateChange = { start = it },
+                        )
+                        StartTimeRow(
+                            startTimeSheet = startTimeSheet,
+                            start = start,
+                            formatter = formatterUserTime,
+                            onTimeChange = { start = it }
+                        )
 
-                // End date
-                EndDateRow(
-                    endDateSheet = endDateSheet,
-                    end = end,
-                    formatter = formatterUserDate,
-                    onDateChange = { end = it },
-                )
-                EndTimeRow(
-                    endTimeSheet = endTimeSheet,
-                    end = end,
-                    formatter = formatterUserTime,
-                    onTimeChange = { end = it }
-                )
+                        // End date
+                        EndDateRow(
+                            endDateSheet = endDateSheet,
+                            end = end,
+                            formatter = formatterUserDate,
+                            onDateChange = { end = it },
+                        )
+                        EndTimeRow(
+                            endTimeSheet = endTimeSheet,
+                            end = end,
+                            formatter = formatterUserTime,
+                            onTimeChange = { end = it }
+                        )
 
-                if (eventType == EventType.GROUP) {
-                    MaxParticipantsRow(
-                        maxParticipants = maxParticipants,
-                        onMaxParticipantsChange = { maxParticipants = it }
-                    )
+                        if (eventType == EventType.GROUP) {
+                            MaxParticipantsRow(
+                                maxParticipants = maxParticipants,
+                                onMaxParticipantsChange = { maxParticipants = it }
+                            )
+                        }
+
+                        EventSportRow(
+                            sport = sports,
+                            onSportChange = { sports = it }
+                        )
+
+                        EventLocationRow(
+                            location = location,
+                            onLocationChange = { location = it }
+                        )
+
+                        // Color
+                        ColorRow(
+                            colorSheet = colorSheet,
+                            selectedColor = selectedColor,
+                            onColorChange = { selectedColor = it }
+                        )
+
+                        // Description
+                        DescriptionRow(
+                            description = description,
+                            onDescriptionChange = { description = it }
+                        )
+                    }
                 }
-
-                EventSportRow(
-                    sport = sports,
-                    onSportChange = { sports = it }
-                )
-
-                EventLocationRow(
-                    location = location,
-                    onLocationChange = { location = it }
-                )
-
-                // Color
-                ColorRow(
-                    colorSheet = colorSheet,
-                    selectedColor = selectedColor,
-                    onColorChange = { selectedColor = it }
-                )
-
-                // Description
-                DescriptionRow(
-                    description = description,
-                    onDescriptionChange = { description = it }
-                )
-            }
+                }
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     fun StartDateRow(
         startDateSheet: SheetState,
@@ -415,7 +421,9 @@ class CreateEventActivity : ComponentActivity() {
             ClickableText(
                 text = AnnotatedString(start.format(formatter)),
                 onClick = { startDateSheet.show() },
-                style = MaterialTheme.typography.body1,
+                style = MaterialTheme.typography.body1.copy(
+                    color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
+                ),
                 modifier = Modifier
                     .weight(.8f)
                     .testTag(TestTags.Clickables.START_DATE)
@@ -466,7 +474,9 @@ class CreateEventActivity : ComponentActivity() {
             ClickableText(
                 text = AnnotatedString(start.toLocalTime().format(formatter)),
                 onClick = { startTimeSheet.show() },
-                style = MaterialTheme.typography.body1,
+                style = MaterialTheme.typography.body1.copy(
+                    color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
+                ),
                 modifier = Modifier
                     .weight(.8f)
                     .testTag(TestTags.Clickables.START_TIME)
@@ -474,7 +484,6 @@ class CreateEventActivity : ComponentActivity() {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     fun EndDateRow(
         endDateSheet: SheetState,
@@ -523,7 +532,9 @@ class CreateEventActivity : ComponentActivity() {
             ClickableText(
                 text = AnnotatedString(end.format(formatter)),
                 onClick = { endDateSheet.show() },
-                style = MaterialTheme.typography.body1,
+                style = MaterialTheme.typography.body1.copy(
+                    color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
+                ),
                 modifier = Modifier
                     .weight(.8f)
                     .testTag(TestTags.Clickables.END_DATE)
@@ -573,7 +584,9 @@ class CreateEventActivity : ComponentActivity() {
             ClickableText(
                 text = AnnotatedString(end.toLocalTime().format(formatter)),
                 onClick = { endTimeSheet.show() },
-                style = MaterialTheme.typography.body1,
+                style = MaterialTheme.typography.body1.copy(
+                    color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
+                ),
                 modifier = Modifier
                     .weight(.8f)
                     .testTag(TestTags.Clickables.END_TIME)
@@ -696,7 +709,9 @@ class CreateEventActivity : ComponentActivity() {
                         onLocationChange(it)
                     }
                 },
-                style = MaterialTheme.typography.body1,
+                style = MaterialTheme.typography.body1.copy(
+                    color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
+                ),
                 modifier = Modifier
                     .weight(.8f)
                     .testTag(TestTags.Clickables.LOCATION)
