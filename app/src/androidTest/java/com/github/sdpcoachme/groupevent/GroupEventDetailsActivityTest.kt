@@ -150,6 +150,9 @@ class GroupEventDetailsActivityTest {
                     ignoreCase = true
                 )
                 .assertExists()
+
+            composeTestRule.onNodeWithTag("WEATHER_COLUMN").assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithContentDescription("Weather icon").assertExists().assertIsDisplayed()
         }
     }
 
