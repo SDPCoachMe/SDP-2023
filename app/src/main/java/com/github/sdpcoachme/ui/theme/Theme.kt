@@ -5,8 +5,6 @@ import androidx.compose.material.Colors
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
@@ -82,25 +80,26 @@ fun CoachMeTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composabl
 
 
 // Create material 3 theme to make sure the sheets from maxkeppeler pick up the dark mode
-val AppDarkMaterial3ColorScheme = darkColorScheme()
-val AppLightMaterial3ColorScheme = lightColorScheme()
-
-val Material3Typography = androidx.compose.material3.Typography()
-
-val Material3Shapes = androidx.compose.material3.Shapes()
-
-@Composable
-fun CoachMeMaterial3Theme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    val appColorScheme = if (darkTheme) {
-        AppDarkMaterial3ColorScheme
-    } else {
-        AppLightMaterial3ColorScheme
-    }
-
-    androidx.compose.material3.MaterialTheme(
-        colorScheme = appColorScheme,
-        typography = Material3Typography,
-        shapes = Material3Shapes,
-        content = content
-    )
-}
+// TODO: uncomment this to enable dark mode for maxkeppeler sheets
+//val AppDarkMaterial3ColorScheme = darkColorScheme()
+//val AppLightMaterial3ColorScheme = lightColorScheme()
+//
+//val Material3Typography = androidx.compose.material3.Typography()
+//
+//val Material3Shapes = androidx.compose.material3.Shapes()
+//
+//@Composable
+//fun CoachMeMaterial3Theme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+//    val appColorScheme = if (darkTheme) {
+//        AppDarkMaterial3ColorScheme
+//    } else {
+//        AppLightMaterial3ColorScheme
+//    }
+//
+//    androidx.compose.material3.MaterialTheme(
+//        colorScheme = appColorScheme,
+//        typography = Material3Typography,
+//        shapes = Material3Shapes,
+//        content = content
+//    )
+//}

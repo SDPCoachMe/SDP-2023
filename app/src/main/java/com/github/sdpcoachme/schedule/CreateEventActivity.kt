@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalComposeUiApi::class)
 
 package com.github.sdpcoachme.schedule
 
@@ -17,9 +17,9 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -42,7 +42,6 @@ import com.github.sdpcoachme.data.schedule.EventType
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
 import com.github.sdpcoachme.profile.SelectSportsActivity
-import com.github.sdpcoachme.ui.theme.CoachMeMaterial3Theme
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.maxkeppeker.sheets.core.models.base.Header
 import com.maxkeppeker.sheets.core.models.base.SheetState
@@ -291,7 +290,8 @@ class CreateEventActivity : ComponentActivity() {
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                CoachMeMaterial3Theme {
+                // TODO: uncomment this to enable dark mode for maxkeppeler sheets
+                // CoachMeMaterial3Theme {
                     Column (
                         modifier = Modifier.padding(horizontal = 10.dp)
                     ) {
@@ -369,8 +369,8 @@ class CreateEventActivity : ComponentActivity() {
                             onDescriptionChange = { description = it }
                         )
                     }
-                }
-                }
+                // }
+            }
         }
     }
 
