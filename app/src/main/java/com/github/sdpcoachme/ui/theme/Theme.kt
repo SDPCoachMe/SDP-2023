@@ -82,26 +82,12 @@ fun CoachMeTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composabl
 
 
 // Create material 3 theme to make sure the sheets from maxkeppeler pick up the dark mode
-val AppDarkMaterial3ColorScheme = darkColorScheme(
-    primary = DarkColorPalette.primary,
-    secondary = DarkColorPalette.primary,
-    tertiary = DarkColorPalette.primaryVariant
-)
-val AppLightMaterial3ColorScheme = lightColorScheme(
-    primary = LightColorPalette.primary,
-    secondary = LightColorPalette.primary,
-    tertiary = LightColorPalette.primaryVariant
-)
+val AppDarkMaterial3ColorScheme = darkColorScheme()
+val AppLightMaterial3ColorScheme = lightColorScheme()
 
-val Material3Typography = androidx.compose.material3.Typography(
-    bodyLarge = Typography.body1
-)
+val Material3Typography = androidx.compose.material3.Typography()
 
-val Material3Shapes = androidx.compose.material3.Shapes(
-    small = Shapes.small,
-    medium = Shapes.medium,
-    large = Shapes.large
-)
+val Material3Shapes = androidx.compose.material3.Shapes()
 
 @Composable
 fun CoachMeMaterial3Theme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
