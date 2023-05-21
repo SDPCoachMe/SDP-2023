@@ -275,8 +275,8 @@ fun GroupEventDetailsLayout(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.End
             ) {
-                Spacer(modifier = Modifier.width(10.dp))
                 Box(Modifier.width(70.dp)) { WeatherView(weatherState, eventStart.toLocalDate()) }
+                Spacer(modifier = Modifier.width(10.dp))
                 DayBox(eventStart.dayOfMonth, eventStart.month)
             }
             Spacer(modifier = Modifier.height(20.dp))
