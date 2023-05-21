@@ -28,8 +28,6 @@ import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.WEEK_H
 import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.TextFields.Companion.CURRENT_WEEK_TEXT_FIELD
 import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
-import com.github.sdpcoachme.weather.WeatherViewTest.Companion.WEATHER_CLOUD_DONE
-import com.github.sdpcoachme.weather.WeatherViewTest.Companion.WEATHER_CLOUD_OFF
 import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertTrue
 import org.junit.After
@@ -385,14 +383,11 @@ class ScheduleActivityTest {
     }
 
     @Test
-    fun weatherForecastIsCorrectlyDisplayedInSchedule() {
-        store.setCurrentEmail(coachEmail).thenApply {
-            ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
-                composeTestRule.onNodeWithTag("WEATHER_COLUMN")
-                    .assertExists().assertIsDisplayed()
-                composeTestRule.onNodeWithTag(WEATHER_CLOUD_OFF).assertExists().assertIsDisplayed()
-                composeTestRule.onNodeWithTag(WEATHER_CLOUD_DONE).assertExists().assertIsDisplayed()
-            }
+    fun weatherForecastIsCorrectlyDisplayedInScheduleWeek() {
+        store.setCurrentEmail(coachEmail).get(1, SECONDS)
+        ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+            composeTestRule.onAllNodesWithTag("WEATHER_COLUMN").assertCountEquals(7)
+            composeTestRule.onAllNodesWithContentDescription("Weather icon").assertCountEquals(7)
         }
     }
 
