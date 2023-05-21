@@ -18,6 +18,7 @@ import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class WeatherTest {
@@ -25,7 +26,7 @@ class WeatherTest {
     @Test
     fun weatherPresenterCorrectlyRetrievesApiWeatherForecast() {
         val presenter = WeatherPresenter().bind(OpenMeteoRepository(RetrofitClient.api))
-        presenter.getWeatherForecast(0.0, 0.0).thenAccept { weatherForecast ->
+        presenter.getWeatherForecast(0.0, 0.0).get(1, TimeUnit.SECONDS).let  { weatherForecast ->
             assertThat(weatherForecast, `is`(notNullValue()))
             assertThat(weatherForecast.forecast, not(`is`(emptyList())))
         }
@@ -35,7 +36,7 @@ class WeatherTest {
     fun weatherPresenterCorrectlyUpdatesObservableApiWeatherState() {
         val presenter = WeatherPresenter().bind(OpenMeteoRepository(RetrofitClient.api))
         val previous = presenter.observableWeatherForecast.value
-        presenter.getWeatherForecast(0.0, 0.0).thenAccept {
+        presenter.getWeatherForecast(0.0, 0.0).get(1, TimeUnit.SECONDS).let  {
             assertThat(presenter.observableWeatherForecast.value, not(`is`(previous)))
         }
     }
@@ -43,7 +44,7 @@ class WeatherTest {
     @Test
     fun weatherPresenterLoadsCorrectWeatherForecast() {
         val presenter = WeatherPresenter().bind(MockWeatherRepository())
-        presenter.getWeatherForecast(0.0, 0.0).thenAccept { weatherForecast ->
+        presenter.getWeatherForecast(0.0, 0.0).get(1, TimeUnit.SECONDS).let  { weatherForecast ->
             assertThat(weatherForecast, `is`(WeatherForecast(MOCK_FORECAST)))
         }
     }
