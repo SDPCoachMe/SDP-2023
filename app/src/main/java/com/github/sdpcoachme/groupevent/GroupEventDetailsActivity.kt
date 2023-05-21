@@ -48,9 +48,12 @@ import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Compa
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Companion.TITLE
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Tabs.Companion.ABOUT
 import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Tabs.Companion.PARTICIPANTS
+import com.github.sdpcoachme.location.provider.FusedLocationProvider
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import com.github.sdpcoachme.weather.WeatherForecast
+import com.github.sdpcoachme.weather.WeatherView
 import kotlinx.coroutines.future.await
 import java.time.LocalDateTime
 import java.time.Month
@@ -122,6 +125,12 @@ class GroupEventDetailsActivity : ComponentActivity() {
         // do not allow the activity to launch without an id. (double bang)
         val groupEventId = intent.getStringExtra(GROUP_EVENT_ID_KEY)!!
 
+        // todo move this into caching store
+        val locationProvider = (application as CoachMeApplication).locationProvider
+        locationProvider.updateContext(this, CompletableFuture.completedFuture(null))
+        val userLatLng = locationProvider.getLastLocation().value?: FusedLocationProvider.CAMPUS
+        val weatherState = store.getWeatherForecast(userLatLng).get()
+
         setContent {
 
             var refreshUI by remember { mutableStateOf(false) }
@@ -168,6 +177,7 @@ class GroupEventDetailsActivity : ComponentActivity() {
                                 organizer!!,
                                 currentUser!!,
                                 participants!!,
+                                weatherState,
                                 onJoinEventClick = {
                                     store.registerForGroupEvent(groupEvent!!.groupEventId).thenAccept {
                                         // Will trigger the launched effect to refresh the UI
@@ -203,6 +213,7 @@ fun GroupEventDetailsLayout(
     organizer: UserInfo,
     currentUser: UserInfo,
     participants: List<UserInfo>,
+    weatherState: MutableState<WeatherForecast>,
     onJoinEventClick: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -249,8 +260,8 @@ fun GroupEventDetailsLayout(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.End
             ) {
-                // TODO : add weather info
                 Spacer(modifier = Modifier.width(10.dp))
+                Box(Modifier.width(70.dp)) { WeatherView(weatherState, eventStart.toLocalDate()) }
                 DayBox(eventStart.dayOfMonth, eventStart.month)
             }
             Spacer(modifier = Modifier.height(20.dp))
