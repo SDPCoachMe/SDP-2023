@@ -14,6 +14,7 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
+import com.github.sdpcoachme.R
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.data.UserInfoSamples
@@ -82,7 +83,8 @@ class InAppNotifierTest {
 
     @Test
     fun onMessageReceivedRedirectsToCoachesListActivityWhenChatIdIsNotSet() {
-        val intent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
+        val context = ApplicationProvider.getApplicationContext() as CoachMeApplication
+        val intent = Intent(context, MapActivity::class.java)
 
         ActivityScenario.launch<MapActivity>(intent).use {
             sendNotification("Title", "Body", "", "messaging")
@@ -90,10 +92,9 @@ class InAppNotifierTest {
 
             // Check if CoachesListActivity is opened
             // Intents.intended does not seem to work when clicking on a notification
-            // make sure "Contacts" is displayed in the header bar
             // TODO: would need to wait for the state to load before checking the UI...
             composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assertExists().assertIsDisplayed()
-            composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assert(hasText("Contacts"))
+            composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assert(hasText(context.getString(R.string.chats)))
 
             composeTestRule.onNodeWithText("${toUser.firstName} ${toUser.lastName}")
                 .assertIsDisplayed()
@@ -125,7 +126,8 @@ class InAppNotifierTest {
 
     @Test
     fun defaultNotificationIsShownIfOnlyNotificationTypeIsSet() {
-        val intent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
+        val context = ApplicationProvider.getApplicationContext() as CoachMeApplication
+        val intent = Intent(context, MapActivity::class.java)
 
         ActivityScenario.launch<MapActivity>(intent).use {
             sendNotification(null, null, null, "messaging")
@@ -136,7 +138,7 @@ class InAppNotifierTest {
             // Since the sender is not set, clicking on the notification should take the user to their contacts
             // TODO: would need to wait for the state to load before checking the UI...
             composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assertExists().assertIsDisplayed()
-            composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assert(hasText("Contacts"))
+            composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assert(hasText(context.getString(R.string.chats)))
 
             composeTestRule.onNodeWithText("${toUser.firstName} ${toUser.lastName}")
                 .assertIsDisplayed()

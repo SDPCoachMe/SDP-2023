@@ -10,7 +10,8 @@ import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -164,18 +165,20 @@ class SelectSportsActivity : ComponentActivity() {
 
         setContent {
             CoachMeTheme {
-                SelectSportsLayout(
-                    onSubmit = {
-                        setResult(RESULT_OK, Intent().putExtra(RETURN_VALUE_KEY, it.toTypedArray()))
-                        finish()
-                    },
-                    onCancel = {
-                        setResult(RESULT_CANCELED)
-                        finish()
-                    },
-                    initialValue = initialValue,
-                    title = title
-                )
+                Surface(color = MaterialTheme.colors.background) {
+                    SelectSportsLayout(
+                        onSubmit = {
+                            setResult(RESULT_OK, Intent().putExtra(RETURN_VALUE_KEY, it.toTypedArray()))
+                            finish()
+                        },
+                        onCancel = {
+                            setResult(RESULT_CANCELED)
+                            finish()
+                        },
+                        initialValue = initialValue,
+                        title = title
+                    )
+                }
             }
         }
     }
@@ -228,24 +231,29 @@ class SelectSportsActivity : ComponentActivity() {
                             modifier = Modifier.testTag(DONE)
                         ) {
                             Icon(Icons.Filled.Done, "Done",
-                                tint = MaterialTheme.colors.onPrimary)
+                                tint = if (MaterialTheme.colors.isLight)
+                                    MaterialTheme.colors.onPrimary
+                                else
+                                    MaterialTheme.colors.onSurface
+                            )
                         }
                     })
             }
         ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 20.dp)
-                    .testTag(TestTags.COLUMN),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                MultiSelectList(
-                    items = sportItems,
-                    toggleSelectSport = toggleSelectSport
-                )
+            Surface(color = MaterialTheme.colors.background) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .testTag(TestTags.COLUMN),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    MultiSelectList(
+                        items = sportItems,
+                        toggleSelectSport = toggleSelectSport
+                    )
+                }
             }
         }
     }
@@ -258,34 +266,47 @@ class SelectSportsActivity : ComponentActivity() {
      */
     @Composable
     fun MultiSelectList(items: List<ListItem<Sports>>, toggleSelectSport: (Sports) -> Unit) {
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag(TestTags.MultiSelectListTag.LAZY_SELECT_COLUMN)
+                .verticalScroll(rememberScrollState()),
         ) {
-            items(items.size) { i ->
+            Divider()
+            List(items.size) { i ->
                 Row (
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            toggleSelectSport(Sports.values()[i])
+                            toggleSelectSport(items[i].element)
                         }
-                        .padding(16.dp)
+                        .padding(vertical = 20.dp, horizontal = 30.dp)
                         .testTag(TestTags.MultiSelectListTag.ROW_TEXT_LIST[i].ROW),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = items[i].element.sportName,
-                        modifier = Modifier.testTag(
-                            TestTags.MultiSelectListTag.ROW_TEXT_LIST[i].TEXT))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = items[i].element.sportIcon,
+                            contentDescription = items[i].element.sportName,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(text = items[i].element.sportName,
+                            modifier = Modifier.testTag(
+                                TestTags.MultiSelectListTag.ROW_TEXT_LIST[i].TEXT))
+                    }
                     Icon(
                         imageVector = if (items[i].selected) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
                         contentDescription = "Selected",
                         tint = MaterialTheme.colors.primary,
                         modifier = if (items[i].selected) Modifier.size(20.dp).testTag(TestTags.MultiSelectListTag.ROW_TEXT_LIST[i].ICON)
-                                    else Modifier.size(20.dp)
+                        else Modifier.size(20.dp)
                     )
                 }
+                Divider()
             }
         }
     }

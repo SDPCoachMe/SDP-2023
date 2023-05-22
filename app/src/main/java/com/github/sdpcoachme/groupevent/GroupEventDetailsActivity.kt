@@ -51,6 +51,8 @@ import com.github.sdpcoachme.groupevent.GroupEventDetailsActivity.TestTags.Tabs.
 import com.github.sdpcoachme.location.provider.FusedLocationProvider
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.ProfileActivity
+import com.github.sdpcoachme.ui.ImageData
+import com.github.sdpcoachme.ui.SmallListItem
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.github.sdpcoachme.weather.WeatherForecast
 import com.github.sdpcoachme.weather.WeatherView
@@ -60,6 +62,9 @@ import java.time.Month
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
 
+/**
+ * Activity that displays the details of a group event.
+ */
 class GroupEventDetailsActivity : ComponentActivity() {
 
     class TestTags {
@@ -150,52 +155,62 @@ class GroupEventDetailsActivity : ComponentActivity() {
             }
 
             CoachMeTheme {
-                Scaffold(
-                    topBar = {
-                        TopAppBar(
-                            title = {
-                                Text("Event details", modifier = Modifier.testTag(TITLE))
-                            },
-                            navigationIcon = {
-                                IconButton(
-                                    onClick = { finish() },
-                                    modifier = Modifier.testTag(BACK)
-                                ) {
-                                    Icon(Icons.Filled.ArrowBack, "Back")
-                                }
-                            }
-                        )
-                    }
-                ) { padding ->
-                    Column(
-                        modifier = Modifier.padding(padding)
-                    ) {
-                        if (groupEvent != null && currentUser != null
-                            && organizer != null && participants != null) {
-                            GroupEventDetailsLayout(
-                                groupEvent!!,
-                                organizer!!,
-                                currentUser!!,
-                                participants!!,
-                                weatherState,
-                                onJoinEventClick = {
-                                    store.registerForGroupEvent(groupEvent!!.groupEventId).thenAccept {
-                                        // Will trigger the launched effect to refresh the UI
-                                        refreshUI = !refreshUI
-                                        // Tell the user that they have joined the event
-                                        val toast = Toast.makeText(
-                                            this@GroupEventDetailsActivity,
-                                            "You have succesfully joined the event!",
-                                            Toast.LENGTH_SHORT
-                                        )
-                                        toast.show()
-                                        // Notifying tests is necessary here since the launched effect
-                                        // is not triggered in the tests for some weird reason
-                                        stateUpdated.complete(null)
+                Surface(
+                    color = MaterialTheme.colors.background
+                ) {
+                    Scaffold(
+                        topBar = {
+                            TopAppBar(
+                                title = {
+                                    Text("Event details", modifier = Modifier.testTag(TITLE))
+                                },
+                                navigationIcon = {
+                                    IconButton(
+                                        onClick = { finish() },
+                                        modifier = Modifier.testTag(BACK)
+                                    ) {
+                                        Icon(Icons.Filled.ArrowBack, "Back")
                                     }
-                                    // TODO: print something if the registration fails ?
                                 }
                             )
+                        }
+                    ) { padding ->
+                        Surface(
+                            color = MaterialTheme.colors.background
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(padding)
+                            ) {
+                                if (groupEvent != null && currentUser != null
+                                    && organizer != null && participants != null
+                                ) {
+                                    GroupEventDetailsLayout(
+                                        groupEvent!!,
+                                        organizer!!,
+                                        currentUser!!,
+                                        participants!!,
+                                        weatherState,
+                                        onJoinEventClick = {
+                                            store.registerForGroupEvent(groupEvent!!.groupEventId)
+                                                .thenAccept {
+                                                    // Will trigger the launched effect to refresh the UI
+                                                    refreshUI = !refreshUI
+                                                    // Tell the user that they have joined the event
+                                                    val toast = Toast.makeText(
+                                                        this@GroupEventDetailsActivity,
+                                                        "You have succesfully joined the event!",
+                                                        Toast.LENGTH_SHORT
+                                                    )
+                                                    toast.show()
+                                                    // Notifying tests is necessary here since the launched effect
+                                                    // is not triggered in the tests for some weird reason
+                                                    stateUpdated.complete(null)
+                                                }
+                                            // TODO: print something if the registration fails ?
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -260,8 +275,8 @@ fun GroupEventDetailsLayout(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.End
             ) {
-                Spacer(modifier = Modifier.width(10.dp))
                 Box(Modifier.width(70.dp)) { WeatherView(weatherState, eventStart.toLocalDate()) }
+                Spacer(modifier = Modifier.width(10.dp))
                 DayBox(eventStart.dayOfMonth, eventStart.month)
             }
             Spacer(modifier = Modifier.height(20.dp))
@@ -288,7 +303,9 @@ fun GroupEventDetailsLayout(
                 ClickableText(
                     modifier = Modifier.testTag(ORGANIZER_NAME),
                     text = AnnotatedString("${organizer.firstName} ${organizer.lastName}"),
-                    style = MaterialTheme.typography.body1,
+                    style = MaterialTheme.typography.body1.copy(
+                        color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
+                    ),
                     onClick = {
                         // Open organizer profile
                         // If the organizer is the current user, open the profile activity, but not in edit mode
@@ -512,7 +529,9 @@ private fun IconTextRow(
             ClickableText(
                 modifier = Modifier.testTag(tag),
                 text = AnnotatedString(text),
-                style = MaterialTheme.typography.body1,
+                style = MaterialTheme.typography.body1.copy(
+                    color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
+                ),
                 onClick = { onClick() }
             )
         } else {
@@ -526,7 +545,6 @@ private fun IconTextRow(
     }
 }
 
-// TODO: might be a way to modularize with UserInfoListItem from CoachesListActivity
 /**
  * Composable that displays a row with a user's profile picture and name.
  */
@@ -535,33 +553,14 @@ fun SmallUserInfoListItem(
     userInfo: UserInfo,
     onClick: (() -> Unit)? = null
 ) {
-    Row(
-        modifier =
-        if (onClick != null) {
-            Modifier.clickable(onClick = onClick)
-        } else {
-            Modifier
-        }
-            .padding(10.dp)
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Image(
+    SmallListItem(
+        image = ImageData(
             painter = painterResource(id = R.drawable.ic_launcher_background),
-            contentDescription = "${userInfo.firstName} ${userInfo.lastName}'s profile picture",
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .border(2.dp, Color.Gray, CircleShape)
-                .padding(0.dp, 0.dp, 0.dp, 0.dp)
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = "${userInfo.firstName} ${userInfo.lastName}",
-            style = MaterialTheme.typography.body1
-        )
-    }
-    Divider()
+            contentDescription = "${userInfo.firstName} ${userInfo.lastName}'s profile picture"
+        ),
+        title = "${userInfo.firstName} ${userInfo.lastName}",
+        onClick = onClick
+    )
 }
 
 // Needed because of https://stackoverflow.com/questions/68847231/jetpack-compose-how-to-disable-floatingaction-button
