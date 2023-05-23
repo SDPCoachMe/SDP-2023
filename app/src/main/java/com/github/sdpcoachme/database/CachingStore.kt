@@ -631,36 +631,43 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
+    /**
+     * Add a new contact to the cache
+     *
+     * @param chatId The id of the chat to add
+     * @param currEmail The email of the current user
+     * @param existingContacts The existing contacts of the current user
+     */
     private fun addNewContactToCache(
         chatId: String,
         currEmail: String,
         existingContacts: List<ContactRowInfo>
     ) {
-        println("addNewContactToCache called!")
         getChat(chatId).thenAccept { chat ->
             val isGroupChat = chatId.startsWith("@@event")
-            var chatTitle = ""
-            if (isGroupChat) {
-                getGroupEvent(chatId).thenAccept { groupEvent ->
-                    chatTitle = groupEvent.event.name
+            val chatTitleFuture =
+                if (isGroupChat) {
+                    getGroupEvent(chatId).thenApply { groupEvent ->
+                        groupEvent.event.name
+                    }
+                } else {
+                    val participant = chat.participants.first { it != currEmail }
+                    getUser(participant).thenApply { user ->
+                        user.firstName + " " + user.lastName
+                    }
                 }
-            } else {
-                val participant = chat.participants.first { it != currEmail }
-                getUser(participant).thenAccept { user ->
-                    chatTitle = user.firstName + " " + user.lastName
-                }
+
+            chatTitleFuture.thenAccept { chatTitle ->
+                val lastMessage = chat.messages.lastOrNull() ?: Message()
+                val newContact = ContactRowInfo(
+                    chatId,
+                    chatTitle,
+                    lastMessage,
+                    isGroupChat
+                )
+
+                contactRowInfos[currEmail] = listOf(newContact) + existingContacts
             }
-
-            val lastMessage = chat.messages.lastOrNull() ?: Message()
-            val newContact = ContactRowInfo(
-                chatId,
-                chatTitle,
-                lastMessage,
-                isGroupChat
-            )
-            println("newContact: $newContact")
-
-            contactRowInfos[currEmail] = listOf(newContact) + existingContacts
         }
     }
 
