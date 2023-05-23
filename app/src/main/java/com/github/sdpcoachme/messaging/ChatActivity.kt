@@ -122,17 +122,11 @@ class ChatActivity : ComponentActivity() {
             isGroupChat = chatId.startsWith("@@event")
 
             emailFuture.thenCompose { email ->
-                store.getUser(email).thenAccept() { user ->
-                    contact =
-                        if (chatId.startsWith("@@event")) chatId
-                        else chatId.replace(email, "")
+                contact =
+                    if (isGroupChat) chatId
+                    else chatId.replace(email, "")
 
-                    // Add the other user to the current user's chat contacts
-                    if (!user.chatContacts.contains(contact)) {
-                        val newUser = user.copy(chatContacts = user.chatContacts + contact)
-                        store.updateUser(newUser)
-                    }
-                }
+                store.addChatContactIfNew(email, chatId, contact)
             }
 
             // needed to remove the chat listener from the db so that

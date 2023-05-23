@@ -90,9 +90,12 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     }
 
     override fun getContactRowInfos(email: String): CompletableFuture<List<ContactRowInfo>> {
+        println("getContactRowInfos email: $email")
         return getUser(email).thenApply {
-            it.chatContacts
+            it.chatContacts.filterNotNull()
         }.thenCompose { contactList ->
+
+            println("getContactRowInfos contactList: $contactList")
             val mappedF = contactList.map { contactId ->
                 val isGroupChat = contactId.startsWith("@@event")
                 val chatId = if (isGroupChat) contactId
@@ -118,8 +121,10 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     private fun getContactRowInfoFromChat(
         chatId: String,
         contactId: String
-    ): CompletableFuture<ContactRowInfo> =
-        getChat(chatId).thenCompose { chat ->
+    ): CompletableFuture<ContactRowInfo> {
+        println("getContactRowInfoFromChat chatId: $chatId contactId: $contactId")
+
+        return getChat(chatId).thenCompose { chat ->
             val lastMessage =
                 if (chat.messages.isEmpty()) Message()
                 else chat.messages.last()
@@ -145,6 +150,7 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
                 }
             }
         }
+    }
 
     override fun getChat(chatId: String): CompletableFuture<Chat> {
         val id = chatId.replace('.', ',')
