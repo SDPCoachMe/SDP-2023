@@ -644,12 +644,11 @@ class CachingStore(private val wrappedDatabase: Database,
      * @param currEmail The email of the current user
      * @param existingContacts The existing contacts of the current user
      */
-    private fun addNewContactToCache(
+    fun addNewContactToCache(
         chatId: String,
         currEmail: String,
         existingContacts: List<ContactRowInfo>
     ) {
-        println("addNewContactToCache called on $chatId")
         getChat(chatId).thenCompose { chat ->
             val isGroupChat = chatId.startsWith("@@event")
             val chatTitleFuture =

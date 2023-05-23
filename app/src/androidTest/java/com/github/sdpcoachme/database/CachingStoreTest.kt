@@ -19,6 +19,7 @@ import com.github.sdpcoachme.data.ChatSample
 import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_2
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
@@ -661,6 +662,68 @@ class CachingStoreTest {
 
         assertTrue(isCorrect)
     }
+    
+    @Test
+    fun addNewContactToCacheCachesGroupChatContact() {
+
+        val currentUser = COACH_1
+        val message = Message(currentUser.email,
+            currentUser.firstName + " " + currentUser.lastName,
+            "Hello Message",
+            LocalDateTime.now().toString()
+        )
+        val groupEvent = GroupEvent(
+            event = Event(),
+            organizer = currentUser.email,
+            maxParticipants = 5,
+            participants = listOf(currentUser.email, COACH_2.email),
+        )
+        val chat = Chat(
+            id = groupEvent.groupEventId,
+            participants = listOf(currentUser.email, COACH_2.email),
+            messages = listOf(message),
+        )
+
+        var timesCalled = 0
+        class GroupContactsDB: MockDatabase() {
+
+            override fun getContactRowInfos(email: String): CompletableFuture<List<ContactRowInfo>> {
+                timesCalled++
+                return CompletableFuture.completedFuture(listOf())
+            }
+
+            override fun getChat(chatId: String): CompletableFuture<Chat> {
+                return CompletableFuture.completedFuture(chat)
+            }
+
+            override fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
+                return CompletableFuture.completedFuture(groupEvent)
+            }
+        }
+
+        wrappedDatabase = GroupContactsDB()
+        cachingStore = CachingStore(wrappedDatabase,
+            ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
+            ApplicationProvider.getApplicationContext()
+        )
+        cachingStore.retrieveData.get(1, SECONDS)
+        cachingStore.setCurrentEmail(currentUser.email).get(1, SECONDS)
+
+        cachingStore.addNewContactToCache(chat.id, currentUser.email, listOf())
+
+        val isCorrect = cachingStore.getContactRowInfo(currentUser.email)
+            .thenApply {
+                assertThat(it.size, `is`(1))
+                assertThat(it[0].chatId, `is`(chat.id))
+                assertThat(it[0].chatTitle, `is`(groupEvent.event.name))
+                assertThat(it[0].isGroupChat, `is`(true))
+                assertThat(it[0].lastMessage, `is`(message))
+                true
+            }.exceptionally { false }.get(1, SECONDS)
+
+        assertTrue(isCorrect)
+        assertThat(timesCalled, `is`(0))
+    } 
 
 
     @Test

@@ -252,7 +252,7 @@ class ChatActivity : ComponentActivity() {
                 )
             },
             navigationIcon = {
-                // Button icon for the back button
+                // Button icon for the    button
                 IconButton(
                     onClick = {
                         store.removeChatListener(chatId)
