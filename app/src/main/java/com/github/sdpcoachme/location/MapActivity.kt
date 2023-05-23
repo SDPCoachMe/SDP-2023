@@ -89,18 +89,20 @@ class MapActivity : ComponentActivity() {
         // all.
         // Note: this is absolutely not scalable, but we can change this later on.
         val futureUsers = store.getAllUsers().thenApply { users -> users.filter { it.coach } }
-        setContent {
-            Dashboard {
-                Map(
-                    modifier = it,
-                    lastUserLocation = locationProvider.getLastLocation(),
-                    futureCoachesToDisplay = futureUsers,
-                    markerLoading = markerLoading,
-                    mapLoading = mapLoading)
+        store.getCurrentEmail().thenApply { email ->
+            setContent {
+                Dashboard {
+                    Map(
+                        email = email,
+                        modifier = it,
+                        lastUserLocation = locationProvider.getLastLocation(),
+                        futureCoachesToDisplay = futureUsers,
+                        markerLoading = markerLoading,
+                        mapLoading = mapLoading)
+                }
             }
         }
     }
-
 }
 
 /**
@@ -110,6 +112,7 @@ class MapActivity : ComponentActivity() {
  */
 @Composable
 fun Map(
+    email: String,
     modifier: Modifier,
     lastUserLocation: MutableState<LatLng?>,
     // Those 2 arguments have default values to avoid refactoring older tests
@@ -169,10 +172,14 @@ fun Map(
                 tag = MARKER(user),
                 onInfoWindowClick = {
                     // TODO: code similar to CoachesList, might be able to modularize
-                    // Launches the ProfileActivity to display the coach's profile
                     val displayCoachIntent = Intent(context, ProfileActivity::class.java)
                     displayCoachIntent.putExtra("email", user.email)
-                    displayCoachIntent.putExtra("isViewingCoach", true)
+                    if (user.email == email) {
+                        displayCoachIntent.putExtra("isViewingCoach", false)
+                    } else {
+                        displayCoachIntent.putExtra("isViewingCoach", true)
+                    }
+                    // Launches the ProfileActivity to display the coach's profile
                     context.startActivity(displayCoachIntent)
                 }
             ) {
