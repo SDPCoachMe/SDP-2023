@@ -80,7 +80,7 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
 
     val context = LocalContext.current
     // equivalent to remember { ScaffoldState(...) }
-    val scaffoldState = rememberScaffoldState()
+    val hamburgerState = rememberScaffoldState()
     // creates a scope tied to the view's lifecycle. scope
     // enables us to launch a coroutine tied to a specific lifecycle
     val coroutineScope = rememberCoroutineScope()
@@ -90,14 +90,14 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
             color = MaterialTheme.colors.background,
         ) {
             Scaffold(
-                scaffoldState = scaffoldState,
+                scaffoldState = hamburgerState,
                 topBar = {
                     AppBar(
                         title = title,
-                        onNavigationIconClick = { coroutineScope.launch { scaffoldState.drawerState.open() } }
+                        onNavigationIconClick = { coroutineScope.launch { hamburgerState.drawerState.open() } }
                     )
                 },
-                drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
+                drawerGesturesEnabled = hamburgerState.drawerState.isOpen,
                 drawerContent = {
                     Surface(
                         color = MaterialTheme.colors.background
@@ -112,17 +112,20 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                         icon = Default.Map
                                     ),
                                     MenuItem(
-                                        tag = Dashboard.TestTags.Buttons.COACHES_LIST, title = "Nearby coaches",
+                                        tag = Dashboard.TestTags.Buttons.COACHES_LIST,
+                                        title = "Nearby coaches",
                                         contentDescription = "See a list of coaches available close to you",
                                         icon = Default.People
                                     ),
                                     MenuItem(
-                                        tag = Dashboard.TestTags.Buttons.GROUP_EVENTS_LIST, title = "Group events",
+                                        tag = Dashboard.TestTags.Buttons.GROUP_EVENTS_LIST,
+                                        title = "Group events",
                                         contentDescription = "See a list of events organized by coaches close to you",
                                         icon = Default.Groups
                                     ),
                                     MenuItem(
-                                        tag = Dashboard.TestTags.Buttons.SCHEDULE, title = "Schedule",
+                                        tag = Dashboard.TestTags.Buttons.SCHEDULE,
+                                        title = "Schedule",
                                         contentDescription = "See schedule",
                                         icon = Default.Today
                                     ),
@@ -132,7 +135,8 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                         icon = Default.Chat
                                     ),
                                     MenuItem(
-                                        tag = Dashboard.TestTags.Buttons.PROFILE, title = "My profile",
+                                        tag = Dashboard.TestTags.Buttons.PROFILE,
+                                        title = "My profile",
                                         contentDescription = "Go to profile",
                                         icon = Default.ManageAccounts
                                     ),
@@ -152,14 +156,19 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                                 )
                                             )
                                         }
+
                                         Dashboard.TestTags.Buttons.PROFILE -> {
+                                            val intent =
+                                                Intent(context, ProfileActivity::class.java)
                                             context.startActivity(
-                                                Intent(
+                                                /*val Intent(
                                                     context,
                                                     ProfileActivity::class.java
-                                                )
+                                                ),*/
+                                                intent
                                             )
                                         }
+
                                         Dashboard.TestTags.Buttons.LOGOUT -> {
                                             (context.applicationContext as CoachMeApplication).authenticator.signOut(
                                                 context
@@ -177,6 +186,7 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                                     }
                                             }
                                         }
+
                                         Dashboard.TestTags.Buttons.SCHEDULE -> {
                                             context.startActivity(
                                                 Intent(
@@ -185,6 +195,7 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                                 )
                                             )
                                         }
+
                                         Dashboard.TestTags.Buttons.COACHES_LIST -> {
                                             context.startActivity(
                                                 Intent(
@@ -193,12 +204,14 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                                 )
                                             )
                                         }
+
                                         Dashboard.TestTags.Buttons.MESSAGING -> {
                                             val intent =
                                                 Intent(context, CoachesListActivity::class.java)
                                             intent.putExtra("isViewingContacts", true)
                                             context.startActivity(intent)
                                         }
+
                                         Dashboard.TestTags.Buttons.GROUP_EVENTS_LIST -> {
                                             context.startActivity(
                                                 Intent(
@@ -207,6 +220,7 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                                 )
                                             )
                                         }
+
                                         else -> {
                                             throw IllegalStateException("Unknown tab clicked: ${it.tag}")
                                         }

@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -80,8 +81,32 @@ class ProfileActivity : ComponentActivity() {
     private lateinit var editTextHandler: (Intent) -> CompletableFuture<String>
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        class ProfileToCoachesListCallback : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val intent = Intent(this@ProfileActivity, CoachesListActivity::class.java)
+                startActivity(intent)
+            }
+        }
+        class ProfileToMapCallback : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val intent = Intent(this@ProfileActivity, Map::class.java)
+                startActivity(intent)
+            }
+        }
+
+        val callbackCoachesList = ProfileToCoachesListCallback()
+        val callbackMap = ProfileToMapCallback()
+        // TODO: which callback to add should be based on whether the user comes from the map or the coaches list
+        /*if (intent.getBooleanExtra("fromMap", false))
+            onBackPressedDispatcher.addCallback(this, callbackMap)
+        else
+            onBackPressedDispatcher.addCallback(this, callbackCoachesList)*/
+        onBackPressedDispatcher.addCallback(this, callbackCoachesList)
+
         stateUpdated = CompletableFuture()
         store = (application as CoachMeApplication).store
 
@@ -113,7 +138,7 @@ class ProfileActivity : ComponentActivity() {
                 if (isViewingCoach) stringResource(R.string.profile_details)
                 else stringResource(R.string.my_profile)
 
-            Dashboard(title) {
+            Dashboard(title = title) {
                 Profile(futureUserInfo, isViewingCoach)
             }
         }
@@ -124,7 +149,6 @@ class ProfileActivity : ComponentActivity() {
      */
     @Composable
     fun Profile(futureUserInfo: CompletableFuture<UserInfo>, isViewingCoach: Boolean) {
-
         val context = LocalContext.current
         var userInfo by remember { mutableStateOf(UserInfo()) }
 
