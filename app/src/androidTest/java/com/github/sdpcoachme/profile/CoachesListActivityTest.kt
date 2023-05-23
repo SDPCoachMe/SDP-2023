@@ -132,6 +132,25 @@ open class CoachesListActivityTest {
     }
 
     @Test
+    fun whenClickingOnOwnCoachProfileActivityShowsOwnProfile() {
+        val coach = COACH_1
+        store.setCurrentEmail(coach.email).thenApply {
+            // Click on own element
+            composeTestRule.onNodeWithText(coach.address.name).assertIsDisplayed()
+            composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
+                .assertIsDisplayed()
+                .performClick()
+
+            // Check that the ProfileActivity is launched with the correct extras
+            Intents.intended(allOf(
+                hasComponent(ProfileActivity::class.java.name),
+                hasExtra("email", coach.email),
+                hasExtra("isViewingCoach", false)
+            ))
+        }
+    }
+
+    @Test
     fun dashboardHasRightTitleOnNearbyCoachesList() {
         val title = (InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as CoachMeApplication).getString(R.string.title_activity_coaches_list)

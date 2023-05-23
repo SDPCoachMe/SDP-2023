@@ -43,9 +43,6 @@ import java.util.concurrent.TimeUnit.SECONDS
  */
 @RunWith(AndroidJUnit4::class)
 class MapActivityTest {
-
-    // TODO add tests for markers
-
     private val random = LatLng(42.0,42.0)
 
     @get: Rule
@@ -91,6 +88,7 @@ class MapActivityTest {
         composeTestRule.setContent {
             CoachMeTheme() {
                 Map(
+                    email = "",
                     modifier = Modifier.fillMaxWidth(),
                     lastUserLocation = lastUserLocation
                 )
@@ -111,7 +109,7 @@ class MapActivityTest {
         val lastUserLocation: MutableState<LatLng?> = mutableStateOf(firstLocation)
         composeTestRule.setContent {
             CoachMeTheme() {
-                Map(modifier = Modifier.fillMaxWidth(),lastUserLocation = lastUserLocation)
+                Map(email = "", modifier = Modifier.fillMaxWidth(),lastUserLocation = lastUserLocation)
             }
         }
         composeTestRule.onNodeWithTag(firstTag).assertExists()
