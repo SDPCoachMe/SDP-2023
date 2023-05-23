@@ -169,6 +169,9 @@ class CreateEventActivity : ComponentActivity() {
         // Set up handler for calls to select sports activity
         selectSportsHandler = SelectSportsActivity.getHandler(this)
 
+        // Set up handler for calls to edit text activity
+        editTextHandler = EditTextActivity.getHandler(this)
+
         val eventTypeName = intent.getStringExtra("eventType")!!
         val eventType = EventType.fromString(eventTypeName)!!
         setContent {
@@ -766,14 +769,16 @@ class CreateEventActivity : ComponentActivity() {
                 ).thenApply {
                     onDescriptionChange(it)
                 }
-            }
+            },
+            modifier = Modifier.fillMaxHeight()
         ) {
             Text(
                 modifier = Modifier.testTag(TestTags.TextFields.DESCRIPTION), //.testTag(TestTags.Texts.DESCRIPTION_TEXT),
                 text = description,
                 style = MaterialTheme.typography.body1,
                 maxLines = 1000,
-                overflow = TextOverflow.Ellipsis
+                softWrap = true,
+                overflow = TextOverflow.Visible
             )
         }
 

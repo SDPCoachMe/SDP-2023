@@ -445,6 +445,7 @@ fun TitleRow(user: UserInfo, isViewingCoach: Boolean) {
 @Composable
 fun AttributeRow(
     label: String,
+    modifier: Modifier = Modifier.requiredHeight(22.dp),
     onClick: () -> Unit = {},
     content: @Composable () -> Unit
 ) {
@@ -458,20 +459,19 @@ fun AttributeRow(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Bottom
     ) {
-        Column(
-            modifier = Modifier
-                .requiredHeight(22.dp),
-            verticalArrangement = Arrangement.Bottom
-        ) {
-            content()
-        }
-        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = label,
             color = Color.Gray,
             style = MaterialTheme.typography.overline,
             fontSize = 8.sp
         )
+        Spacer(modifier = Modifier.height(4.dp))
+        Column(
+            modifier = modifier,
+            verticalArrangement = Arrangement.Bottom
+        ) {
+            content()
+        }
     }
 }
 
