@@ -122,12 +122,9 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
         chatId: String,
         contactId: String
     ): CompletableFuture<ContactRowInfo> {
-        println("getContactRowInfoFromChat chatId: $chatId contactId: $contactId")
 
         return getChat(chatId).thenCompose { chat ->
-            val lastMessage =
-                if (chat.messages.isEmpty()) Message()
-                else chat.messages.last()
+            val lastMessage = chat.messages.lastOrNull() ?: Message()
 
             if (contactId.startsWith("@@event")) {
                 getGroupEvent(contactId)

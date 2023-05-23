@@ -601,15 +601,11 @@ class CachingStore(private val wrappedDatabase: Database,
     }
 
     private fun updateCachedContactRowInfo(chatId: String, message: Message): CompletableFuture<Void> {
-        println("updateCachedContactRowInfo called with chatId $chatId and message $message")
         return getCurrentEmail().thenAccept { currEmail ->
             // update the contact's last message
-            println("contactRowInfos contains $currEmail: " + contactRowInfos.containsKey(currEmail))
             if (!contactRowInfos.containsKey(currEmail)) {
                 return@thenAccept
             }
-            println("contactRowInfos contains $currEmail")
-            println("contactRowInfos[$currEmail]: " + contactRowInfos[currEmail])
 
             var existingContacts = listOf<ContactRowInfo>()
             // we need to find the contact with the given chatId and update it
@@ -630,7 +626,6 @@ class CachingStore(private val wrappedDatabase: Database,
                 contactRowInfos[currEmail] = listOf(updatedContact) + existingContacts
                 return@thenAccept
             }
-            println("contact not found in cache")
             // if the contact is not found, we need to fetch the chat from the db
             // and update the cache with the new contact
             addNewContactToCache(chatId, currEmail, existingContacts)
@@ -652,11 +647,8 @@ class CachingStore(private val wrappedDatabase: Database,
         getChat(chatId).thenCompose { chat ->
             val isGroupChat = chatId.startsWith("@@event")
             val chatTitleFuture =
-                if (isGroupChat) {
-                    getGroupEvent(chatId).thenApply { groupEvent ->
-                        groupEvent.event.name
-                    }
-                } else {
+                if (isGroupChat) getGroupEvent(chatId).thenApply { it.event.name }
+                else {
                     val participant = chat.participants.first { it != currEmail }
                     getUser(participant).thenApply { user ->
                         user.firstName + " " + user.lastName
@@ -664,9 +656,7 @@ class CachingStore(private val wrappedDatabase: Database,
                 }
 
             chatTitleFuture.thenAccept { chatTitle ->
-                val lastMessage =
-                    chat.messages.lastOrNull()
-                    ?: Message()
+                val lastMessage = chat.messages.lastOrNull() ?: Message()
                 val newContact = ContactRowInfo(
                     chatId,
                     chatTitle,
