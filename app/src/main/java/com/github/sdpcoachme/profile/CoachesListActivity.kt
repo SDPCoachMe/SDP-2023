@@ -225,7 +225,11 @@ class CoachesListActivity : ComponentActivity() {
                 onClick = {
                     val displayCoachIntent = Intent(context, ProfileActivity::class.java)
                     displayCoachIntent.putExtra("email", user.email)
-                    displayCoachIntent.putExtra("isViewingCoach", true)
+                    if (user.email == currentUserEmail) {
+                        displayCoachIntent.putExtra("isViewingCoach", false)
+                    } else {
+                        displayCoachIntent.putExtra("isViewingCoach", true)
+                    }
                     context.startActivity(displayCoachIntent)
                 }
             )
