@@ -802,7 +802,34 @@ class CachingStoreTest {
         override fun getChat(chatId: String): CompletableFuture<Chat> {
             return CompletableFuture.completedFuture(Chat("chatiId2", listOf(defaultUser.email, COACH_1.email), listOf()))
         }
+
+        override fun getUser(email: String): CompletableFuture<UserInfo> {
+            return CompletableFuture.completedFuture(defaultUser)
+        }
     }
+    
+    @Test
+    fun addChatContactIfNewDoesNotUpdateContactsIfTheNewContactIsAnExistingOne() {
+        val currentUser = defaultUser.copy(chatContacts = listOf("id1", "id2"))
+        val wrappedDatabase = ContactRowDB(currentUser, listOf())
+        cachingStore = CachingStore(wrappedDatabase,
+            ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
+            ApplicationProvider.getApplicationContext()
+        )
+        cachingStore.retrieveData.get(1, SECONDS)
+        cachingStore.setCurrentEmail(currentUser.email).get(1, SECONDS)
+
+        val isCorrect = cachingStore.addChatContactIfNew(currentUser.email, "id2", "id2")
+            .thenCompose {
+                cachingStore.getUser(currentUser.email)
+            }.thenApply {
+                // id2 is not to be expected in position 0 as the id2 is already inside
+                assertThat(it.chatContacts, `is`(currentUser.chatContacts))
+                true
+            }.exceptionally { println("error: ${it.cause}"); false }.get(5, SECONDS)
+
+        assertTrue(isCorrect)
+    } 
 
     @Test
     fun sendingMessageInChatWhoseContactRowIsCachedUpdatesThatContactRowInCache() {

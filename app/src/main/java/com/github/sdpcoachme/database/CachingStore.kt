@@ -524,6 +524,8 @@ class CachingStore(private val wrappedDatabase: Database,
                 // update the user in the database
                 val updatedUser = user.copy(chatContacts = listOf(contact) + user.chatContacts)
                 updateUser(updatedUser)
+
+                println("updated contacts: " + updatedUser.chatContacts)
             }
         }
     }
@@ -599,11 +601,15 @@ class CachingStore(private val wrappedDatabase: Database,
     }
 
     private fun updateCachedContactRowInfo(chatId: String, message: Message): CompletableFuture<Void> {
+        println("updateCachedContactRowInfo called with chatId $chatId and message $message")
         return getCurrentEmail().thenAccept { currEmail ->
             // update the contact's last message
+            println("contactRowInfos contains $currEmail: " + contactRowInfos.containsKey(currEmail))
             if (!contactRowInfos.containsKey(currEmail)) {
                 return@thenAccept
             }
+            println("contactRowInfos contains $currEmail")
+            println("contactRowInfos[$currEmail]: " + contactRowInfos[currEmail])
 
             var existingContacts = listOf<ContactRowInfo>()
             // we need to find the contact with the given chatId and update it
@@ -624,7 +630,7 @@ class CachingStore(private val wrappedDatabase: Database,
                 contactRowInfos[currEmail] = listOf(updatedContact) + existingContacts
                 return@thenAccept
             }
-
+            println("contact not found in cache")
             // if the contact is not found, we need to fetch the chat from the db
             // and update the cache with the new contact
             addNewContactToCache(chatId, currEmail, existingContacts)
@@ -643,6 +649,7 @@ class CachingStore(private val wrappedDatabase: Database,
         currEmail: String,
         existingContacts: List<ContactRowInfo>
     ) {
+        println("addNewContactToCache called on $chatId")
         getChat(chatId).thenCompose { chat ->
             val isGroupChat = chatId.startsWith("@@event")
             val chatTitleFuture =
@@ -658,7 +665,9 @@ class CachingStore(private val wrappedDatabase: Database,
                 }
 
             chatTitleFuture.thenAccept { chatTitle ->
-                val lastMessage = chat.messages.lastOrNull() ?: Message()
+                val lastMessage =
+                    chat.messages.lastOrNull()
+                    ?: Message()
                 val newContact = ContactRowInfo(
                     chatId,
                     chatTitle,
