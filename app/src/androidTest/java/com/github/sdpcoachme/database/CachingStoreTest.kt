@@ -18,6 +18,7 @@ import com.github.sdpcoachme.data.AddressSamples.Companion.NEW_YORK
 import com.github.sdpcoachme.data.ChatSample
 import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.UserInfo
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
@@ -25,13 +26,14 @@ import com.github.sdpcoachme.data.messaging.Message.ReadState
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.schedule.EventOps
-import junit.framework.TestCase.*
 import com.google.android.gms.maps.model.LatLng
-import junit.framework.TestCase.*
+import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertFalse
+import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.CoreMatchers.*
+import org.hamcrest.CoreMatchers.not
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -796,6 +798,10 @@ class CachingStoreTest {
         override fun addChatListener(chatId: String, onChange: (Chat) -> Unit) {
             onChange(onChangeChat)
         }
+
+        override fun getChat(chatId: String): CompletableFuture<Chat> {
+            return CompletableFuture.completedFuture(Chat("chatiId2", listOf(defaultUser.email, COACH_1.email), listOf()))
+        }
     }
 
     @Test
@@ -804,7 +810,7 @@ class CachingStoreTest {
         val rowInfo = ContactRowInfo(
             "chatiId",
             "chatiName",
-            Message("sender@email.com", "Sender Name", "Test Message", LocalDateTime.now().toString(), ReadState.SENT, mapOf()),
+            Message(defaultUser.email, "Sender Name", "Test Message", LocalDateTime.now().toString(), ReadState.SENT, mapOf()),
             false,
         )
         val unusedRowInfo = rowInfo.copy(chatId = "chatiId2", chatTitle = "chatiName2", isGroupChat = true)
@@ -818,9 +824,10 @@ class CachingStoreTest {
         cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
 
         cachingStore.getCurrentEmail().get(1, SECONDS)
+        cachingStore.updateUser(COACH_1).get(1, SECONDS)
 
         val expectedMessage = Message(
-            "other@email.com",
+            COACH_1.email,
             "Sender Name",
             "New Message!",
             LocalDateTime.now().toString(),
@@ -846,11 +853,11 @@ class CachingStoreTest {
     }
 
     @Test
-    fun sendingMessageForUncachedChatClearsStaleChat() {
+    fun sendingMessageForUncachedChatAddsItToTheCache() {
         val rowInfo = ContactRowInfo(
             "chatiId",
             "chatiName",
-            Message("sender@email.com", "Sender Name", "Test Message", LocalDateTime.now().toString(), ReadState.SENT, mapOf()),
+            Message(defaultUser.email, "Sender Name", "Test Message", LocalDateTime.now().toString(), ReadState.SENT, mapOf()),
             false,
         )
         val uncachedRowInfo = rowInfo.copy(chatId = "chatiId2", chatTitle = "chatiName2", isGroupChat = true)
@@ -861,7 +868,9 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext()
         )
         cachingStore.retrieveData.get(1, SECONDS)
-        cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
+        cachingStore.setCurrentEmail(defaultUser.email).get(1, SECONDS)
+        cachingStore.updateUser(COACH_1).get(1, SECONDS)
+
         val nonCachedMessage = Message(
             "other@email.com",
             "Sender Name",
@@ -879,8 +888,8 @@ class CachingStoreTest {
                 assert(wrappedDatabase.sentMessage == nonCachedMessage)
                 cachingStore.getContactRowInfo(defaultUser.email)
             }.thenApply {
-                // should have called the wrapped database again since the stale cache should be cleared
-                assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(2))
+                // should not have called the wrapped database since the cache should have been updated
+                assertThat(wrappedDatabase.nbCallsToGetContactRowInfo, `is`(1))
 
                 true
             }.exceptionally { false }.get(5, SECONDS)

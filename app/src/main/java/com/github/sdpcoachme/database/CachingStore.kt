@@ -643,7 +643,7 @@ class CachingStore(private val wrappedDatabase: Database,
         currEmail: String,
         existingContacts: List<ContactRowInfo>
     ) {
-        getChat(chatId).thenAccept { chat ->
+        getChat(chatId).thenCompose { chat ->
             val isGroupChat = chatId.startsWith("@@event")
             val chatTitleFuture =
                 if (isGroupChat) {
