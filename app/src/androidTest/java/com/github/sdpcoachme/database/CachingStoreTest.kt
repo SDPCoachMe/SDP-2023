@@ -724,6 +724,52 @@ class CachingStoreTest {
         assertTrue(isCorrect)
         assertThat(timesCalled, `is`(0))
     } 
+    
+    @Test
+    fun updateChatParticipantsForCachedChatUpdatesTheCache() {
+
+        val chat = Chat(
+            id = "chatId",
+            participants = listOf(COACH_1.email),
+            messages = listOf(),
+        )
+
+        val newParticipants = listOf(COACH_1.email, COACH_2.email)
+        var timesCalled = 0
+        class ChatDB: MockDatabase() {
+            override fun getChat(chatId: String): CompletableFuture<Chat> {
+                timesCalled++
+                return CompletableFuture.completedFuture(chat)
+            }
+        }
+
+        wrappedDatabase = ChatDB()
+        cachingStore = CachingStore(wrappedDatabase,
+            ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
+            ApplicationProvider.getApplicationContext()
+        )
+        cachingStore.retrieveData.get(1, SECONDS)
+        cachingStore.setCurrentEmail(COACH_1.email).get(1, SECONDS)
+
+        val isCorrect = cachingStore.getChat(chat.id)
+            .thenCompose {
+                assertThat(it, `is`(chat))
+                assertThat(timesCalled, `is`(1))
+
+                cachingStore.updateChatParticipants(chat.id, newParticipants)
+            }.thenCompose {
+                cachingStore.getChat(chat.id)
+            }.thenApply {
+                assertThat(it.participants, `is`(newParticipants))
+                assertThat(timesCalled, `is`(1))
+                true
+            }.exceptionally {
+                println("error: ${it.cause}")
+                false
+            }.get(1, SECONDS)
+
+        assertTrue(isCorrect)
+    } 
 
 
     @Test
