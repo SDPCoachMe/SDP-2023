@@ -3,6 +3,7 @@ package com.github.sdpcoachme.location
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,6 +33,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserInfo
@@ -80,12 +82,15 @@ class MapActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        /*val callback = this.onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(false) {
+
+        class CoachesListCallback : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                val intent = Intent(this@MapActivity, ProfileActivity::class.java)
-                startActivity(intent)
+                val intent = Intent(this@MapActivity, MapActivity::class.java)
+                ContextCompat.startActivity(this@MapActivity, intent, null)
             }
-        })*/
+        }
+        val callback = CoachesListCallback()
+        //onBackPressedDispatcher.addCallback(this, callback)
 
         store = (application as CoachMeApplication).store
 

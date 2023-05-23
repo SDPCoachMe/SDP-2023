@@ -72,18 +72,24 @@ class CoachesListActivity : ComponentActivity() {
 
     // Observable state of the current sports used to filter the coaches list
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
-
+    val callback = object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            // Redirect to MapActivity
+            startActivity(Intent(this@CoachesListActivity, MapActivity::class.java))
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         class CoachesListCallback : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                val intent = Intent(this@CoachesListActivity, MapActivity::class.java)
-                ContextCompat.startActivity(this@CoachesListActivity, intent, null)
+                /*val intent = Intent(this@CoachesListActivity, MapActivity::class.java)
+                ContextCompat.startActivity(this@CoachesListActivity, intent, null)*/
+
             }
         }
-        val callback = CoachesListCallback()
-        onBackPressedDispatcher.addCallback(this, callback)
+
+        //onBackPressedDispatcher.addCallback(callback)
 
         val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
         store = (application as CoachMeApplication).store

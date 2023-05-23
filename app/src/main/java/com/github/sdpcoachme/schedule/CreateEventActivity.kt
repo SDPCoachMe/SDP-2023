@@ -30,6 +30,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.github.sdpcoachme.CoachMeApplication
@@ -41,7 +42,11 @@ import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.data.schedule.EventType
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.autocomplete.AddressAutocompleteHandler
+import com.github.sdpcoachme.profile.AttributeRow
+import com.github.sdpcoachme.profile.EditTextActivity
 import com.github.sdpcoachme.profile.SelectSportsActivity
+import com.github.sdpcoachme.profile.SportsRow
+import com.github.sdpcoachme.profile.TextRow
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.maxkeppeker.sheets.core.models.base.Header
 import com.maxkeppeker.sheets.core.models.base.SheetState
@@ -145,12 +150,14 @@ class CreateEventActivity : ComponentActivity() {
 
         companion object {
             const val SCAFFOLD = "scaffold"
+            const val SPORTS = "sports"
         }
     }
 
     private lateinit var store: CachingStore
     private lateinit var addressAutocompleteHandler: AddressAutocompleteHandler
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
+    private lateinit var editTextHandler: (Intent) -> CompletableFuture<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -204,7 +211,7 @@ class CreateEventActivity : ComponentActivity() {
                     color = selectedColor.value.toString(),
                     start = start.format(formatterEventDate),
                     end = end.format(formatterEventDate),
-                    address = location,   // TODO: Add possibility to choose location during next task
+                    address = location,
                     description = description
                 )
                 TopAppBar(
@@ -296,20 +303,24 @@ class CreateEventActivity : ComponentActivity() {
                         modifier = Modifier.padding(horizontal = 10.dp)
                     ) {
                         val focusManager = LocalFocusManager.current
-                        TextField(
+                        TextRow(
+                            label = "EVENT TITLE",
+                            tag = TestTags.TextFields.EVENT_NAME,
                             value = eventName,
-                            onValueChange = { eventName = it },
-                            label = { Text("Event Title") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
-                            keyboardActions = KeyboardActions(
-                                onNext = { focusManager.clearFocus() }
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 10.dp)
-                                .testTag(TestTags.TextFields.EVENT_NAME)
+                            onClick = {
+                                editTextHandler(
+                                    EditTextActivity.getIntent(
+                                        context = context,
+                                        initialValue = eventName,
+                                        label = "Event Title",
+                                    )
+                                ).thenApply {
+                                    eventName = it
+                                }
+                            }
                         )
+
+                        Divider(startIndent = 20.dp)
 
                         // Start date
                         StartDateRow(
@@ -318,13 +329,14 @@ class CreateEventActivity : ComponentActivity() {
                             formatter = formatterUserDate,
                             onDateChange = { start = it },
                         )
+                        Divider(startIndent = 20.dp)
                         StartTimeRow(
                             startTimeSheet = startTimeSheet,
                             start = start,
                             formatter = formatterUserTime,
                             onTimeChange = { start = it }
                         )
-
+                        Divider(startIndent = 20.dp)
                         // End date
                         EndDateRow(
                             endDateSheet = endDateSheet,
@@ -332,6 +344,7 @@ class CreateEventActivity : ComponentActivity() {
                             formatter = formatterUserDate,
                             onDateChange = { end = it },
                         )
+                        Divider(startIndent = 20.dp)
                         EndTimeRow(
                             endTimeSheet = endTimeSheet,
                             end = end,
@@ -340,29 +353,49 @@ class CreateEventActivity : ComponentActivity() {
                         )
 
                         if (eventType == EventType.GROUP) {
+                            Divider(startIndent = 20.dp)
                             MaxParticipantsRow(
                                 maxParticipants = maxParticipants,
                                 onMaxParticipantsChange = { maxParticipants = it }
                             )
                         }
 
-                        EventSportRow(
+                        Divider(startIndent = 20.dp)
+                        /*EventSportRow(
                             sport = sports,
                             onSportChange = { sports = it }
+                        )*/
+                        SportsRow(
+                            label = "SPORT",
+                            tag = TestTags.SPORTS,
+                            value = sports,
+                            onClick = {
+                                selectSportsHandler(
+                                    SelectSportsActivity.getIntent(
+                                        context = context,
+                                        initialValue = sports,
+                                    )
+                                ).thenApply {
+                                    // only update the sport if the user selected only one
+                                    if (it.size == 1) {
+                                        sports = it
+                                    }
+                                }
+                            }
                         )
-
+                        Divider(startIndent = 20.dp)
                         EventLocationRow(
                             location = location,
                             onLocationChange = { location = it }
                         )
-
+                        Divider(startIndent = 20.dp)
                         // Color
                         ColorRow(
                             colorSheet = colorSheet,
                             selectedColor = selectedColor,
                             onColorChange = { selectedColor = it }
                         )
-
+                        Divider(startIndent = 20.dp)
                         // Description
                         DescriptionRow(
                             description = description,
@@ -381,17 +414,16 @@ class CreateEventActivity : ComponentActivity() {
         formatter: DateTimeFormatter,
         onDateChange: (LocalDateTime) -> Unit
     ) {
-        Row (
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            verticalAlignment = Alignment.Bottom
-        ){
+        AttributeRow(
+            label = "START DATE",
+            onClick = { startDateSheet.show() },
+        ) {
             Text(
-                text = "Start Date: ",
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag(TestTags.Texts.START_DATE_TEXT)
+                modifier = Modifier.testTag(TestTags.Texts.START_DATE_TEXT),
+                text = start.format(formatter),
+                style = MaterialTheme.typography.body1,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             CalendarDialog(
                 state = startDateSheet,
@@ -418,16 +450,6 @@ class CreateEventActivity : ComponentActivity() {
                     usePlatformDefaultWidth = true,
                 )
             )
-            ClickableText(
-                text = AnnotatedString(start.format(formatter)),
-                onClick = { startDateSheet.show() },
-                style = MaterialTheme.typography.body1.copy(
-                    color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
-                ),
-                modifier = Modifier
-                    .weight(.8f)
-                    .testTag(TestTags.Clickables.START_DATE)
-            )
         }
     }
 
@@ -438,18 +460,16 @@ class CreateEventActivity : ComponentActivity() {
         formatter: DateTimeFormatter,
         onTimeChange: (LocalDateTime) -> Unit
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            verticalAlignment = Alignment.Bottom
+        AttributeRow(
+            label = "START TIME",
+            onClick = { startTimeSheet.show() },
         ) {
             Text(
-                text = "Time: ",
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 20.dp)
-                    .testTag(TestTags.Texts.START_TIME_TEXT)
+                modifier = Modifier.testTag(TestTags.Texts.START_TIME_TEXT),
+                text = start.format(formatter),
+                style = MaterialTheme.typography.body1,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             ClockDialog(
                 state = startTimeSheet,
@@ -471,16 +491,6 @@ class CreateEventActivity : ComponentActivity() {
                     onTimeChange(start.withHour(hours).withMinute(minutes))
                 }
             )
-            ClickableText(
-                text = AnnotatedString(start.toLocalTime().format(formatter)),
-                onClick = { startTimeSheet.show() },
-                style = MaterialTheme.typography.body1.copy(
-                    color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
-                ),
-                modifier = Modifier
-                    .weight(.8f)
-                    .testTag(TestTags.Clickables.START_TIME)
-            )
         }
     }
 
@@ -491,19 +501,19 @@ class CreateEventActivity : ComponentActivity() {
         formatter: DateTimeFormatter,
         onDateChange: (LocalDateTime) -> Unit
     ) {
-        Row (
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            verticalAlignment = Alignment.Bottom
-        ){
+        AttributeRow(
+            label = "END DATE",
+            onClick = { endDateSheet.show() },
+        ) {
             Text(
-                text = "End Date: ",
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag(TestTags.Texts.END_DATE_TEXT)
+                modifier = Modifier.testTag(TestTags.Texts.END_DATE_TEXT),
+                text = end.format(formatter),
+                style = MaterialTheme.typography.body1,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             CalendarDialog(
+                state = endDateSheet,
                 header = Header.Custom {
                     Text(
                         text = "End Date",
@@ -514,12 +524,10 @@ class CreateEventActivity : ComponentActivity() {
                             .testTag(TestTags.Texts.END_DATE_DIALOG_TITLE)
                     )
                 },
-                state = endDateSheet,
                 config = CalendarConfig(
                     monthSelection = false,
                     yearSelection = false,
-                    style = CalendarStyle.MONTH,
-                ),
+                    style = CalendarStyle.MONTH),
                 selection = CalendarSelection.Date {
                     onDateChange(it.atStartOfDay().plusHours(1))
                 },
@@ -528,16 +536,6 @@ class CreateEventActivity : ComponentActivity() {
                     dismissOnClickOutside = true,
                     usePlatformDefaultWidth = true,
                 )
-            )
-            ClickableText(
-                text = AnnotatedString(end.format(formatter)),
-                onClick = { endDateSheet.show() },
-                style = MaterialTheme.typography.body1.copy(
-                    color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
-                ),
-                modifier = Modifier
-                    .weight(.8f)
-                    .testTag(TestTags.Clickables.END_DATE)
             )
         }
     }
@@ -549,18 +547,16 @@ class CreateEventActivity : ComponentActivity() {
         formatter: DateTimeFormatter,
         onTimeChange: (LocalDateTime) -> Unit
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            verticalAlignment = Alignment.Bottom
+        AttributeRow(
+            label = "END TIME",
+            onClick = { endTimeSheet.show() },
         ) {
             Text(
-                text = "Time: ",
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 20.dp)
-                    .testTag(TestTags.Texts.END_TIME_TEXT)
+                modifier = Modifier.testTag(TestTags.Texts.END_TIME_TEXT),
+                text = end.format(formatter),
+                style = MaterialTheme.typography.body1,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             ClockDialog(
                 state = endTimeSheet,
@@ -575,21 +571,12 @@ class CreateEventActivity : ComponentActivity() {
                     )
                 },
                 config = ClockConfig(
+                    defaultTime = end.toLocalTime(),
                     is24HourFormat = true
                 ),
                 selection = ClockSelection.HoursMinutes { hours, minutes ->
                     onTimeChange(end.withHour(hours).withMinute(minutes))
                 }
-            )
-            ClickableText(
-                text = AnnotatedString(end.toLocalTime().format(formatter)),
-                onClick = { endTimeSheet.show() },
-                style = MaterialTheme.typography.body1.copy(
-                    color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
-                ),
-                modifier = Modifier
-                    .weight(.8f)
-                    .testTag(TestTags.Clickables.END_TIME)
             )
         }
     }
@@ -599,35 +586,32 @@ class CreateEventActivity : ComponentActivity() {
         maxParticipants: Int,
         onMaxParticipantsChange: (Int) -> Unit
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            verticalAlignment = Alignment.Bottom
+        val context = LocalContext.current
+        AttributeRow(
+            label = "MAX PARTICIPANTS",
+            onClick = {
+                editTextHandler(
+                    EditTextActivity.getIntent(
+                        context = context,
+                        initialValue =
+                            if (maxParticipants != 0) {
+                                maxParticipants.toString()
+                            } else {
+                                ""
+                            },
+                        label = "Max Participants",
+                    )
+                ).thenApply {
+                    onMaxParticipantsChange(it.toIntOrNull() ?: 0)
+                }
+            }
         ) {
             Text(
-                text = "Max Participants: ",
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag(TestTags.Texts.MAX_PARTICIPANTS_TEXT)
-            )
-            val focusManager = LocalFocusManager.current
-            TextField(
-                value = if (maxParticipants != 0) {
-                    maxParticipants.toString()
-                } else {
-                    ""
-                },
-                onValueChange = {
-                    onMaxParticipantsChange(it.toIntOrNull() ?: 0)
-                },
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next, keyboardType = KeyboardType.Number),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.clearFocus() }
-                ),
-                modifier = Modifier
-                    .weight(.8f)
-                    .testTag(TestTags.TextFields.MAX_PARTICIPANTS)
+                modifier = Modifier.testTag(TestTags.Texts.MAX_PARTICIPANTS_TEXT),
+                text = maxParticipants.toString(),
+                style = MaterialTheme.typography.body1,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -689,32 +673,21 @@ class CreateEventActivity : ComponentActivity() {
         location: Address,
         onLocationChange: (Address) -> Unit,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            verticalAlignment = Alignment.Bottom
+        AttributeRow(
+            label = "LOCATION",
+            onClick = {
+                addressAutocompleteHandler.launch(
+                ).thenApply {
+                    onLocationChange(it)
+                }
+            }
         ) {
             Text(
-                text = "Location: ",
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag(TestTags.Texts.LOCATION_TEXT)
-            )
-            ClickableText(
-                text = AnnotatedString(location.name),
-                onClick = {
-                    addressAutocompleteHandler.launch(
-                    ).thenApply {
-                        onLocationChange(it)
-                    }
-                },
-                style = MaterialTheme.typography.body1.copy(
-                    color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
-                ),
-                modifier = Modifier
-                    .weight(.8f)
-                    .testTag(TestTags.Clickables.LOCATION)
+                modifier = Modifier.testTag(TestTags.Texts.LOCATION_TEXT),
+                text = location.name,
+                style = MaterialTheme.typography.body1,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -725,32 +698,31 @@ class CreateEventActivity : ComponentActivity() {
         selectedColor: Color,
         onColorChange: (Color) -> Unit
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            verticalAlignment = Alignment.Bottom
+        val colorMap = mapOf(
+            EventColors.RED.color.toArgb() to EventColors.RED.color,
+            EventColors.SALMON.color.toArgb() to EventColors.SALMON.color,
+            EventColors.ORANGE.color.toArgb() to EventColors.ORANGE.color,
+            EventColors.LIME.color.toArgb() to EventColors.LIME.color,
+            EventColors.MINT.color.toArgb() to EventColors.MINT.color,
+            EventColors.DARK_GREEN.color.toArgb() to EventColors.DARK_GREEN.color,
+            EventColors.BLUE.color.toArgb() to EventColors.BLUE.color,
+            EventColors.LIGHT_BLUE.color.toArgb() to EventColors.LIGHT_BLUE.color,
+            EventColors.PURPLE.color.toArgb() to EventColors.PURPLE.color,
+        )
+        AttributeRow(
+            label = "COLOR",
+            onClick = { colorSheet.show() },
         ) {
-            Text(
-                text = "Color: ",
+            Box (
                 modifier = Modifier
-                    .weight(1f)
-                    .testTag(TestTags.Texts.COLOR_TEXT)
+                    .fillMaxHeight(.5f)
+                    .aspectRatio(1f, true)
+                    .size(5.dp)
+                    .clickable { colorSheet.show() }
+                    .background(selectedColor)
+                    .testTag(TestTags.Clickables.COLOR_BOX)
             )
-
-            val colorMap = mapOf(
-                EventColors.RED.color.toArgb() to EventColors.RED.color,
-                EventColors.SALMON.color.toArgb() to EventColors.SALMON.color,
-                EventColors.ORANGE.color.toArgb() to EventColors.ORANGE.color,
-                EventColors.LIME.color.toArgb() to EventColors.LIME.color,
-                EventColors.MINT.color.toArgb() to EventColors.MINT.color,
-                EventColors.DARK_GREEN.color.toArgb() to EventColors.DARK_GREEN.color,
-                EventColors.BLUE.color.toArgb() to EventColors.BLUE.color,
-                EventColors.LIGHT_BLUE.color.toArgb() to EventColors.LIGHT_BLUE.color,
-                EventColors.PURPLE.color.toArgb() to EventColors.PURPLE.color,
-            )
-
-            ColorDialog(
+            ColorDialog (
                 state = colorSheet,
                 header = Header.Custom {
                     Text(
@@ -773,16 +745,6 @@ class CreateEventActivity : ComponentActivity() {
                     allowCustomColorAlphaValues = false,
                 )
             )
-            Box (
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(.5f)
-                    .aspectRatio(1f, true)
-                    .size(5.dp)
-                    .clickable { colorSheet.show() }
-                    .background(selectedColor)
-                    .testTag(TestTags.Clickables.COLOR_BOX)
-            )
         }
     }
 
@@ -791,7 +753,31 @@ class CreateEventActivity : ComponentActivity() {
         description: String,
         onDescriptionChange: (String) -> Unit
     ) {
-        Row (modifier = Modifier
+        val context = LocalContext.current
+        AttributeRow(
+            label = "DESCRIPTION",
+            onClick = {
+                editTextHandler(
+                    EditTextActivity.getIntent(
+                        context = context,
+                        initialValue = description,
+                        label = "Description",
+                    )
+                ).thenApply {
+                    onDescriptionChange(it)
+                }
+            }
+        ) {
+            Text(
+                modifier = Modifier.testTag(TestTags.TextFields.DESCRIPTION), //.testTag(TestTags.Texts.DESCRIPTION_TEXT),
+                text = description,
+                style = MaterialTheme.typography.body1,
+                maxLines = 1000,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        /*Row (modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
             .padding(top = 10.dp),
@@ -812,7 +798,7 @@ class CreateEventActivity : ComponentActivity() {
                     .padding(top = 10.dp)
                     .testTag(TestTags.TextFields.DESCRIPTION)
             )
-        }
+        }*/
     }
 }
 

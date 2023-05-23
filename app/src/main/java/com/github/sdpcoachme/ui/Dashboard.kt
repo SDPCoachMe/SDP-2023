@@ -3,13 +3,41 @@ package com.github.sdpcoachme.ui
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.*
+import androidx.compose.material.AppBarDefaults
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
+import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons.Default
-import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.ManageAccounts
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.rememberScaffoldState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
@@ -30,7 +58,6 @@ import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.schedule.ScheduleActivity
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
@@ -100,7 +127,7 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                 drawerGesturesEnabled = hamburgerState.drawerState.isOpen,
                 drawerContent = {
                     Surface(
-                        color = MaterialTheme.colors.background
+                        color = MaterialTheme.colors.background,
                     ) {
                         Column {
                             DrawerHeader(context, UIDisplayed)
@@ -158,14 +185,11 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                         }
 
                                         Dashboard.TestTags.Buttons.PROFILE -> {
-                                            val intent =
-                                                Intent(context, ProfileActivity::class.java)
                                             context.startActivity(
-                                                /*val Intent(
+                                                Intent(
                                                     context,
                                                     ProfileActivity::class.java
-                                                ),*/
-                                                intent
+                                                ),
                                             )
                                         }
 
@@ -175,15 +199,14 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                             ) {
                                                 (context.applicationContext as CoachMeApplication).store.setCurrentEmail(
                                                     ""
-                                                )
-                                                    .thenApply {
-                                                        context.startActivity(
-                                                            Intent(
-                                                                context,
-                                                                LoginActivity::class.java
-                                                            )
+                                                ).thenApply {
+                                                    context.startActivity(
+                                                        Intent(
+                                                            context,
+                                                            LoginActivity::class.java
                                                         )
-                                                    }
+                                                    )
+                                                }
                                             }
                                         }
 
@@ -301,11 +324,7 @@ fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
         contentAlignment = Alignment.Center,
         content = {
             Column(horizontalAlignment = CenterHorizontally) {
-                Text(text = "Dashboard", fontSize = 50.sp)
-                Text(
-                    modifier = Modifier.testTag(DASHBOARD_EMAIL),
-                    text = email, fontSize = 20.sp
-                )
+                Text(text = "Dashboard", fontSize = 40.sp)
             }
         }
     )
