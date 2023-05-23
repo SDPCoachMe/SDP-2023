@@ -137,29 +137,29 @@ class GroupEventsListActivityTest {
             val tag = GroupEventsListActivity.TestTags.GroupEventItemTags(event).TITLE
             composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).performClick()
 
-            composeTestRule.onNodeWithTag(GroupEventDetailsActivity.TestTags.Buttons.JOIN_EVENT)
+            composeTestRule.onNodeWithTag(GroupEventDetailsActivity.TestTags.Buttons.JOIN_EVENT, useUnmergedTree = true)
                 .assertIsDisplayed()
                 .performClick()
 
             // place contacts into cache
             getStore().getContactRowInfo(nonParticipantUser.email).get(1000, TimeUnit.MILLISECONDS)
 
-            composeTestRule.onNodeWithTag(GroupEventDetailsActivity.TestTags.Buttons.CHAT)
+            composeTestRule.onNodeWithTag(GroupEventDetailsActivity.TestTags.Buttons.CHAT, useUnmergedTree = true)
                 .assertIsDisplayed()
                 .performClick()
 
 
-            composeTestRule.onNodeWithTag(ChatActivity.TestTags.Buttons.BACK)
+            composeTestRule.onNodeWithTag(ChatActivity.TestTags.Buttons.BACK, useUnmergedTree = true)
                 .assertIsDisplayed()
                 .performClick()
 
-            composeTestRule.onNodeWithTag(GroupEventDetailsActivity.TestTags.Buttons.BACK)
+            composeTestRule.onNodeWithTag(GroupEventDetailsActivity.TestTags.Buttons.BACK, useUnmergedTree = true)
                 .assertIsDisplayed()
                 .performClick()
 
-            composeTestRule.onNodeWithTag(Dashboard.TestTags.DRAWER_HEADER).assertIsNotDisplayed()
-            composeTestRule.onNodeWithTag(Dashboard.TestTags.Buttons.HAMBURGER_MENU).performClick()
-            composeTestRule.onNodeWithTag(Dashboard.TestTags.DRAWER_HEADER).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(Dashboard.TestTags.DRAWER_HEADER, useUnmergedTree = true).assertIsNotDisplayed()
+            composeTestRule.onNodeWithTag(Dashboard.TestTags.Buttons.HAMBURGER_MENU, useUnmergedTree = true).performClick()
+            composeTestRule.onNodeWithTag(Dashboard.TestTags.DRAWER_HEADER, useUnmergedTree = true).assertIsDisplayed()
 
             val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
             device.findObject(UiSelector().text("Chats"))
