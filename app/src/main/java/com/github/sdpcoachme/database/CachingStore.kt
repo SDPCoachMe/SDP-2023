@@ -355,6 +355,7 @@ class CachingStore(private val wrappedDatabase: Database,
             groupEvent
         }.thenCompose { groupEvent ->
             getCurrentEmail().thenCompose { email ->
+
                 CompletableFuture.allOf(
                     // Update the group event in the database
                     updateGroupEvent(groupEvent.copy(participants = groupEvent.participants + email)),
@@ -362,10 +363,8 @@ class CachingStore(private val wrappedDatabase: Database,
                     addGroupEventToSchedule(groupEventId),
                     // Add the user to the group chat
                     updateChatParticipants(groupEvent.groupEventId, groupEvent.participants + email),
-                    // Update the user contacts
-                    getUser(email).thenApply {
-                        updateUser(it.copy(chatContacts = listOf(groupEvent.groupEventId) + it.chatContacts))
-                    }
+                    // Update the user contacts and cache
+                    addChatContactIfNew(email, groupEvent.groupEventId, groupEvent.groupEventId)
                 )
             }
         }.thenApply {
@@ -514,9 +513,12 @@ class CachingStore(private val wrappedDatabase: Database,
      * @param chatId The potentially new contact to add
      */
     fun addChatContactIfNew(email: String, chatId: String, contact: String): CompletableFuture<Void> {
+        println("Adding chat contact if new called on $email with chatid $chatId and contact $contact")
         return getUser(email).thenAccept() { user ->
+            println("contact already in contacts: " + user.chatContacts.contains(chatId))
             // Add the other user to the current user's chat contacts if not already inside
             if (!user.chatContacts.contains(chatId)) {
+                println("Adding chat contact $chatId to $email")
                 updateCachedContactRowInfo(chatId, Message())
 
                 // update the user in the database
