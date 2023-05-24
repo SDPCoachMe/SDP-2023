@@ -187,73 +187,75 @@ class CoachesListActivity : ComponentActivity() {
         }
     }
 
-    /**
-     * Displays a single user info in a list, or a chat preview if isViewingContacts is true.
-     */
-    @Composable
-    fun UserInfoListItem(currentUserEmail: String, user: UserInfo = UserInfo(), isViewingContacts: Boolean = false, contactRowInfo: ContactRowInfo = ContactRowInfo()) {
-        val context = LocalContext.current
+}
 
-        if (isViewingContacts) {
-            val picture = if (contactRowInfo.isGroupChat) {
-                GroupEvent.getPictureResource(contactRowInfo.chatId)
-            } else {
-                // Make sure we handle the case where participants is empty (should never happen here though)
-                // See the _TODO above in the LaunchedEffect and the one in ContactRowInfo for more details
-                contactRowInfo.participants
-                    .firstOrNull { it != currentUserEmail }?.let { UserInfo.getPictureResource(it) } ?:
-                    UserInfo.getPictureResource("") // fallback to gray picture (displayed when
-                    // email is empty usually indicating loading state)
-            }
-            ListItem(
-                image = ImageData(
-                    painter = painterResource(id = picture),
-                    contentDescription = contactRowInfo.chatTitle,
-                ),
-                title = contactRowInfo.chatTitle,
-                firstRow = {
-                    val senderName = if (contactRowInfo.lastMessage.sender == currentUserEmail) "You" else contactRowInfo.lastMessage.senderName
-                    IconTextRow(
-                        text = if (senderName.isNotEmpty()) "$senderName: ${contactRowInfo.lastMessage.content}" else "Tap to write a message",
-                        maxLines = 2
-                    )
-                },
-                onClick = {
-                    val displayChatIntent = Intent(context, ChatActivity::class.java)
-                    displayChatIntent.putExtra("chatId", contactRowInfo.chatId)
-                    context.startActivity(displayChatIntent)
-                }
-            )
+
+/**
+ * Displays a single user info in a list, or a chat preview if isViewingContacts is true.
+ */
+@Composable
+fun UserInfoListItem(currentUserEmail: String, user: UserInfo = UserInfo(), isViewingContacts: Boolean = false, contactRowInfo: ContactRowInfo = ContactRowInfo()) {
+    val context = LocalContext.current
+
+    if (isViewingContacts) {
+        val picture = if (contactRowInfo.isGroupChat) {
+            GroupEvent.getPictureResource(contactRowInfo.chatId)
         } else {
-            ListItem(
-                image = ImageData(
-                    painter = painterResource(id = user.getPictureResource()),
-                    contentDescription = "${user.firstName} ${user.lastName}'s profile picture",
-                ),
-                title = "${user.firstName} ${user.lastName}",
-                firstRow = {
-                    IconTextRow(
-                        icon = IconData(icon = Default.Place, contentDescription = "${user.firstName} ${user.lastName}'s location"),
-                        text = user.address.name
-                    )
-                },
-                secondRow = {
-                    IconsRow(icons = user.sports.map { sport ->
-                        IconData(icon = sport.sportIcon, contentDescription = sport.sportName)
-                    })
-                },
-                onClick = {
-                    val displayCoachIntent = Intent(context, ProfileActivity::class.java)
-                    displayCoachIntent.putExtra("email", user.email)
-                    if (user.email == currentUserEmail) {
-                        displayCoachIntent.putExtra("isViewingCoach", false)
-                    } else {
-                        displayCoachIntent.putExtra("isViewingCoach", true)
-                    }
-                    context.startActivity(displayCoachIntent)
-                }
-            )
+            // Make sure we handle the case where participants is empty (should never happen here though)
+            // See the _TODO above in the LaunchedEffect and the one in ContactRowInfo for more details
+            contactRowInfo.participants
+                .firstOrNull { it != currentUserEmail }?.let { UserInfo.getPictureResource(it) } ?:
+            UserInfo.getPictureResource("") // fallback to gray picture (displayed when
+            // email is empty usually indicating loading state)
         }
+        ListItem(
+            image = ImageData(
+                painter = painterResource(id = picture),
+                contentDescription = contactRowInfo.chatTitle,
+            ),
+            title = contactRowInfo.chatTitle,
+            firstRow = {
+                val senderName = if (contactRowInfo.lastMessage.sender == currentUserEmail) "You" else contactRowInfo.lastMessage.senderName
+                IconTextRow(
+                    text = if (senderName.isNotEmpty()) "$senderName: ${contactRowInfo.lastMessage.content}" else "Tap to write a message",
+                    maxLines = 2
+                )
+            },
+            onClick = {
+                val displayChatIntent = Intent(context, ChatActivity::class.java)
+                displayChatIntent.putExtra("chatId", contactRowInfo.chatId)
+                context.startActivity(displayChatIntent)
+            }
+        )
+    } else {
+        ListItem(
+            image = ImageData(
+                painter = painterResource(id = user.getPictureResource()),
+                contentDescription = "${user.firstName} ${user.lastName}'s profile picture",
+            ),
+            title = "${user.firstName} ${user.lastName}",
+            firstRow = {
+                IconTextRow(
+                    icon = IconData(icon = Default.Place, contentDescription = "${user.firstName} ${user.lastName}'s location"),
+                    text = user.address.name
+                )
+            },
+            secondRow = {
+                IconsRow(icons = user.sports.map { sport ->
+                    IconData(icon = sport.sportIcon, contentDescription = sport.sportName)
+                })
+            },
+            onClick = {
+                val displayCoachIntent = Intent(context, ProfileActivity::class.java)
+                displayCoachIntent.putExtra("email", user.email)
+                if (user.email == currentUserEmail) {
+                    displayCoachIntent.putExtra("isViewingCoach", false)
+                } else {
+                    displayCoachIntent.putExtra("isViewingCoach", true)
+                }
+                context.startActivity(displayCoachIntent)
+            }
+        )
     }
 }
 

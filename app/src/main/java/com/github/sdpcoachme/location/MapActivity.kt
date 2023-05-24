@@ -5,13 +5,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -29,6 +27,9 @@ import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.C
 import com.github.sdpcoachme.location.provider.LocationProvider
 import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.ui.Dashboard
+import com.github.sdpcoachme.ui.IconData
+import com.github.sdpcoachme.ui.IconTextRow
+import com.github.sdpcoachme.ui.IconsRow
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -183,7 +184,6 @@ fun Map(
                     context.startActivity(displayCoachIntent)
                 }
             ) {
-                // TODO: code similar to CoachesList, might be able to modularize
                 Column(
                     modifier = Modifier
                         .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 12.dp)
@@ -198,38 +198,22 @@ fun Map(
                         overflow = TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Place,
-                            tint = Color.Gray,
-                            contentDescription = "${user.firstName} ${user.lastName}'s location",
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Text(
-                            text = user.address.name,
-                            color = Color.Gray,
-                            style = MaterialTheme.typography.body2,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                    IconTextRow(
+                        icon = IconData(
+                            Icons.Default.Place,
+                            contentDescription = "${user.firstName} ${user.lastName}'s location"
+                        ),
+                        text = user.address.name
+                    )
                     Spacer(modifier = Modifier.height(6.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        user.sports.map {
-                            Icon(
-                                imageVector = it.sportIcon,
-                                tint = Color.Gray,
-                                contentDescription = it.sportName,
-                                modifier = Modifier.size(20.dp)
+                    IconsRow(
+                        icons = user.sports.map {
+                            IconData(
+                                it.sportIcon,
+                                contentDescription = it.sportName
                             )
-                            Spacer(modifier = Modifier.width(1.dp))
                         }
-                    }
+                    )
                 }
             }
         }

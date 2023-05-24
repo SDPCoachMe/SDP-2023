@@ -11,6 +11,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -485,20 +488,19 @@ fun SportsRow(
         label = label,
         onClick = onClick
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start,
+        LazyHorizontalGrid(
+            rows = GridCells.Fixed(1),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier
+                .fillMaxWidth()
+                .height(16.dp)
                 .testTag(tag)
                 .padding(0.dp, 0.dp, 0.dp, 2.5.dp)
         ) {
-            value.map {
+            items(value) {
                 Icon(
                     imageVector = it.sportIcon,
-                    contentDescription = it.sportName,
-                    modifier = Modifier
-                        .padding(0.dp, 0.dp, 6.dp, 0.dp)
-                        .size(16.dp)
+                    contentDescription = it.sportName
                 )
             }
         }

@@ -5,6 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
@@ -203,17 +206,18 @@ fun IconTextRow(
 fun IconsRow(
     icons: List<IconData>
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically
+    LazyHorizontalGrid(
+        rows = GridCells.Fixed(1),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.fillMaxWidth().height(20.dp)
     ) {
-        icons.forEach {
+        items(icons) {
             Icon(
                 imageVector = it.icon,
                 tint = Color.Gray,
                 contentDescription = it.contentDescription,
                 modifier = Modifier.size(20.dp)
             )
-            Spacer(modifier = Modifier.width(4.dp))
         }
     }
 }
