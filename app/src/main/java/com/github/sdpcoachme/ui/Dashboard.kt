@@ -28,18 +28,12 @@ import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.profile.CoachesListActivity
 import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.schedule.ScheduleActivity
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.COACHES_LIST
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.GROUP_EVENTS_LIST
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.LOGOUT
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.MESSAGING
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.PLAN
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.PROFILE
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.SCHEDULE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.MENU_LIST
+import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.util.concurrent.CompletableFuture
@@ -73,13 +67,16 @@ class Dashboard {
 /**
  * Dashboard UI implemented as a left-sided drawer to navigate to other application activities.
  * @param appContent = set here the root composable of the current launched activity
- * @param title = title to display on the top application bar
+ * @param title = title to display on the top application bar. It is a composable function that
+ * takes a Modifier as parameter, and the modifier must be applied to the Text composable that
+ * displays the title. This allows to add a test tag to the title, while still making it possible for
+ * the caller to pass a custom composable as title.
+ * @param UIDisplayed = future that will be completed when the UI is displayed
  */
 @Composable
-fun Dashboard(title: String? = null,
-              UIDisplayed: CompletableFuture<Void> = CompletableFuture<Void>(),
-              noElevation: Boolean = false,
-              appContent: @Composable (Modifier) -> Unit) {
+fun Dashboard(title: @Composable (Modifier) -> Unit,
+                UIDisplayed: CompletableFuture<Void> = CompletableFuture<Void>(),
+                appContent: @Composable (Modifier) -> Unit) {
 
     val context = LocalContext.current
     // equivalent to remember { ScaffoldState(...) }
@@ -88,91 +85,175 @@ fun Dashboard(title: String? = null,
     // enables us to launch a coroutine tied to a specific lifecycle
     val coroutineScope = rememberCoroutineScope()
 
-    Scaffold(
-        scaffoldState = scaffoldState,
-        topBar = {
-            AppBar(
-                title = title ?: stringResource(id = R.string.app_name),
-                onNavigationIconClick = { coroutineScope.launch {scaffoldState.drawerState.open()} },
-                noElevation = noElevation
-            )},
-        drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
-        drawerContent = {
-            DrawerHeader(context, UIDisplayed)
-            DrawerBody(
-                items = listOf(
-                    MenuItem(tag = PLAN, title = "Map",
-                        contentDescription = "Return to main map",
-                        icon = Default.Map),
-                    MenuItem(tag = COACHES_LIST, title = "Nearby coaches",
-                        contentDescription = "See a list of coaches available close to you",
-                        icon = Default.People),
-                    MenuItem(tag = GROUP_EVENTS_LIST, title = "Group events",
-                        contentDescription = "See a list of events organized by coaches close to you",
-                        icon = Default.Groups),
-                    MenuItem(tag = SCHEDULE, title = "Schedule",
-                        contentDescription = "See schedule",
-                        icon = Default.Today),
-                    MenuItem(tag = MESSAGING, title = "Messaging",
-                        contentDescription = "Go to Messaging section",
-                        icon = Default.Chat),
-                    MenuItem(tag = PROFILE, title = "My profile",
-                        contentDescription = "Go to profile",
-                        icon = Default.ManageAccounts),
-                    MenuItem(tag = LOGOUT, title = "Log out",
-                            contentDescription = "User logs out",
-                            icon = Default.Logout)
-                ),
-                onItemClick = {
-                    when (it.tag) {
-                        PLAN -> {
-                            context.startActivity(Intent(context, MapActivity::class.java))
-                        }
-                        PROFILE -> {
-                            context.startActivity(Intent(context, ProfileActivity::class.java))
-                        }
-                        LOGOUT -> {
-                            (context.applicationContext as CoachMeApplication).authenticator.signOut(context) {
-                                (context.applicationContext as CoachMeApplication).store.setCurrentEmail("")
-                                    .thenApply {
-                                        context.startActivity(Intent(context, LoginActivity::class.java))
+    CoachMeTheme {
+        Surface(
+            color = MaterialTheme.colors.background,
+        ) {
+            Scaffold(
+                scaffoldState = scaffoldState,
+                topBar = {
+                    AppBar(
+                        title = title,
+                        onNavigationIconClick = { coroutineScope.launch { scaffoldState.drawerState.open() } }
+                    )
+                },
+                drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
+                drawerContent = {
+                    Surface(
+                        color = MaterialTheme.colors.background
+                    ) {
+                        Column {
+                            DrawerHeader(context, UIDisplayed)
+                            DrawerBody(
+                                items = listOf(
+                                    MenuItem(
+                                        tag = Dashboard.TestTags.Buttons.PLAN, title = "Map",
+                                        contentDescription = "Return to main map",
+                                        icon = Default.Map
+                                    ),
+                                    MenuItem(
+                                        tag = Dashboard.TestTags.Buttons.COACHES_LIST, title = "Nearby coaches",
+                                        contentDescription = "See a list of coaches available close to you",
+                                        icon = Default.People
+                                    ),
+                                    MenuItem(
+                                        tag = Dashboard.TestTags.Buttons.GROUP_EVENTS_LIST, title = "Group events",
+                                        contentDescription = "See a list of events organized by coaches close to you",
+                                        icon = Default.Groups
+                                    ),
+                                    MenuItem(
+                                        tag = Dashboard.TestTags.Buttons.SCHEDULE, title = "Schedule",
+                                        contentDescription = "See schedule",
+                                        icon = Default.Today
+                                    ),
+                                    MenuItem(
+                                        tag = Dashboard.TestTags.Buttons.MESSAGING, title = "Chats",
+                                        contentDescription = "Go to Messaging section",
+                                        icon = Default.Chat
+                                    ),
+                                    MenuItem(
+                                        tag = Dashboard.TestTags.Buttons.PROFILE, title = "My profile",
+                                        contentDescription = "Go to profile",
+                                        icon = Default.ManageAccounts
+                                    ),
+                                    MenuItem(
+                                        tag = Dashboard.TestTags.Buttons.LOGOUT, title = "Log out",
+                                        contentDescription = "User logs out",
+                                        icon = Default.Logout
+                                    )
+                                ),
+                                onItemClick = {
+                                    when (it.tag) {
+                                        Dashboard.TestTags.Buttons.PLAN -> {
+                                            context.startActivity(
+                                                Intent(
+                                                    context,
+                                                    MapActivity::class.java
+                                                )
+                                            )
+                                        }
+                                        Dashboard.TestTags.Buttons.PROFILE -> {
+                                            context.startActivity(
+                                                Intent(
+                                                    context,
+                                                    ProfileActivity::class.java
+                                                )
+                                            )
+                                        }
+                                        Dashboard.TestTags.Buttons.LOGOUT -> {
+                                            (context.applicationContext as CoachMeApplication).authenticator.signOut(
+                                                context
+                                            ) {
+                                                (context.applicationContext as CoachMeApplication).store.setCurrentEmail(
+                                                    ""
+                                                )
+                                                    .thenApply {
+                                                        context.startActivity(
+                                                            Intent(
+                                                                context,
+                                                                LoginActivity::class.java
+                                                            )
+                                                        )
+                                                    }
+                                            }
+                                        }
+                                        Dashboard.TestTags.Buttons.SCHEDULE -> {
+                                            context.startActivity(
+                                                Intent(
+                                                    context,
+                                                    ScheduleActivity::class.java
+                                                )
+                                            )
+                                        }
+                                        Dashboard.TestTags.Buttons.COACHES_LIST -> {
+                                            context.startActivity(
+                                                Intent(
+                                                    context,
+                                                    CoachesListActivity::class.java
+                                                )
+                                            )
+                                        }
+                                        Dashboard.TestTags.Buttons.MESSAGING -> {
+                                            val intent =
+                                                Intent(context, CoachesListActivity::class.java)
+                                            intent.putExtra("isViewingContacts", true)
+                                            context.startActivity(intent)
+                                        }
+                                        Dashboard.TestTags.Buttons.GROUP_EVENTS_LIST -> {
+                                            context.startActivity(
+                                                Intent(
+                                                    context,
+                                                    GroupEventsListActivity::class.java
+                                                )
+                                            )
+                                        }
+                                        else -> {
+                                            throw IllegalStateException("Unknown tab clicked: ${it.tag}")
+                                        }
                                     }
-                            }
+                                }
+                            )
                         }
-                        SCHEDULE -> {
-                            context.startActivity(Intent(context, ScheduleActivity::class.java))
-                        }
-                        COACHES_LIST -> {
-                            context.startActivity(Intent(context, CoachesListActivity::class.java))
-                        }
-                        MESSAGING -> {
-                            val intent = Intent(context, CoachesListActivity::class.java)
-                            intent.putExtra("isViewingContacts", true)
-                            context.startActivity(intent)
-                        }
-                        GROUP_EVENTS_LIST -> {
-                            context.startActivity(Intent(context, GroupEventsListActivity::class.java))
-                        }
-                        else -> {
-                            throw IllegalStateException("Unknown tab clicked: ${it.tag}")
-                        }
+                    }
+                },
+                content = { innerPadding ->
+                    Surface(
+                        color = MaterialTheme.colors.background
+                    ) {
+                        // invokes dashboardContent composable with correct padding
+                        appContent(Modifier.padding(innerPadding))
                     }
                 }
             )
-        },
-        content = { innerPadding ->
-            // invokes dashboardContent composable with correct padding
-            appContent(Modifier.padding(innerPadding))
         }
+    }
+}
+
+/**
+ * Overloaded version of [Dashboard] that takes a String as title, and displays it as a [Text] composable
+ * in the top application bar.
+ *
+ * @param title = title to display on the top application bar
+ * @param appContent = set here the root composable of the current launched activity
+ * @param UIDisplayed = future that will be completed when the UI is displayed
+ */
+@Composable
+fun Dashboard(title: String? = null,
+              UIDisplayed: CompletableFuture<Void> = CompletableFuture<Void>(),
+              appContent: @Composable (Modifier) -> Unit) {
+    Dashboard(
+        title = { modifier -> Text(text = title ?: stringResource(id = R.string.app_name), modifier = modifier) },
+        UIDisplayed = UIDisplayed,
+        appContent = appContent
     )
 }
 
 @Composable
-fun AppBar(title: String, onNavigationIconClick: () -> Unit, noElevation: Boolean = false) {
+fun AppBar(title: @Composable (Modifier) -> Unit, onNavigationIconClick: () -> Unit, noElevation: Boolean = false) {
     TopAppBar(
-        title = { Text(text = title, modifier = Modifier.testTag(BAR_TITLE)) },
-        backgroundColor = MaterialTheme.colors.primary,
-        contentColor = MaterialTheme.colors.onPrimary,
+        title = {
+            title(Modifier.testTag(BAR_TITLE))
+        },
         navigationIcon = {
             IconButton(
                 modifier = Modifier.testTag(HAMBURGER_MENU),

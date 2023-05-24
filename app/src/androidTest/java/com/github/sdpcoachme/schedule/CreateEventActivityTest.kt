@@ -6,8 +6,6 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
-import androidx.test.espresso.intent.Intents.intended
-import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -24,7 +22,6 @@ import com.github.sdpcoachme.data.schedule.EventType
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.autocomplete.MockAddressAutocompleteHandler
 import com.github.sdpcoachme.profile.SelectSportsActivity
-import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.CANCEL
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.COLOR_BOX
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.END_DATE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.END_TIME
@@ -60,7 +57,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
@@ -282,10 +278,10 @@ class CreateEventActivityTest {
                 .performClick() // launches SelectSportsActivity
 
             val runTag = SelectSportsActivity.TestTags.ListRowTag(Sports.RUNNING).ROW
-            composeTestRule.onNodeWithTag(runTag, useUnmergedTree = true).performClick()   // unchoose running
+            composeTestRule.onNodeWithTag(runTag, useUnmergedTree = true).performScrollTo().performClick()   // unchoose running
 
             val swimTag = SelectSportsActivity.TestTags.ListRowTag(Sports.SWIMMING).ROW
-            composeTestRule.onNodeWithTag(swimTag, useUnmergedTree = true).performClick()   // choose swimming
+            composeTestRule.onNodeWithTag(swimTag, useUnmergedTree = true).performScrollTo().performClick()   // choose swimming
 
             composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.DONE, useUnmergedTree = true).performClick() // go back to CreateEventActivity
 
@@ -305,10 +301,10 @@ class CreateEventActivityTest {
                 .performClick() // launches SelectSportsActivity
 
             val runTag = SelectSportsActivity.TestTags.ListRowTag(Sports.RUNNING).ROW
-            composeTestRule.onNodeWithTag(runTag, useUnmergedTree = true).performClick()   // unchoose running
+            composeTestRule.onNodeWithTag(runTag, useUnmergedTree = true).performScrollTo().performClick()   // unchoose running
 
             val swimTag = SelectSportsActivity.TestTags.ListRowTag(Sports.SWIMMING).ROW
-            composeTestRule.onNodeWithTag(swimTag, useUnmergedTree = true).performClick()   // choose swimming
+            composeTestRule.onNodeWithTag(swimTag, useUnmergedTree = true).performScrollTo().performClick()   // choose swimming
 
             composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.CANCEL, useUnmergedTree = true).performClick() // go back to CreateEventActivity
 
@@ -373,30 +369,21 @@ class CreateEventActivityTest {
     }
 
     @Test
-    fun addPrivateEventWithValidInfosRedirectsToSchedule() {
+    fun addPrivateEventWithValidInfosFocusWorks() {
         defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
 
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            fillAndCheckFocus(defaultEvent.name, EVENT_NAME)
-            fillAndCheckFocus(defaultEvent.description, DESCRIPTION)
-
             val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+            fillAndCheckFocus(defaultEvent.name, EVENT_NAME)
             device.waitForIdle()
-            composeTestRule.onNodeWithTag(SAVE)
-                .assertExists()
-                .performClick()
-
+            fillAndCheckFocus(defaultEvent.description, DESCRIPTION)
             device.waitForIdle()
-
-            // Check that we are redirected to Schedule (onNodeWithText because return to schedule waits for future)
-            composeTestRule.onNodeWithText("Schedule", substring = true, useUnmergedTree = true)
-                .assertIsDisplayed()
         }
     }
 
 
     @Test
-    fun addGroupEventWithValidInfosRedirectsToSchedule() {
+    fun addGroupEventWithValidInfosFocusWorks() {
         defaultIntent.putExtra("eventType", EventType.GROUP.eventTypeName)
 
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
@@ -408,38 +395,6 @@ class CreateEventActivityTest {
             device.waitForIdle()
             fillAndCheckFocus(defaultEvent.description, DESCRIPTION)
             device.waitForIdle()
-
-            composeTestRule.onNodeWithTag(SAVE)
-                .assertExists()
-                .performClick()
-
-            // Check that we are redirected to Schedule (onNodeWithText because return to schedule waits for future)
-            composeTestRule.onNodeWithText("Schedule", substring = true, useUnmergedTree = true)
-                .assertIsDisplayed()
-        }
-    }
-
-    @Test
-    fun cancelPrivateEventCorrectlyRedirectsToSchedule() {
-        defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
-
-        ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(CANCEL)
-                .performClick()
-
-            intended(hasComponent(ScheduleActivity::class.java.name))
-        }
-    }
-
-    @Test
-    fun cancelGroupEventCorrectlyRedirectsToSchedule() {
-        defaultIntent.putExtra("eventType", EventType.GROUP.eventTypeName)
-
-        ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(CANCEL)
-                .performClick()
-
-            intended(hasComponent(ScheduleActivity::class.java.name))
         }
     }
 

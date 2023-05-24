@@ -764,7 +764,7 @@ class CachingStore(private val wrappedDatabase: Database,
      */
     fun setCurrentEmail(email: String): CompletableFuture<Void> {
         currentEmail = email
-        return completedFuture(null)
+        return storeLocalData()
     }
 
     /**

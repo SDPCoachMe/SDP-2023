@@ -6,6 +6,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -47,7 +49,11 @@ class IntentExtrasErrorHandlerActivity : ComponentActivity() {
 
         setContent {
             CoachMeTheme {
-                IntentExtrasErrorScreen(errorMsg)
+                Surface(
+                    color = MaterialTheme.colors.background
+                ) {
+                    IntentExtrasErrorScreen(errorMsg)
+                }
             }
         }
     }
@@ -71,7 +77,7 @@ class IntentExtrasErrorHandlerActivity : ComponentActivity() {
                     val intent = Intent(context, LoginActivity::class.java)
                     startActivity(intent)
                 }) {
-                    Text(text = "Return to login page")
+                    Text(text = "RETURN TO LOGIN PAGE")
                 }
         }
     }

@@ -64,7 +64,10 @@ open class SelectSportsActivityTest {
             composeTestRule.onNodeWithTag(DONE).assertIsDisplayed()
             composeTestRule.onNodeWithTag(CANCEL).assertIsDisplayed()
             ROW_TEXT_LIST.forEach {
-                composeTestRule.onNodeWithTag(it.ICON, useUnmergedTree = true).assertDoesNotExist()
+                composeTestRule.onNodeWithTag(it.ROW, useUnmergedTree = true)
+                    .performScrollTo()
+                composeTestRule.onNodeWithTag(it.ICON, useUnmergedTree = true)
+                    .assertDoesNotExist()
             }
         }
     }
@@ -78,20 +81,31 @@ open class SelectSportsActivityTest {
             title = title,
             initialValue = initialValue
         )
-        ActivityScenario.launch<EditTextActivity>(intent).use {
+        ActivityScenario.launch<SelectSportsActivity>(intent).use {
             for (sport in Sports.values()) {
+                val tags = TestTags.ListRowTag(sport)
                 if (sport in initialValue) {
-                    composeTestRule.onNodeWithTag(TestTags.ListRowTag(sport).ICON, useUnmergedTree = true).assertIsDisplayed()
+                    composeTestRule.onNodeWithTag(tags.ROW, useUnmergedTree = true)
+                        .performScrollTo()
+                    composeTestRule.onNodeWithTag(tags.ICON, useUnmergedTree = true)
+                        .assertIsDisplayed()
                 } else {
-                    composeTestRule.onNodeWithTag(TestTags.ListRowTag(sport).ICON, useUnmergedTree = true).assertDoesNotExist()
+                    composeTestRule.onNodeWithTag(tags.ROW, useUnmergedTree = true)
+                        .performScrollTo()
+                    composeTestRule.onNodeWithTag(tags.ICON, useUnmergedTree = true)
+                        .assertDoesNotExist()
                 }
             }
             composeTestRule.onNodeWithTag(TITLE).assertIsDisplayed().assertTextEquals(title)
             composeTestRule.onNodeWithTag(DONE).assertIsDisplayed()
             composeTestRule.onNodeWithTag(CANCEL).assertIsDisplayed()
             for (sport in Sports.values()) {
-                composeTestRule.onNodeWithTag(TestTags.ListRowTag(sport).ROW).assertIsDisplayed()
-                composeTestRule.onNodeWithTag(TestTags.ListRowTag(sport).ROW).assertTextEquals(sport.sportName)
+                val tags = TestTags.ListRowTag(sport)
+                composeTestRule.onNodeWithTag(tags.ROW, useUnmergedTree = true)
+                    .performScrollTo()
+                composeTestRule.onNodeWithTag(tags.TEXT, useUnmergedTree = true)
+                    .assertIsDisplayed()
+                    .assertTextEquals(sport.sportName)
             }
         }
     }
@@ -100,10 +114,15 @@ open class SelectSportsActivityTest {
     fun tickIconsDisplayedAfterClick() {
         ActivityScenario.launch<SelectSportsActivity>(launchSelectSports).use {
             ROW_TEXT_LIST.forEach {
-                composeTestRule.onNodeWithTag(it.ROW).performClick()
+                composeTestRule.onNodeWithTag(it.ROW, useUnmergedTree = true)
+                    .performScrollTo()
+                    .performClick()
             }
             ROW_TEXT_LIST.forEach {
-                composeTestRule.onNodeWithTag(it.ICON, useUnmergedTree = true).assertIsDisplayed()
+                composeTestRule.onNodeWithTag(it.ROW, useUnmergedTree = true)
+                    .performScrollTo()
+                composeTestRule.onNodeWithTag(it.ICON, useUnmergedTree = true)
+                    .assertIsDisplayed()
             }
         }
     }
@@ -112,13 +131,20 @@ open class SelectSportsActivityTest {
     fun tickIconsDisappearAfterSecondClick() {
         ActivityScenario.launch<SelectSportsActivity>(launchSelectSports).use {
             ROW_TEXT_LIST.forEach {
-                composeTestRule.onNodeWithTag(it.ROW).performClick()
+                composeTestRule.onNodeWithTag(it.ROW, useUnmergedTree = true)
+                    .performScrollTo()
+                    .performClick()
             }
             ROW_TEXT_LIST.forEach {
-                composeTestRule.onNodeWithTag(it.ROW).performClick()
+                composeTestRule.onNodeWithTag(it.ROW, useUnmergedTree = true)
+                    .performScrollTo()
+                    .performClick()
             }
             ROW_TEXT_LIST.forEach {
-                composeTestRule.onNodeWithTag(it.ICON, useUnmergedTree = true).assertDoesNotExist()
+                composeTestRule.onNodeWithTag(it.ROW, useUnmergedTree = true)
+                    .performScrollTo()
+                composeTestRule.onNodeWithTag(it.ICON, useUnmergedTree = true)
+                    .assertDoesNotExist()
             }
         }
     }

@@ -169,20 +169,22 @@ class EditTextActivity : ComponentActivity() {
 
         setContent {
             CoachMeTheme {
-                EditTextLayout(
-                    onSubmit = {
-                        setResult(RESULT_OK, Intent().putExtra(RETURN_VALUE_KEY, it))
-                        finish()
-                    },
-                    onCancel = {
-                        setResult(RESULT_CANCELED)
-                        finish()
-                    },
-                    initialValue = initialValue,
-                    title = title,
-                    label = label,
-                    placeholder = placeholder
-                )
+                Surface(color = MaterialTheme.colors.background) {
+                    EditTextLayout(
+                        onSubmit = {
+                            setResult(RESULT_OK, Intent().putExtra(RETURN_VALUE_KEY, it))
+                            finish()
+                        },
+                        onCancel = {
+                            setResult(RESULT_CANCELED)
+                            finish()
+                        },
+                        initialValue = initialValue,
+                        title = title,
+                        label = label,
+                        placeholder = placeholder
+                    )
+                }
             }
         }
     }
@@ -228,12 +230,16 @@ fun EditTextLayout(
                         modifier = Modifier.testTag(DONE)
                     ) {
                         Icon(Icons.Filled.Done, "Done",
-                            tint = MaterialTheme.colors.onPrimary)
+                            tint = if (MaterialTheme.colors.isLight)
+                                MaterialTheme.colors.onPrimary
+                            else
+                                MaterialTheme.colors.onSurface
+                        )
                     }
                 })
         }
-    ) {
-        padding ->
+    ) { padding ->
+        Surface(color = MaterialTheme.colors.background) {
             Column(
                 modifier = Modifier.padding(padding)
             ) {
@@ -254,5 +260,6 @@ fun EditTextLayout(
                     )
                 )
             }
+        }
     }
 }

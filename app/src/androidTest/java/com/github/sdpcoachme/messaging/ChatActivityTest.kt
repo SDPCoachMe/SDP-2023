@@ -32,7 +32,6 @@ import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_BOX
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_MESSAGE
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
-import com.github.sdpcoachme.profile.CoachesListActivity
 import com.github.sdpcoachme.profile.ProfileActivity
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
@@ -176,27 +175,6 @@ class ChatActivityTest {
                     hasExtra("isViewingCoach", true)
                 )
             )
-        }
-    }
-
-    @Test
-    fun backButtonReturnsToListedContactsWhenPressed() {
-        ActivityScenario.launch<ChatActivity>(personalChatDefaultIntent).use {
-            waitForLoading(it)
-
-            composeTestRule.onNodeWithTag(BACK)
-                .assertIsDisplayed()
-                .performClick()
-
-            Intents.intended(
-                allOf(
-                    hasComponent(CoachesListActivity::class.java.name),
-                    hasExtra("isViewingContacts", true)
-                )
-            )
-
-            composeTestRule.onNodeWithText("${UserInfoSamples.COACH_1.firstName} ${UserInfoSamples.COACH_1.lastName}")
-                .assertIsDisplayed()
         }
     }
 

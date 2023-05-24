@@ -154,6 +154,7 @@ class DashboardTest {
         tag: String,
         intentMatcher: Matcher<Intent>
     ) {
+        composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
         composeTestRule.onNodeWithTag(tag).performClick()
         intended(intentMatcher)
     }

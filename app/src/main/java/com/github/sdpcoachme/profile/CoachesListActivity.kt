@@ -4,47 +4,24 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Divider
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons.Default
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
@@ -55,11 +32,9 @@ import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.CAMPUS
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.CoachesListActivity.TestTags.Buttons.Companion.FILTER
-import com.github.sdpcoachme.ui.Dashboard
-import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import com.github.sdpcoachme.ui.theme.Purple200
+import com.github.sdpcoachme.ui.*
 import kotlinx.coroutines.future.await
-import java.util.Collections
+import java.util.*
 import java.util.concurrent.CompletableFuture
 
 class CoachesListActivity : ComponentActivity() {
@@ -132,13 +107,11 @@ class CoachesListActivity : ComponentActivity() {
                 stateLoading.complete(null)
             }
 
-            val title = if (isViewingContacts) stringResource(R.string.contacts)
+            val title = if (isViewingContacts) stringResource(R.string.chats)
             else stringResource(R.string.title_activity_coaches_list)
 
-            CoachMeTheme {
-                Dashboard(title) {
-                    CoachesList(it, email, listOfCoaches, isViewingContacts, contactRowInfos)
-                }
+            Dashboard(title) {
+                CoachesList(it, email, listOfCoaches, isViewingContacts, contactRowInfos)
             }
         }
     }
@@ -192,7 +165,8 @@ class CoachesListActivity : ComponentActivity() {
                         .align(Alignment.BottomEnd)
                         .padding(16.dp)
                         .testTag(FILTER),
-                    backgroundColor = Purple200
+                    backgroundColor = MaterialTheme.colors.primary,
+                    contentColor = MaterialTheme.colors.onPrimary
                 ) {
                     Icon(
                         imageVector = Default.Tune,
@@ -203,101 +177,62 @@ class CoachesListActivity : ComponentActivity() {
         }
     }
 
-    // TODO: make this composable use new ListItem composable in package ui
+    /**
+     * Displays a single user info in a list, or a chat preview if isViewingContacts is true.
+     */
     @Composable
     fun UserInfoListItem(currentUserEmail: String, user: UserInfo = UserInfo(), isViewingContacts: Boolean = false, contactRowInfo: ContactRowInfo = ContactRowInfo()) {
         val context = LocalContext.current
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    if (isViewingContacts) {
-                        val displayChatIntent = Intent(context, ChatActivity::class.java)
-                        displayChatIntent.putExtra("chatId", contactRowInfo.chatId)
-                        context.startActivity(displayChatIntent)
-                    } else {
-                        val displayCoachIntent = Intent(context, ProfileActivity::class.java)
-                        displayCoachIntent.putExtra("email", user.email)
-                        displayCoachIntent.putExtra("isViewingCoach", true)
-                        context.startActivity(displayCoachIntent)
-                    }
-                }
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .height(100.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // TODO: might be a good idea to merge the profile picture code used here and the one used in EditProfileActivity
-            Image(
-                painter = painterResource(id = R.drawable.ic_launcher_background),
-                contentDescription = "${user.firstName} ${user.lastName}'s profile picture",
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .border(2.dp, Color.Gray, CircleShape)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(
-                modifier = Modifier.fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Text(
-                    text = if (isViewingContacts) contactRowInfo.chatTitle else "${user.firstName} ${user.lastName}",
-                    style = MaterialTheme.typography.h6,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
 
-                if (isViewingContacts) {
+        if (isViewingContacts) {
+            ListItem(
+                image = ImageData(
+                    painter = painterResource(id = R.drawable.ic_launcher_background),
+                    contentDescription = contactRowInfo.chatTitle,
+                ),
+                title = contactRowInfo.chatTitle,
+                firstRow = {
                     val senderName = if (contactRowInfo.lastMessage.sender == currentUserEmail) "You" else contactRowInfo.lastMessage.senderName
-                    Text(
+                    IconTextRow(
                         text = if (senderName.isNotEmpty()) "$senderName: ${contactRowInfo.lastMessage.content}" else "Tap to write a message",
-                        color = Color.Gray,
-                        style = MaterialTheme.typography.body2,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        maxLines = 2
                     )
-                } else {
-                    UserViewBody(user)
+                },
+                onClick = {
+                    val displayChatIntent = Intent(context, ChatActivity::class.java)
+                    displayChatIntent.putExtra("chatId", contactRowInfo.chatId)
+                    context.startActivity(displayChatIntent)
                 }
-
-            }
-        }
-        Divider()
-    }
-
-    @Composable
-    fun UserViewBody(user: UserInfo) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Default.Place,
-                tint = Color.Gray,
-                contentDescription = "${user.firstName} ${user.lastName}'s location",
-                modifier = Modifier.size(20.dp)
             )
-            Spacer(modifier = Modifier.width(4.dp))
-            // Temporary, until we implement proper location handling
-            Text(
-                text = user.address.name,
-                color = Color.Gray,
-                style = MaterialTheme.typography.body2,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+        } else {
+            ListItem(
+                image = ImageData(
+                    painter = painterResource(id = R.drawable.ic_launcher_background),
+                    contentDescription = "${user.firstName} ${user.lastName}'s profile picture",
+                ),
+                title = "${user.firstName} ${user.lastName}",
+                firstRow = {
+                    IconTextRow(
+                        icon = IconData(icon = Default.Place, contentDescription = "${user.firstName} ${user.lastName}'s location"),
+                        text = user.address.name
+                    )
+                },
+                secondRow = {
+                    IconsRow(icons = user.sports.map { sport ->
+                        IconData(icon = sport.sportIcon, contentDescription = sport.sportName)
+                    })
+                },
+                onClick = {
+                    val displayCoachIntent = Intent(context, ProfileActivity::class.java)
+                    displayCoachIntent.putExtra("email", user.email)
+                    if (user.email == currentUserEmail) {
+                        displayCoachIntent.putExtra("isViewingCoach", false)
+                    } else {
+                        displayCoachIntent.putExtra("isViewingCoach", true)
+                    }
+                    context.startActivity(displayCoachIntent)
+                }
             )
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            user.sports.map {
-                Icon(
-                    imageVector = it.sportIcon,
-                    tint = Color.Gray,
-                    contentDescription = it.sportName,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-            }
         }
     }
 }

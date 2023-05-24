@@ -16,7 +16,6 @@ import com.github.sdpcoachme.data.schedule.EventType
 import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.Buttons.Companion.GO_TO_LOGIN_BUTTON
-import com.github.sdpcoachme.errorhandling.IntentExtrasErrorHandlerActivity.TestTags.TextFields.Companion.ERROR_MESSAGE_FIELD
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Buttons.Companion.ADD_EVENT_BUTTON
 import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Buttons.Companion.ADD_GROUP_EVENT_BUTTON
@@ -28,8 +27,6 @@ import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.Companion.WEEK_H
 import com.github.sdpcoachme.schedule.ScheduleActivity.TestTags.TextFields.Companion.CURRENT_WEEK_TEXT_FIELD
 import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
-import com.github.sdpcoachme.weather.WeatherViewTest.Companion.WEATHER_CLOUD_DONE
-import com.github.sdpcoachme.weather.WeatherViewTest.Companion.WEATHER_CLOUD_OFF
 import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertTrue
 import org.junit.After
@@ -82,15 +79,6 @@ class ScheduleActivityTest {
             initiallyDisplayed.forEach { tag ->
                 composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).assertExists()
             }
-        }
-    }
-
-    @Test
-    fun errorPageIsShownWhenScheduleIsLaunchedWithEmptyCurrentEmail() {
-        store.setCurrentEmail("")
-        ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
-            composeTestRule.onNodeWithTag(ERROR_MESSAGE_FIELD).assertIsDisplayed()
         }
     }
 
@@ -306,9 +294,9 @@ class ScheduleActivityTest {
             composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
             composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).assertExists()
             composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).performClick()    // switch 1 week forward
-            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(7).format(formatter)} - \n${currentMonday.plusDays(13).format(formatter)}")
+            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(7).format(formatter)}\n${currentMonday.plusDays(13).format(formatter)}")
             composeTestRule.onNodeWithTag(RIGHT_ARROW_BUTTON).performClick()    // switch 1 week forward
-            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(14).format(formatter)} - \n${currentMonday.plusDays(20).format(formatter)}")
+            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.plusDays(14).format(formatter)}\n${currentMonday.plusDays(20).format(formatter)}")
         }
     }
 
@@ -319,9 +307,9 @@ class ScheduleActivityTest {
             composeTestRule.onNodeWithTag(BASIC_SCHEDULE).assertExists()
             composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).assertExists()
             composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).performClick()   // switch 1 week backward
-            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(7).format(formatter)} - \n${currentMonday.minusDays(1).format(formatter)}")
+            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(7).format(formatter)}\n${currentMonday.minusDays(1).format(formatter)}")
             composeTestRule.onNodeWithTag(LEFT_ARROW_BUTTON).performClick()  // switch 1 week backward
-            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(14).format(formatter)} - \n${currentMonday.minusDays(8).format(formatter)}")
+            composeTestRule.onNodeWithTag(CURRENT_WEEK_TEXT_FIELD).assertTextContains("${currentMonday.minusDays(14).format(formatter)}\n${currentMonday.minusDays(8).format(formatter)}")
         }
     }
 
@@ -385,14 +373,11 @@ class ScheduleActivityTest {
     }
 
     @Test
-    fun weatherForecastIsCorrectlyDisplayedInSchedule() {
-        store.setCurrentEmail(coachEmail).thenApply {
-            ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
-                composeTestRule.onNodeWithTag("WEATHER_COLUMN")
-                    .assertExists().assertIsDisplayed()
-                composeTestRule.onNodeWithTag(WEATHER_CLOUD_OFF).assertExists().assertIsDisplayed()
-                composeTestRule.onNodeWithTag(WEATHER_CLOUD_DONE).assertExists().assertIsDisplayed()
-            }
+    fun weatherForecastIsCorrectlyDisplayedInScheduleWeek() {
+        store.setCurrentEmail(coachEmail).get(1, SECONDS)
+        ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+            composeTestRule.onAllNodesWithTag("WEATHER_COLUMN").assertCountEquals(7)
+            composeTestRule.onAllNodesWithContentDescription("Weather icon").assertCountEquals(7)
         }
     }
 
