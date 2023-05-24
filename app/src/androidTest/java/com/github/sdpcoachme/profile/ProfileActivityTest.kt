@@ -295,7 +295,7 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).performClick()
 
             for (rowTag in ROW_TEXT_LIST) {
-                composeTestRule.onNodeWithTag(rowTag.ROW, useUnmergedTree = true).performClick()
+                composeTestRule.onNodeWithTag(rowTag.ROW, useUnmergedTree = true).performScrollTo().performClick()
             }
             composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.DONE, useUnmergedTree = true).performClick()
 
@@ -317,7 +317,7 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).performClick()
 
             for (rowTag in ROW_TEXT_LIST) {
-                composeTestRule.onNodeWithTag(rowTag.ROW, useUnmergedTree = true).performClick()
+                composeTestRule.onNodeWithTag(rowTag.ROW, useUnmergedTree = true).performScrollTo().performClick()
             }
             composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.CANCEL, useUnmergedTree = true).performClick()
 

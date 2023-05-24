@@ -1,9 +1,10 @@
 package com.github.sdpcoachme.weather
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -11,6 +12,7 @@ import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.R.drawable.weather_cloud_done
@@ -61,15 +63,19 @@ private fun WeatherColumn(weatherText: String, weatherCode: Int) {
         modifier = Modifier.fillMaxWidth().testTag("WEATHER_COLUMN"),
         horizontalAlignment = CenterHorizontally
     ) {
-        Image(
+        Icon(
             painter = painterResource(id = weatherCode),
             contentDescription = "Weather icon",
-            modifier = Modifier.size(35.dp).testTag(weatherCode.toString())
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+                .testTag(weatherCode.toString())
         )
         Text(
             text = weatherText,
             fontSize = 10f.sp,
-            modifier = Modifier.testTag(weatherText)
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().testTag(weatherText)
         )
     }
 }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
@@ -27,7 +28,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.UserInfo
@@ -44,9 +44,8 @@ import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_BOX
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_FIELD
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CHAT_MESSAGE
 import com.github.sdpcoachme.messaging.ChatActivity.TestTags.Companion.CONTACT_FIELD
-import com.github.sdpcoachme.profile.CoachesListActivity
 import com.github.sdpcoachme.profile.ProfileActivity
-import com.github.sdpcoachme.ui.theme.Purple500
+import com.github.sdpcoachme.ui.theme.*
 import kotlinx.coroutines.future.await
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -123,17 +122,11 @@ class ChatActivity : ComponentActivity() {
             isGroupChat = chatId.startsWith("@@event")
 
             emailFuture.thenCompose { email ->
-                store.getUser(email).thenAccept() { user ->
-                    contact =
-                        if (chatId.startsWith("@@event")) chatId
-                        else chatId.replace(email, "")
+                contact =
+                    if (isGroupChat) chatId
+                    else chatId.replace(email, "")
 
-                    // Add the other user to the current user's chat contacts
-                    if (!user.chatContacts.contains(contact)) {
-                        val newUser = user.copy(chatContacts = user.chatContacts + contact)
-                        store.updateUser(newUser)
-                    }
-                }
+                store.addChatContactIfNew(email, chatId, contact)
             }
 
             // needed to remove the chat listener from the db so that
@@ -146,13 +139,11 @@ class ChatActivity : ComponentActivity() {
             })
 
             setContent {
-
-                ChatView(
-                    chatId,
-                    contact,
-                    stateLoading,
-                    isGroupChat
-                )
+                CoachMeTheme {
+                    Surface(color = MaterialTheme.colors.background) {
+                        ChatView(chatId, contact, stateLoading, isGroupChat)
+                    }
+                }
             }
         }
     }
@@ -193,31 +184,34 @@ class ChatActivity : ComponentActivity() {
             stateLoading.complete(null)
         }
 
-        Column(
-            modifier = Modifier
-                .fillMaxHeight()
-        ) {
-
-            ContactField(toUser, chatId, isGroupChat, groupEvent)
-
-            ChatBoxContainer(
-                chat = chat,
-                currentUserEmail = currentUserEmail,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .weight(1f)
-                    .testTag(CHAT_BOX.CONTAINER)
-            )
-
-            ChatField(
-                currentUserEmail = currentUserEmail,
-                chat = chat,
-                onSend = {
-                    store.getChat(chatId).thenAccept { chat = it }
-                },
-                isGroupChat,
-                groupEvent,
-            )
+        Scaffold(
+            topBar = {
+                ContactField(toUser, chatId, isGroupChat, groupEvent)
+            }
+        ) { padding ->
+            Surface(color = MaterialTheme.colors.background) {
+                Column(
+                    modifier = Modifier.padding(padding)
+                ) {
+                    ChatBoxContainer(
+                        chat = chat,
+                        currentUserEmail = currentUserEmail,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f)
+                            .testTag(CHAT_BOX.CONTAINER)
+                    )
+                    ChatField(
+                        currentUserEmail = currentUserEmail,
+                        chat = chat,
+                        onSend = {
+                            store.getChat(chatId).thenAccept { chat = it }
+                        },
+                        isGroupChat,
+                        groupEvent,
+                    )
+                }
+            }
         }
     }
 
@@ -232,13 +226,9 @@ class ChatActivity : ComponentActivity() {
         groupEvent: GroupEvent
     ) {
         val context = LocalContext.current
-        Row(
-            modifier = Modifier
-                .testTag(CONTACT_FIELD.ROW)
-                .fillMaxWidth()
-                .height(56.dp) // matches the built-in app bar height
-                .background(color = Purple500)
-                .clickable { // go to the profile of the other user or show the event
+        TopAppBar(
+            modifier = Modifier.testTag(CONTACT_FIELD.ROW)
+                .clickable {
                     store.removeChatListener(chatId)
 
                     // if it is a group chat, chatId is the event id
@@ -255,43 +245,30 @@ class ChatActivity : ComponentActivity() {
                         context.startActivity(coachProfileIntent)
                     }
                 },
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            // Button icon for the back button
-            IconButton(
-                onClick = {
-                    store.removeChatListener(chatId)
-                    // go back to the listed contacts (msg contacts or coaches)
-                    val intent = Intent(context, CoachesListActivity::class.java)
-                    intent.putExtra("isViewingContacts", true)
-                    context.startActivity(intent)
-
-                },
-                modifier = Modifier
-                    .testTag(BACK)
-                    .padding(start = 5.dp)
-                    .align(Alignment.CenterVertically)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White
+            title = {
+                Text(
+                    text = if (isGroupChat) groupEvent.event.name else "${toUser.firstName} ${toUser.lastName}",
+                    modifier = Modifier.testTag(CONTACT_FIELD.LABEL)
                 )
-            }
+            },
+            navigationIcon = {
+                // Button icon for the    button
+                IconButton(
+                    onClick = {
+                        store.removeChatListener(chatId)
+                        // go back to previous activity
+                        finish()
 
-            Text(
-                text = if (isGroupChat) groupEvent.event.name else toUser.firstName + " " + toUser.lastName,
-                fontSize = 20.sp,
-                modifier = Modifier
-                    .testTag(CONTACT_FIELD.LABEL)
-                    .fillMaxWidth()
-                    .align(Alignment.CenterVertically)
-                    .padding(start = 10.dp),
-                color = Color.White,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
+                    },
+                    modifier = Modifier.testTag(BACK)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Back"
+                    )
+                }
+            }
+        )
     }
 
     /**
@@ -369,7 +346,7 @@ class ChatActivity : ComponentActivity() {
         ) {
             Column(
                 modifier = Modifier
-                    .padding(20.dp)
+                    .padding(start = 20.dp, end = 20.dp, top = 10.dp)
                     .testTag(CHAT_BOX.MESSAGES_COLUMN)
             ) {
                 // Chat Messages
@@ -388,11 +365,12 @@ class ChatActivity : ComponentActivity() {
                                 .align(Alignment.CenterHorizontally)
                                 .padding(bottom = 10.dp)
                                 .background(
-                                    color = Color(0xFFE6E7E7),
+                                    color = MaterialTheme.colors.chatTime,
                                     shape = RoundedCornerShape(10.dp)
                                 )
                                 .padding(5.dp),
                             textAlign = TextAlign.Center,
+                            color = MaterialTheme.colors.onChatTime
                         )
                     }
 
@@ -418,8 +396,8 @@ class ChatActivity : ComponentActivity() {
         nbParticipants: Int
     ) {
         val timestampFormatter = DateTimeFormatter.ofPattern("HH:mm")
-        val timeAndUnreadMarkColor = Color(0xFF6C6C6D)
-        val readMarkColor = Color(0xFF0027FF)
+        val timeAndUnreadMarkColor = MaterialTheme.colors.onMessageTimeStamp
+        val readMarkColor = MaterialTheme.colors.readMessageCheck
 
         Row(
             modifier = Modifier
@@ -446,7 +424,7 @@ class ChatActivity : ComponentActivity() {
                         .testTag(CHAT_MESSAGE.LABEL)
                         .fillMaxWidth(0.7f)
                         .background(
-                            color = if (isFromCurrentUser) Color(0xFFBBC5FD) else Color.LightGray,
+                            color = if (isFromCurrentUser) MaterialTheme.colors.messageMe else MaterialTheme.colors.messageOther,
                             shape = RoundedCornerShape(
                                 10.dp,
                                 10.dp,
@@ -455,8 +433,8 @@ class ChatActivity : ComponentActivity() {
                             )
                         )
                         .padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
-
-                    )
+                    color = MaterialTheme.colors.onMessage
+                )
 
                 // timestamp for message
                 Text(
@@ -526,77 +504,76 @@ class ChatActivity : ComponentActivity() {
     ) {
         var message by remember { mutableStateOf("") }
 
-        Row(
-            modifier = Modifier
-                .padding(start = 20.dp, end = 20.dp, bottom = 20.dp)
-                .fillMaxWidth()
-                .testTag(CHAT_FIELD.ROW),
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.Start
+        Surface(
+            elevation = 4.dp,
         ) {
-            // Chat Text Field
-            TextField(
-                value = message,
-                onValueChange = { message = it },
-                placeholder = { Text("Message") },
+            Row(
                 modifier = Modifier
-                    .weight(0.8f)
-                    .testTag(CHAT_FIELD.LABEL)
-                    .background(
-                        shape = RoundedCornerShape(30.dp),
-                        color = Color.LightGray
-                    ),
-                colors = TextFieldDefaults.textFieldColors(
-                    backgroundColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                ),
-            )
-
-            // Send Button
-            if (message.trim().isNotEmpty()) {
-                IconButton(
-                    onClick = {
-                        store.getUser(currentUserEmail).thenCompose {
-                            store.sendMessage(
-                                chat.id,
-                                Message(
-                                    currentUserEmail,
-                                    "${it.firstName} ${it.lastName}",
-                                    message.trim(),
-                                    LocalDateTime.now().toString(),
-                                    ReadState.SENT
-                                )
-                            ).thenAccept {
-                                onSend()
-                            }
-                        }
-                        message = ""
-
-                        // Place this chat at the top of the users' chat list whenever a message is sent
-                        for (participantMail in chat.participants) {
-                            store.getUser(participantMail).thenCompose {
-                                val contact =
-                                    if (isGroupChat) groupEvent.groupEventId else chat.id.replace(
-                                        participantMail,
-                                        ""
-                                    )
-                                store.updateUser(
-                                    it.copy(
-                                        chatContacts = listOf(contact) + it.chatContacts.filter { e -> e != contact })
-                                )
-                            }
-                        }
-                    },
+                    .padding(10.dp)
+                    .fillMaxWidth()
+                    .testTag(CHAT_FIELD.ROW),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Chat Text Field
+                TextField(
+                    value = message,
+                    onValueChange = { message = it },
+                    placeholder = { Text("Message") },
                     modifier = Modifier
-                        .padding(start = 8.dp)
-                        .weight(0.2f)
-                        .testTag(SEND)
-                ) {
-                    Icon(
-                        Icons.Filled.Send,
-                        contentDescription = "Send Message"
-                    )
+                        .testTag(CHAT_FIELD.LABEL)
+                        .weight(0.9f),
+                    shape = CircleShape,
+                    colors = TextFieldDefaults.textFieldColors(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                    ),
+                )
+
+                // Send Button
+                if (message.trim().isNotEmpty()) {
+                    Spacer(modifier = Modifier.width(10.dp))
+                    IconButton(
+                        onClick = {
+                            store.getUser(currentUserEmail).thenCompose {
+                                store.sendMessage(
+                                    chat.id,
+                                    Message(
+                                        currentUserEmail,
+                                        "${it.firstName} ${it.lastName}",
+                                        message.trim(),
+                                        LocalDateTime.now().toString(),
+                                        ReadState.SENT
+                                    )
+                                ).thenAccept {
+                                    onSend()
+                                }
+                            }
+                            message = ""
+
+                            // Place this chat at the top of the users' chat list whenever a message is sent
+                            for (participantMail in chat.participants) {
+                                store.getUser(participantMail).thenCompose {
+                                    val contact =
+                                        if (isGroupChat) groupEvent.groupEventId else chat.id.replace(
+                                            participantMail,
+                                            ""
+                                        )
+                                    store.updateUser(
+                                        it.copy(
+                                            chatContacts = listOf(contact) + it.chatContacts.filter { e -> e != contact })
+                                    )
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .testTag(SEND)
+                            .weight(0.1f)
+                    ) {
+                        Icon(
+                            Icons.Filled.Send,
+                            contentDescription = "Send Message"
+                        )
+                    }
                 }
             }
         }

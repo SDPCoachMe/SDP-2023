@@ -13,7 +13,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowLeft
 import androidx.compose.material.icons.filled.ArrowRight
 import androidx.compose.runtime.*
@@ -42,13 +41,11 @@ import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
-import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.location.provider.FusedLocationProvider
 import com.github.sdpcoachme.schedule.EventOps.Companion.getDayFormatter
 import com.github.sdpcoachme.schedule.EventOps.Companion.getStartMonday
 import com.github.sdpcoachme.schedule.EventOps.Companion.getTimeFormatter
-import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import com.github.sdpcoachme.ui.theme.Purple500
+import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.weather.WeatherForecast
 import com.github.sdpcoachme.weather.WeatherView
 import java.time.LocalDate
@@ -69,7 +66,6 @@ class ScheduleActivity : ComponentActivity() {
             companion object {
                 const val LEFT_ARROW_BUTTON = "leftArrowButton"
                 const val RIGHT_ARROW_BUTTON = "rightArrowButton"
-                const val BACK = "backButton"
                 const val ADD_EVENT_BUTTON = "addEventButton"
                 const val ADD_PRIVATE_EVENT_BUTTON = "addPrivateEventButton"
                 const val ADD_GROUP_EVENT_BUTTON = "addGroupEventButton"
@@ -106,11 +102,7 @@ class ScheduleActivity : ComponentActivity() {
         val weatherState = store.getWeatherForecast(userLatLng).get()
 
         setContent {
-            CoachMeTheme {
-                Surface(color = MaterialTheme.colors.background) {
-                    Schedule(futureDBSchedule, store, weatherState)
-                }
-            }
+            Schedule(futureDBSchedule, store, weatherState)
         }
     }
 }
@@ -124,8 +116,7 @@ private const val COLUMNS_PER_WEEK = 7
 fun Schedule(
     futureDBSchedule: CompletableFuture<Schedule>,
     store: CachingStore,
-    weatherState: MutableState<WeatherForecast>,
-    modifier: Modifier = Modifier
+    weatherState: MutableState<WeatherForecast>
     ) {
     // the starting day is always the monday of the current week
     var shownWeekMonday by remember { mutableStateOf(getStartMonday()) }
@@ -161,102 +152,108 @@ fun Schedule(
         }
     }
 
-    Box(modifier = modifier) {
-        Column(modifier = modifier
-            .testTag(ScheduleActivity.TestTags.SCHEDULE_COLUMN)
-        ) {
+    Dashboard(
+        title = { modifier ->
             ScheduleTitleRow(
                 shownWeekMonday = shownWeekMonday,
                 onLeftArrowClick = { updateCurrentWeekMonday(-1) },
                 onRightArrowClick = { updateCurrentWeekMonday(1) },
+                modifier = modifier
             )
+        }
+    ) { modifier ->
+        Box(modifier = modifier) {
+            Column(modifier = Modifier.testTag(ScheduleActivity.TestTags.SCHEDULE_COLUMN)
+            ) {
 
-            WeekHeader(
-                shownWeekMonday = shownWeekMonday,
-                dayWidth = dayWidth,
-                weatherState = weatherState
-            )
+                WeekHeader(
+                    shownWeekMonday = shownWeekMonday,
+                    dayWidth = dayWidth,
+                    weatherState = weatherState
+                )
 
-            // filter events to only show events in the current week
-            val eventsToShow = EventOps.eventsToWrappedEvents(events)
+                // filter events to only show events in the current week
+                val eventsToShow = EventOps.eventsToWrappedEvents(events)
 
-            BasicSchedule(
-                events = eventsToShow.filter { event ->
-                    val eventDate = LocalDateTime.parse(event.start).toLocalDate()
-                    eventDate >= shownWeekMonday && eventDate < shownWeekMonday.plusWeeks(1)
+                BasicSchedule(
+                    events = eventsToShow.filter { event ->
+                        val eventDate = LocalDateTime.parse(event.start).toLocalDate()
+                        eventDate >= shownWeekMonday && eventDate < shownWeekMonday.plusWeeks(1)
+                    },
+                    shownMonday = shownWeekMonday,
+                    dayWidth = dayWidth,
+                    modifier = Modifier
+                        .weight(1f) // Fill remaining space in the column
+                        .verticalScroll(verticalScrollState)
+                        .testTag(ScheduleActivity.TestTags.BASIC_SCHEDULE)
+                )
+            }
+
+            fun launchCreateEventActivity(eventType: EventType) {
+                val intent = Intent(context, CreateEventActivity::class.java)
+                intent.putExtra("eventType", eventType.eventTypeName)
+                context.startActivity(intent)
+            }
+
+            var isDropdownExpanded by remember { mutableStateOf(false) }
+
+            FloatingActionButton(
+                onClick = {
+                    val isCoachFuture = store.getCurrentEmail().thenCompose { email ->
+                        store.getUser(email)
+                    }.thenApply { user ->
+                        user.coach
+                    }
+                    // if user is coach, let them choose between private and group event
+                    isCoachFuture.thenAccept { isCoach ->
+                        if (isCoach) {
+                            isDropdownExpanded = !isDropdownExpanded
+                        } else {
+                            launchCreateEventActivity(EventType.PRIVATE)
+                        }
+                    }
                 },
-                shownMonday = shownWeekMonday,
-                dayWidth = dayWidth,
                 modifier = Modifier
-                    .weight(1f) // Fill remaining space in the column
-                    .verticalScroll(verticalScrollState)
-                    .testTag(ScheduleActivity.TestTags.BASIC_SCHEDULE)
-            )
-        }
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .testTag(ScheduleActivity.TestTags.Buttons.ADD_EVENT_BUTTON),
+                backgroundColor = MaterialTheme.colors.primary,
+                contentColor = MaterialTheme.colors.onPrimary
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add Event"
+                )
+            }
 
-        fun launchCreateEventActivity(eventType: EventType) {
-            val intent = Intent(context, CreateEventActivity::class.java)
-            intent.putExtra("eventType", eventType.eventTypeName)
-            context.startActivity(intent)
-        }
-
-        var isDropdownExpanded by remember { mutableStateOf(false) }
-
-        FloatingActionButton(
-            onClick = {
-                val isCoachFuture = store.getCurrentEmail().thenCompose { email ->
-                    store.getUser(email)
-                }.thenApply { user ->
-                    user.coach
-                }
-                // if user is coach, let them choose between private and group event
-                isCoachFuture.thenAccept { isCoach ->
-                    if (isCoach) {
-                        isDropdownExpanded = !isDropdownExpanded
-                    } else {
+            // TODO: align the dropdown menu with the add event button
+            DropdownMenu(
+                expanded = isDropdownExpanded,
+                onDismissRequest = { isDropdownExpanded = false },
+                properties = PopupProperties(clippingEnabled = false),
+            ) {
+                DropdownMenuItem(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .testTag(ScheduleActivity.TestTags.Buttons.ADD_PRIVATE_EVENT_BUTTON),
+                    onClick = {
+                        isDropdownExpanded = false
                         launchCreateEventActivity(EventType.PRIVATE)
                     }
+                ) {
+                    Text(text = "Private Event")
                 }
-            },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-                .testTag(ScheduleActivity.TestTags.Buttons.ADD_EVENT_BUTTON),
-            backgroundColor = Purple500
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Add Event"
-            )
-        }
-
-        // TODO: align the dropdown menu with the add event button
-        DropdownMenu(
-            expanded = isDropdownExpanded,
-            onDismissRequest = { isDropdownExpanded = false },
-            properties = PopupProperties(clippingEnabled = false),
-        ) {
-            DropdownMenuItem(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .testTag(ScheduleActivity.TestTags.Buttons.ADD_PRIVATE_EVENT_BUTTON),
-                onClick = {
-                    isDropdownExpanded = false
-                    launchCreateEventActivity(EventType.PRIVATE)
+                DropdownMenuItem(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .testTag(ScheduleActivity.TestTags.Buttons.ADD_GROUP_EVENT_BUTTON),
+                    onClick = {
+                        isDropdownExpanded = false
+                        launchCreateEventActivity(EventType.GROUP)
+                    }
+                ) {
+                    Text(text = "Group Event")
                 }
-            ) {
-                Text(text = "Private Event")
-            }
-            DropdownMenuItem(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .testTag(ScheduleActivity.TestTags.Buttons.ADD_GROUP_EVENT_BUTTON),
-                onClick = {
-                    isDropdownExpanded = false
-                    launchCreateEventActivity(EventType.GROUP)
-                }
-            ) {
-                Text(text = "Group Event")
             }
         }
     }
@@ -269,49 +266,17 @@ fun ScheduleTitleRow(
     onRightArrowClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .background(Purple500)
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // Button icon for the back button
-        IconButton(
-            onClick = {
-                // go back to the map view
-                val intent = Intent(context, MapActivity::class.java)
-                context.startActivity(intent)
-            },
-            modifier = Modifier
-                .testTag(ScheduleActivity.TestTags.Buttons.BACK)
-                .padding(start = 5.dp)
-                .align(Alignment.CenterVertically)
-        ) {
-            Icon(
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Back",
-                modifier = Modifier.align(Alignment.CenterVertically),
-                tint = Color.White
-            )
-        }
         Text(
             text = "Schedule",
-            style = MaterialTheme.typography.h5,
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .padding(start = 10.dp)
+            modifier = modifier // Modifier is passed for the test tag of the dashboard title
         )
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End,
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
+        Row {
             IconButton(
                 onClick = { onLeftArrowClick() },
                 modifier = Modifier
@@ -319,8 +284,7 @@ fun ScheduleTitleRow(
             ) {
                 Icon(
                     imageVector = Icons.Default.ArrowLeft,
-                    contentDescription = "Left arrow",
-                    tint = Color.White
+                    contentDescription = "Left arrow"
                 )
             }
 
@@ -328,15 +292,15 @@ fun ScheduleTitleRow(
             // To prevent the text from being too long, set a max width
             val maxTextWidth = LocalConfiguration.current.screenWidthDp.dp / 5
             Text(
-                text = "${shownWeekMonday.format(formatter)} - \n${
+                text = "${shownWeekMonday.format(formatter)}\n${
                     shownWeekMonday.plusDays(6).format(formatter)
                 }",
                 style = MaterialTheme.typography.subtitle1,
-                color = Color.White,
                 modifier = Modifier
                     .testTag(ScheduleActivity.TestTags.TextFields.CURRENT_WEEK_TEXT_FIELD)
                     .align(Alignment.CenterVertically)
-                    .widthIn(max = maxTextWidth)
+                    .widthIn(max = maxTextWidth),
+                textAlign = TextAlign.Center
             )
 
 
@@ -348,8 +312,7 @@ fun ScheduleTitleRow(
             ) {
                 Icon(
                     imageVector = Icons.Default.ArrowRight,
-                    contentDescription = "Right arrow",
-                    tint = Color.White
+                    contentDescription = "Right arrow"
                 )
             }
         }
@@ -466,17 +429,29 @@ fun BasicEvent(
     event: ShownEvent,
     modifier: Modifier = Modifier,
 ) {
+    val backgroundColor = Color(event.color.toULong())
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(end = 2.dp, bottom = 2.dp)
-            .background(Color(event.color.toULong()), shape = RoundedCornerShape(4.dp))
+            .background(color = backgroundColor, shape = RoundedCornerShape(4.dp))
             .padding(4.dp)
     ) {
+        // Dynamically choose the text color based on the background color of the event ? I leave it here,
+        // not sure if it's a good idea
+        //val textColor =
+        //    if ((backgroundColor.red*0.299 + backgroundColor.green*0.587 + backgroundColor.blue*0.114) > 150)
+        //        Color.White
+        //    else
+        //        Color.Black
+        // For now, force black (even in dark mode) as it seems to look better
+        val textColor = Color.Black
+
         Text(
             text = "${LocalDateTime.parse(event.startText).toLocalTime().format(EventTimeFormatter)} - ${LocalDateTime.parse(event.endText).toLocalTime().format(EventTimeFormatter)}",
             style = MaterialTheme.typography.caption,
             fontSize = 9f.sp,
+            color = textColor
         )
 
         Text(
@@ -484,6 +459,7 @@ fun BasicEvent(
             style = MaterialTheme.typography.body1,
             fontWeight = FontWeight.Bold,
             fontSize = 12f.sp,
+            color = textColor
         )
 
         Text(
@@ -492,6 +468,7 @@ fun BasicEvent(
             maxLines = 5,
             overflow = TextOverflow.Ellipsis,
             fontSize = 10f.sp,
+            color = textColor
         )
     }
 }

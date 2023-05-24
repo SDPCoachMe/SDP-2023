@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MAP
@@ -28,10 +29,10 @@ import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.C
 import com.github.sdpcoachme.location.provider.LocationProvider
 import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.ui.Dashboard
-import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
@@ -88,10 +89,11 @@ class MapActivity : ComponentActivity() {
         // all.
         // Note: this is absolutely not scalable, but we can change this later on.
         val futureUsers = store.getAllUsers().thenApply { users -> users.filter { it.coach } }
-        setContent {
-            CoachMeTheme {
+        store.getCurrentEmail().thenApply { email ->
+            setContent {
                 Dashboard {
                     Map(
+                        email = email,
                         modifier = it,
                         lastUserLocation = locationProvider.getLastLocation(),
                         futureCoachesToDisplay = futureUsers,
@@ -101,7 +103,6 @@ class MapActivity : ComponentActivity() {
             }
         }
     }
-
 }
 
 /**
@@ -111,6 +112,7 @@ class MapActivity : ComponentActivity() {
  */
 @Composable
 fun Map(
+    email: String,
     modifier: Modifier,
     lastUserLocation: MutableState<LatLng?>,
     // Those 2 arguments have default values to avoid refactoring older tests
@@ -140,7 +142,8 @@ fun Map(
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
             isMyLocationEnabled = lastUserLocation.value != null,
-            mapType = MapType.NORMAL
+            mapType = MapType.NORMAL,
+            mapStyleOptions = if (MaterialTheme.colors.isLight) null else MapStyleOptions.loadRawResourceStyle(context, R.raw.google_maps_dark_theme),
         ),
         onMapLoaded = {
             // For testing purposes, we need to know when the map is ready
@@ -169,10 +172,14 @@ fun Map(
                 tag = MARKER(user),
                 onInfoWindowClick = {
                     // TODO: code similar to CoachesList, might be able to modularize
-                    // Launches the ProfileActivity to display the coach's profile
                     val displayCoachIntent = Intent(context, ProfileActivity::class.java)
                     displayCoachIntent.putExtra("email", user.email)
-                    displayCoachIntent.putExtra("isViewingCoach", true)
+                    if (user.email == email) {
+                        displayCoachIntent.putExtra("isViewingCoach", false)
+                    } else {
+                        displayCoachIntent.putExtra("isViewingCoach", true)
+                    }
+                    // Launches the ProfileActivity to display the coach's profile
                     context.startActivity(displayCoachIntent)
                 }
             ) {
