@@ -12,14 +12,14 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.matcher.ViewMatchers.assertThat
-import com.github.sdpcoachme.data.Address
+import com.github.sdpcoachme.data.*
 import com.github.sdpcoachme.data.AddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.AddressSamples.Companion.NEW_YORK
-import com.github.sdpcoachme.data.ChatSample
-import com.github.sdpcoachme.data.GroupEvent
-import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_2
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_3
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACH_1
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACH_2
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
@@ -43,6 +43,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
 
@@ -64,7 +65,8 @@ class CachingStoreTest {
             context.dataStoreTest.edit { it.clear() }
         }
         wrappedDatabase = MockDatabase()
-        cachingStore = CachingStore(wrappedDatabase,
+        cachingStore = CachingStore(
+            wrappedDatabase,
             ApplicationProvider.getApplicationContext<Context>().dataStoreTest,
             ApplicationProvider.getApplicationContext()
         )
@@ -77,6 +79,105 @@ class CachingStoreTest {
         runBlocking {
             context.dataStoreTest.edit { it.clear() }
         }
+    }
+
+    @Test
+    fun getCoachAverageRatingReturnsAverageRating() {
+        val ratedCoach = COACH_1.copy(
+            ratings = mapOf(
+                NON_COACH_1.email to 0,
+                NON_COACH_2.email to 2
+            )
+        )
+        cachingStore.updateUser(ratedCoach).get(1, SECONDS)
+        val averageRating = cachingStore.getCoachAverageRating(ratedCoach.email)
+            .get(1, SECONDS)
+        assertThat(averageRating, `is`(1))
+    }
+
+    @Test
+    fun getCoachAverageRatingRoundsToNearestInteger() {
+        val ratedCoach1 = COACH_1.copy(
+            ratings = mapOf(
+                NON_COACH_1.email to 0,
+                NON_COACH_2.email to 0,
+                UserInfoSamples.NON_COACH_3.email to 1
+            )
+        )
+        val ratedCoach2 = COACH_2.copy(
+            ratings = mapOf(
+                NON_COACH_1.email to 0,
+                NON_COACH_2.email to 1,
+                UserInfoSamples.NON_COACH_3.email to 1
+            )
+        )
+        val ratedCoach3 = COACH_3.copy(
+            ratings = mapOf(
+                UserInfoSamples.NON_COACH_1.email to 0,
+                UserInfoSamples.NON_COACH_2.email to 5
+            )
+        )
+
+        cachingStore.updateUser(ratedCoach1)
+            .thenCompose { cachingStore.updateUser(ratedCoach2) }
+            .thenCompose { cachingStore.updateUser(ratedCoach3) }
+            .get(1, SECONDS)
+
+
+        val averageRating1 = cachingStore.getCoachAverageRating(ratedCoach1.email)
+            .get(1, SECONDS)
+        assertThat(averageRating1, `is`(0))
+        val averageRating2 = cachingStore.getCoachAverageRating(ratedCoach2.email)
+            .get(1, SECONDS)
+        assertThat(averageRating2, `is`(1))
+        val averageRating3 = cachingStore.getCoachAverageRating(ratedCoach3.email)
+            .get(1, SECONDS)
+        assertThat(averageRating3, `is`(3))
+    }
+
+    @Test
+    fun addRatingToNonCoachUserThrowsException() {
+        cachingStore.setCurrentEmail(NON_COACH_1.email).get(1, SECONDS)
+        cachingStore.updateUser(NON_COACH_2).get(1, SECONDS)
+        try {
+            cachingStore.addRatingToCoach(NON_COACH_2.email, 5).get(1, SECONDS)
+        } catch (e: ExecutionException) {
+            val actualException = e.cause
+            assertTrue(actualException is IllegalArgumentException)
+            return  // Test passed
+        }
+        // If no exception was thrown, the test should fail
+        throw AssertionError("Expected exception IllegalArgumentException was not thrown.")
+    }
+
+    @Test
+    fun addNegativeRatingThrowsException() {
+        cachingStore.setCurrentEmail(NON_COACH_1.email).get(1, SECONDS)
+        cachingStore.updateUser(COACH_1).get(1, SECONDS)
+        try {
+            cachingStore.addRatingToCoach(COACH_1.email, -1).get(1, SECONDS)
+        } catch (e: ExecutionException) {
+            val actualException = e.cause
+            assertTrue(actualException is IllegalArgumentException)
+            return  // Test passed
+        }
+        // If no exception was thrown, the test should fail
+        throw AssertionError("Expected exception IllegalArgumentException was not thrown.")
+    }
+
+    @Test
+    fun addRatingAbove5ThrowsException() {
+        cachingStore.setCurrentEmail(NON_COACH_1.email).get(1, SECONDS)
+        cachingStore.updateUser(COACH_1).get(1, SECONDS)
+        try {
+            cachingStore.addRatingToCoach(COACH_1.email, 6).get(1, SECONDS)
+        } catch (e: ExecutionException) {
+            val actualException = e.cause
+            assertTrue(actualException is IllegalArgumentException)
+            return  // Test passed
+        }
+        // If no exception was thrown, the test should fail
+        throw AssertionError("Expected exception IllegalArgumentException was not thrown.")
     }
 
     @Test
@@ -1408,6 +1509,14 @@ class CachingStoreTest {
             NEW_YORK,
             false
         )
+
+        const val rafaNadalEmail = "rafa@nadal.com"
+
+        val defaultRatings = mutableMapOf(
+            "defaultId1" to 3,
+            "defaultId2" to 5
+        )
+
 
     }
 

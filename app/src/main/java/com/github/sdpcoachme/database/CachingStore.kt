@@ -278,7 +278,7 @@ class CachingStore(private val wrappedDatabase: Database,
     fun addRatingToCoach(coachEmail: String, rating: Int): CompletableFuture<Void> {
         return getCurrentEmail().thenCompose { currEmail ->
             getUser(coachEmail).thenCompose { user ->
-                if (user.coach) {
+                if (user.coach && rating in 0..5) {
                     updateUser(user.copy(ratings = user.ratings + (currEmail to rating)))
                 } else {
                     throw IllegalArgumentException("Adding rating from a non-coach user")

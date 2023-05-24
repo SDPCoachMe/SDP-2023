@@ -212,9 +212,7 @@ open class CoachesListActivityTest {
                 toEmail,
                 "0987654321",
                 LAUSANNE,
-                false,
-                emptyList(),
-                emptyList()
+                false
             )
             composeTestRule.onNodeWithText(coach.address.name).assertIsDisplayed()
             composeTestRule.onNodeWithText("${coach.firstName} ${coach.lastName}")
