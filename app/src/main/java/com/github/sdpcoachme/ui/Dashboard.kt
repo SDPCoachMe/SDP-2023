@@ -2,17 +2,24 @@ package com.github.sdpcoachme.ui
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.AppBarDefaults
+import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
@@ -41,9 +48,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -51,6 +61,7 @@ import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.auth.LoginActivity
+import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.groupevent.GroupEventsListActivity
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.profile.CoachesListActivity
@@ -58,6 +69,7 @@ import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.schedule.ScheduleActivity
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
@@ -131,6 +143,7 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                     ) {
                         Column {
                             DrawerHeader(context, UIDisplayed)
+                            Spacer(modifier = Modifier.height(20.dp))
                             DrawerBody(
                                 items = listOf(
                                     MenuItem(
@@ -319,15 +332,74 @@ fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 40.dp)
-            .testTag(DRAWER_HEADER),
+            .testTag(DRAWER_HEADER)
+            .background(color = MaterialTheme.colors.primary),
         contentAlignment = Alignment.Center,
         content = {
             Column(horizontalAlignment = CenterHorizontally) {
-                Text(text = "Dashboard", fontSize = 40.sp)
+                Text(
+                    modifier = Modifier.padding(top = 20.dp),
+                    text = "Dashboard", fontSize = 40.sp, color = Color.White
+                )
             }
         }
     )
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color = MaterialTheme.colors.primary),
+        contentAlignment = Alignment.Center,
+        content = {
+            Column(horizontalAlignment = Alignment.Start) {
+                DrawerPersonalDetails(context = context, UIDisplayed = UIDisplayed)
+            }
+        }
+    )
+}
+
+@Composable
+fun DrawerPersonalDetails(context: Context, UIDisplayed: CompletableFuture<Void>) {
+    val emailFuture = (context.applicationContext as CoachMeApplication).store.getCurrentEmail()
+    var email by remember { mutableStateOf("") }
+    var userInfo by remember { mutableStateOf(UserInfo()) }
+
+    LaunchedEffect(emailFuture) {
+        email = emailFuture.await()
+        userInfo = (context.applicationContext as CoachMeApplication).store.getUser(email).await()
+        UIDisplayed.complete(null)
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(0.dp, 20.dp, 25.dp, 20.dp),
+    ) {
+        Column {
+            Text(
+                modifier = Modifier
+                    .padding(start = 16.dp),
+                text = userInfo.firstName + " " + userInfo.lastName, fontSize = 20.sp, color = Color.White
+            )
+            Text(
+                modifier = Modifier
+                    .testTag(DASHBOARD_EMAIL)
+                    .padding(start = 16.dp, top = 3.dp),
+                text = email, fontSize = 12.sp, color = Color.White
+            )
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Image(
+            painter = painterResource(id = R.drawable.ic_launcher_background),
+            contentDescription = "Profile picture",
+            modifier = Modifier
+                .size(60.dp)
+                .clip(CircleShape)
+                .border(2.dp, Color.Gray, CircleShape)
+                .padding(0.dp, 0.dp, 0.dp, 0.dp)
+                .align(Alignment.CenterEnd)
+                .testTag(ProfileActivity.TestTags.PROFILE_PICTURE)
+        )
+    }
+
 }
 
 @Composable
@@ -338,6 +410,9 @@ fun DrawerBody(
 ) {
     LazyColumn(Modifier.testTag(MENU_LIST)) {
         items(items) { item ->
+            if (item.tag == Dashboard.TestTags.Buttons.LOGOUT) {
+                Divider(modifier = Modifier.padding(16.dp))
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
