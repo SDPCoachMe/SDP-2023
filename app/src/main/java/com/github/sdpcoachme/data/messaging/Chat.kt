@@ -1,5 +1,7 @@
 package com.github.sdpcoachme.data.messaging
 
+import com.github.sdpcoachme.data.UserInfo
+
 /**
  * Data class representing a chat
  */
@@ -10,6 +12,36 @@ data class Chat(
 ) {
     // Constructor needed to make the data class serializable
     constructor() : this("", emptyList(), emptyList())
+
+    /**
+     * Returns the resource id for the profile picture of the chat. Note that this is temporary,
+     * and will be replaced by a real profile picture in a future version. For now, this functions
+     * hashes the chat's id and returns one of the predefined profile pictures located in the
+     * drawable folder.
+     */
+    // TODO: this method is temporary and a lot of its content is not ideally implemented. It will be
+    //  fixed when we implement real profile pictures
+    fun getChatPictureResource(currentUserEmail: String): Int {
+        if (id.startsWith("@@event")) {
+            // TODO: code similar to the one in UserInfo.getProfilePictureResource(String)
+            val prefix = "chat_picture_"
+            val fieldNames = com.github.sdpcoachme.R.drawable::class.java.fields.filter {
+                it.name.startsWith(prefix)
+            }
+            // mod returns same sign as divisor, so no need to use abs
+            val index = id.hashCode().mod(fieldNames.size)
+            val field = fieldNames[index]
+
+            return field.get(null) as Int
+        } else {
+            // participants size must be 2 here
+            val otherUserEmail = participants.filterNot {
+                it == currentUserEmail
+            }.first()
+
+            return UserInfo.getProfilePictureResource(otherUserEmail)
+        }
+    }
 
     companion object {
 
