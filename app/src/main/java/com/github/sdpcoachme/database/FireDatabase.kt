@@ -90,12 +90,12 @@ class FireDatabase(databaseReference: DatabaseReference) : Database {
     }
 
     override fun getContactRowInfos(email: String): CompletableFuture<List<ContactRowInfo>> {
-        println("getContactRowInfos email: $email")
         return getUser(email).thenApply {
+            // this line has been added to prevent strange buts where the chatContacts list
+            // contains null values (which should not be possible according to AndroidStudio but can happen)
             it.chatContacts.filterNotNull()
         }.thenCompose { contactList ->
 
-            println("getContactRowInfos contactList: $contactList")
             val mappedF = contactList.map { contactId ->
                 val isGroupChat = contactId.startsWith("@@event")
                 val chatId = if (isGroupChat) contactId

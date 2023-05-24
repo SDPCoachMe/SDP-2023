@@ -513,19 +513,14 @@ class CachingStore(private val wrappedDatabase: Database,
      * @param chatId The potentially new contact to add
      */
     fun addChatContactIfNew(email: String, chatId: String, contact: String): CompletableFuture<Void> {
-        println("Adding chat contact if new called on $email with chatid $chatId and contact $contact")
         return getUser(email).thenAccept() { user ->
-            println("contact already in contacts: " + user.chatContacts.contains(chatId))
             // Add the other user to the current user's chat contacts if not already inside
-            if (!user.chatContacts.contains(chatId)) {
-                println("Adding chat contact $chatId to $email")
+            if (!user.chatContacts.contains(contact)) {
                 updateCachedContactRowInfo(chatId, Message())
 
                 // update the user in the database
                 val updatedUser = user.copy(chatContacts = listOf(contact) + user.chatContacts)
                 updateUser(updatedUser)
-
-                println("updated contacts: " + updatedUser.chatContacts)
             }
         }
     }

@@ -645,6 +645,7 @@ class CachingStoreTest {
             ApplicationProvider.getApplicationContext()
         )
         cachingStore.setCurrentEmail(exampleEmail).get(1, SECONDS)
+        
         val isCorrect = cachingStore.getContactRowInfo(exampleEmail)
             .thenCompose {
                 assertThat(timesCalled, `is`(1))
