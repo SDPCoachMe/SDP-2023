@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
@@ -242,7 +243,14 @@ fun Dashboard(title: String? = null,
               UIDisplayed: CompletableFuture<Void> = CompletableFuture<Void>(),
               appContent: @Composable (Modifier) -> Unit) {
     Dashboard(
-        title = { modifier -> Text(text = title ?: stringResource(id = R.string.app_name), modifier = modifier) },
+        title = { modifier ->
+            Text(
+                text = title ?: stringResource(id = R.string.app_name),
+                modifier = modifier,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        },
         UIDisplayed = UIDisplayed,
         appContent = appContent
     )

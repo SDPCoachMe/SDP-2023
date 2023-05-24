@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
@@ -248,7 +249,9 @@ fun GroupEventDetailsLayout(
                 modifier = Modifier
                     .testTag(EVENT_NAME),
                 text = groupEvent.event.name,
-                style = MaterialTheme.typography.h4
+                style = MaterialTheme.typography.h4,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(5.dp))
             Row(
@@ -313,7 +316,9 @@ fun GroupEventDetailsLayout(
                         intent.putExtra("isViewingCoach", true)
                         intent.putExtra("email", organizer.email)
                         context.startActivity(intent)
-                    }
+                    },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
             Spacer(modifier = Modifier.height(20.dp))
@@ -531,14 +536,18 @@ private fun IconTextRow(
                 style = MaterialTheme.typography.body1.copy(
                     color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
                 ),
-                onClick = { onClick() }
+                onClick = { onClick() },
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         } else {
             Text(
                 modifier = Modifier.testTag(tag),
                 text = text,
                 style = MaterialTheme.typography.body1,
-                color = Color.Gray
+                color = Color.Gray,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

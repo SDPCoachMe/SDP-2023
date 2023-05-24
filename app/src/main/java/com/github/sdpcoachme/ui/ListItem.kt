@@ -146,7 +146,9 @@ fun SmallListItem(
         Text(
             modifier = titleTag?.let { Modifier.testTag(titleTag) } ?: Modifier,
             text = title,
-            style = MaterialTheme.typography.body1
+            style = MaterialTheme.typography.body1,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
     Divider()

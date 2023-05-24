@@ -26,6 +26,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
@@ -248,7 +249,9 @@ class ChatActivity : ComponentActivity() {
             title = {
                 Text(
                     text = if (isGroupChat) groupEvent.event.name else "${toUser.firstName} ${toUser.lastName}",
-                    modifier = Modifier.testTag(CONTACT_FIELD.LABEL)
+                    modifier = Modifier.testTag(CONTACT_FIELD.LABEL),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             },
             navigationIcon = {

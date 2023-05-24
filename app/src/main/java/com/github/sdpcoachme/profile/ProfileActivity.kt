@@ -383,9 +383,13 @@ fun TitleRow(user: UserInfo, isViewingCoach: Boolean) {
         horizontalArrangement = Arrangement.Start
     ) {
         Text(
-            modifier = Modifier.testTag(PROFILE_LABEL),
+            modifier = Modifier
+                .testTag(PROFILE_LABEL)
+                .fillMaxWidth(0.7f),
             text = title,
-            style = MaterialTheme.typography.h4
+            style = MaterialTheme.typography.h4,
+            maxLines = 4,
+            overflow = TextOverflow.Ellipsis
         )
         Box(
             modifier = Modifier
