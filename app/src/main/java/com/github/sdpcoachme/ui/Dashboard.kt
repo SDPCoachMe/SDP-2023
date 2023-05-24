@@ -46,7 +46,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -70,7 +69,6 @@ import com.github.sdpcoachme.schedule.ScheduleActivity
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
-import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.future.await
@@ -320,30 +318,6 @@ fun AppBar(title: @Composable (Modifier) -> Unit, onNavigationIconClick: () -> U
 
 @Composable
 fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
-    val emailFuture = (context.applicationContext as CoachMeApplication).store.getCurrentEmail()
-
-    var email by remember { mutableStateOf("") }
-
-    LaunchedEffect(emailFuture) {
-        email = emailFuture.await()
-        UIDisplayed.complete(null)
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag(DRAWER_HEADER)
-            .background(color = MaterialTheme.colors.primary),
-        contentAlignment = Alignment.Center,
-        content = {
-            Column(horizontalAlignment = CenterHorizontally) {
-                Text(
-                    modifier = Modifier.padding(top = 20.dp),
-                    text = "Dashboard", fontSize = 40.sp, color = Color.White
-                )
-            }
-        }
-    )
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -351,55 +325,50 @@ fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
         contentAlignment = Alignment.Center,
         content = {
             Column(horizontalAlignment = Alignment.Start) {
-                DrawerPersonalDetails(context = context, UIDisplayed = UIDisplayed)
+                val emailFuture = (context.applicationContext as CoachMeApplication).store.getCurrentEmail()
+                var email by remember { mutableStateOf("") }
+                var userInfo by remember { mutableStateOf(UserInfo()) }
+
+                LaunchedEffect(emailFuture) {
+                    email = emailFuture.await()
+                    userInfo = (context.applicationContext as CoachMeApplication).store.getUser(email).await()
+                    UIDisplayed.complete(null)
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(0.dp, 20.dp, 25.dp, 20.dp),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    Column {
+                        Text(
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 3.dp),
+                            text = userInfo.firstName + " " + userInfo.lastName, fontSize = 20.sp, color = Color.White
+                        )
+                        Text(
+                            modifier = Modifier
+                                .testTag(DASHBOARD_EMAIL)
+                                .padding(start = 16.dp),
+                            text = email, fontSize = 12.sp, color = Color.White
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_launcher_background),
+                        contentDescription = "Profile picture",
+                        modifier = Modifier
+                            .size(60.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, Color.Gray, CircleShape)
+                            .padding(0.dp, 0.dp, 0.dp, 0.dp)
+                            .align(Alignment.CenterEnd)
+                            .testTag(ProfileActivity.TestTags.PROFILE_PICTURE)
+                    )
+                }
             }
         }
     )
-}
-
-@Composable
-fun DrawerPersonalDetails(context: Context, UIDisplayed: CompletableFuture<Void>) {
-    val emailFuture = (context.applicationContext as CoachMeApplication).store.getCurrentEmail()
-    var email by remember { mutableStateOf("") }
-    var userInfo by remember { mutableStateOf(UserInfo()) }
-
-    LaunchedEffect(emailFuture) {
-        email = emailFuture.await()
-        userInfo = (context.applicationContext as CoachMeApplication).store.getUser(email).await()
-        UIDisplayed.complete(null)
-    }
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(0.dp, 20.dp, 25.dp, 20.dp),
-    ) {
-        Column {
-            Text(
-                modifier = Modifier
-                    .padding(start = 16.dp),
-                text = userInfo.firstName + " " + userInfo.lastName, fontSize = 20.sp, color = Color.White
-            )
-            Text(
-                modifier = Modifier
-                    .testTag(DASHBOARD_EMAIL)
-                    .padding(start = 16.dp, top = 3.dp),
-                text = email, fontSize = 12.sp, color = Color.White
-            )
-        }
-        Spacer(modifier = Modifier.width(10.dp))
-        Image(
-            painter = painterResource(id = R.drawable.ic_launcher_background),
-            contentDescription = "Profile picture",
-            modifier = Modifier
-                .size(60.dp)
-                .clip(CircleShape)
-                .border(2.dp, Color.Gray, CircleShape)
-                .padding(0.dp, 0.dp, 0.dp, 0.dp)
-                .align(Alignment.CenterEnd)
-                .testTag(ProfileActivity.TestTags.PROFILE_PICTURE)
-        )
-    }
-
 }
 
 @Composable

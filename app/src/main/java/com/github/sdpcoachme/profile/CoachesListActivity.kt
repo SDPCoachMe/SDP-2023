@@ -29,7 +29,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.Sports
@@ -81,15 +80,6 @@ class CoachesListActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        class CoachesListCallback : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                /*val intent = Intent(this@CoachesListActivity, MapActivity::class.java)
-                ContextCompat.startActivity(this@CoachesListActivity, intent, null)*/
-
-            }
-        }
-
-        //onBackPressedDispatcher.addCallback(callback)
 
         val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
         store = (application as CoachMeApplication).store
