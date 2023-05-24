@@ -9,4 +9,8 @@ data class ContactRowInfo (
     val chatTitle: String = "", // name of recipient / group chat name
     val lastMessage: Message = Message(),
     val isGroupChat: Boolean = false,
+    val participants: List<String> = emptyList(), // emails of participants
+    // Note: participants may be an empty list even if the chat has participants! It is only used in
+    // CoachesListActivity for practical reasons, and temporarily until Chat and ContactRowInfo are merged
+    // TODO: this class should be merged with Chat as it is redundant
 )

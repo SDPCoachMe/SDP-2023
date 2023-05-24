@@ -394,7 +394,7 @@ fun TitleRow(user: UserInfo, isViewingCoach: Boolean) {
             contentAlignment = Alignment.CenterEnd
         ) {
             Image(
-                painter = painterResource(id = R.drawable.ic_launcher_background),
+                painter = painterResource(id = user.getPictureResource()),
                 contentDescription = "Profile picture",
                 modifier = Modifier
                     .size(60.dp)

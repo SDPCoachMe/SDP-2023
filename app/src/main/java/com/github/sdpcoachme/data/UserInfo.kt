@@ -19,10 +19,10 @@ data class UserInfo(
     constructor() : this("", "", "", "", Address(), false, emptyList(), emptyList())
 
     /**
-     * Overloaded version of getProfilePictureResource(String) that uses the email of the UserInfo
+     * Overloaded version of getPictureResource(String) that uses the email of this UserInfo
      */
-    fun getProfilePictureResource(): Int {
-        return getProfilePictureResource(email)
+    fun getPictureResource(): Int {
+        return getPictureResource(email)
     }
 
     companion object {
@@ -31,9 +31,11 @@ data class UserInfo(
          * this is temporary, and will be replaced by a real profile picture in a future version.
          * For now, this functions hashes the user's email and returns one of the predefined profile
          * pictures located in the drawable folder.
+         *
+         * @param email The email of the user whose profile picture to return
          */
         // TODO: this method is temporary
-        fun getProfilePictureResource(email: String): Int {
+        fun getPictureResource(email: String): Int {
             val prefix = "profile_picture_"
             val fieldNames = R.drawable::class.java.fields.filter {
                 it.name.startsWith(prefix)

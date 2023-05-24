@@ -30,7 +30,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.database.CachingStore
@@ -286,7 +285,7 @@ fun GroupEventDetailsLayout(
                 horizontalArrangement = Arrangement.Start
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_background),
+                    painter = painterResource(id = organizer.getPictureResource()),
                     contentDescription = "Organizer profile picture",
                     modifier = Modifier
                         .size(40.dp)
@@ -555,7 +554,7 @@ fun SmallUserInfoListItem(
 ) {
     SmallListItem(
         image = ImageData(
-            painter = painterResource(id = R.drawable.ic_launcher_background),
+            painter = painterResource(id = userInfo.getPictureResource()),
             contentDescription = "${userInfo.firstName} ${userInfo.lastName}'s profile picture"
         ),
         title = "${userInfo.firstName} ${userInfo.lastName}",

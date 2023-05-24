@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
+import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.ContactRowInfo
@@ -90,9 +91,18 @@ class CoachesListActivity : ComponentActivity() {
             LaunchedEffect(true) {
                 email = emailFuture.await()
                 if (isViewingContacts) {
-                    contactRowInfos = store
+                    // TODO: this is bad code and should be refactored
+                    //  -> The participants should be fetched in the database method getContactRowInfo
+                    //  But does it really make sense to use ContactRowInfo over Chat, then ?
+                    //  (imo, ContactRowInfo and Chat should be merged into one class, and this should
+                    //  be the only class used throughout the app)
+                    val contactRowInfosTemp = store
                         .getContactRowInfo(email = email)
                         .await()
+                    contactRowInfos = contactRowInfosTemp.map {
+                        it.copy(participants = store.getChat(it.chatId).await().participants)
+                    }
+
                 } else {
                     listOfCoaches = store
                         .getAllUsersByNearest(
@@ -185,9 +195,18 @@ class CoachesListActivity : ComponentActivity() {
         val context = LocalContext.current
 
         if (isViewingContacts) {
+            val picture = if (contactRowInfo.isGroupChat) {
+                GroupEvent.getPictureResource(contactRowInfo.chatId)
+            } else {
+                // Make sure we handle the case where participants is empty (should never happen here though)
+                // See the _TODO above in the LaunchedEffect and the one in ContactRowInfo for more details
+                contactRowInfo.participants
+                    .firstOrNull { it != currentUserEmail }?.let { UserInfo.getPictureResource(it) } ?:
+                    R.drawable.ic_launcher_background // fallback to default green android background if necessary
+            }
             ListItem(
                 image = ImageData(
-                    painter = painterResource(id = R.drawable.ic_launcher_background),
+                    painter = painterResource(id = picture),
                     contentDescription = contactRowInfo.chatTitle,
                 ),
                 title = contactRowInfo.chatTitle,
@@ -207,7 +226,7 @@ class CoachesListActivity : ComponentActivity() {
         } else {
             ListItem(
                 image = ImageData(
-                    painter = painterResource(id = R.drawable.ic_launcher_background),
+                    painter = painterResource(id = user.getPictureResource()),
                     contentDescription = "${user.firstName} ${user.lastName}'s profile picture",
                 ),
                 title = "${user.firstName} ${user.lastName}",
