@@ -19,15 +19,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.content.ContextCompat
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.LOG_IN
 import com.github.sdpcoachme.database.CachingStore
-import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.messaging.InAppNotificationService
@@ -52,8 +49,10 @@ class LoginActivity : ComponentActivity() {
         }
     }
 
+
     private lateinit var store : CachingStore
     private lateinit var authenticator: Authenticator
+    private val launchGoogleSignIn = mutableStateOf(true)
     // Register the launcher to handle the result of Google Authentication
     private val signInLauncher: ActivityResultLauncher<Intent> = registerForActivityResult (
         FirebaseAuthUIActivityResultContract()
@@ -76,8 +75,8 @@ class LoginActivity : ComponentActivity() {
                 }
             },
             onFailure = {
-                val errorMsg = "There was an error while trying to log in."
-                ErrorHandlerLauncher().launchExtrasErrorHandler(this, errorMsg)
+                // Signal that we need to relaunch the Google sign in
+                launchGoogleSignIn.value = true
             }
         )
     }
@@ -127,7 +126,7 @@ class LoginActivity : ComponentActivity() {
                     ) {
                         // Need to pass padding to child node
                             innerPadding ->
-                        AuthenticationForm(modifier = Modifier.padding(innerPadding))
+                        AuthenticationForm(modifier = Modifier.padding(innerPadding), launchGoogleSignIn = launchGoogleSignIn)
                     }
                 }
             }
@@ -135,12 +134,21 @@ class LoginActivity : ComponentActivity() {
     }
 
     @Composable
-    fun AuthenticationForm(modifier: Modifier = Modifier) {
+    fun AuthenticationForm(modifier: Modifier = Modifier, launchGoogleSignIn: MutableState<Boolean>) {
 
         var showUI by remember { mutableStateOf(false) }
 
         LaunchedEffect(true) {
             showUI = displayUI.await()
+        }
+
+        // Coroutine responsible for launching (relaunching at cancel) the Google sign in
+        LaunchedEffect(key1 = launchGoogleSignIn.value) {
+            if (launchGoogleSignIn.value) {
+                launchGoogleSignIn.value = false
+
+                authenticator.signIn(signInLauncher)
+            }
         }
 
         Column(
@@ -149,13 +157,8 @@ class LoginActivity : ComponentActivity() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (showUI) {
-                // TODO: add app icon and make this activity look nicer.
-                Button(
-                    modifier = Modifier.testTag(LOG_IN),
-                    onClick = {
-                        authenticator.signIn(signInLauncher)
-                    })
-                { Text("LOG IN") }
+
+
             } else {
                 // While we are waiting for the next activity to launch, we display a loading
                 CircularProgressIndicator()
