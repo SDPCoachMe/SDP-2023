@@ -3,20 +3,23 @@ package com.github.sdpcoachme.messaging
 import android.content.Intent
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
+import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
-import com.github.sdpcoachme.R
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
+import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserInfoSamples
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.database.CachingStore
@@ -137,6 +140,75 @@ class InAppNotifierTest {
             // Since the ChatId is not set, clicking on the notification should take the user to their contacts
             // Since the sender is not set, clicking on the notification should take the user to their contacts
             // TODO: would need to wait for the state to load before checking the UI...
+            composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assertExists().assertIsDisplayed()
+            composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assert(hasText(context.getString(R.string.chats)))
+
+            composeTestRule.onNodeWithText("${toUser.firstName} ${toUser.lastName}")
+                .assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun onMessageReceivedEnablesEmailRecoveryAndOpensChatActivityWhenUserReceivesNotificationThenLoggsOutAndThenClicksOnIt() {
+        val intent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
+
+        // The start screen can be anything, MapActivity is just used here
+        ActivityScenario.launch<MapActivity>(intent).use {
+
+            sendNotification("Title", "Body", personalChatId, "messaging")
+
+
+            composeTestRule.onNodeWithTag(Dashboard.TestTags.DRAWER_HEADER, useUnmergedTree = true)
+                .assertIsNotDisplayed()
+            composeTestRule.onNodeWithTag(Dashboard.TestTags.Buttons.HAMBURGER_MENU, useUnmergedTree = true)
+                .performClick()
+            composeTestRule.onNodeWithTag(Dashboard.TestTags.DRAWER_HEADER, useUnmergedTree = true)
+                .assertIsDisplayed()
+
+            val device = UiDevice.getInstance(getInstrumentation())
+            device.waitForIdle()
+            device.findObject(
+                UiSelector().text("Log out"))
+                .click()
+
+            // exit application
+            device.pressHome()
+
+            clickOnNotification("Title", "Body")
+
+            // Check if ChatActivity is opened
+            composeTestRule.onNodeWithText(toUser.firstName + " " + toUser.lastName).assertExists()
+            composeTestRule.onNodeWithTag(CONTACT_FIELD.LABEL, useUnmergedTree = true).assertExists()
+            composeTestRule.onNodeWithTag(CHAT_FIELD.LABEL, useUnmergedTree = true).assertExists()
+        }
+    }
+
+    @Test
+    fun onMessageReceivedEnablesEmailRecoveryAndOpensContactsListWhenUserReceivesNotificationWithoutChatIdThenLoggsOutAndThenClicksOnIt() {
+        val context = ApplicationProvider.getApplicationContext() as CoachMeApplication
+        val intent = Intent(context, MapActivity::class.java)
+
+        ActivityScenario.launch<MapActivity>(intent).use {
+            sendNotification("Title", "Body", "", "messaging")
+
+            composeTestRule.onNodeWithTag(Dashboard.TestTags.DRAWER_HEADER, useUnmergedTree = true)
+                .assertIsNotDisplayed()
+            composeTestRule.onNodeWithTag(Dashboard.TestTags.Buttons.HAMBURGER_MENU, useUnmergedTree = true)
+                .performClick()
+            composeTestRule.onNodeWithTag(Dashboard.TestTags.DRAWER_HEADER, useUnmergedTree = true)
+                .assertIsDisplayed()
+
+            val device = UiDevice.getInstance(getInstrumentation())
+            device.waitForIdle()
+            device.findObject(UiSelector().text("Log out"))
+                .click()
+
+            // exit application
+            device.pressHome()
+
+            clickOnNotification("Title", "Body")
+
+            // Check if CoachesListActivity is opened
             composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assertExists().assertIsDisplayed()
             composeTestRule.onNodeWithTag(Dashboard.TestTags.BAR_TITLE).assert(hasText(context.getString(R.string.chats)))
 
