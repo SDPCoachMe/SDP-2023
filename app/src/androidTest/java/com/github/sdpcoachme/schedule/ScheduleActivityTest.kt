@@ -84,17 +84,19 @@ class ScheduleActivityTest {
 
     @Test
     fun getExceptionIsThrownCorrectly() {
-        store.setCurrentEmail("throwGetSchedule@Exception.com").get(100, MILLISECONDS)
-        Intents.init()
+        store.setCurrentEmail("throwGetSchedule@Exception.com").thenAccept {
+            Intents.init()
 
-        val mapIntent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
-        ActivityScenario.launch<MapActivity>(mapIntent).use {
-            composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
-            composeTestRule.onNodeWithTag(Dashboard.TestTags.Buttons.SCHEDULE).performClick()
-            composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            val mapIntent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
+            ActivityScenario.launch<MapActivity>(mapIntent).use {
+                composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
+                composeTestRule.onNodeWithTag(Dashboard.TestTags.Buttons.SCHEDULE).performClick()
+                composeTestRule.onNodeWithTag(GO_TO_LOGIN_BUTTON).assertIsDisplayed()
+            }
+
+            Intents.release()
         }
 
-        Intents.release()
     }
 
     @Test
@@ -374,11 +376,13 @@ class ScheduleActivityTest {
 
     @Test
     fun weatherForecastIsCorrectlyDisplayedInScheduleWeek() {
-        store.setCurrentEmail(coachEmail).get(1, SECONDS)
-        ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
-            composeTestRule.onAllNodesWithTag("WEATHER_COLUMN").assertCountEquals(7)
-            composeTestRule.onAllNodesWithContentDescription("Weather icon").assertCountEquals(7)
+        store.setCurrentEmail(coachEmail).thenApply {
+            ActivityScenario.launch<ScheduleActivity>(defaultIntent).use {
+                composeTestRule.onAllNodesWithTag("WEATHER_COLUMN").assertCountEquals(7)
+                composeTestRule.onAllNodesWithContentDescription("Weather icon").assertCountEquals(7)
+            }
         }
+
     }
 
 

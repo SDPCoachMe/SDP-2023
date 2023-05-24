@@ -26,7 +26,11 @@ open class MockDatabase: Database {
     private var groupChat = Chat()
 
     // TODO: type any is not ideal, needs refactoring
-    private var accounts = hashMapOf<String, Any>(DEFAULT_EMAIL to defaultUserInfo)
+    private var accounts = hashMapOf<String, Any>(
+        DEFAULT_EMAIL to defaultUserInfo,
+        TO_EMAIL to toUser,
+        UserInfoSamples.COACH_1.email to UserInfoSamples.COACH_1,
+    )
     private val fcmTokens = hashMapOf<String, String>()
     private var schedules = hashMapOf<String, Schedule>()
     private var groupEvents = hashMapOf<String, GroupEvent>()

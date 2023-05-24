@@ -335,12 +335,16 @@ fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
         content = {
             Column(horizontalAlignment = Alignment.Start) {
                 val emailFuture = (context.applicationContext as CoachMeApplication).store.getCurrentEmail()
+                val userInfoFuture = emailFuture.thenCompose { email ->
+                    (context.applicationContext as CoachMeApplication).store.getUser(email)
+                }
                 var email by remember { mutableStateOf("") }
                 var userInfo by remember { mutableStateOf(UserInfo()) }
 
-                LaunchedEffect(emailFuture) {
+                LaunchedEffect(emailFuture, userInfoFuture) {
                     email = emailFuture.await()
-                    userInfo = (context.applicationContext as CoachMeApplication).store.getUser(email).await()
+
+                    userInfo = userInfoFuture.await()
                     UIDisplayed.complete(null)
                 }
                 Box(
