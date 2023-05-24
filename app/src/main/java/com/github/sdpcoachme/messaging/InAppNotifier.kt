@@ -68,19 +68,17 @@ class InAppNotifier(val context: Context, val store: CachingStore) {
                     Intent(context, LoginActivity::class.java)
                         .putExtra("chatId", chatId)
                         .setAction("OPEN_CHAT_ACTIVITY")
-                chatId.isEmpty() ->
-                    Intent(context, CoachesListActivity::class.java)
+                else -> {
+                    val emailExistsIntent = Intent(context, CoachesListActivity::class.java)
                         .putExtra("isViewingContacts", true)
                         .putExtra("pushNotification_currentUserEmail", email)
-                else ->
-                    Intent(context, CoachesListActivity::class.java)
-                        // openChat is added to make sure that the user goes bac to the CoachesListActivity
-                        // when clicking on the back button in the chat activity
-                        // I.e., with this boolean extra, the onCreate of the CoachesListActivity
-                        // will automatically redirect to the wanted chat.
-                        .putExtra("openChat", true)
-                        .putExtra("chatId", chatId)
-                        .putExtra("pushNotification_currentUserEmail", email)
+                    if (chatId.isNotEmpty()) {
+                        emailExistsIntent
+                            .putExtra("openChat", true)
+                            .putExtra("chatId", chatId)
+                    }
+                    emailExistsIntent
+                }
             }
 
             // Create the pending intent to be used when the notification is clicked
