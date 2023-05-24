@@ -69,6 +69,7 @@ import com.github.sdpcoachme.schedule.ScheduleActivity
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import com.github.sdpcoachme.ui.theme.dashboardPersonalDetailsBackground
@@ -142,7 +143,6 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                     ) {
                         Column {
                             DrawerHeader(context, UIDisplayed)
-
                             Spacer(modifier = Modifier.height(20.dp))
                             DrawerBody(
                                 items = listOf(
@@ -346,7 +346,8 @@ fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(0.dp, 20.dp, 25.dp, 20.dp),
+                        .padding(0.dp, 20.dp, 25.dp, 20.dp)
+                        .testTag(DRAWER_HEADER),
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     Column {

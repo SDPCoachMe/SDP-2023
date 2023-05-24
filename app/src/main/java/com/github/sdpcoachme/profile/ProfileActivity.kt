@@ -444,7 +444,6 @@ fun AttributeRow(
                 onClick()
             }
             .fillMaxWidth()
-            .fillMaxHeight()
             .padding(20.dp, 10.dp, 20.dp, 10.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Bottom

@@ -3,7 +3,6 @@ package com.github.sdpcoachme.profile
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,7 +34,6 @@ import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.database.CachingStore
-import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.CAMPUS
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.CoachesListActivity.TestTags.Buttons.Companion.FILTER
@@ -51,7 +49,6 @@ import java.util.concurrent.CompletableFuture
 
 
 class CoachesListActivity : ComponentActivity() {
-
     class TestTags {
         class Buttons {
             companion object {
@@ -60,23 +57,14 @@ class CoachesListActivity : ComponentActivity() {
         }
     }
 
-
-    // Allows to notice testing framework that the activity is ready
-
     private lateinit var store: CachingStore
     private lateinit var emailFuture: CompletableFuture<String>
 
-
+    // Allows to notice testing framework that the activity is ready
     var stateLoading = CompletableFuture<Void>()
 
     // Observable state of the current sports used to filter the coaches list
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
-    val callback = object : OnBackPressedCallback(true) {
-        override fun handleOnBackPressed() {
-            // Redirect to MapActivity
-            startActivity(Intent(this@CoachesListActivity, MapActivity::class.java))
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

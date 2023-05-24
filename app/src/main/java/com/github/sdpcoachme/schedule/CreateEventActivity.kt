@@ -70,14 +70,14 @@ class CreateEventActivity : ComponentActivity() {
                 }
 
                 val ACTIVITY_TITLE = text("activityTitle")
+                val EVENT_TITLE_TEXT = text("eventName")
                 val START_DATE_TEXT = text("startDate")
                 val START_TIME_TEXT = text("startTime")
                 val END_DATE_TEXT = text("endDate")
                 val END_TIME_TEXT = text("endTime")
                 val MAX_PARTICIPANTS_TEXT = text("maxParticipants")
-                val SPORT_TEXT = text("sport")
                 val LOCATION_TEXT = text("location")
-                val COLOR_TEXT = text("color")
+                val DESCRIPTION_TEXT = text("description")
 
                 val START_DATE_DIALOG_TITLE = text("startDateDialogTitle")
                 val END_DATE_DIALOG_TITLE = text("endDateDialogTitle")
@@ -101,27 +101,9 @@ class CreateEventActivity : ComponentActivity() {
                     return "${tag}Box"
                 }
 
-                val START_DATE = clickableText("startDate")
-                val START_TIME = clickableText("startTime")
-                val END_DATE = clickableText("endDate")
-                val END_TIME = clickableText("endTime")
-                val SPORT = clickableText("sport")
-                val LOCATION = clickableText("location")
                 val SAVE = button("save")
                 val CANCEL = button("cancel")
                 val COLOR_BOX = box("color")
-            }
-        }
-
-        class TextFields {
-            companion object {
-                private fun textField(tag: String): String {
-                    return "${tag}TextField"
-                }
-
-                val EVENT_NAME = textField("eventName")
-                val MAX_PARTICIPANTS = textField("maxParticipants")
-                val DESCRIPTION = textField("description")
             }
         }
 
@@ -141,6 +123,20 @@ class CreateEventActivity : ComponentActivity() {
             val ICON = "${sport.sportName}Icon"
         }
 
+        class Label {
+            companion object {
+                val EVENT_TITLE_LABEL = "EVENT TITLE"
+                val START_DATE_LABEL = "START DATE"
+                val START_TIME_LABEL = "START TIME"
+                val END_DATE_LABEL = "END DATE"
+                val END_TIME_LABEL = "END TIME"
+                val MAX_PARTICIPANTS_LABEL = "MAX PARTICIPANTS"
+                val SPORT_LABEL = "SPORT"
+                val LOCATION_LABEL = "LOCATION"
+                val COLOR_LABEL = "COLOR"
+                val DESCRIPTION_LABEL = "DESCRIPTION"
+            }
+        }
 
         companion object {
             const val SCAFFOLD = "scaffold"
@@ -298,8 +294,8 @@ class CreateEventActivity : ComponentActivity() {
                             .verticalScroll(scrollState)
                     ) {
                         TextRow(
-                            label = "EVENT TITLE",
-                            tag = TestTags.TextFields.EVENT_NAME,
+                            label = TestTags.Label.EVENT_TITLE_LABEL,
+                            tag = TestTags.Texts.EVENT_TITLE_TEXT,
                             value = eventName,
                             onClick = {
                                 editTextHandler(
@@ -354,12 +350,8 @@ class CreateEventActivity : ComponentActivity() {
                         }
 
                         Divider(startIndent = 20.dp)
-                        /*EventSportRow(
-                            sport = sports,
-                            onSportChange = { sports = it }
-                        )*/
                         SportsRow(
-                            label = "SPORT",
+                            label = TestTags.Label.SPORT_LABEL,
                             tag = TestTags.SPORTS,
                             value = sports,
                             onClick = {
@@ -408,7 +400,7 @@ class CreateEventActivity : ComponentActivity() {
         onDateChange: (LocalDateTime) -> Unit
     ) {
         AttributeRow(
-            label = "START DATE",
+            label = TestTags.Label.START_DATE_LABEL,
             onClick = { startDateSheet.show() },
         ) {
             Text(
@@ -454,7 +446,7 @@ class CreateEventActivity : ComponentActivity() {
         onTimeChange: (LocalDateTime) -> Unit
     ) {
         AttributeRow(
-            label = "START TIME",
+            label = TestTags.Label.START_TIME_LABEL,
             onClick = { startTimeSheet.show() },
         ) {
             Text(
@@ -495,7 +487,7 @@ class CreateEventActivity : ComponentActivity() {
         onDateChange: (LocalDateTime) -> Unit
     ) {
         AttributeRow(
-            label = "END DATE",
+            label = TestTags.Label.END_DATE_LABEL,
             onClick = { endDateSheet.show() },
         ) {
             Text(
@@ -541,7 +533,7 @@ class CreateEventActivity : ComponentActivity() {
         onTimeChange: (LocalDateTime) -> Unit
     ) {
         AttributeRow(
-            label = "END TIME",
+            label = TestTags.Label.END_TIME_LABEL,
             onClick = { endTimeSheet.show() },
         ) {
             Text(
@@ -581,7 +573,7 @@ class CreateEventActivity : ComponentActivity() {
     ) {
         val context = LocalContext.current
         AttributeRow(
-            label = "MAX PARTICIPANTS",
+            label = TestTags.Label.MAX_PARTICIPANTS_LABEL,
             onClick = {
                 editTextHandler(
                     EditTextActivity.getIntent(
@@ -615,7 +607,7 @@ class CreateEventActivity : ComponentActivity() {
         onLocationChange: (Address) -> Unit,
     ) {
         AttributeRow(
-            label = "LOCATION",
+            label = TestTags.Label.LOCATION_LABEL,
             onClick = {
                 addressAutocompleteHandler.launch(
                 ).thenApply {
@@ -651,7 +643,7 @@ class CreateEventActivity : ComponentActivity() {
             EventColors.PURPLE.color.toArgb() to EventColors.PURPLE.color,
         )
         AttributeRow(
-            label = "COLOR",
+            label = TestTags.Label.COLOR_LABEL,
             onClick = { colorSheet.show() },
         ) {
             Box (
@@ -696,7 +688,7 @@ class CreateEventActivity : ComponentActivity() {
     ) {
         val context = LocalContext.current
         AttributeRow(
-            label = "DESCRIPTION",
+            label = TestTags.Label.DESCRIPTION_LABEL,
             modifier = Modifier
                 .fillMaxHeight(),
             onClick = {
@@ -713,7 +705,7 @@ class CreateEventActivity : ComponentActivity() {
         ) {
             Text(
                 modifier = Modifier
-                    .testTag(TestTags.TextFields.DESCRIPTION)
+                    .testTag(TestTags.Texts.DESCRIPTION_TEXT)
                     .fillMaxHeight(), //.testTag(TestTags.Texts.DESCRIPTION_TEXT),
                 text = description,
                 style = MaterialTheme.typography.body1,
