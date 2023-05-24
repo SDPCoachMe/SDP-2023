@@ -1,5 +1,7 @@
 package com.github.sdpcoachme.data
 
+import com.github.sdpcoachme.R
+
 /**
  * Data class for the client user
  */
@@ -15,4 +17,9 @@ data class UserInfo(
 ) {
     // Constructor needed to make the data class serializable
     constructor() : this("", "", "", "", Address(), false, emptyList(), emptyList())
+
+    fun getProfilePictureResource(): Int {
+        R.drawable::class.java.declaredFields
+        return 0
+    }
 }
