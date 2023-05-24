@@ -11,6 +11,7 @@ import com.github.sdpcoachme.auth.LoginActivity
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.profile.CoachesListActivity
 import com.google.firebase.messaging.FirebaseMessagingService
+import java.util.concurrent.CompletableFuture
 
 /**
  * This class is used to send in-app push notifications to the user while the app is in the foreground.
@@ -59,18 +60,27 @@ class InAppNotifier(val context: Context, val store: CachingStore) {
     private fun sendMessagingNotification(notificationTitle: String, notificationBody: String, chatId: String) {
 
         // The more info we receive, the more we can customize the notification's behaviour (up until the chat itself)
-        store.isLoggedIn().thenAccept { isLoggedIn ->
+        store.isLoggedIn().thenCompose { isLoggedIn ->
+            if (isLoggedIn) store.getCurrentEmail() else CompletableFuture.completedFuture("")
+        }.thenAccept { email ->
             val intent = when {
-                !isLoggedIn ->
+                email.isEmpty() ->
                     Intent(context, LoginActivity::class.java)
-                    .putExtra("chatId", chatId)
-                    .setAction("OPEN_CHAT_ACTIVITY")
+                        .putExtra("chatId", chatId)
+                        .setAction("OPEN_CHAT_ACTIVITY")
                 chatId.isEmpty() ->
                     Intent(context, CoachesListActivity::class.java)
-                    .putExtra("isViewingContacts", true)
+                        .putExtra("isViewingContacts", true)
+                        .putExtra("pushNotification_currentUserEmail", email)
                 else ->
-                    Intent(context, ChatActivity::class.java)
-                    .putExtra("chatId", chatId)
+                    Intent(context, CoachesListActivity::class.java)
+                        // openChat is added to make sure that the user goes bac to the CoachesListActivity
+                        // when clicking on the back button in the chat activity
+                        // I.e., with this boolean extra, the onCreate of the CoachesListActivity
+                        // will automatically redirect to the wanted chat.
+                        .putExtra("openChat", true)
+                        .putExtra("chatId", chatId)
+                        .putExtra("pushNotification_currentUserEmail", email)
             }
 
             // Create the pending intent to be used when the notification is clicked
