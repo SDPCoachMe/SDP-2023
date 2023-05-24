@@ -44,7 +44,8 @@ class GroupEventSamples {
             organizer = COACH_1.email,
             maxParticipants = 2,
             //  right now, the organizer is added to the event by the database when the event is created... :(
-            participants = listOf(COACH_2.email, NON_COACH_1.email)
+            participants = listOf(COACH_2.email, NON_COACH_1.email),
+            groupEventId = "@@event_booked"
         )
 
         val AVAILABLE = GroupEvent(

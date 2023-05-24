@@ -181,11 +181,12 @@ open class MockDatabase: Database {
         this.onChange(chat)
     }
 
+    var chatTitle = "Group Chat"
     override fun getContactRowInfos(email: String): CompletableFuture<List<ContactRowInfo>> {
         val id = if (email < toUser.email) email+toUser.email else toUser.email+email
         return CompletableFuture.completedFuture(listOf(
             ContactRowInfo(id, toUser.firstName + " " + toUser.lastName, if (chat.messages.isEmpty()) Message() else chat.messages.last()),
-            ContactRowInfo(groupChat.id, "Group Chat", if (groupChat.messages.isEmpty()) Message() else groupChat.messages.last(), true)
+            ContactRowInfo(groupChat.id, chatTitle, if (groupChat.messages.isEmpty()) Message() else groupChat.messages.last(), true)
         ))
     }
 
@@ -195,6 +196,7 @@ open class MockDatabase: Database {
     ): CompletableFuture<Void> {
         if (chatId.startsWith("@@event")) { // only group chats can be updated
             groupChat = groupChat.copy(id = chatId, participants = participants)
+            chatTitle = groupEvents[chatId]?.event?.name ?: "Group Chat"
         }
         return CompletableFuture.completedFuture(null)
     }

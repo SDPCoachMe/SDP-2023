@@ -323,8 +323,8 @@ class CachingStore(private val wrappedDatabase: Database,
     }
 
     // TODO: use a listener of schedule for easier readability of code :)
-    private var groupEventFuture: CompletableFuture<Void> = CompletableFuture.completedFuture(null)
-    private var registerForGroupEventFuture: CompletableFuture<Void> = CompletableFuture.completedFuture(null)
+    private var groupEventFuture: CompletableFuture<Void> = completedFuture(null)
+    private var registerForGroupEventFuture: CompletableFuture<Void> = completedFuture(null)
 
     /**
      * Updates the value of a group event in the caching store (adds it if it does not exist)
@@ -355,6 +355,7 @@ class CachingStore(private val wrappedDatabase: Database,
             groupEvent
         }.thenCompose { groupEvent ->
             getCurrentEmail().thenCompose { email ->
+
                 CompletableFuture.allOf(
                     // Update the group event in the database
                     updateGroupEvent(groupEvent.copy(participants = groupEvent.participants + email)),
@@ -362,10 +363,8 @@ class CachingStore(private val wrappedDatabase: Database,
                     addGroupEventToSchedule(groupEventId),
                     // Add the user to the group chat
                     updateChatParticipants(groupEvent.groupEventId, groupEvent.participants + email),
-                    // Update the user contacts
-                    getUser(email).thenApply {
-                        updateUser(it.copy(chatContacts = listOf(groupEvent.groupEventId) + it.chatContacts))
-                    }
+                    // Update the user contacts and cache
+                    addChatContactIfNew(email, groupEvent.groupEventId, groupEvent.groupEventId)
                 )
             }
         }.thenApply {
@@ -508,6 +507,25 @@ class CachingStore(private val wrappedDatabase: Database,
     }
 
     /**
+     * Updates the chat contacts of the current user if the given contact is not already in the list
+     *
+     * @param email The email of the current user
+     * @param chatId The potentially new contact to add
+     */
+    fun addChatContactIfNew(email: String, chatId: String, contact: String): CompletableFuture<Void> {
+        return getUser(email).thenAccept() { user ->
+            // Add the other user to the current user's chat contacts if not already inside
+            if (!user.chatContacts.contains(contact)) {
+                updateCachedContactRowInfo(chatId, Message())
+
+                // update the user in the database
+                val updatedUser = user.copy(chatContacts = listOf(contact) + user.chatContacts)
+                updateUser(updatedUser)
+            }
+        }
+    }
+
+    /**
      * Get the contact row info for the given user
      * This will be used to display the user's contacts in the UI
      * similar to other messaging services such as WhatsApp:
@@ -584,27 +602,65 @@ class CachingStore(private val wrappedDatabase: Database,
                 return@thenAccept
             }
 
-            var newContacts = listOf<ContactRowInfo>()
+            var existingContacts = listOf<ContactRowInfo>()
             // we need to find the contact with the given chatId and update it
-            var wantedContact: ContactRowInfo? = null
+            var updatedContact: ContactRowInfo? = null
             for (contact in contactRowInfos[currEmail]!!) {
                 // if the contact is the one we are looking for, we update it
                 // but only if the last message has changed (if, e.g.,new members entered the chat,
                 // we don't want to place the chat at the top of the list)
                 if (contact.chatId == chatId) {
-                    wantedContact = contact.copy(lastMessage = message)
+                    updatedContact = contact.copy(lastMessage = message)
                 } else {
-                    newContacts = newContacts + contact
+                    existingContacts = existingContacts + contact
                 }
             }
             // Iff the contact is found, we can assume that the cache is
             // up-to-date and return without clearing the cache
-            if (wantedContact != null) {
-                contactRowInfos[currEmail] = listOf(wantedContact) + newContacts
+            if (updatedContact != null) {
+                contactRowInfos[currEmail] = listOf(updatedContact) + existingContacts
                 return@thenAccept
             }
-            // to signal that the cache is not up to date
-            contactRowInfos.remove(currEmail)
+            // if the contact is not found, we need to fetch the chat from the db
+            // and update the cache with the new contact
+            addNewContactToCache(chatId, currEmail, existingContacts)
+        }
+    }
+
+    /**
+     * Add a new contact to the cache
+     *
+     * @param chatId The id of the chat to add
+     * @param currEmail The email of the current user
+     * @param existingContacts The existing contacts of the current user
+     */
+    fun addNewContactToCache(
+        chatId: String,
+        currEmail: String,
+        existingContacts: List<ContactRowInfo>
+    ) {
+        getChat(chatId).thenCompose { chat ->
+            val isGroupChat = chatId.startsWith("@@event")
+            val chatTitleFuture =
+                if (isGroupChat) getGroupEvent(chatId).thenApply { it.event.name }
+                else {
+                    val participant = chat.participants.first { it != currEmail }
+                    getUser(participant).thenApply { user ->
+                        user.firstName + " " + user.lastName
+                    }
+                }
+
+            chatTitleFuture.thenAccept { chatTitle ->
+                val lastMessage = chat.messages.lastOrNull() ?: Message()
+                val newContact = ContactRowInfo(
+                    chatId,
+                    chatTitle,
+                    lastMessage,
+                    isGroupChat
+                )
+
+                contactRowInfos[currEmail] = listOf(newContact) + existingContacts
+            }
         }
     }
 
