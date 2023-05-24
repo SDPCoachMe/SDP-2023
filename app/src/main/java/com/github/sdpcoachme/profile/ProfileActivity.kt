@@ -41,7 +41,9 @@ import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.FIRST_NA
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.LAST_NAME
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PHONE
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PROFILE_LABEL
+import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.RATING
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.SPORTS
+import com.github.sdpcoachme.rating.RatingActivity
 import com.github.sdpcoachme.ui.Dashboard
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
@@ -68,6 +70,7 @@ class ProfileActivity : ComponentActivity() {
             const val ADDRESS = "address"
             const val SPORTS = "sports"
             const val COACH_SWITCH = "coachSwitch"
+            const val RATING = "rating"
         }
     }
 
@@ -79,6 +82,7 @@ class ProfileActivity : ComponentActivity() {
     private lateinit var addressAutocompleteHandler: AddressAutocompleteHandler
     private lateinit var editTextHandler: (Intent) -> CompletableFuture<String>
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
+    private lateinit var ratingHandler: (Intent) -> CompletableFuture<Int>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -108,6 +112,9 @@ class ProfileActivity : ComponentActivity() {
         // Set up handler for calls to select sports activity
         selectSportsHandler = SelectSportsActivity.getHandler(this)
 
+        // Set up handler for calls to rate the coach activity
+        ratingHandler = RatingActivity.getHandler(this)
+
         setContent {
             val title =
                 if (isViewingCoach) stringResource(R.string.profile_details)
@@ -127,10 +134,15 @@ class ProfileActivity : ComponentActivity() {
 
         val context = LocalContext.current
         var userInfo by remember { mutableStateOf(UserInfo()) }
+        var coachRating by remember { mutableStateOf(0)}
 
         // Make sure the userInfo variable is updated when the futureUserInfo completes
-        LaunchedEffect(futureUserInfo) {
+        LaunchedEffect(futureUserInfo, coachRating) {
             userInfo = futureUserInfo.await()
+            // getCoachAverageRating(...) performs a CachingStore getUser() as a coach rating can be
+            // changed asynchronously within a ProfileActivity scope from another user, which could
+            // lead to stale data if we only pass the userInfo here.
+            coachRating = store.getCoachAverageRating(userInfo.email).await()
             stateUpdated.complete(null)
         }
 
@@ -181,6 +193,24 @@ class ProfileActivity : ComponentActivity() {
         ) {
             TitleRow(userInfo, isViewingCoach)
             Spacer(modifier = Modifier.height(10.dp))
+            TextRow(
+                label = "RATING",
+                tag = RATING,
+                value = coachRating.toString(),
+                onClick = {
+                    ratingHandler(
+                        RatingActivity.getIntent(
+                            context = context,
+                            coachName = "${userInfo.firstName} ${userInfo.lastName}",
+                            initialValue = coachRating
+                        )
+                    ).thenApply {
+                        store.addRatingToCoach(userInfo.email, it)
+                        coachRating = it
+                    }
+                }
+            )
+            Divider(startIndent = 20.dp)
             TextRow(
                 label = "EMAIL",
                 tag = EMAIL,
