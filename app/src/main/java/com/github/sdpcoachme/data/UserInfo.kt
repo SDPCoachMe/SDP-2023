@@ -18,8 +18,21 @@ data class UserInfo(
     // Constructor needed to make the data class serializable
     constructor() : this("", "", "", "", Address(), false, emptyList(), emptyList())
 
+    /**
+     * Returns the resource id for the profile picture of the user. Note that this is temporary,
+     * and will be replaced by a real profile picture in a future version. For now, this functions
+     * hashes the user's email and returns one of the predefined profile pictures located in the
+     * drawable folder.
+     */
     fun getProfilePictureResource(): Int {
-        R.drawable::class.java.declaredFields
-        return 0
+        val prefix = "profile_picture_"
+        val fieldNames = R.drawable::class.java.fields.filter {
+            it.name.startsWith(prefix)
+        }
+        // mod returns same sign as divisor, so no need to use abs
+        val index = email.hashCode().mod(fieldNames.size)
+        val field = fieldNames[index]
+
+        return field.get(null) as Int
     }
 }
