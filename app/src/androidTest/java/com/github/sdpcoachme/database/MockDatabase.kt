@@ -38,8 +38,8 @@ open class MockDatabase: Database {
     companion object {
         private const val DEFAULT_EMAIL = "example@email.com"
         private val defaultUserInfo = UserInfo(
-            "John",
-            "Doe",
+            "Firstname",
+            "Secondname",
             DEFAULT_EMAIL,
             "1234567890",
             LAUSANNE,
