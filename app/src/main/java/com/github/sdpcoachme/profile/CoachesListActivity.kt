@@ -202,7 +202,8 @@ class CoachesListActivity : ComponentActivity() {
                 // See the _TODO above in the LaunchedEffect and the one in ContactRowInfo for more details
                 contactRowInfo.participants
                     .firstOrNull { it != currentUserEmail }?.let { UserInfo.getPictureResource(it) } ?:
-                    R.drawable.ic_launcher_background // fallback to default green android background if necessary
+                    UserInfo.getPictureResource("") // fallback to gray picture (displayed when
+                    // email is empty usually indicating loading state)
             }
             ListItem(
                 image = ImageData(

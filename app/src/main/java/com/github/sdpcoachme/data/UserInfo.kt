@@ -36,10 +36,16 @@ data class UserInfo(
          */
         // TODO: this method is temporary
         fun getPictureResource(email: String): Int {
+            // Empty email means UserInfo is probably loading, so return gray background picture
+            if (email.isEmpty()) {
+                return R.drawable.loading_picture
+            }
+
             val prefix = "profile_picture_"
             val fieldNames = R.drawable::class.java.fields.filter {
                 it.name.startsWith(prefix)
             }
+
             // mod returns same sign as divisor, so no need to use abs
             val index = email.hashCode().mod(fieldNames.size)
             val field = fieldNames[index]

@@ -43,6 +43,11 @@ data class GroupEvent(
         // TODO: this method is temporary
         fun getPictureResource(groupEventId: String): Int {
             // TODO: code similar to the one in UserInfo.getPictureResource(String)
+            // Empty id means GroupEventId is probably loading, so return gray background picture
+            if (groupEventId.isEmpty()) {
+                return R.drawable.loading_picture
+            }
+
             val prefix = "group_event_picture_"
             val fieldNames = R.drawable::class.java.fields.filter {
                 it.name.startsWith(prefix)
