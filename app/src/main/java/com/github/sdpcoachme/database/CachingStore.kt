@@ -515,7 +515,7 @@ class CachingStore(private val wrappedDatabase: Database,
     fun addChatContactIfNew(email: String, chatId: String, contact: String): CompletableFuture<Void> {
         return getUser(email).thenAccept() { user ->
             // Add the other user to the current user's chat contacts if not already inside
-            if (!user.chatContacts.contains(chatId)) {
+            if (!user.chatContacts.contains(contact)) {
                 updateCachedContactRowInfo(chatId, Message())
 
                 // update the user in the database
