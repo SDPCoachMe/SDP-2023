@@ -278,11 +278,13 @@ class CachingStore(private val wrappedDatabase: Database,
     fun addRatingToCoach(coachEmail: String, rating: Int): CompletableFuture<Void> {
         return getCurrentEmail().thenCompose { currEmail ->
             getUser(coachEmail).thenCompose { user ->
-                if (user.coach && rating in 0..5) {
+                if (!user.coach)
+                    throw IllegalArgumentException("Adding rating to a non-coach user")
+                else if (rating !in 0..5)
+                    throw IllegalArgumentException("Rating must be between 0 and 5")
+                else
                     updateUser(user.copy(ratings = user.ratings + (currEmail to rating)))
-                } else {
-                    throw IllegalArgumentException("Adding rating from a non-coach user")
-                }
+
             }
         }
     }
@@ -295,7 +297,10 @@ class CachingStore(private val wrappedDatabase: Database,
     fun getCoachAverageRating(email: String): CompletableFuture<Int> {
         return getUser(email).thenApply { user ->
             if (user.coach) {
-                user.ratings.values.average().roundToInt()
+                val ratings = user.ratings.values
+                // If the coach has no ratings, return 0 instead of NaN returned by average()
+                if (ratings.isEmpty()) 0
+                else ratings.average().roundToInt()
             } else
                 throw IllegalArgumentException("Getting average rating from a non-coach user")
         }
