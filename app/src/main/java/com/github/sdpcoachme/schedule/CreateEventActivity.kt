@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -298,7 +297,6 @@ class CreateEventActivity : ComponentActivity() {
                             .padding(horizontal = 10.dp)
                             .verticalScroll(scrollState)
                     ) {
-                        val focusManager = LocalFocusManager.current
                         TextRow(
                             label = "EVENT TITLE",
                             tag = TestTags.TextFields.EVENT_NAME,

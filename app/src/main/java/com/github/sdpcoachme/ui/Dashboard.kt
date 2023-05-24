@@ -71,6 +71,7 @@ import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import com.github.sdpcoachme.ui.theme.dashboardPersonalDetailsBackground
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.util.concurrent.CompletableFuture
@@ -141,6 +142,7 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                     ) {
                         Column {
                             DrawerHeader(context, UIDisplayed)
+
                             Spacer(modifier = Modifier.height(20.dp))
                             DrawerBody(
                                 items = listOf(
@@ -316,12 +318,19 @@ fun AppBar(title: @Composable (Modifier) -> Unit, onNavigationIconClick: () -> U
     )
 }
 
+/**
+ * Composable that displays the header of the drawer.
+ * It contains the user's profile picture, name and email.
+ *
+ * @param context = current context
+ * @param UIDisplayed = future that will be completed when the UI is displayed
+ */
 @Composable
 fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = MaterialTheme.colors.primary),
+            .background(color = MaterialTheme.colors.dashboardPersonalDetailsBackground),
         contentAlignment = Alignment.Center,
         content = {
             Column(horizontalAlignment = Alignment.Start) {
@@ -344,13 +353,13 @@ fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
                         Text(
                             modifier = Modifier
                                 .padding(start = 16.dp, end = 3.dp),
-                            text = userInfo.firstName + " " + userInfo.lastName, fontSize = 20.sp, color = Color.White
+                            text = userInfo.firstName + " " + userInfo.lastName, fontSize = 20.sp, color = Color.White,
                         )
                         Text(
                             modifier = Modifier
                                 .testTag(DASHBOARD_EMAIL)
                                 .padding(start = 16.dp),
-                            text = email, fontSize = 12.sp, color = Color.White
+                            text = email, fontSize = 12.sp, color = Color.White,
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
@@ -365,12 +374,25 @@ fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
                             .align(Alignment.CenterEnd)
                             .testTag(ProfileActivity.TestTags.PROFILE_PICTURE)
                     )
+
+                }
+                // if in dark mode, add a divider to separate the header from the menu items
+                if (!MaterialTheme.colors.isLight) {
+                    Divider(modifier = Modifier.padding(start = 16.dp, end = 16.dp))
                 }
             }
         }
     )
 }
 
+/**
+ * Composable that displays the body of the drawer.
+ * It contains the clickable menu items the user can use to navigate through the app.
+ *
+ * @param items = list of menu items to display
+ * @param itemTextStyle = style of the text of the menu items
+ * @param onItemClick = callback to invoke when a menu item is clicked
+ */
 @Composable
 fun DrawerBody(
     items: List<MenuItem>,

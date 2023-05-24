@@ -3,7 +3,6 @@ package com.github.sdpcoachme.location
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,7 +32,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserInfo
@@ -81,16 +79,6 @@ class MapActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-
-        class CoachesListCallback : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                val intent = Intent(this@MapActivity, MapActivity::class.java)
-                ContextCompat.startActivity(this@MapActivity, intent, null)
-            }
-        }
-        val callback = CoachesListCallback()
-        //onBackPressedDispatcher.addCallback(this, callback)
 
         store = (application as CoachMeApplication).store
 
@@ -203,7 +191,6 @@ fun Map(
                 state = state,
                 tag = MARKER(user),
                 onInfoWindowClick = {
-                    // TODO: code similar to CoachesList, might be able to modularize
                     val displayCoachIntent = Intent(context, ProfileActivity::class.java)
                     displayCoachIntent.putExtra("email", user.email)
                     if (user.email == email) {
@@ -215,7 +202,6 @@ fun Map(
                     context.startActivity(displayCoachIntent)
                 }
             ) {
-                // TODO: code similar to CoachesList, might be able to modularize
                 Column(
                     modifier = Modifier
                         .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 12.dp)
