@@ -10,15 +10,13 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.ClickableText
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,9 +24,6 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -250,10 +245,6 @@ class CreateEventActivity : ComponentActivity() {
                                             finish() // Go back to previous activity (removes itself from activity stack)
                                         }
                                     } else if (eventType == EventType.GROUP) {
-                                        // TODO: temporary, until we stop considering the organiser as a participant
-                                        //  an event must have at least 2 participants, since for now the organiser is
-                                        //  considered as a participant, and we don't want to have an event with only
-                                        //  the organiser as a participant
                                         if (maxParticipants <= 2) {
                                             val toast = Toast.makeText(context, "Max participants must be greater than 2", Toast.LENGTH_SHORT)
                                             toast.show()
@@ -269,7 +260,6 @@ class CreateEventActivity : ComponentActivity() {
                                                     participants = listOf(),
                                                 )
                                                 EventOps.addGroupEvent(groupEvent, store).thenCompose {
-                                                    // TODO: temporary since we consider organiser as a participant
                                                     store.registerForGroupEvent(groupEventId = groupEvent.groupEventId)
                                                 }
                                             }.thenAccept {
@@ -301,9 +291,12 @@ class CreateEventActivity : ComponentActivity() {
                     .padding(padding)
             ) {
                 // TODO: uncomment this to enable dark mode for maxkeppeler sheets
-                // CoachMeMaterial3Theme {
+                //CoachMeMaterial3Theme {
+                    val scrollState = rememberScrollState()
                     Column (
-                        modifier = Modifier.padding(horizontal = 10.dp)
+                        modifier = Modifier
+                            .padding(horizontal = 10.dp)
+                            .verticalScroll(scrollState)
                     ) {
                         val focusManager = LocalFocusManager.current
                         TextRow(
@@ -324,7 +317,6 @@ class CreateEventActivity : ComponentActivity() {
                         )
 
                         Divider(startIndent = 20.dp)
-
                         // Start date
                         StartDateRow(
                             startDateSheet = startDateSheet,
@@ -405,7 +397,7 @@ class CreateEventActivity : ComponentActivity() {
                             onDescriptionChange = { description = it }
                         )
                     }
-                // }
+                //}
             }
         }
     }
@@ -620,58 +612,6 @@ class CreateEventActivity : ComponentActivity() {
     }
 
     @Composable
-    fun EventSportRow(
-        sport: List<Sports>,
-        onSportChange: (List<Sports>) -> Unit,
-    ) {
-        val context = LocalContext.current
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            Text(
-                text = "Sport: ",
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag(TestTags.Texts.SPORT_TEXT)
-            )
-
-            Box(
-                modifier = Modifier
-                    .clickable {
-                        selectSportsHandler(
-                            SelectSportsActivity.getIntent(
-                                context = context,
-                                initialValue = sport
-                            )
-                        ).thenApply {
-                            // only update the sport if the user selected only one
-                            if (it.size == 1) {
-                                onSportChange(it)
-                            }
-                        }
-                    }
-                    .weight(.8f)
-                    .testTag(TestTags.Clickables.SPORT)
-            ) {
-                sport.forEach {
-                    Spacer(modifier = Modifier.padding(0.dp, 0.dp, 6.dp, 0.dp))
-                    Icon(
-                        imageVector = it.sportIcon,
-                        contentDescription = it.sportName,
-                        modifier = Modifier
-                            .padding(0.dp, 0.dp, 6.dp, 0.dp)
-                            .size(16.dp)
-                            .testTag(TestTags.SportElement(it).ICON)
-                    )
-                }
-            }
-        }
-    }
-
-    @Composable
     fun EventLocationRow(
         location: Address,
         onLocationChange: (Address) -> Unit,
@@ -759,6 +699,8 @@ class CreateEventActivity : ComponentActivity() {
         val context = LocalContext.current
         AttributeRow(
             label = "DESCRIPTION",
+            modifier = Modifier
+                .fillMaxHeight(),
             onClick = {
                 editTextHandler(
                     EditTextActivity.getIntent(
@@ -770,40 +712,18 @@ class CreateEventActivity : ComponentActivity() {
                     onDescriptionChange(it)
                 }
             },
-            modifier = Modifier.fillMaxHeight()
         ) {
             Text(
-                modifier = Modifier.testTag(TestTags.TextFields.DESCRIPTION), //.testTag(TestTags.Texts.DESCRIPTION_TEXT),
+                modifier = Modifier
+                    .testTag(TestTags.TextFields.DESCRIPTION)
+                    .fillMaxHeight(), //.testTag(TestTags.Texts.DESCRIPTION_TEXT),
                 text = description,
                 style = MaterialTheme.typography.body1,
-                maxLines = 1000,
+                maxLines = 20,
                 softWrap = true,
                 overflow = TextOverflow.Visible
             )
         }
-
-        /*Row (modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-            .padding(top = 10.dp),
-            verticalAlignment = Alignment.Bottom
-        ){
-            val focusManager = LocalFocusManager.current
-            TextField(
-                value = description,
-                onValueChange = { onDescriptionChange(it) },
-                label = { Text("Description") },
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.clearFocus() }
-                ),
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth()
-                    .padding(top = 10.dp)
-                    .testTag(TestTags.TextFields.DESCRIPTION)
-            )
-        }*/
     }
 }
 

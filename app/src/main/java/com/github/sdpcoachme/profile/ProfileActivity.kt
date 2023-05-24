@@ -6,15 +6,35 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.material.Button
+import androidx.compose.material.Divider
+import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Switch
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -81,39 +101,8 @@ class ProfileActivity : ComponentActivity() {
     private lateinit var editTextHandler: (Intent) -> CompletableFuture<String>
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
 
-    val callback = object : OnBackPressedCallback(true) {
-        override fun handleOnBackPressed() {
-            // Redirect to CoachesListActivity
-            startActivity(Intent(this@ProfileActivity, CoachesListActivity::class.java))
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        class ProfileToCoachesListCallback : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                val intent = Intent(this@ProfileActivity, CoachesListActivity::class.java)
-                startActivity(intent)
-            }
-        }
-        /*class ProfileToMapCallback : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                onBackPressedDispatcher.onBackPressed()
-                *//*val intent = Intent(this@ProfileActivity, Map::class.java)
-                startActivity(intent)*//*
-            }
-        }*/
-
-        /*val callbackCoachesList = ProfileToCoachesListCallback()
-        val callbackMap = ProfileToMapCallback()
-        // TODO: which callback to add should be based on whether the user comes from the map or the coaches list
-        if (intent.getBooleanExtra("fromMap", false))
-            onBackPressedDispatcher.addCallback(this, callbackMap)
-        else
-            onBackPressedDispatcher.addCallback(this, callbackCoachesList)*/
-        //onBackPressedDispatcher.addCallback(callback)
-
 
         stateUpdated = CompletableFuture()
         store = (application as CoachMeApplication).store
@@ -455,6 +444,7 @@ fun AttributeRow(
                 onClick()
             }
             .fillMaxWidth()
+            .fillMaxHeight()
             .padding(20.dp, 10.dp, 20.dp, 10.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Bottom
