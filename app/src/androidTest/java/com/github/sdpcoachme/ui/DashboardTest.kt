@@ -18,9 +18,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.github.sdpcoachme.BuildConfig
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.auth.LoginActivity
-import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.profile.CoachesListActivity
@@ -56,9 +54,8 @@ class DashboardTest {
     private val EXISTING_EMAIL = MockDatabase.getDefaultEmail()
     private val EXISTING_NAME = "${MockDatabase.getDefaultUser().firstName} ${MockDatabase.getDefaultUser().lastName}"
 
-    private lateinit var store: CachingStore
-    /*private val store = (InstrumentationRegistry.getInstrumentation()
-        .targetContext.applicationContext as CoachMeApplication).store*/
+    private val store = (InstrumentationRegistry.getInstrumentation()
+        .targetContext.applicationContext as CoachMeApplication).store
 
     @get:Rule
     val composeTestRule = createComposeRule()
@@ -72,17 +69,12 @@ class DashboardTest {
 
     @Before
     fun initIntents() {
-        (ApplicationProvider.getApplicationContext() as CoachMeTestApplication).clearDataStoreAndResetCachingStore()
-        store = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as CoachMeApplication).store
-        store.retrieveData.get(1, TimeUnit.SECONDS)
         store.setCurrentEmail(EXISTING_EMAIL).get(100, TimeUnit.MILLISECONDS)
         Intents.init()
     }
 
     @After
     fun releaseIntents() {
-        store.setCurrentEmail("")
-        ApplicationProvider.getApplicationContext<CoachMeTestApplication>().clearDataStoreAndResetCachingStore()
         Intents.release()
     }
 
@@ -97,7 +89,7 @@ class DashboardTest {
         composeTestRule.setContent {
             Dashboard(UIDisplayed = UIDisplayed) {}
         }
-        UIDisplayed.get(1000, TimeUnit.MILLISECONDS)
+        UIDisplayed.get(1, TimeUnit.SECONDS)
     }
 
     /**
@@ -177,14 +169,14 @@ class DashboardTest {
         intended(intentMatcher)
     }
 
-    /*@Test
+    @Test
     fun dashboardCorrectlyRedirectsOnProfileClick() {
         setUpDashboard()
         dashboardCorrectlyRedirectsOnMenuItemClick(
             PROFILE,
             hasComponent(ProfileActivity::class.java.name)
         )
-    }*/
+    }
 
     @Test
     fun dashboardCorrectlyRedirectsOnPlanClick() {

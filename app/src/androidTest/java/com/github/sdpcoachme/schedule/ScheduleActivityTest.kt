@@ -84,9 +84,8 @@ class ScheduleActivityTest {
 
     @Test
     fun getExceptionIsThrownCorrectly() {
+        Intents.init()
         store.setCurrentEmail("throwGetSchedule@Exception.com").thenAccept {
-            Intents.init()
-
             val mapIntent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
             ActivityScenario.launch<MapActivity>(mapIntent).use {
                 composeTestRule.onNodeWithTag(HAMBURGER_MENU).performClick()
@@ -95,7 +94,7 @@ class ScheduleActivityTest {
             }
 
             Intents.release()
-        }
+        }.exceptionally { Intents.release(); null }.get(3, SECONDS)
 
     }
 
