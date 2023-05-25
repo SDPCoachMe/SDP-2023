@@ -33,8 +33,8 @@ import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.IconData
 import com.github.sdpcoachme.ui.Label
-import com.github.sdpcoachme.ui.theme.label
-import com.github.sdpcoachme.ui.theme.onLabel
+import com.github.sdpcoachme.ui.theme.onRating
+import com.github.sdpcoachme.ui.theme.rating
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -264,8 +264,8 @@ fun Map(
                                 icon = Icons.Default.Star,
                                 contentDescription = "Coach rating"
                             ),
-                            backgroundColor = MaterialTheme.colors.label,
-                            contentColor = MaterialTheme.colors.onLabel,
+                            backgroundColor = MaterialTheme.colors.rating,
+                            contentColor = MaterialTheme.colors.onRating,
                             iconOnRight = true
                         )
                     }

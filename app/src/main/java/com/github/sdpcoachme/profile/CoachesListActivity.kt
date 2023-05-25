@@ -30,8 +30,8 @@ import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.C
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.CoachesListActivity.TestTags.Buttons.Companion.FILTER
 import com.github.sdpcoachme.ui.*
-import com.github.sdpcoachme.ui.theme.label
-import com.github.sdpcoachme.ui.theme.onLabel
+import com.github.sdpcoachme.ui.theme.onRating
+import com.github.sdpcoachme.ui.theme.rating
 import kotlinx.coroutines.future.await
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -248,8 +248,8 @@ class CoachesListActivity : ComponentActivity() {
                                 icon = Default.Star,
                                 contentDescription = "Coach rating"
                             ),
-                            backgroundColor = MaterialTheme.colors.label,
-                            contentColor = MaterialTheme.colors.onLabel,
+                            backgroundColor = MaterialTheme.colors.rating,
+                            contentColor = MaterialTheme.colors.onRating,
                             iconOnRight = true
                         )
                     }
