@@ -24,4 +24,5 @@ enum class Sports(val sportName: String, val sportIcon: ImageVector) {
     VOLLEYBALL("Volleyball", Icons.Default.SportsVolleyball),
     WORKOUT("Workout", Icons.Default.FitnessCenter),
     YOGA("Yoga", Icons.Default.SelfImprovement),
+    WATERSKI("Waterski", Icons.Default.DownhillSkiing),
 }

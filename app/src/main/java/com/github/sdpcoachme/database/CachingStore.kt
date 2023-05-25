@@ -36,6 +36,7 @@ import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
+import kotlin.math.roundToInt
 
 /**
  * A caching database that wraps another database
@@ -265,6 +266,43 @@ class CachingStore(private val wrappedDatabase: Database,
                 )
                 distance
             }
+        }
+    }
+
+    /**
+     * Add rating to a coach
+     * @param coachEmail The email of the coach
+     * @param rating The rating to add
+     * @return A future that will complete with the updated user
+     */
+    fun addRatingToCoach(coachEmail: String, rating: Int): CompletableFuture<Void> {
+        return getCurrentEmail().thenCompose { currEmail ->
+            getUser(coachEmail).thenCompose { user ->
+                if (!user.coach)
+                    throw IllegalArgumentException("Adding rating to a non-coach user")
+                else if (rating !in 0..5)
+                    throw IllegalArgumentException("Rating must be between 0 and 5")
+                else
+                    updateUser(user.copy(ratings = user.ratings + (currEmail to rating)))
+
+            }
+        }
+    }
+
+    /**
+     * Get the average rating of a coach rounded to the nearest integer
+     * @param email The email of the coach
+     * @return A future that will complete with the rating of the coach or null if the user is not a coach
+     */
+    fun getCoachAverageRating(email: String): CompletableFuture<Int> {
+        return getUser(email).thenApply { user ->
+            if (user.coach) {
+                val ratings = user.ratings.values
+                // If the coach has no ratings, return 0 instead of NaN returned by average()
+                if (ratings.isEmpty()) 0
+                else ratings.average().roundToInt()
+            } else
+                throw IllegalArgumentException("Getting average rating from a non-coach user")
         }
     }
 
