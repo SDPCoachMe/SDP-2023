@@ -31,7 +31,7 @@ private val LightColorPalette = lightColors(
 
 // Adding extra colors for messages and other things
 
-// Label for group event items
+// Label for group event items and rating stars
 @get:Composable
 val Colors.label: Color
     get() = DarkOrange

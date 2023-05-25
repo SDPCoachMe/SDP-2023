@@ -10,11 +10,24 @@ import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
-import androidx.compose.material.Text
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import java.util.concurrent.CompletableFuture
 
 class RatingActivity: ComponentActivity() {
+
+    class TestTags {
+        companion object {
+
+            const val TITLE = "title"
+
+            class Buttons {
+                companion object {
+                    const val DONE = "doneButton"
+                    const val CANCEL = "cancelButton"
+                }
+            }
+        }
+    }
 
     companion object {
 
@@ -79,19 +92,29 @@ class RatingActivity: ComponentActivity() {
         class RatingCancelledException(message: String? = null, cause: Throwable? = null) : Exception(message, cause) {
             constructor(cause: Throwable) : this(null, cause)
         }
-
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val initialValue = intent.getIntExtra(INITIAL_KEY, 0)
+        val initialRating = intent.getIntExtra(INITIAL_KEY, 0)
         val title = "Rate " + (intent.getStringExtra(COACH_NAME) ?: DEFAULT_COACH_NAME)
 
         setContent {
             CoachMeTheme {
                 Surface(color = MaterialTheme.colors.background) {
-                    Text("$title : Rating is $initialValue")
+                    RatingBar(
+                        title = title,
+                        initialRating = initialRating,
+                        onSubmit = {
+                            setResult(RESULT_OK, Intent().putExtra(FINAL_KEY, it))
+                            finish()
+                        },
+                        onCancel = {
+                            setResult(RESULT_CANCELED)
+                            finish()
+                        }
+                    )
                 }
             }
         }
