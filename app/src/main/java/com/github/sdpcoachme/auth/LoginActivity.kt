@@ -184,7 +184,7 @@ class LoginActivity : ComponentActivity() {
                 .fillMaxSize()
                 .padding(top = 35.dp) // Adjust the top padding as needed
                 .fillMaxWidth(),
-            verticalArrangement = Arrangement.Top,
+            verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Your content here
@@ -202,28 +202,7 @@ class LoginActivity : ComponentActivity() {
 
                 Spacer(modifier = Modifier.height(80.dp))
 
-                Box(
-                    modifier = Modifier
-                        .padding(bottom = 32.dp)
-                        .size(210.dp)
-                        .clip(CircleShape)
-                        .background(Color.White)
-                ) {
-                    Image(
-                        painter = painterResource(id = android.R.drawable.ic_menu_myplaces),
-                        contentDescription = "Coach Me Logo",
-                        modifier = Modifier
-                            .testTag(TestTags.COACH_ME_ICON)
-                            .size(200.dp)
-                    )
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .testTag(TestTags.LOADING_SYMBOL)
-                            .size(210.dp)
-                            .align(Alignment.Center),
-                        strokeWidth = 4.dp,
-                    )
-                }
+                IconAndLoading()
 
                 Spacer(modifier = Modifier.height(60.dp))
 
@@ -238,9 +217,37 @@ class LoginActivity : ComponentActivity() {
                     textAlign = TextAlign.Center
                 )
             } else {
-                // While we are waiting for the next activity to launch, we display a loading
-                CircularProgressIndicator()
+                // While we are waiting for the next activity to launch, we display the icon and
+                // the loading circle
+                IconAndLoading()
             }
+        }
+    }
+
+    @Composable
+    fun IconAndLoading() {
+        Box(
+            modifier = Modifier
+                .padding(bottom = 32.dp)
+                .size(210.dp)
+                .clip(CircleShape)
+                .background(Color.White)
+
+        ) {
+            Image(
+                painter = painterResource(id = android.R.drawable.ic_menu_myplaces),
+                contentDescription = "Coach Me Logo",
+                modifier = Modifier
+                    .testTag(TestTags.COACH_ME_ICON)
+                    .size(200.dp)
+            )
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .testTag(TestTags.LOADING_SYMBOL)
+                    .size(210.dp)
+                    .align(Alignment.Center),
+                strokeWidth = 4.dp,
+            )
         }
     }
 
