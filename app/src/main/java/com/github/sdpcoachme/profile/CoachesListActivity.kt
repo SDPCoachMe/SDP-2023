@@ -11,11 +11,10 @@ import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons.Default
-import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.*
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,12 +35,6 @@ import com.github.sdpcoachme.profile.CoachesListActivity.TestTags.Buttons.Compan
 import com.github.sdpcoachme.ui.*
 import com.github.sdpcoachme.ui.theme.onRating
 import com.github.sdpcoachme.ui.theme.rating
-import com.github.sdpcoachme.ui.Dashboard
-import com.github.sdpcoachme.ui.IconData
-import com.github.sdpcoachme.ui.IconTextRow
-import com.github.sdpcoachme.ui.IconsRow
-import com.github.sdpcoachme.ui.ImageData
-import com.github.sdpcoachme.ui.ListItem
 import kotlinx.coroutines.future.await
 import java.util.*
 import java.util.concurrent.CompletableFuture

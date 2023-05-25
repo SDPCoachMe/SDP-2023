@@ -5,13 +5,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.runtime.*
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,23 +29,14 @@ import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MARKER_INFO
 import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.CAMPUS
 import com.github.sdpcoachme.location.provider.LocationProvider
 import com.github.sdpcoachme.profile.ProfileActivity
-import com.github.sdpcoachme.ui.Dashboard
-import com.github.sdpcoachme.ui.IconData
-import com.github.sdpcoachme.ui.IconTextRow
-import com.github.sdpcoachme.ui.IconsRow
-import com.github.sdpcoachme.ui.Label
+import com.github.sdpcoachme.ui.*
 import com.github.sdpcoachme.ui.theme.onRating
 import com.github.sdpcoachme.ui.theme.rating
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
-import com.google.maps.android.compose.MapType
-import com.google.maps.android.compose.MarkerInfoWindowContent
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.*
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
@@ -213,7 +203,6 @@ fun Map(
                 ) {
                     Column(
                         modifier = Modifier
-                            .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 12.dp)
                             .fillMaxWidth(0.8f)
                     ) {
                         Text(
