@@ -89,21 +89,13 @@ class CreateEventActivity : ComponentActivity() {
 
         class Clickables {
             companion object {
-                private fun clickableText(tag: String): String {
-                    return "${tag}ClickableText"
-                }
-
                 private fun button(tag: String): String {
                     return "${tag}Button"
                 }
 
-                private fun box(tag: String): String {
-                    return "${tag}Box"
-                }
-
                 val SAVE = button("save")
                 val CANCEL = button("cancel")
-                val COLOR_BOX = box("color")
+                val COLOR_BOX = "colorBox"
             }
         }
 
@@ -117,10 +109,6 @@ class CreateEventActivity : ComponentActivity() {
                 val CANCEL_ICON = icon("cancel")
 
             }
-        }
-
-        class SportElement(sport: Sports) {
-            val ICON = "${sport.sportName}Icon"
         }
 
         class Label {
@@ -231,7 +219,7 @@ class CreateEventActivity : ComponentActivity() {
                     actions = {
                         IconButton(
                             onClick = {
-                                if (start.isAfter(end)) {
+                                if (start.isAfter(end) or start.isEqual(end)) {
                                     val toast = Toast.makeText(context, "Start date must be before end date", Toast.LENGTH_SHORT)
                                     toast.show()
                                 } else {
@@ -706,7 +694,7 @@ class CreateEventActivity : ComponentActivity() {
             Text(
                 modifier = Modifier
                     .testTag(TestTags.Texts.DESCRIPTION_TEXT)
-                    .fillMaxHeight(), //.testTag(TestTags.Texts.DESCRIPTION_TEXT),
+                    .fillMaxHeight(),
                 text = description,
                 style = MaterialTheme.typography.body1,
                 maxLines = 20,
