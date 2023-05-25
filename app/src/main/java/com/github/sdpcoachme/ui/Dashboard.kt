@@ -2,20 +2,57 @@ package com.github.sdpcoachme.ui
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.AppBarDefaults
+import androidx.compose.material.Divider
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
+import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons.Default
-import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.ManageAccounts
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.rememberScaffoldState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -23,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.auth.LoginActivity
+import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.groupevent.GroupEventsListActivity
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.profile.CoachesListActivity
@@ -31,9 +69,11 @@ import com.github.sdpcoachme.schedule.ScheduleActivity
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_NAME
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
+import com.github.sdpcoachme.ui.theme.dashboardPersonalDetailsBackground
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.util.concurrent.CompletableFuture
@@ -46,6 +86,7 @@ class Dashboard {
         companion object {
             const val DRAWER_HEADER = "drawerHeader"
             const val DASHBOARD_EMAIL = "dashboardEmail"
+            const val DASHBOARD_NAME = "dashboardName"
             const val MENU_LIST = "menuList"
             const val BAR_TITLE = "barTitle"
         }
@@ -80,7 +121,7 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
 
     val context = LocalContext.current
     // equivalent to remember { ScaffoldState(...) }
-    val scaffoldState = rememberScaffoldState()
+    val hamburgerState = rememberScaffoldState()
     // creates a scope tied to the view's lifecycle. scope
     // enables us to launch a coroutine tied to a specific lifecycle
     val coroutineScope = rememberCoroutineScope()
@@ -90,20 +131,21 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
             color = MaterialTheme.colors.background,
         ) {
             Scaffold(
-                scaffoldState = scaffoldState,
+                scaffoldState = hamburgerState,
                 topBar = {
                     AppBar(
                         title = title,
-                        onNavigationIconClick = { coroutineScope.launch { scaffoldState.drawerState.open() } }
+                        onNavigationIconClick = { coroutineScope.launch { hamburgerState.drawerState.open() } }
                     )
                 },
-                drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
+                drawerGesturesEnabled = hamburgerState.drawerState.isOpen,
                 drawerContent = {
                     Surface(
-                        color = MaterialTheme.colors.background
+                        color = MaterialTheme.colors.background,
                     ) {
                         Column {
                             DrawerHeader(context, UIDisplayed)
+                            Spacer(modifier = Modifier.height(20.dp))
                             DrawerBody(
                                 items = listOf(
                                     MenuItem(
@@ -112,17 +154,20 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                         icon = Default.Map
                                     ),
                                     MenuItem(
-                                        tag = Dashboard.TestTags.Buttons.COACHES_LIST, title = "Nearby coaches",
+                                        tag = Dashboard.TestTags.Buttons.COACHES_LIST,
+                                        title = "Nearby coaches",
                                         contentDescription = "See a list of coaches available close to you",
                                         icon = Default.People
                                     ),
                                     MenuItem(
-                                        tag = Dashboard.TestTags.Buttons.GROUP_EVENTS_LIST, title = "Group events",
+                                        tag = Dashboard.TestTags.Buttons.GROUP_EVENTS_LIST,
+                                        title = "Group events",
                                         contentDescription = "See a list of events organized by coaches close to you",
                                         icon = Default.Groups
                                     ),
                                     MenuItem(
-                                        tag = Dashboard.TestTags.Buttons.SCHEDULE, title = "Schedule",
+                                        tag = Dashboard.TestTags.Buttons.SCHEDULE,
+                                        title = "Schedule",
                                         contentDescription = "See schedule",
                                         icon = Default.Today
                                     ),
@@ -132,7 +177,8 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                         icon = Default.Chat
                                     ),
                                     MenuItem(
-                                        tag = Dashboard.TestTags.Buttons.PROFILE, title = "My profile",
+                                        tag = Dashboard.TestTags.Buttons.PROFILE,
+                                        title = "My profile",
                                         contentDescription = "Go to profile",
                                         icon = Default.ManageAccounts
                                     ),
@@ -141,89 +187,90 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                         contentDescription = "User logs out",
                                         icon = Default.Logout
                                     )
-                                )
-                            ) {
-                                when (it.tag) {
-                                    Dashboard.TestTags.Buttons.PLAN -> {
-                                        context.startActivity(
-                                            Intent(
-                                                context,
-                                                MapActivity::class.java
-                                            )
-                                        )
-                                    }
-
-                                    Dashboard.TestTags.Buttons.PROFILE -> {
-                                        context.startActivity(
-                                            Intent(
-                                                context,
-                                                ProfileActivity::class.java
-                                            )
-                                        )
-                                    }
-
-                                    Dashboard.TestTags.Buttons.LOGOUT -> {
-                                        val authenticator =
-                                            (context.applicationContext as CoachMeApplication).authenticator
-
-                                        authenticator.delete(context) {
-                                            (context.applicationContext as CoachMeApplication).authenticator.signOut(
-                                                context
-                                            ) {
-                                                (context.applicationContext as CoachMeApplication).store.setCurrentEmail(
-                                                    ""
+                                ),
+                                onItemClick = {
+                                    when (it.tag) {
+                                        Dashboard.TestTags.Buttons.PLAN -> {
+                                            context.startActivity(
+                                                Intent(
+                                                    context,
+                                                    MapActivity::class.java
                                                 )
-                                                    .thenApply {
-                                                        context.startActivity(
-                                                            Intent(
-                                                                context,
-                                                                LoginActivity::class.java
+                                            )
+                                        }
+
+                                        Dashboard.TestTags.Buttons.PROFILE -> {
+                                            context.startActivity(
+                                                Intent(
+                                                    context,
+                                                    ProfileActivity::class.java
+                                                ),
+                                            )
+                                        }
+
+                                        Dashboard.TestTags.Buttons.LOGOUT -> {
+                                            val authenticator =
+                                                (context.applicationContext as CoachMeApplication).authenticator
+
+                                            authenticator.delete(context) {
+                                                (context.applicationContext as CoachMeApplication).authenticator.signOut(
+                                                    context
+                                                ) {
+                                                    (context.applicationContext as CoachMeApplication).store.setCurrentEmail(
+                                                        ""
+                                                    )
+                                                        .thenApply {
+                                                            context.startActivity(
+                                                                Intent(
+                                                                    context,
+                                                                    LoginActivity::class.java
+                                                                )
                                                             )
-                                                        )
-                                                    }
+                                                        }
+                                                }
                                             }
                                         }
-                                    }
 
-                                    Dashboard.TestTags.Buttons.SCHEDULE -> {
-                                        context.startActivity(
-                                            Intent(
-                                                context,
-                                                ScheduleActivity::class.java
+                                        Dashboard.TestTags.Buttons.SCHEDULE -> {
+                                            context.startActivity(
+                                                Intent(
+                                                    context,
+                                                    ScheduleActivity::class.java
+                                                )
                                             )
-                                        )
-                                    }
+                                        }
 
-                                    Dashboard.TestTags.Buttons.COACHES_LIST -> {
-                                        context.startActivity(
-                                            Intent(
-                                                context,
-                                                CoachesListActivity::class.java
+                                        Dashboard.TestTags.Buttons.COACHES_LIST -> {
+                                            context.startActivity(
+                                                Intent(
+                                                    context,
+                                                    CoachesListActivity::class.java
+                                                )
                                             )
-                                        )
-                                    }
+                                        }
 
-                                    Dashboard.TestTags.Buttons.MESSAGING -> {
-                                        val intent =
-                                            Intent(context, CoachesListActivity::class.java)
-                                        intent.putExtra("isViewingContacts", true)
-                                        context.startActivity(intent)
-                                    }
+                                        Dashboard.TestTags.Buttons.MESSAGING -> {
+                                            val intent =
+                                                Intent(context, CoachesListActivity::class.java)
+                                            intent.putExtra("isViewingContacts", true)
+                                            context.startActivity(intent)
+                                        }
 
-                                    Dashboard.TestTags.Buttons.GROUP_EVENTS_LIST -> {
-                                        context.startActivity(
-                                            Intent(
-                                                context,
-                                                GroupEventsListActivity::class.java
+                                        Dashboard.TestTags.Buttons.GROUP_EVENTS_LIST -> {
+                                            context.startActivity(
+                                                Intent(
+                                                    context,
+                                                    GroupEventsListActivity::class.java
+                                                )
                                             )
-                                        )
-                                    }
+                                        }
 
-                                    else -> {
-                                        throw IllegalStateException("Unknown tab clicked: ${it.tag}")
+                                        else -> {
+                                            throw IllegalStateException("Unknown tab clicked: ${it.tag}")
+                                        }
                                     }
                                 }
-                            }
+                            )
                         }
                     }
                 },
@@ -279,35 +326,87 @@ fun AppBar(title: @Composable (Modifier) -> Unit, onNavigationIconClick: () -> U
     )
 }
 
+/**
+ * Composable that displays the header of the drawer.
+ * It contains the user's profile picture, name and email.
+ *
+ * @param context = current context
+ * @param UIDisplayed = future that will be completed when the UI is displayed
+ */
 @Composable
 fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
-    val emailFuture = (context.applicationContext as CoachMeApplication).store.getCurrentEmail()
-
-    var email by remember { mutableStateOf("") }
-
-    LaunchedEffect(emailFuture) {
-        email = emailFuture.await()
-        UIDisplayed.complete(null)
-    }
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 40.dp)
-            .testTag(DRAWER_HEADER),
+            .background(color = MaterialTheme.colors.dashboardPersonalDetailsBackground),
         contentAlignment = Alignment.Center,
         content = {
-            Column(horizontalAlignment = CenterHorizontally) {
-                Text(text = "Dashboard", fontSize = 50.sp)
-                Text(
-                    modifier = Modifier.testTag(DASHBOARD_EMAIL),
-                    text = email, fontSize = 20.sp
-                )
+            Column(horizontalAlignment = Alignment.Start) {
+                val emailFuture = (context.applicationContext as CoachMeApplication).store.getCurrentEmail()
+                val userInfoFuture = emailFuture.thenCompose { email ->
+                    (context.applicationContext as CoachMeApplication).store.getUser(email)
+                }
+                var email by remember { mutableStateOf("") }
+                var userInfo by remember { mutableStateOf(UserInfo()) }
+
+                LaunchedEffect(emailFuture, userInfoFuture) {
+                    email = emailFuture.await()
+
+                    userInfo = userInfoFuture.await()
+                    UIDisplayed.complete(null)
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(0.dp, 20.dp, 25.dp, 20.dp)
+                        .testTag(DRAWER_HEADER),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    Column {
+                        Text(
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 3.dp)
+                                .testTag(DASHBOARD_NAME),
+                            text = userInfo.firstName + " " + userInfo.lastName, fontSize = 20.sp, color = Color.White,
+                        )
+                        Text(
+                            modifier = Modifier
+                                .testTag(DASHBOARD_EMAIL)
+                                .padding(start = 16.dp),
+                            text = email, fontSize = 12.sp, color = Color.White,
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_launcher_background),
+                        contentDescription = "Profile picture",
+                        modifier = Modifier
+                            .size(60.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, Color.Gray, CircleShape)
+                            .padding(0.dp, 0.dp, 0.dp, 0.dp)
+                            .align(Alignment.CenterEnd)
+                            .testTag(ProfileActivity.TestTags.PROFILE_PICTURE)
+                    )
+
+                }
+                // if in dark mode, add a divider to separate the header from the menu items
+                if (!MaterialTheme.colors.isLight) {
+                    Divider(modifier = Modifier.padding(start = 16.dp, end = 16.dp))
+                }
             }
         }
     )
 }
 
+/**
+ * Composable that displays the body of the drawer.
+ * It contains the clickable menu items the user can use to navigate through the app.
+ *
+ * @param items = list of menu items to display
+ * @param itemTextStyle = style of the text of the menu items
+ * @param onItemClick = callback to invoke when a menu item is clicked
+ */
 @Composable
 fun DrawerBody(
     items: List<MenuItem>,
@@ -316,6 +415,9 @@ fun DrawerBody(
 ) {
     LazyColumn(Modifier.testTag(MENU_LIST)) {
         items(items) { item ->
+            if (item.tag == Dashboard.TestTags.Buttons.LOGOUT) {
+                Divider(modifier = Modifier.padding(16.dp))
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

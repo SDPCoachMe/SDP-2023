@@ -3,7 +3,9 @@ package com.github.sdpcoachme.database
 import com.github.sdpcoachme.data.AddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.data.UserInfoSamples
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_2
+import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_3
 import com.github.sdpcoachme.data.messaging.Chat
 import com.github.sdpcoachme.data.messaging.ContactRowInfo
 import com.github.sdpcoachme.data.messaging.Message
@@ -26,7 +28,12 @@ open class MockDatabase: Database {
     private var groupChat = Chat()
 
     // TODO: type any is not ideal, needs refactoring
-    private var accounts = hashMapOf<String, Any>(DEFAULT_EMAIL to defaultUserInfo)
+    private var accounts = hashMapOf<String, Any>(
+        DEFAULT_EMAIL to defaultUserInfo,
+        COACH_1.email to COACH_1,
+        COACH_2.email to COACH_2,
+        COACH_3.email to COACH_3,
+    )
     private val fcmTokens = hashMapOf<String, String>()
     private var schedules = hashMapOf<String, Schedule>()
     private var groupEvents = hashMapOf<String, GroupEvent>()
@@ -34,8 +41,8 @@ open class MockDatabase: Database {
     companion object {
         private const val DEFAULT_EMAIL = "example@email.com"
         private val defaultUserInfo = UserInfo(
-            "John",
-            "Doe",
+            "Firstname",
+            "Secondname",
             DEFAULT_EMAIL,
             "1234567890",
             LAUSANNE,
@@ -44,8 +51,8 @@ open class MockDatabase: Database {
             emptyList()
         )
 
-        private val TO_EMAIL = "to@email.com"
-        private val toUser = UserInfoSamples.COACH_1
+        private val TO_EMAIL = COACH_1.email
+        private val toUser = COACH_1
 
         // Those functions are going to be used in the CacheStore tests
         fun getDefaultEmail(): String {

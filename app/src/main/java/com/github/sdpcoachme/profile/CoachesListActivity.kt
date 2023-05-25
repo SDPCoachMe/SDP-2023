@@ -15,7 +15,12 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons.Default
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -32,13 +37,18 @@ import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.CAMPUS
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.CoachesListActivity.TestTags.Buttons.Companion.FILTER
-import com.github.sdpcoachme.ui.*
+import com.github.sdpcoachme.ui.Dashboard
+import com.github.sdpcoachme.ui.IconData
+import com.github.sdpcoachme.ui.IconTextRow
+import com.github.sdpcoachme.ui.IconsRow
+import com.github.sdpcoachme.ui.ImageData
+import com.github.sdpcoachme.ui.ListItem
 import kotlinx.coroutines.future.await
-import java.util.*
+import java.util.Collections
 import java.util.concurrent.CompletableFuture
 
-class CoachesListActivity : ComponentActivity() {
 
+class CoachesListActivity : ComponentActivity() {
     class TestTags {
         class Buttons {
             companion object {
@@ -47,12 +57,10 @@ class CoachesListActivity : ComponentActivity() {
         }
     }
 
-    // Allows to notice testing framework that the activity is ready
-
     private lateinit var store: CachingStore
     private lateinit var emailFuture: CompletableFuture<String>
 
-
+    // Allows to notice testing framework that the activity is ready
     var stateLoading = CompletableFuture<Void>()
 
     // Observable state of the current sports used to filter the coaches list
@@ -240,6 +248,15 @@ class CoachesListActivity : ComponentActivity() {
                     })
                 },
                 onClick = {
+                    /*class CoachesListCallback : OnBackPressedCallback(true) {
+                        override fun handleOnBackPressed() {
+                            val intent = Intent(this@CoachesListActivity, MapActivity::class.java)
+                            ContextCompat.startActivity(this@CoachesListActivity, intent, null)
+                        }
+                    }
+                    val callback = CoachesListCallback()
+                    onBackPressedDispatcher.addCallback(this, callback)*/
+
                     val displayCoachIntent = Intent(context, ProfileActivity::class.java)
                     displayCoachIntent.putExtra("email", user.email)
                     if (user.email == currentUserEmail) {
