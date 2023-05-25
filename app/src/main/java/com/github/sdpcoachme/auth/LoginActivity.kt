@@ -43,8 +43,8 @@ import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.MapActivity
-import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.messaging.InAppNotificationService
+import com.github.sdpcoachme.profile.CoachesListActivity
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.await
@@ -278,8 +278,10 @@ class LoginActivity : ComponentActivity() {
                 if (action.equals("OPEN_CHAT_ACTIVITY")
                     && pushNotificationIntent.getStringExtra("chatId") != null) {
                     // If a notification was clicked, redirect to chat activity
-                    Intent(this, ChatActivity::class.java)
+                    Intent(this, CoachesListActivity::class.java)
+                        .putExtra("openChat", true)
                         .putExtra("chatId", pushNotificationIntent.getStringExtra("chatId"))
+                        .putExtra("pushNotification_currentUserEmail", email)
                 } else {
                     // If no notification was clicked, redirect to map activity
                     Intent(this, MapActivity::class.java)
