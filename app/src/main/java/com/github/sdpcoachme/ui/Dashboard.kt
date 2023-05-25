@@ -144,9 +144,15 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                     )
                                 )
                             ) {
+                                fun startActivityWithNoHistory(intent: Intent) {
+                                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    context.startActivity(intent)
+                                }
+
                                 when (it.tag) {
+
                                     Dashboard.TestTags.Buttons.PLAN -> {
-                                        context.startActivity(
+                                        startActivityWithNoHistory(
                                             Intent(
                                                 context,
                                                 MapActivity::class.java
@@ -155,7 +161,7 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                     }
 
                                     Dashboard.TestTags.Buttons.PROFILE -> {
-                                        context.startActivity(
+                                        startActivityWithNoHistory(
                                             Intent(
                                                 context,
                                                 ProfileActivity::class.java
@@ -175,7 +181,7 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                                     ""
                                                 )
                                                     .thenApply {
-                                                        context.startActivity(
+                                                        startActivityWithNoHistory(
                                                             Intent(
                                                                 context,
                                                                 LoginActivity::class.java
@@ -187,7 +193,7 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                     }
 
                                     Dashboard.TestTags.Buttons.SCHEDULE -> {
-                                        context.startActivity(
+                                        startActivityWithNoHistory(
                                             Intent(
                                                 context,
                                                 ScheduleActivity::class.java
@@ -196,7 +202,7 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                     }
 
                                     Dashboard.TestTags.Buttons.COACHES_LIST -> {
-                                        context.startActivity(
+                                        startActivityWithNoHistory(
                                             Intent(
                                                 context,
                                                 CoachesListActivity::class.java
@@ -208,11 +214,11 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                         val intent =
                                             Intent(context, CoachesListActivity::class.java)
                                         intent.putExtra("isViewingContacts", true)
-                                        context.startActivity(intent)
+                                        startActivityWithNoHistory(intent)
                                     }
 
                                     Dashboard.TestTags.Buttons.GROUP_EVENTS_LIST -> {
-                                        context.startActivity(
+                                        startActivityWithNoHistory(
                                             Intent(
                                                 context,
                                                 GroupEventsListActivity::class.java

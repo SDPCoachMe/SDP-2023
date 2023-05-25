@@ -3,6 +3,7 @@ package com.github.sdpcoachme.auth
 import android.content.Intent
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.pressBackUnconditionally
@@ -195,8 +196,11 @@ open class LoginActivityTest {
 
     // Waits for the activity to finish loading any async state
     private fun waitForLoading(scenario: ActivityScenario<LoginActivity>) {
-        // Instead, make the test wait for the future to finish, and crash after a certain time
         lateinit var stateLoading: CompletableFuture<Void>
+        // Do not wait if the activity was destroyed already
+        if (scenario.state == Lifecycle.State.DESTROYED) {
+            return
+        }
         scenario.onActivity {
             stateLoading = it.stateLoading
         }
