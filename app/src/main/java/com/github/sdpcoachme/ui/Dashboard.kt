@@ -142,26 +142,32 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                         contentDescription = "User logs out",
                                         icon = Default.Logout
                                     )
-                                ),
-                                onItemClick = {
-                                    when (it.tag) {
-                                        Dashboard.TestTags.Buttons.PLAN -> {
-                                            context.startActivity(
-                                                Intent(
-                                                    context,
-                                                    MapActivity::class.java
-                                                )
+                                )
+                            ) {
+                                when (it.tag) {
+                                    Dashboard.TestTags.Buttons.PLAN -> {
+                                        context.startActivity(
+                                            Intent(
+                                                context,
+                                                MapActivity::class.java
                                             )
-                                        }
-                                        Dashboard.TestTags.Buttons.PROFILE -> {
-                                            context.startActivity(
-                                                Intent(
-                                                    context,
-                                                    ProfileActivity::class.java
-                                                )
+                                        )
+                                    }
+
+                                    Dashboard.TestTags.Buttons.PROFILE -> {
+                                        context.startActivity(
+                                            Intent(
+                                                context,
+                                                ProfileActivity::class.java
                                             )
-                                        }
-                                        Dashboard.TestTags.Buttons.LOGOUT -> {
+                                        )
+                                    }
+
+                                    Dashboard.TestTags.Buttons.LOGOUT -> {
+                                        val authenticator =
+                                            (context.applicationContext as CoachMeApplication).authenticator
+
+                                        authenticator.delete(context) {
                                             (context.applicationContext as CoachMeApplication).authenticator.signOut(
                                                 context
                                             ) {
@@ -178,42 +184,47 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                                     }
                                             }
                                         }
-                                        Dashboard.TestTags.Buttons.SCHEDULE -> {
-                                            context.startActivity(
-                                                Intent(
-                                                    context,
-                                                    ScheduleActivity::class.java
-                                                )
+                                    }
+
+                                    Dashboard.TestTags.Buttons.SCHEDULE -> {
+                                        context.startActivity(
+                                            Intent(
+                                                context,
+                                                ScheduleActivity::class.java
                                             )
-                                        }
-                                        Dashboard.TestTags.Buttons.COACHES_LIST -> {
-                                            context.startActivity(
-                                                Intent(
-                                                    context,
-                                                    CoachesListActivity::class.java
-                                                )
+                                        )
+                                    }
+
+                                    Dashboard.TestTags.Buttons.COACHES_LIST -> {
+                                        context.startActivity(
+                                            Intent(
+                                                context,
+                                                CoachesListActivity::class.java
                                             )
-                                        }
-                                        Dashboard.TestTags.Buttons.MESSAGING -> {
-                                            val intent =
-                                                Intent(context, CoachesListActivity::class.java)
-                                            intent.putExtra("isViewingContacts", true)
-                                            context.startActivity(intent)
-                                        }
-                                        Dashboard.TestTags.Buttons.GROUP_EVENTS_LIST -> {
-                                            context.startActivity(
-                                                Intent(
-                                                    context,
-                                                    GroupEventsListActivity::class.java
-                                                )
+                                        )
+                                    }
+
+                                    Dashboard.TestTags.Buttons.MESSAGING -> {
+                                        val intent =
+                                            Intent(context, CoachesListActivity::class.java)
+                                        intent.putExtra("isViewingContacts", true)
+                                        context.startActivity(intent)
+                                    }
+
+                                    Dashboard.TestTags.Buttons.GROUP_EVENTS_LIST -> {
+                                        context.startActivity(
+                                            Intent(
+                                                context,
+                                                GroupEventsListActivity::class.java
                                             )
-                                        }
-                                        else -> {
-                                            throw IllegalStateException("Unknown tab clicked: ${it.tag}")
-                                        }
+                                        )
+                                    }
+
+                                    else -> {
+                                        throw IllegalStateException("Unknown tab clicked: ${it.tag}")
                                     }
                                 }
-                            )
+                            }
                         }
                     }
                 },
