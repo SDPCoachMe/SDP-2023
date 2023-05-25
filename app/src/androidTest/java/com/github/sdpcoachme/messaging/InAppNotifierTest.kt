@@ -148,6 +148,11 @@ class InAppNotifierTest {
         }
     }
 
+    // This test checks that the emails of the users can be recovered when receiving a push notification while the app is
+    // open, then logging out and closing the application. After closing the application, the notification is pressed.
+    // This was a bugfix as, before, the app would crash since the email of the user was no longer stored in the app.
+    // Thanks to this test, we can ensure that the email still can be recovered even after having logged out so that
+    // clicking on the notification does not result in an error.
     @Test
     fun onMessageReceivedEnablesEmailRecoveryAndOpensChatActivityWhenUserReceivesNotificationThenLoggsOutAndThenClicksOnIt() {
         val intent = Intent(ApplicationProvider.getApplicationContext(), MapActivity::class.java)
@@ -183,6 +188,8 @@ class InAppNotifierTest {
         }
     }
 
+    // This test checks the same email recovery as the previous test, however, this time the notification
+    // does not contain the chat id which means that the expected activity to be opened is the contacts listing.
     @Test
     fun onMessageReceivedEnablesEmailRecoveryAndOpensContactsListWhenUserReceivesNotificationWithoutChatIdThenLoggsOutAndThenClicksOnIt() {
         val context = ApplicationProvider.getApplicationContext() as CoachMeApplication
