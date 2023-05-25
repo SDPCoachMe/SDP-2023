@@ -4,15 +4,29 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material.MaterialTheme.colors
 import androidx.compose.material.icons.Icons.Default
-import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -29,11 +43,17 @@ import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.CAMPUS
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.CoachesListActivity.TestTags.Buttons.Companion.FILTER
-import com.github.sdpcoachme.ui.*
-import com.github.sdpcoachme.ui.theme.label
-import com.github.sdpcoachme.ui.theme.onLabel
+import com.github.sdpcoachme.ui.Dashboard
+import com.github.sdpcoachme.ui.IconData
+import com.github.sdpcoachme.ui.IconTextRow
+import com.github.sdpcoachme.ui.IconsRow
+import com.github.sdpcoachme.ui.ImageData
+import com.github.sdpcoachme.ui.Label
+import com.github.sdpcoachme.ui.ListItem
+import com.github.sdpcoachme.ui.theme.ratingBackground
+import com.github.sdpcoachme.ui.theme.ratingStar
 import kotlinx.coroutines.future.await
-import java.util.*
+import java.util.Collections
 import java.util.concurrent.CompletableFuture
 
 class CoachesListActivity : ComponentActivity() {
@@ -176,8 +196,8 @@ class CoachesListActivity : ComponentActivity() {
                         .align(Alignment.BottomEnd)
                         .padding(16.dp)
                         .testTag(FILTER),
-                    backgroundColor = MaterialTheme.colors.primary,
-                    contentColor = MaterialTheme.colors.onPrimary
+                    backgroundColor = colors.primary,
+                    contentColor = colors.onPrimary
                 ) {
                     Icon(
                         imageVector = Default.Tune,
@@ -248,8 +268,8 @@ class CoachesListActivity : ComponentActivity() {
                                 icon = Default.Star,
                                 contentDescription = "Coach rating"
                             ),
-                            backgroundColor = MaterialTheme.colors.label,
-                            contentColor = MaterialTheme.colors.onLabel,
+                            backgroundColor = colors.ratingBackground,
+                            contentColor = colors.ratingStar,
                             iconOnRight = true
                         )
                     }

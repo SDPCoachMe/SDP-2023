@@ -5,7 +5,9 @@ import android.view.MotionEvent.ACTION_UP
 import androidx.compose.animation.core.Spring.DampingRatioMediumBouncy
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement.Center
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -34,8 +36,8 @@ import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.rating.RatingActivity.TestTags.Companion.Buttons.Companion.CANCEL
 import com.github.sdpcoachme.rating.RatingActivity.TestTags.Companion.Buttons.Companion.DONE
 import com.github.sdpcoachme.rating.RatingActivity.TestTags.Companion.TITLE
-import com.github.sdpcoachme.ui.theme.label
-import com.github.sdpcoachme.ui.theme.onLabel
+import com.github.sdpcoachme.ui.theme.selectedStar
+import com.github.sdpcoachme.ui.theme.unselectedStar
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -47,7 +49,6 @@ fun RatingBar(
 ) {
     var rating by remember { mutableStateOf(initialRating) }
     var selected by remember { mutableStateOf(false) }
-
     val size by animateDpAsState(
         targetValue = if (selected) 72.dp else 64.dp,
         animationSpec = spring(DampingRatioMediumBouncy)
@@ -61,54 +62,57 @@ fun RatingBar(
                 },
                 navigationIcon = {
                     IconButton(onClick = onCancel, modifier = Modifier.testTag(CANCEL)) {
-                        Icon(Filled.ArrowBack, "Back")
+                        Icon(
+                            imageVector = Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = {
-                            onSubmit(rating)
-                        },
-                        modifier = Modifier.testTag(DONE)
-                    ) {
+                    IconButton(onClick = { onSubmit(rating) }, modifier = Modifier.testTag(DONE)) {
                         Icon(
-                            Filled.Done, "Done",
-                            tint = if (colors.isLight)
-                                colors.onPrimary
-                            else
-                                colors.onSurface
+                            imageVector = Filled.Done,
+                            contentDescription = "Done",
+                            tint = if (colors.isLight) colors.onPrimary else colors.onSurface
                         )
                     }
                 }
             )
         }
     ) { padding ->
-        Row(
-            modifier = Modifier.padding(padding).fillMaxSize(),
-            verticalAlignment = CenterVertically,
-            horizontalArrangement = Center
+        Column(modifier = Modifier
+            .clickable { rating = 0 }
+            .padding(padding)
+            .fillMaxSize()
         ) {
-            for (i in 1..5) {
-                Icon(
-                    imageVector = Default.Star,
-                    contentDescription = "star",
-                    modifier = Modifier
-                        .width(size)
-                        .height(size)
-                        .pointerInteropFilter {
-                            when (it.action) {
-                                ACTION_DOWN -> {
-                                    selected = true
-                                    rating = i
+            Row(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize(),
+                verticalAlignment = CenterVertically,
+                horizontalArrangement = Center
+            ) {
+                for (star in 1..5) {
+                    Icon(
+                        imageVector = Default.Star,
+                        contentDescription = "star",
+                        modifier = Modifier
+                            .width(size)
+                            .height(size)
+                            .pointerInteropFilter {
+                                when (it.action) {
+                                    ACTION_DOWN -> {
+                                        selected = true
+                                        rating = star
+                                    }
+
+                                    ACTION_UP -> selected = false
                                 }
-                                ACTION_UP -> {
-                                    selected = false
-                                }
-                            }
-                            true
-                        },
-                    tint = if (i <= rating) colors.label else colors.onLabel
-                )
+                                true
+                            },
+                        tint = if (star <= rating) colors.selectedStar else colors.unselectedStar
+                    )
+                }
             }
         }
     }
