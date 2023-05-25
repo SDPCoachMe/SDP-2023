@@ -209,18 +209,24 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                         }
 
                                         Dashboard.TestTags.Buttons.LOGOUT -> {
-                                            (context.applicationContext as CoachMeApplication).authenticator.signOut(
-                                                context
-                                            ) {
-                                                (context.applicationContext as CoachMeApplication).store.setCurrentEmail(
-                                                    ""
-                                                ).thenApply {
-                                                    context.startActivity(
-                                                        Intent(
-                                                            context,
-                                                            LoginActivity::class.java
-                                                        )
+                                            val authenticator =
+                                                (context.applicationContext as CoachMeApplication).authenticator
+
+                                            authenticator.delete(context) {
+                                                (context.applicationContext as CoachMeApplication).authenticator.signOut(
+                                                    context
+                                                ) {
+                                                    (context.applicationContext as CoachMeApplication).store.setCurrentEmail(
+                                                        ""
                                                     )
+                                                        .thenApply {
+                                                            context.startActivity(
+                                                                Intent(
+                                                                    context,
+                                                                    LoginActivity::class.java
+                                                                )
+                                                            )
+                                                        }
                                                 }
                                             }
                                         }
