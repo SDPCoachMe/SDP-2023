@@ -109,6 +109,13 @@ class ChatActivity : ComponentActivity() {
 
         store = (application as CoachMeApplication).store
         emailFuture = store.getCurrentEmail()
+            .exceptionally {
+                // The following recovers from the user receiving a push notification, then logging out
+                // and then clicking on the notification. In this case, the intent will contain the email
+                val pushNotificationEmail = intent.getStringExtra("pushNotification_currentUserEmail")!!
+                store.setCurrentEmail(pushNotificationEmail)
+                pushNotificationEmail
+            }
         val chatId = intent.getStringExtra("chatId")
         val isGroupChat: Boolean
         var contact = ""
