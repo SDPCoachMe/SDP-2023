@@ -65,10 +65,27 @@ class CoachesListActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        if (intent.getBooleanExtra("openChat", false)) {
+            val chatId = intent.getStringExtra("chatId")!!
+            val email = intent.getStringExtra("pushNotification_currentUserEmail")!!
+            val chatIntent = Intent(this, ChatActivity::class.java)
+                .putExtra("chatId", chatId)
+                .putExtra("pushNotification_currentUserEmail", email)
+            startActivity(chatIntent)
+        }
+
+
         val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
         store = (application as CoachMeApplication).store
 
         emailFuture = store.getCurrentEmail()
+            .exceptionally {
+                // The following recovers from the user receiving a push notification, then logging out
+                // and then clicking on the notification. In this case, the intent will contain the email
+                val pushNotificationEmail = intent.getStringExtra("pushNotification_currentUserEmail")!!
+                store.setCurrentEmail(pushNotificationEmail)
+                pushNotificationEmail
+            }
 
         val locationProvider = (application as CoachMeApplication).locationProvider
         // Here we don't need the UserInfo

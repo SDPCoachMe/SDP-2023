@@ -28,3 +28,6 @@ Run the app on an emulator or physical device.
 
 ## How to Use
 When you first open the app, you will be prompted to create a profile. Once you have created a profile, you can search for coaches by location or by sport. You can then view coach profiles, send messages to coaches to arrange appointments, and schedule events in your calendar.
+
+## Shoutouts
+The App icon has been taken from the following website: <a href="https://www.flaticon.com/free-icons/first" title="first icons">First icons created by Freepik - Flaticon</a>
