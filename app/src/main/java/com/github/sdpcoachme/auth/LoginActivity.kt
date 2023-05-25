@@ -11,7 +11,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.github.sdpcoachme.CoachMeApplication
+import com.github.sdpcoachme.R
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.messaging.InAppNotificationService
@@ -229,23 +229,24 @@ class LoginActivity : ComponentActivity() {
         Box(
             modifier = Modifier
                 .padding(bottom = 32.dp)
-                .size(210.dp)
+                .size(150.dp)
                 .clip(CircleShape)
-                .background(Color.White)
 
         ) {
             Image(
-                painter = painterResource(id = android.R.drawable.ic_menu_myplaces),
+                painter = painterResource(id = R.mipmap.coach_me_icon_foreground),
                 contentDescription = "Coach Me Logo",
                 modifier = Modifier
                     .testTag(TestTags.COACH_ME_ICON)
-                    .size(200.dp)
+                    .size(150.dp)
+                    .align(Alignment.Center),
             )
             CircularProgressIndicator(
                 modifier = Modifier
                     .testTag(TestTags.LOADING_SYMBOL)
-                    .size(210.dp)
+                    .size(150.dp)
                     .align(Alignment.Center),
+                color = Color(0xFFFF5722),
                 strokeWidth = 4.dp,
             )
         }
