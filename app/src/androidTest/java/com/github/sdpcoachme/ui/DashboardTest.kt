@@ -19,6 +19,7 @@ import androidx.test.rule.GrantPermissionRule
 import com.github.sdpcoachme.BuildConfig
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.auth.LoginActivity
+import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.location.MapActivity
 import com.github.sdpcoachme.profile.CoachesListActivity
 import com.github.sdpcoachme.profile.ProfileActivity
@@ -31,6 +32,7 @@ import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.PLAN
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.PROFILE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.SCHEDULE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_NAME
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.MENU_LIST
 import org.hamcrest.Matcher
@@ -49,7 +51,8 @@ import java.util.concurrent.TimeUnit
 @RunWith(AndroidJUnit4::class)
 class DashboardTest {
 
-    private val EXISTING_EMAIL = "example@email.com"
+    private val EXISTING_EMAIL = MockDatabase.getDefaultEmail()
+    private val EXISTING_NAME = "${MockDatabase.getDefaultUser().firstName} ${MockDatabase.getDefaultUser().lastName}"
 
     private val store = (InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as CoachMeApplication).store
@@ -66,7 +69,7 @@ class DashboardTest {
 
     @Before
     fun initIntents() {
-        store.setCurrentEmail(EXISTING_EMAIL).get(1000, TimeUnit.MILLISECONDS)
+        store.setCurrentEmail(EXISTING_EMAIL).get(100, TimeUnit.MILLISECONDS)
         Intents.init()
     }
 
@@ -80,13 +83,13 @@ class DashboardTest {
      */
     private fun setUpDashboard(withoutEmail: Boolean = false) {
         if (withoutEmail) {
-            store.setCurrentEmail("")
+            store.setCurrentEmail("").get(1, TimeUnit.SECONDS)
         }
         val UIDisplayed = CompletableFuture<Void>()
         composeTestRule.setContent {
             Dashboard(UIDisplayed = UIDisplayed) {}
         }
-        UIDisplayed.get(1000, TimeUnit.MILLISECONDS)
+        UIDisplayed.get(1, TimeUnit.SECONDS)
     }
 
     /**
@@ -150,6 +153,13 @@ class DashboardTest {
         setUpDashboard()
         composeTestRule.onNodeWithTag(DASHBOARD_EMAIL).assert(hasText(text = EXISTING_EMAIL))
     }
+
+    @Test
+    fun dashboardDisplaysCorrectNameOfUser() {
+        setUpDashboard()
+        composeTestRule.onNodeWithTag(DASHBOARD_NAME).assert(hasText(text = EXISTING_NAME))
+    }
+
     private fun dashboardCorrectlyRedirectsOnMenuItemClick(
         tag: String,
         intentMatcher: Matcher<Intent>
