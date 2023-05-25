@@ -34,7 +34,12 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
-import com.google.maps.android.compose.*
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapType
+import com.google.maps.android.compose.MarkerInfoWindowContent
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 
@@ -99,7 +104,8 @@ class MapActivity : ComponentActivity() {
                         lastUserLocation = locationProvider.getLastLocation(),
                         futureCoachesToDisplay = futureUsers,
                         markerLoading = markerLoading,
-                        mapLoading = mapLoading)
+                        mapLoading = mapLoading
+                    )
                 }
             }
         }
@@ -172,7 +178,6 @@ fun Map(
                 state = state,
                 tag = MARKER(user),
                 onInfoWindowClick = {
-                    // TODO: code similar to CoachesList, might be able to modularize
                     val displayCoachIntent = Intent(context, ProfileActivity::class.java)
                     displayCoachIntent.putExtra("email", user.email)
                     if (user.email == email) {

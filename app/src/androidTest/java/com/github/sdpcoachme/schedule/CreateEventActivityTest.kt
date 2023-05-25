@@ -21,31 +21,33 @@ import com.github.sdpcoachme.data.schedule.EventColors
 import com.github.sdpcoachme.data.schedule.EventType
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.location.autocomplete.MockAddressAutocompleteHandler
+import com.github.sdpcoachme.profile.EditTextActivity
 import com.github.sdpcoachme.profile.SelectSportsActivity
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.COLOR_BOX
-import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.END_DATE
-import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.END_TIME
-import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.LOCATION
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.SAVE
-import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.SPORT
-import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.START_DATE
-import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Clickables.Companion.START_TIME
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Companion.SCAFFOLD
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Icons.Companion.CANCEL_ICON
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Icons.Companion.SAVE_ICON
-import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.TextFields.Companion.DESCRIPTION
-import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.TextFields.Companion.EVENT_NAME
-import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.TextFields.Companion.MAX_PARTICIPANTS
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Label.Companion.COLOR_LABEL
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Label.Companion.DESCRIPTION_LABEL
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Label.Companion.END_DATE_LABEL
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Label.Companion.END_TIME_LABEL
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Label.Companion.EVENT_TITLE_LABEL
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Label.Companion.LOCATION_LABEL
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Label.Companion.MAX_PARTICIPANTS_LABEL
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Label.Companion.SPORT_LABEL
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Label.Companion.START_DATE_LABEL
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Label.Companion.START_TIME_LABEL
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.ACTIVITY_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.COLOR_DIALOG_TITLE
-import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.COLOR_TEXT
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.DESCRIPTION_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.END_DATE_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.END_DATE_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.END_TIME_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.END_TIME_TEXT
+import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.EVENT_TITLE_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.LOCATION_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.MAX_PARTICIPANTS_TEXT
-import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.SPORT_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_DATE_DIALOG_TITLE
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_DATE_TEXT
 import com.github.sdpcoachme.schedule.CreateEventActivity.TestTags.Texts.Companion.START_TIME_DIALOG_TITLE
@@ -100,34 +102,40 @@ class CreateEventActivityTest {
 
     @Test
     fun correctInitialScreenContentForPrivateEvent() {
-        val initiallyDisplayed = listOf(
+        val initiallyDisplayedTags = listOf(
             SCAFFOLD,
             ACTIVITY_TITLE,
             CANCEL_ICON,
             SAVE_ICON,
-            EVENT_NAME,
             START_DATE_TEXT,
             START_TIME_TEXT,
             END_DATE_TEXT,
             END_TIME_TEXT,
-            START_DATE,
-            START_TIME,
-            END_DATE,
-            END_TIME,
-            SPORT_TEXT,
-            SPORT,
-            LOCATION_TEXT,
-            LOCATION,
-            COLOR_TEXT,
             COLOR_BOX,
-            DESCRIPTION,
+        )
+        val initiallyDisplayedLabels = listOf(
+            EVENT_TITLE_LABEL,
+            START_DATE_LABEL,
+            START_TIME_LABEL,
+            END_DATE_LABEL,
+            END_TIME_LABEL,
+            SPORT_LABEL,
+            LOCATION_LABEL,
+            COLOR_LABEL,
+            DESCRIPTION_LABEL,
         )
 
         defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
 
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            initiallyDisplayed.forEach { tag ->
+            initiallyDisplayedTags.forEach { tag ->
+                println("Checking for tag: $tag")
                 composeTestRule.onNodeWithTag(tag, useUnmergedTree = true)
+                    .assertExists()
+                    .assertIsDisplayed()
+            }
+            initiallyDisplayedLabels.forEach { label ->
+                composeTestRule.onNodeWithText(label, useUnmergedTree = true)
                     .assertExists()
                     .assertIsDisplayed()
             }
@@ -136,36 +144,41 @@ class CreateEventActivityTest {
 
     @Test
     fun correctInitialScreenContentForGroupEvent() {
-        val initiallyDisplayed = listOf(
+        val initiallyDisplayedTags = listOf(
             SCAFFOLD,
             ACTIVITY_TITLE,
             CANCEL_ICON,
             SAVE_ICON,
-            EVENT_NAME,
             START_DATE_TEXT,
             START_TIME_TEXT,
             END_DATE_TEXT,
             END_TIME_TEXT,
-            START_DATE,
-            START_TIME,
-            END_DATE,
-            END_TIME,
             MAX_PARTICIPANTS_TEXT,
-            MAX_PARTICIPANTS,
-            SPORT_TEXT,
-            SPORT,
-            LOCATION_TEXT,
-            LOCATION,
-            COLOR_TEXT,
             COLOR_BOX,
-            DESCRIPTION,
+        )
+        val initiallyDisplayedLabels = listOf(
+            EVENT_TITLE_LABEL,
+            START_DATE_LABEL,
+            START_TIME_LABEL,
+            END_DATE_LABEL,
+            END_TIME_LABEL,
+            MAX_PARTICIPANTS_LABEL,
+            SPORT_LABEL,
+            LOCATION_LABEL,
+            COLOR_LABEL,
+            DESCRIPTION_LABEL,
         )
 
         defaultIntent.putExtra("eventType", EventType.GROUP.eventTypeName)
 
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            initiallyDisplayed.forEach { tag ->
+            initiallyDisplayedTags.forEach { tag ->
                 composeTestRule.onNodeWithTag(tag, useUnmergedTree = true)
+                    .assertExists()
+                    .assertIsDisplayed()
+            }
+            initiallyDisplayedLabels.forEach { label ->
+                composeTestRule.onNodeWithText(label, useUnmergedTree = true)
                     .assertExists()
                     .assertIsDisplayed()
             }
@@ -175,7 +188,7 @@ class CreateEventActivityTest {
 
     // Note: Pressing the cancel button on the date picker works, but pressing the ok button does not
     private fun openAndCancelDatePicker(
-        dateTag: String,
+        dateLabel: String,
         dialogTitleTag: String,
     ) {
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
@@ -183,7 +196,7 @@ class CreateEventActivityTest {
         val timeout = 200L
 
         // Open date picker
-        composeTestRule.onNodeWithTag(dateTag)
+        composeTestRule.onNodeWithText(dateLabel, substring = true, useUnmergedTree = true)
             .performClick()
         composeTestRule.onNodeWithTag(dialogTitleTag, useUnmergedTree = true)
             .assertExists()
@@ -196,15 +209,15 @@ class CreateEventActivityTest {
         device.findObject(By.text("Cancel")).click()
         device.wait(Until.gone(By.text("Cancel")), timeout)
 
-        composeTestRule.onNodeWithTag(START_DATE)
-            .assertTextEquals(EventOps.getDefaultEventStart().format(EventOps.getDayFormatter()))
+        composeTestRule.onNodeWithTag(dialogTitleTag, useUnmergedTree = true)
+            .assertDoesNotExist()
     }
 
     @Test
     fun cancelAndConfirmStartDateWorks() {
         defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            openAndCancelDatePicker(START_DATE, START_DATE_DIALOG_TITLE)
+            openAndCancelDatePicker(START_DATE_LABEL, START_DATE_DIALOG_TITLE)
         }
     }
 
@@ -212,13 +225,13 @@ class CreateEventActivityTest {
     fun cancelAndConfirmEndDateWorks() {
         defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            openAndCancelDatePicker(END_DATE, END_DATE_DIALOG_TITLE)
+            openAndCancelDatePicker(END_DATE_LABEL, END_DATE_DIALOG_TITLE)
         }
     }
 
     // Note: Pressing the cancel button on the time picker works, but pressing the ok button does not
     private fun openAndCancelTimePicker(
-        timeTag: String,
+        timeLabel: String,
         dialogTitleTag: String,
     ) {
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
@@ -228,7 +241,7 @@ class CreateEventActivityTest {
         val testMinute2 = 0
 
         // Open time picker
-        composeTestRule.onNodeWithTag(timeTag)
+        composeTestRule.onNodeWithText(timeLabel, substring = true, useUnmergedTree = true)
             .performClick()
         composeTestRule.onNodeWithTag(dialogTitleTag, useUnmergedTree = true)
             .assertExists()
@@ -257,7 +270,7 @@ class CreateEventActivityTest {
     fun cancelAndConfirmStartTimeWorks() {
         defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            openAndCancelTimePicker(START_TIME, START_TIME_DIALOG_TITLE)
+            openAndCancelTimePicker(START_TIME_LABEL, START_TIME_DIALOG_TITLE)
         }
     }
 
@@ -265,7 +278,7 @@ class CreateEventActivityTest {
     fun cancelAndConfirmEndTimeWorks() {
         defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            openAndCancelTimePicker(END_TIME, END_TIME_DIALOG_TITLE)
+            openAndCancelTimePicker(END_TIME_LABEL, END_TIME_DIALOG_TITLE)
         }
     }
 
@@ -273,7 +286,7 @@ class CreateEventActivityTest {
     fun changeSportWorks() {
         defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(SPORT)
+            composeTestRule.onNodeWithText(SPORT_LABEL)
                 .assertExists()
                 .performClick() // launches SelectSportsActivity
 
@@ -284,11 +297,9 @@ class CreateEventActivityTest {
             composeTestRule.onNodeWithTag(swimTag, useUnmergedTree = true).performScrollTo().performClick()   // choose swimming
 
             composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.DONE, useUnmergedTree = true).performClick() // go back to CreateEventActivity
-
-            val swimIconTag = CreateEventActivity.TestTags.SportElement(Sports.SWIMMING).ICON
-            composeTestRule.onNodeWithTag(swimIconTag, useUnmergedTree = true).assertExists()
-            val runIconTag = CreateEventActivity.TestTags.SportElement(Sports.RUNNING).ICON
-            composeTestRule.onNodeWithTag(runIconTag, useUnmergedTree = true).assertDoesNotExist()
+            composeTestRule.onNodeWithTag(CreateEventActivity.TestTags.SPORTS, useUnmergedTree = true).onChildren().assertAny(
+                hasContentDescription(Sports.SWIMMING.sportName)
+            )
         }
     }
 
@@ -296,7 +307,7 @@ class CreateEventActivityTest {
     fun changeSportThenCancelDoesNothing() {
         defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(SPORT)
+            composeTestRule.onNodeWithText(SPORT_LABEL, useUnmergedTree = true)
                 .assertExists()
                 .performClick() // launches SelectSportsActivity
 
@@ -307,11 +318,9 @@ class CreateEventActivityTest {
             composeTestRule.onNodeWithTag(swimTag, useUnmergedTree = true).performScrollTo().performClick()   // choose swimming
 
             composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.CANCEL, useUnmergedTree = true).performClick() // go back to CreateEventActivity
-
-            val swimIconTag = CreateEventActivity.TestTags.SportElement(Sports.SWIMMING).ICON
-            composeTestRule.onNodeWithTag(swimIconTag, useUnmergedTree = true).assertDoesNotExist()
-            val runIconTag = CreateEventActivity.TestTags.SportElement(Sports.RUNNING).ICON
-            composeTestRule.onNodeWithTag(runIconTag, useUnmergedTree = true).assertExists()
+            composeTestRule.onNodeWithTag(CreateEventActivity.TestTags.SPORTS, useUnmergedTree = true).onChildren().assertAny(
+                hasContentDescription(Sports.RUNNING.sportName)
+            )
         }
     }
 
@@ -319,11 +328,11 @@ class CreateEventActivityTest {
     fun changeLocationWorks() {
         defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(LOCATION)
+            composeTestRule.onNodeWithText(LOCATION_LABEL, substring = true, useUnmergedTree = true)
                 .assertExists()
                 .performClick() // changes address to default (Lausanne)
 
-            composeTestRule.onNodeWithTag(LOCATION)
+            composeTestRule.onNodeWithTag(LOCATION_TEXT, useUnmergedTree = true)
                 .assertTextEquals(MockAddressAutocompleteHandler.DEFAULT_ADDRESS.name)
         }
     }
@@ -332,7 +341,7 @@ class CreateEventActivityTest {
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
         // Open color picker
-        composeTestRule.onNodeWithTag(COLOR_BOX)
+        composeTestRule.onNodeWithText(COLOR_LABEL, substring = true, useUnmergedTree = true)
             .performClick()
         composeTestRule.onNodeWithTag(COLOR_DIALOG_TITLE, useUnmergedTree = true)
             .assertExists()
@@ -353,48 +362,45 @@ class CreateEventActivityTest {
         }
     }
 
-    private fun fillAndCheckFocus(text: String, tag: String) {
-        composeTestRule.onNodeWithTag(tag)
-            .assertIsNotFocused()
-        composeTestRule.onNodeWithTag(tag)
-            .performClick()
-        composeTestRule.onNodeWithTag(tag)
-            .assertIsFocused()
-        composeTestRule.onNodeWithTag(tag)
-            .performTextInput(text)
-        composeTestRule.onNodeWithTag(tag)
-            .performImeAction()
-        composeTestRule.onNodeWithTag(tag)
-            .assertIsNotFocused()
+    private fun editFieldTo(text: String, tag: String) {
+        composeTestRule.onNodeWithText(tag, substring = true, useUnmergedTree = true).performClick()
+        composeTestRule.onNodeWithTag(EditTextActivity.TestTags.Companion.TextFields.MAIN, useUnmergedTree = true).performTextClearance()
+        composeTestRule.onNodeWithTag(EditTextActivity.TestTags.Companion.TextFields.MAIN, useUnmergedTree = true).performTextInput(text)
+        composeTestRule.onNodeWithTag(EditTextActivity.TestTags.Companion.TextFields.MAIN, useUnmergedTree = true).performImeAction()
     }
 
     @Test
-    fun addPrivateEventWithValidInfosFocusWorks() {
+    fun fillInPrivateEventWithValidInfosWorks() {
         defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
 
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
             val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-            fillAndCheckFocus(defaultEvent.name, EVENT_NAME)
+
+            editFieldTo(defaultEvent.name, EVENT_TITLE_LABEL)
             device.waitForIdle()
-            fillAndCheckFocus(defaultEvent.description, DESCRIPTION)
+            composeTestRule.onNodeWithTag(EVENT_TITLE_TEXT, useUnmergedTree = true).assertTextEquals(defaultEvent.name)
+            editFieldTo(defaultEvent.description, DESCRIPTION_LABEL)
             device.waitForIdle()
+            composeTestRule.onNodeWithTag(DESCRIPTION_TEXT, useUnmergedTree = true).assertTextEquals(defaultEvent.description)
         }
     }
 
-
     @Test
-    fun addGroupEventWithValidInfosFocusWorks() {
+    fun fillInGroupEventWithValidInfosWorks() {
         defaultIntent.putExtra("eventType", EventType.GROUP.eventTypeName)
 
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(MAX_PARTICIPANTS)
-                .performTextInput("5")
-
             val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-            fillAndCheckFocus(defaultEvent.name, EVENT_NAME)
+
+            editFieldTo(defaultEvent.name, EVENT_TITLE_LABEL)
             device.waitForIdle()
-            fillAndCheckFocus(defaultEvent.description, DESCRIPTION)
+            composeTestRule.onNodeWithTag(EVENT_TITLE_TEXT, useUnmergedTree = true).assertTextEquals(defaultEvent.name)
+            editFieldTo("5", MAX_PARTICIPANTS_LABEL)
             device.waitForIdle()
+            composeTestRule.onNodeWithTag(MAX_PARTICIPANTS_TEXT, useUnmergedTree = true).assertTextEquals("5")
+            editFieldTo(defaultEvent.description, DESCRIPTION_LABEL)
+            device.waitForIdle()
+            composeTestRule.onNodeWithTag(DESCRIPTION_TEXT, useUnmergedTree = true).assertTextEquals(defaultEvent.description)
         }
     }
 
@@ -402,10 +408,13 @@ class CreateEventActivityTest {
     fun addValidPrivateEventSavesToDatabase() {
         defaultIntent.putExtra("eventType", EventType.PRIVATE.eventTypeName)
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
-            composeTestRule.onNodeWithTag(EVENT_NAME)
-                .performTextInput(defaultEvent.name)
-            composeTestRule.onNodeWithTag(DESCRIPTION)
-                .performTextInput(defaultEvent.description)
+            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+
+            editFieldTo(defaultEvent.name, EVENT_TITLE_LABEL)
+            device.waitForIdle()
+            editFieldTo(defaultEvent.description, DESCRIPTION_LABEL)
+            device.waitForIdle()
+
             composeTestRule.onNodeWithTag(SAVE)
                 .performClick()
 
@@ -429,40 +438,41 @@ class CreateEventActivityTest {
         ActivityScenario.launch<CreateEventActivity>(defaultIntent).use {
             val maxParticipants = 5
             val organiser = store.getCurrentEmail().get().replace(".", ",")
+            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
             // since tested with private event, we directly fill in the whole form
-            composeTestRule.onNodeWithTag(EVENT_NAME)
-                .performTextInput(defaultEvent.name)
-            composeTestRule.onNodeWithTag(DESCRIPTION)
-                .performTextInput(defaultEvent.description)
-            openAndCancelDatePicker(START_DATE, START_DATE_DIALOG_TITLE)
-            openAndCancelDatePicker(END_DATE, END_DATE_DIALOG_TITLE)
-            openAndCancelTimePicker(START_TIME, START_TIME_DIALOG_TITLE)
+            editFieldTo(defaultEvent.name, EVENT_TITLE_LABEL)
+            device.waitForIdle()
+            editFieldTo(defaultEvent.description, DESCRIPTION_LABEL)
+            device.waitForIdle()
+            openAndCancelDatePicker(START_DATE_LABEL, START_DATE_DIALOG_TITLE)
+            openAndCancelDatePicker(END_DATE_LABEL, END_DATE_DIALOG_TITLE)
+            openAndCancelTimePicker(START_TIME_LABEL, START_TIME_DIALOG_TITLE)
 
             // Select sport
-            composeTestRule.onNodeWithTag(SPORT).performClick() // launches SelectSportsActivity
+            composeTestRule.onNodeWithText(SPORT_LABEL).performClick() // launches SelectSportsActivity
             val runTag = SelectSportsActivity.TestTags.ListRowTag(Sports.RUNNING).ROW
             composeTestRule.onNodeWithTag(runTag, useUnmergedTree = true).performClick()   // unchoose running
             val swimTag = SelectSportsActivity.TestTags.ListRowTag(Sports.SWIMMING).ROW
             composeTestRule.onNodeWithTag(swimTag, useUnmergedTree = true).performClick()   // choose swimming
-            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.CANCEL, useUnmergedTree = true).performClick() // go back to CreateEventActivity
+            composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.DONE, useUnmergedTree = true).performClick() // go back to CreateEventActivity
 
             // fill in remaining fields
-            composeTestRule.onNodeWithTag(LOCATION)
+            composeTestRule.onNodeWithText(LOCATION_LABEL, substring = true, useUnmergedTree = true)
                 .performClick()
             openAndCloseColorPicker()
-            openAndCancelTimePicker(END_TIME, END_TIME_DIALOG_TITLE)
-            composeTestRule.onNodeWithTag(MAX_PARTICIPANTS)
-                .performTextInput(maxParticipants.toString())
+            openAndCancelTimePicker(END_TIME_LABEL, END_TIME_DIALOG_TITLE)
+            editFieldTo(maxParticipants.toString(), MAX_PARTICIPANTS_LABEL)
+            device.waitForIdle()
             composeTestRule.onNodeWithTag(SAVE)
                 .performClick()
 
-            val expectedEvent = defaultEvent
+            val expectedEvent = defaultEvent.copy(sport = Sports.SWIMMING)
             val expectedGroupEvent = GroupEvent(
                 organizer = organiser,
                 maxParticipants = maxParticipants,
                 participants = listOf(organiser),
-                event = expectedEvent
+                event = expectedEvent.copy(sport = Sports.SWIMMING)
             )
 
             val eventId = "@@event" + organiser + defaultEvent.start.format(eventDateFormatter)

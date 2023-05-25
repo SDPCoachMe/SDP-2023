@@ -186,62 +186,65 @@ class ScheduleActivity : ComponentActivity() {
 
                 var isDropdownExpanded by remember { mutableStateOf(false) }
 
-                FloatingActionButton(
-                    onClick = {
-                        val isCoachFuture = store.getCurrentEmail().thenCompose { email ->
-                            store.getUser(email)
-                        }.thenApply { user ->
-                            user.coach
-                        }
-                        // if user is coach, let them choose between private and group event
-                        isCoachFuture.thenAccept { isCoach ->
-                            if (isCoach) {
-                                isDropdownExpanded = !isDropdownExpanded
-                            } else {
+                Box(modifier = Modifier.align(Alignment.BottomEnd)) {
+                    FloatingActionButton(
+                        onClick = {
+                            val isCoachFuture = store.getCurrentEmail().thenCompose { email ->
+                                store.getUser(email)
+                            }.thenApply { user ->
+                                user.coach
+                            }
+                            // if user is coach, let them choose between private and group event
+                            isCoachFuture.thenAccept { isCoach ->
+                                if (isCoach) {
+                                    isDropdownExpanded = !isDropdownExpanded
+                                } else {
+                                    launchCreateEventActivity(EventType.PRIVATE)
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(16.dp)
+                            .testTag(TestTags.Buttons.ADD_EVENT_BUTTON),
+                        backgroundColor = MaterialTheme.colors.primary,
+                        contentColor = MaterialTheme.colors.onPrimary
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add Event"
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = isDropdownExpanded,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd),
+                        onDismissRequest = { isDropdownExpanded = false },
+                        properties = PopupProperties(clippingEnabled = false),
+                    ) {
+                        DropdownMenuItem(
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .testTag(TestTags.Buttons.ADD_PRIVATE_EVENT_BUTTON),
+                            onClick = {
+                                isDropdownExpanded = false
                                 launchCreateEventActivity(EventType.PRIVATE)
                             }
+                        ) {
+                            Text(text = "Private Event")
                         }
-                    },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp)
-                        .testTag(TestTags.Buttons.ADD_EVENT_BUTTON),
-                    backgroundColor = MaterialTheme.colors.primary,
-                    contentColor = MaterialTheme.colors.onPrimary
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add Event"
-                    )
-                }
-
-                // TODO: align the dropdown menu with the add event button
-                DropdownMenu(
-                    expanded = isDropdownExpanded,
-                    onDismissRequest = { isDropdownExpanded = false },
-                    properties = PopupProperties(clippingEnabled = false),
-                ) {
-                    DropdownMenuItem(
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .testTag(TestTags.Buttons.ADD_PRIVATE_EVENT_BUTTON),
-                        onClick = {
-                            isDropdownExpanded = false
-                            launchCreateEventActivity(EventType.PRIVATE)
+                        DropdownMenuItem(
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .testTag(TestTags.Buttons.ADD_GROUP_EVENT_BUTTON),
+                            onClick = {
+                                isDropdownExpanded = false
+                                launchCreateEventActivity(EventType.GROUP)
+                            }
+                        ) {
+                            Text(text = "Group Event")
                         }
-                    ) {
-                        Text(text = "Private Event")
-                    }
-                    DropdownMenuItem(
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .testTag(TestTags.Buttons.ADD_GROUP_EVENT_BUTTON),
-                        onClick = {
-                            isDropdownExpanded = false
-                            launchCreateEventActivity(EventType.GROUP)
-                        }
-                    ) {
-                        Text(text = "Group Event")
                     }
                 }
             }

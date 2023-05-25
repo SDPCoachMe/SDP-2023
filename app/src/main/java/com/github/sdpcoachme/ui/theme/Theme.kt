@@ -62,6 +62,10 @@ val Colors.onChatTime: Color
 val Colors.readMessageCheck: Color
     get() = if (isLight) DarkPrettyBlue else LightPrettyBlue
 
+@get:Composable
+val Colors.dashboardPersonalDetailsBackground: Color
+    get() = if (isLight) Purple500 else DarkGrayTopBar
+
 @Composable
 fun CoachMeTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     val colors = if (darkTheme) {
