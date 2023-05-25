@@ -94,9 +94,7 @@ open class LoginActivityTest {
         "to@email.com",
         "0987654321",
         AddressSamples.LAUSANNE,
-        true,
-        emptyList(),
-        emptyList()
+        true
     )
 
     private val currentUser = UserInfo(
@@ -106,8 +104,6 @@ open class LoginActivityTest {
         "0123456789",
         AddressSamples.NEW_YORK,
         false,
-        emptyList(),
-        emptyList()
     )
 
     private val nonExistingUser = UserInfo(
@@ -117,8 +113,6 @@ open class LoginActivityTest {
         "",
         AddressSamples.NEW_YORK,
         false,
-        emptyList(),
-        emptyList()
     )
 
     @get:Rule

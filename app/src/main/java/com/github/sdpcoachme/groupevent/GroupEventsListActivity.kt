@@ -155,7 +155,6 @@ fun GroupEventItem(
 ) {
     val context = LocalContext.current
     val tags = GroupEventsListActivity.TestTags.GroupEventItemTags(groupEvent)
-
     val eventStart = LocalDateTime.parse(groupEvent.event.start)
     val eventEnd = LocalDateTime.parse(groupEvent.event.end)
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")

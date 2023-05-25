@@ -46,9 +46,7 @@ open class MockDatabase: Database {
             DEFAULT_EMAIL,
             "1234567890",
             LAUSANNE,
-            false,
-            emptyList(),
-            emptyList()
+            false
         )
 
         private val TO_EMAIL = COACH_1.email

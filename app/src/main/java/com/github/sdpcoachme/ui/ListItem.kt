@@ -77,7 +77,9 @@ fun ListItem(
             Spacer(modifier = Modifier.width(16.dp))
         }
         Column(
-            modifier = Modifier.fillMaxWidth(firstColumnMaxWidth).fillMaxHeight(),
+            modifier = Modifier
+                .fillMaxWidth(firstColumnMaxWidth)
+                .fillMaxHeight(),
             verticalArrangement = Arrangement.SpaceEvenly
         ) {
             Text(
@@ -238,7 +240,8 @@ fun Label(
     textTag: String? = null,
     icon: IconData? = null,
     backgroundColor: Color,
-    contentColor: Color
+    contentColor: Color,
+    iconOnRight: Boolean = false
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -246,25 +249,61 @@ fun Label(
             .background(backgroundColor, CircleShape)
             .padding(horizontal = 10.dp, vertical = 6.dp)
     ) {
-        icon?.let {
-            Icon(
-                imageVector = icon.icon,
-                tint = contentColor,
-                contentDescription = icon.contentDescription,
-                modifier = Modifier.size(15.dp)
-            )
+        if (iconOnRight) {
+            LabelText(text = text, contentColor = contentColor, textTag = textTag)
             Spacer(modifier = Modifier.width(4.dp))
+            LabelIcon(icon = icon, contentColor = contentColor)
+        } else {
+            LabelIcon(icon = icon, contentColor = contentColor)
+            Spacer(modifier = Modifier.width(4.dp))
+            LabelText(text = text, contentColor = contentColor, textTag = textTag)
         }
-        Text(
-            modifier = textTag?.let { Modifier.testTag(textTag) } ?: Modifier,
-            text = text,
-            color = contentColor,
-            style = MaterialTheme.typography.overline,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+    }
+}
+
+/**
+ * This composable is the icon used in a label.
+ * @param icon the icon to display
+ * @param contentColor the color of the icon
+ */
+@Composable
+fun LabelIcon(
+    icon: IconData? = null,
+    contentColor: Color
+) {
+    icon?.let {
+        Icon(
+            imageVector = icon.icon,
+            tint = contentColor,
+            contentDescription = icon.contentDescription,
+            modifier = Modifier.size(15.dp)
         )
     }
 }
+
+/**
+ * This composable is the text used in a label.
+ * @param text the text to display
+ * @param contentColor the color of the text
+ * @param textTag the tag to use for the text
+ */
+@Composable
+fun LabelText(
+    text: String,
+    contentColor: Color,
+    textTag: String? = null
+) {
+    Text(
+        modifier = textTag?.let { Modifier.testTag(textTag) } ?: Modifier,
+        text = text,
+        color = contentColor,
+        style = MaterialTheme.typography.overline,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+    )
+}
+
+
 
 /**
  * Represents an icon and its content description. Used to more easily pass icons as parameters.

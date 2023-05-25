@@ -5,11 +5,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -20,6 +23,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.database.CachingStore
+import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.COACH_RATING
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MARKER
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MARKER_INFO_WINDOW
@@ -30,6 +34,9 @@ import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.ui.IconData
 import com.github.sdpcoachme.ui.IconTextRow
 import com.github.sdpcoachme.ui.IconsRow
+import com.github.sdpcoachme.ui.Label
+import com.github.sdpcoachme.ui.theme.onRating
+import com.github.sdpcoachme.ui.theme.rating
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -57,6 +64,7 @@ class MapActivity : ComponentActivity() {
             const val MAP = "map"
             fun MARKER(user: UserInfo) = "marker-${user.email}"
             fun MARKER_INFO_WINDOW(user: UserInfo) = "infoWindow-${user.email}"
+            fun COACH_RATING(user: UserInfo) = "coachRating-${user.email}"
         }
 
     }
@@ -104,7 +112,8 @@ class MapActivity : ComponentActivity() {
                         lastUserLocation = locationProvider.getLastLocation(),
                         futureCoachesToDisplay = futureUsers,
                         markerLoading = markerLoading,
-                        mapLoading = mapLoading
+                        mapLoading = mapLoading,
+                        store = store
                     )
                 }
             }
@@ -125,7 +134,8 @@ fun Map(
     // Those 2 arguments have default values to avoid refactoring older tests
     futureCoachesToDisplay: CompletableFuture<List<UserInfo>> = CompletableFuture.completedFuture(listOf()),
     markerLoading: CompletableFuture<Void> = CompletableFuture<Void>(),
-    mapLoading: CompletableFuture<Void> = CompletableFuture<Void>()
+    mapLoading: CompletableFuture<Void> = CompletableFuture<Void>(),
+    store: CachingStore
 ) {
 
     val context = LocalContext.current
@@ -174,6 +184,12 @@ fun Map(
                 )
             }
 
+            var coachRating by remember { mutableStateOf(0) }
+
+            LaunchedEffect(true) {
+                coachRating = store.getCoachAverageRating(user.email).await()
+            }
+
             MarkerInfoWindowContent(
                 state = state,
                 tag = MARKER(user),
@@ -189,36 +205,59 @@ fun Map(
                     context.startActivity(displayCoachIntent)
                 }
             ) {
-                Column(
+                Row(
                     modifier = Modifier
                         .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 12.dp)
                         .fillMaxWidth(0.8f)
                         .testTag(MARKER_INFO_WINDOW(user))
                 ) {
-                    Text(
-                        text = "${user.firstName} ${user.lastName}",
-                        color = Color.Black,
-                        style = MaterialTheme.typography.h6,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    IconTextRow(
-                        icon = IconData(
-                            Icons.Default.Place,
-                            contentDescription = "${user.firstName} ${user.lastName}'s location"
-                        ),
-                        text = user.address.name
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    IconsRow(
-                        icons = user.sports.map {
-                            IconData(
-                                it.sportIcon,
-                                contentDescription = it.sportName
-                            )
-                        }
-                    )
+                    Column(
+                        modifier = Modifier
+                            .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 12.dp)
+                            .fillMaxWidth(0.8f)
+                    ) {
+                        Text(
+                            text = "${user.firstName} ${user.lastName}",
+                            color = Color.Black,
+                            style = MaterialTheme.typography.h6,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        IconTextRow(
+                            icon = IconData(
+                                Icons.Default.Place,
+                                contentDescription = "${user.firstName} ${user.lastName}'s location"
+                            ),
+                            text = user.address.name
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        IconsRow(
+                            icons = user.sports.map {
+                                IconData(
+                                    it.sportIcon,
+                                    contentDescription = it.sportName
+                                )
+                            }
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.Top
+                    ) {
+                        Label(
+                            text = "$coachRating",
+                            textTag = COACH_RATING(user),
+                            icon = IconData(
+                                icon = Icons.Default.Star,
+                                contentDescription = "Coach rating"
+                            ),
+                            backgroundColor = MaterialTheme.colors.rating,
+                            contentColor = MaterialTheme.colors.onRating,
+                            iconOnRight = true
+                        )
+                    }
                 }
             }
         }

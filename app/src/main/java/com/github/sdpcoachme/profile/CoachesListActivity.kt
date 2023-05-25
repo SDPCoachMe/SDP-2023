@@ -4,18 +4,18 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons.Default
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -34,6 +34,14 @@ import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.C
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.CoachesListActivity.TestTags.Buttons.Companion.FILTER
 import com.github.sdpcoachme.ui.*
+import com.github.sdpcoachme.ui.theme.onRating
+import com.github.sdpcoachme.ui.theme.rating
+import com.github.sdpcoachme.ui.Dashboard
+import com.github.sdpcoachme.ui.IconData
+import com.github.sdpcoachme.ui.IconTextRow
+import com.github.sdpcoachme.ui.IconsRow
+import com.github.sdpcoachme.ui.ImageData
+import com.github.sdpcoachme.ui.ListItem
 import kotlinx.coroutines.future.await
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -41,6 +49,11 @@ import java.util.concurrent.CompletableFuture
 class CoachesListActivity : ComponentActivity() {
 
     class TestTags {
+        data class CoachesListTags(val user: UserInfo) {
+            val RATING = "coachRating-${user.email}"
+        }
+
+
         class Buttons {
             companion object {
                 const val FILTER = "filterSearch"
@@ -169,11 +182,18 @@ class CoachesListActivity : ComponentActivity() {
                     }
                 } else {
                     items(listOfCoaches) { user ->
+                        var rating by remember { mutableStateOf(0) }
+
+                        LaunchedEffect(true) {
+                            rating = store.getCoachAverageRating(user.email).await()
+                        }
+
                         // Filtering should not influence the coaches list in contacts view
                         // We still show user with no favourite sports, especially for testing purposes
                         if (user.sports.isEmpty()
                             || !Collections.disjoint(user.sports, sportsFilter)) {
-                            UserInfoListItem(currentUserEmail = currentUserEmail, user = user, isViewingContacts = false)
+                            UserInfoListItem(currentUserEmail = currentUserEmail, user = user,
+                                isViewingContacts = false, coachRating = rating)
                         }
                     }
                 }
@@ -214,7 +234,8 @@ class CoachesListActivity : ComponentActivity() {
  * Displays a single user info in a list, or a chat preview if isViewingContacts is true.
  */
 @Composable
-fun UserInfoListItem(currentUserEmail: String, user: UserInfo = UserInfo(), isViewingContacts: Boolean = false, contactRowInfo: ContactRowInfo = ContactRowInfo()) {
+fun UserInfoListItem(currentUserEmail: String, user: UserInfo = UserInfo(), isViewingContacts: Boolean = false,
+                     contactRowInfo: ContactRowInfo = ContactRowInfo(), coachRating: Int = 0) {
     val context = LocalContext.current
 
     if (isViewingContacts) {
@@ -248,6 +269,7 @@ fun UserInfoListItem(currentUserEmail: String, user: UserInfo = UserInfo(), isVi
             }
         )
     } else {
+        val tags = CoachesListActivity.TestTags.CoachesListTags(user)
         ListItem(
             image = ImageData(
                 painter = painterResource(id = user.getPictureResource()),
@@ -265,6 +287,27 @@ fun UserInfoListItem(currentUserEmail: String, user: UserInfo = UserInfo(), isVi
                     IconData(icon = sport.sportIcon, contentDescription = sport.sportName)
                 })
             },
+            secondColumn = {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier.fillMaxHeight(),
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    Spacer(modifier = Modifier.height(9.dp))
+                    Label(
+                        text = "$coachRating",
+                        textTag = tags.RATING,
+                        icon = IconData(
+                            icon = Default.Star,
+                            contentDescription = "Coach rating"
+                        ),
+                        backgroundColor = MaterialTheme.colors.rating,
+                        contentColor = MaterialTheme.colors.onRating,
+                        iconOnRight = true
+                    )
+                }
+            },
+            firstColumnMaxWidth = 0.7f,
             onClick = {
                 val displayCoachIntent = Intent(context, ProfileActivity::class.java)
                 displayCoachIntent.putExtra("email", user.email)
