@@ -49,15 +49,20 @@ class CoachesListActivity : ComponentActivity() {
     }
 
     // Allows to notice testing framework that the activity is ready
+    var stateUpdated = CompletableFuture<Void>()
+    // To refresh the list of events, when we come back to this activity
+    var refreshState by mutableStateOf(false)
 
     private lateinit var store: CachingStore
-    private lateinit var emailFuture: CompletableFuture<String>
-
-
-    var stateLoading = CompletableFuture<Void>()
 
     // Observable state of the current sports used to filter the coaches list
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh the list of events by triggering launched effect
+        refreshState = !refreshState
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,19 +75,8 @@ class CoachesListActivity : ComponentActivity() {
                 .putExtra("pushNotification_currentUserEmail", email)
             startActivity(chatIntent)
         }
-
-
         val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
         store = (application as CoachMeApplication).store
-
-        emailFuture = store.getCurrentEmail()
-            .exceptionally {
-                // The following recovers from the user receiving a push notification, then logging out
-                // and then clicking on the notification. In this case, the intent will contain the email
-                val pushNotificationEmail = intent.getStringExtra("pushNotification_currentUserEmail")!!
-                store.setCurrentEmail(pushNotificationEmail)
-                pushNotificationEmail
-            }
 
         val locationProvider = (application as CoachMeApplication).locationProvider
         // Here we don't need the UserInfo
@@ -105,8 +99,17 @@ class CoachesListActivity : ComponentActivity() {
             // Composable is first created (given that the parameter key1 never changes). The code won't
             // be executed on every recomposition.
             // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
-            LaunchedEffect(true) {
-                email = emailFuture.await()
+            // Note: Now we trigger LaunchedEffect not once, but every time the refreshState changes.
+            LaunchedEffect(refreshState) {
+                email = store.getCurrentEmail()
+                    .exceptionally {
+                        // The following recovers from the user receiving a push notification, then logging out
+                        // and then clicking on the notification. In this case, the intent will contain the email
+                        val pushNotificationEmail = intent.getStringExtra("pushNotification_currentUserEmail")!!
+                        store.setCurrentEmail(pushNotificationEmail)
+                        pushNotificationEmail
+                    }.await()
+
                 if (isViewingContacts) {
                     // TODO: this is bad code and should be refactored
                     //  -> The participants should be fetched in the database method getContactRowInfo
@@ -131,7 +134,7 @@ class CoachesListActivity : ComponentActivity() {
                 }
 
                 // Activity is now ready for testing
-                stateLoading.complete(null)
+                stateUpdated.complete(null)
             }
 
             val title = if (isViewingContacts) stringResource(R.string.chats)

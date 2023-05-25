@@ -63,24 +63,32 @@ class GroupEventsListActivity : ComponentActivity() {
     }
 
     // To notify tests that the activity is ready
-    lateinit var stateLoading: CompletableFuture<Void>
+    lateinit var stateUpdated: CompletableFuture<Void>
+    // To refresh the list of events, when we come back to this activity
+    var refreshState by mutableStateOf(false)
 
     private lateinit var store: CachingStore
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh the list of events by triggering launched effect
+        refreshState = !refreshState
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         store = (application as CoachMeApplication).store
-        stateLoading = CompletableFuture()
+        stateUpdated = CompletableFuture()
 
         setContent {
             var myEvents by remember { mutableStateOf<List<GroupEvent>>(emptyList()) }
             var allEvents by remember { mutableStateOf<List<GroupEvent>>(emptyList()) }
 
-            LaunchedEffect(true) {
+            LaunchedEffect(refreshState) {
                 allEvents = store.getUpcomingGroupEventsByDate().await()
                 val email = store.getCurrentEmail().await()
                 myEvents = store.getGroupEventsOfUserByDate(email).await().reversed() // To have the oldest last
-                stateLoading.complete(null)
+                stateUpdated.complete(null)
             }
 
             data class TabItem(

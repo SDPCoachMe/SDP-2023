@@ -322,10 +322,6 @@ class CachingStore(private val wrappedDatabase: Database,
         }
     }
 
-    // TODO: use a listener of schedule for easier readability of code :)
-    private var groupEventFuture: CompletableFuture<Void> = completedFuture(null)
-    private var registerForGroupEventFuture: CompletableFuture<Void> = completedFuture(null)
-
     /**
      * Updates the value of a group event in the caching store (adds it if it does not exist)
      *
@@ -345,7 +341,6 @@ class CachingStore(private val wrappedDatabase: Database,
      * event. The future will complete exceptionally if the group event is full.
      */
     fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
-        registerForGroupEventFuture = CompletableFuture()
         return getGroupEvent(groupEventId).thenApply { groupEvent ->
             // Check that event is not full
             if (groupEvent.participants.size >= groupEvent.maxParticipants) {
@@ -367,12 +362,6 @@ class CachingStore(private val wrappedDatabase: Database,
                     addChatContactIfNew(email, groupEvent.groupEventId, groupEvent.groupEventId)
                 )
             }
-        }.thenApply {
-            registerForGroupEventFuture.complete(null)
-            it
-        }.exceptionally {
-            registerForGroupEventFuture.complete(null)
-            null
         }
     }
 
@@ -403,7 +392,6 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return a completable future that completes when the group event has been added, containing the cached schedule
      */
     fun addGroupEventToSchedule(groupEventId: String): CompletableFuture<Schedule> {
-        groupEventFuture = CompletableFuture()
         return getCurrentEmail().thenCompose { email ->
             wrappedDatabase.addGroupEventToSchedule(email = email, groupEventId = groupEventId)
         }.thenCompose {
@@ -415,12 +403,6 @@ class CachingStore(private val wrappedDatabase: Database,
                 groupEvents = cachedSchedule.groupEvents + groupEventId
             )
             cachedSchedule
-        }.thenApply {
-            groupEventFuture.complete(null)
-            it
-        }.exceptionally {
-            groupEventFuture.complete(null)
-            null
         }
     }
 
@@ -449,58 +431,56 @@ class CachingStore(private val wrappedDatabase: Database,
     fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         currentShownMonday = currentWeekMonday
 
-        return CompletableFuture.allOf(registerForGroupEventFuture, groupEventFuture).thenCompose {
-            getCurrentEmail().thenCompose { email ->
-                if (cachedSchedule.events.isEmpty() && cachedSchedule.groupEvents.isEmpty()) {  // If no cached schedule for that account, we fetch the schedule from the db
-                    wrappedDatabase.getSchedule(email).thenApply { schedule ->
-                        val events =
-                            schedule.events.filter {   // We only cache the events that are in the current week or close to it
-                                if (it != Event()) {
-                                    val start = LocalDateTime.parse(it.start).toLocalDate()
-                                    val end = LocalDateTime.parse(it.end).toLocalDate()
-                                    start >= minCachedMonday && end <= maxCachedMonday
-                                } else {
-                                    false
-                                }
+        return getCurrentEmail().thenCompose { email ->
+            if (cachedSchedule.events.isEmpty() && cachedSchedule.groupEvents.isEmpty()) {  // If no cached schedule for that account, we fetch the schedule from the db
+                wrappedDatabase.getSchedule(email).thenApply { schedule ->
+                    val events =
+                        schedule.events.filter {   // We only cache the events that are in the current week or close to it
+                            if (it != Event()) {
+                                val start = LocalDateTime.parse(it.start).toLocalDate()
+                                val end = LocalDateTime.parse(it.end).toLocalDate()
+                                start >= minCachedMonday && end <= maxCachedMonday
+                            } else {
+                                false
+                            }
+                        }
+
+                    val transformedGroupEvents = fetchGroupEventsAsEvents(schedule)
+
+                    schedule.copy(events = events + transformedGroupEvents)
+                        .also {   // Update the cache
+                            cachedSchedule = it
+                            storeLocalData()
+                        }
+                }
+            } else {
+                // If it is time to prefetch (because displayed week is too close to the edge of the cached schedule), we fetch the schedule from the db
+                if (currentWeekMonday <= minCachedMonday || currentWeekMonday >= maxCachedMonday) {
+
+                    // Update the cached schedule's prefetch boundaries
+                    minCachedMonday = currentWeekMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
+                    maxCachedMonday = currentWeekMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
+
+                    wrappedDatabase.getSchedule(email)
+                        .thenApply { schedule ->
+                            val events = schedule.events.filter {
+                                val start = LocalDateTime.parse(it.start).toLocalDate()
+                                val end = LocalDateTime.parse(it.end).toLocalDate()
+                                start >= minCachedMonday && end <= maxCachedMonday
                             }
 
-                        val transformedGroupEvents = fetchGroupEventsAsEvents(schedule)
+                            // Transform of groupEvents to a list of Events
+                            val transformedGroupEvents = fetchGroupEventsAsEvents(schedule)
 
-                        schedule.copy(events = events + transformedGroupEvents)
-                            .also {   // Update the cache
-                                cachedSchedule = it
+                            schedule.copy(events = events + transformedGroupEvents).also {
+                                cachedSchedule = it  // Update the cache
                                 storeLocalData()
                             }
-                    }
+                        }
                 } else {
-                    // If it is time to prefetch (because displayed week is too close to the edge of the cached schedule), we fetch the schedule from the db
-                    if (currentWeekMonday <= minCachedMonday || currentWeekMonday >= maxCachedMonday) {
-
-                        // Update the cached schedule's prefetch boundaries
-                        minCachedMonday = currentWeekMonday.minusWeeks(CACHED_SCHEDULE_WEEKS_BEHIND)
-                        maxCachedMonday = currentWeekMonday.plusWeeks(CACHED_SCHEDULE_WEEKS_AHEAD)
-
-                        wrappedDatabase.getSchedule(email)
-                            .thenApply { schedule ->
-                                val events = schedule.events.filter {
-                                    val start = LocalDateTime.parse(it.start).toLocalDate()
-                                    val end = LocalDateTime.parse(it.end).toLocalDate()
-                                    start >= minCachedMonday && end <= maxCachedMonday
-                                }
-
-                                // Transform of groupEvents to a list of Events
-                                val transformedGroupEvents = fetchGroupEventsAsEvents(schedule)
-
-                                schedule.copy(events = events + transformedGroupEvents).also {
-                                    cachedSchedule = it  // Update the cache
-                                    storeLocalData()
-                                }
-                            }
-                    } else {
-                        // If no need to prefetch, we return the cached schedule
-                        currentShownMonday = currentWeekMonday
-                        completedFuture(cachedSchedule)
-                    }
+                    // If no need to prefetch, we return the cached schedule
+                    currentShownMonday = currentWeekMonday
+                    completedFuture(cachedSchedule)
                 }
             }
         }
