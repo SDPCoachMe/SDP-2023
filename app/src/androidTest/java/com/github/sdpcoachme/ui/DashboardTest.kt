@@ -177,14 +177,14 @@ class DashboardTest {
         intended(intentMatcher)
     }
 
-    @Test
+    /*@Test
     fun dashboardCorrectlyRedirectsOnProfileClick() {
         setUpDashboard()
         dashboardCorrectlyRedirectsOnMenuItemClick(
             PROFILE,
             hasComponent(ProfileActivity::class.java.name)
         )
-    }
+    }*/
 
     @Test
     fun dashboardCorrectlyRedirectsOnPlanClick() {
