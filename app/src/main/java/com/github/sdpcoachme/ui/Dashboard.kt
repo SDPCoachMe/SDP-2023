@@ -74,7 +74,6 @@ import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_NAME
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import com.github.sdpcoachme.ui.theme.dashboardPersonalDetailsBackground
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.util.concurrent.CompletableFuture
@@ -352,7 +351,7 @@ fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = MaterialTheme.colors.dashboardPersonalDetailsBackground),
+            .background(color = if (MaterialTheme.colors.isLight) MaterialTheme.colors.primary else Color.Unspecified),
         contentAlignment = Alignment.Center,
         content = {
             Column(horizontalAlignment = Alignment.Start) {
@@ -379,13 +378,15 @@ fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
                             modifier = Modifier
                                 .padding(start = 16.dp, end = 3.dp)
                                 .testTag(DASHBOARD_NAME),
-                            text = userInfo.firstName + " " + userInfo.lastName, fontSize = 20.sp, color = Color.White,
+                            text = userInfo.firstName + " " + userInfo.lastName, fontSize = 20.sp,
+                            color = if (MaterialTheme.colors.isLight) MaterialTheme.colors.onPrimary else Color.Unspecified
                         )
                         Text(
                             modifier = Modifier
                                 .testTag(DASHBOARD_EMAIL)
                                 .padding(start = 16.dp),
-                            text = email, fontSize = 12.sp, color = Color.White,
+                            text = email, fontSize = 12.sp,
+                            color = if (MaterialTheme.colors.isLight) MaterialTheme.colors.onPrimary else Color.Unspecified
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
