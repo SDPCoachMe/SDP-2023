@@ -38,8 +38,6 @@ class InAppNotificationServiceTest {
         "0123456789",
         AddressSamples.NEW_YORK,
         false,
-        emptyList(),
-        emptyList()
     )
 
     private lateinit var store: CachingStore

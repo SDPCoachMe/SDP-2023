@@ -10,6 +10,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +23,7 @@ import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.database.CachingStore
+import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.COACH_RATING
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MAP
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MARKER
 import com.github.sdpcoachme.location.MapActivity.TestTags.Companion.MARKER_INFO_WINDOW
@@ -29,6 +31,10 @@ import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.C
 import com.github.sdpcoachme.location.provider.LocationProvider
 import com.github.sdpcoachme.profile.ProfileActivity
 import com.github.sdpcoachme.ui.Dashboard
+import com.github.sdpcoachme.ui.IconData
+import com.github.sdpcoachme.ui.Label
+import com.github.sdpcoachme.ui.theme.label
+import com.github.sdpcoachme.ui.theme.onLabel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -51,6 +57,7 @@ class MapActivity : ComponentActivity() {
             const val MAP = "map"
             fun MARKER(user: UserInfo) = "marker-${user.email}"
             fun MARKER_INFO_WINDOW(user: UserInfo) = "infoWindow-${user.email}"
+            fun COACH_RATING(user: UserInfo) = "coachRating-${user.email}"
         }
 
     }
@@ -98,7 +105,9 @@ class MapActivity : ComponentActivity() {
                         lastUserLocation = locationProvider.getLastLocation(),
                         futureCoachesToDisplay = futureUsers,
                         markerLoading = markerLoading,
-                        mapLoading = mapLoading)
+                        mapLoading = mapLoading,
+                        store = store
+                    )
                 }
             }
         }
@@ -118,7 +127,8 @@ fun Map(
     // Those 2 arguments have default values to avoid refactoring older tests
     futureCoachesToDisplay: CompletableFuture<List<UserInfo>> = CompletableFuture.completedFuture(listOf()),
     markerLoading: CompletableFuture<Void> = CompletableFuture<Void>(),
-    mapLoading: CompletableFuture<Void> = CompletableFuture<Void>()
+    mapLoading: CompletableFuture<Void> = CompletableFuture<Void>(),
+    store: CachingStore
 ) {
 
     val context = LocalContext.current
@@ -167,6 +177,12 @@ fun Map(
                 )
             }
 
+            var coachRating by remember { mutableStateOf(0) }
+
+            LaunchedEffect(true) {
+                coachRating = store.getCoachAverageRating(user.email).await()
+            }
+
             MarkerInfoWindowContent(
                 state = state,
                 tag = MARKER(user),
@@ -184,53 +200,77 @@ fun Map(
                 }
             ) {
                 // TODO: code similar to CoachesList, might be able to modularize
-                Column(
+                Row(
                     modifier = Modifier
                         .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 12.dp)
                         .fillMaxWidth(0.8f)
                         .testTag(MARKER_INFO_WINDOW(user))
                 ) {
-                    Text(
-                        text = "${user.firstName} ${user.lastName}",
-                        color = Color.Black,
-                        style = MaterialTheme.typography.h6,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .testTag(MARKER_INFO_WINDOW(user))
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Place,
-                            tint = Color.Gray,
-                            contentDescription = "${user.firstName} ${user.lastName}'s location",
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
                         Text(
-                            text = user.address.name,
-                            color = Color.Gray,
-                            style = MaterialTheme.typography.body2,
+                            text = "${user.firstName} ${user.lastName}",
+                            color = Color.Black,
+                            style = MaterialTheme.typography.h6,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                    }
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        user.sports.map {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Icon(
-                                imageVector = it.sportIcon,
+                                imageVector = Icons.Default.Place,
                                 tint = Color.Gray,
-                                contentDescription = it.sportName,
+                                contentDescription = "${user.firstName} ${user.lastName}'s location",
                                 modifier = Modifier.size(20.dp)
                             )
-                            Spacer(modifier = Modifier.width(1.dp))
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text(
+                                text = user.address.name,
+                                color = Color.Gray,
+                                style = MaterialTheme.typography.body2,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            user.sports.map {
+                                Icon(
+                                    imageVector = it.sportIcon,
+                                    tint = Color.Gray,
+                                    contentDescription = it.sportName,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(1.dp))
+                            }
                         }
                     }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.Top
+                    ) {
+                        Label(
+                            text = "$coachRating",
+                            textTag = COACH_RATING(user),
+                            icon = IconData(
+                                icon = Icons.Default.Star,
+                                contentDescription = "Coach rating"
+                            ),
+                            backgroundColor = MaterialTheme.colors.label,
+                            contentColor = MaterialTheme.colors.onLabel,
+                            iconOnRight = true
+                        )
+                    }
                 }
+
             }
         }
     }

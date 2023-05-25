@@ -9,7 +9,7 @@ class UserInfoSamples {
             address = AddressSamples.PARIS,
             phone = "0123456789",
             sports = listOf(Sports.SKI, Sports.SWIMMING),
-            coach = true
+            coach = true,
         )
         val COACH_2 = UserInfo(
             firstName = "Marc",
@@ -47,6 +47,16 @@ class UserInfoSamples {
             address = AddressSamples.SYDNEY,
             phone = "0123456789",
             sports = listOf(Sports.TENNIS),
+            coach = false
+        )
+
+        val NON_COACH_3 = UserInfo(
+            firstName = "Kylian",
+            lastName = "Lopez",
+            email = "kylian@email.com",
+            address = AddressSamples.LAUSANNE,
+            phone = "0123456789",
+            sports = listOf(Sports.SWIMMING),
             coach = false
         )
         val NON_COACHES = listOf(NON_COACH_1, NON_COACH_2)

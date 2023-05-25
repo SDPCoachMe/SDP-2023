@@ -1,10 +1,13 @@
 package com.github.sdpcoachme.groupevent
 
 import android.content.Intent
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -12,6 +15,8 @@ import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.UiSelector
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.CoachMeTestApplication
 import com.github.sdpcoachme.data.GroupEvent
@@ -20,8 +25,12 @@ import com.github.sdpcoachme.data.UserInfoSamples
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_2
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_3
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACH_1
+import com.github.sdpcoachme.data.messaging.Message
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.groupevent.GroupEventsListActivity.TestTags.Tabs.Companion.MY_EVENTS
+import com.github.sdpcoachme.messaging.ChatActivity
+import com.github.sdpcoachme.ui.Dashboard
+import junit.framework.TestCase.assertTrue
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -105,6 +114,66 @@ class GroupEventsListActivityTest {
             Intents.intended(
                 IntentMatchers.hasComponent(GroupEventDetailsActivity::class.java.name)
             )
+        }
+    }
+
+    @Test
+    fun whenOpeningChatThenGoingToContactsTheChatIsDisplayed() {
+        val groupEvent = GroupEventSamples.AVAILABLE
+        val organizer = getStore().getUser(groupEvent.organizer).get(1000, TimeUnit.MILLISECONDS)
+        val nonParticipantUser = allUsers.filterNot { it.email in groupEvent.participants + groupEvent.organizer }.first()
+
+        getStore().setCurrentEmail(nonParticipantUser.email).get(1000, TimeUnit.MILLISECONDS)
+        getStore().sendMessage(groupEvent.groupEventId, Message(organizer.email, "Sender Name", "Message", LocalDateTime.now().toString())).get(1000, TimeUnit.MILLISECONDS)
+        // place current contacts in cache
+        val intent = Intent(getContext(), GroupEventsListActivity::class.java)
+
+        ActivityScenario.launch<GroupEventsListActivity>(intent).use {
+            waitForLoading(it)
+            val event = GroupEventSamples.ALL.filterNot { e ->
+                LocalDateTime.parse(e.event.start).isBefore(LocalDateTime.now())
+                        || e.maxParticipants == e.participants.size
+            }.first()
+            val tag = GroupEventsListActivity.TestTags.GroupEventItemTags(event).TITLE
+            composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).performClick()
+
+            composeTestRule.onNodeWithTag(GroupEventDetailsActivity.TestTags.Buttons.JOIN_EVENT, useUnmergedTree = true)
+                .assertIsDisplayed()
+                .performClick()
+
+            // place contacts into cache
+            getStore().getContactRowInfo(nonParticipantUser.email).get(1000, TimeUnit.MILLISECONDS)
+
+            composeTestRule.onNodeWithTag(GroupEventDetailsActivity.TestTags.Buttons.CHAT, useUnmergedTree = true)
+                .assertIsDisplayed()
+                .performClick()
+
+
+            composeTestRule.onNodeWithTag(ChatActivity.TestTags.Buttons.BACK, useUnmergedTree = true)
+                .assertIsDisplayed()
+                .performClick()
+
+            composeTestRule.onNodeWithTag(GroupEventDetailsActivity.TestTags.Buttons.BACK, useUnmergedTree = true)
+                .assertIsDisplayed()
+                .performClick()
+
+            composeTestRule.onNodeWithTag(Dashboard.TestTags.DRAWER_HEADER, useUnmergedTree = true).assertIsNotDisplayed()
+            composeTestRule.onNodeWithTag(Dashboard.TestTags.Buttons.HAMBURGER_MENU, useUnmergedTree = true).performClick()
+            composeTestRule.onNodeWithTag(Dashboard.TestTags.DRAWER_HEADER, useUnmergedTree = true).assertIsDisplayed()
+
+            val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+            device.findObject(UiSelector().text("Chats"))
+                .click()
+            device.waitForIdle()
+
+            composeTestRule.onNodeWithText("This event is available", useUnmergedTree = true)
+                .assertIsDisplayed()
+                .performClick()
+
+            val res = device.findObject(UiSelector().text("Message"))
+                .exists()
+
+            assertTrue(res)
         }
     }
 
