@@ -69,6 +69,7 @@ import com.github.sdpcoachme.schedule.ScheduleActivity
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.BAR_TITLE
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_EMAIL
+import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_NAME
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
@@ -85,6 +86,7 @@ class Dashboard {
         companion object {
             const val DRAWER_HEADER = "drawerHeader"
             const val DASHBOARD_EMAIL = "dashboardEmail"
+            const val DASHBOARD_NAME = "dashboardName"
             const val MENU_LIST = "menuList"
             const val BAR_TITLE = "barTitle"
         }
@@ -357,7 +359,8 @@ fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
                     Column {
                         Text(
                             modifier = Modifier
-                                .padding(start = 16.dp, end = 3.dp),
+                                .padding(start = 16.dp, end = 3.dp)
+                                .testTag(DASHBOARD_NAME),
                             text = userInfo.firstName + " " + userInfo.lastName, fontSize = 20.sp, color = Color.White,
                         )
                         Text(
