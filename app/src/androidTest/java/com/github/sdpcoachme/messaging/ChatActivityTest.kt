@@ -441,6 +441,23 @@ class ChatActivityTest {
         }
     }
 
+    // simulates push notifications where the user logs out after receiving the notification and then logs in
+    @Test
+    fun chatActivityRecoversFromMissingCurrentUserEmailIfItIsPassedInTheIntentExtra() {
+        store.setCurrentEmail("").get(1000, TimeUnit.MILLISECONDS)
+        val emailRecoveryIntent = personalChatDefaultIntent
+            .putExtra("pushNotification_currentUserEmail", currentUser.email)
+
+        ActivityScenario.launch<ChatActivity>(emailRecoveryIntent).use {
+            waitForLoading(it)
+
+            composeTestRule.onNodeWithTag(BACK).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(CONTACT_FIELD.LABEL, useUnmergedTree = true).assertTextEquals(toUser.firstName + " " + toUser.lastName)
+            composeTestRule.onNodeWithTag(CHAT_FIELD.LABEL, useUnmergedTree = true).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(CHAT_BOX.CONTAINER).assertIsDisplayed()
+        }
+    }
+
 
     // Waits for the activity to finish loading any async state
     private fun waitForLoading(scenario: ActivityScenario<ChatActivity>) {
