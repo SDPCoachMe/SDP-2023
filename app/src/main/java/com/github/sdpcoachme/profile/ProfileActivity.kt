@@ -198,15 +198,19 @@ class ProfileActivity : ComponentActivity() {
                 tag = RATING,
                 value = coachRating.toString(),
                 onClick = {
-                    ratingHandler(
-                        RatingActivity.getIntent(
-                            context = context,
-                            coachName = "${userInfo.firstName} ${userInfo.lastName}",
-                            initialValue = coachRating
-                        )
-                    ).thenApply {
-                        store.addRatingToCoach(userInfo.email, it)
-                        coachRating = it
+                    if (isViewingCoach) {
+                        ratingHandler(
+                            RatingActivity.getIntent(
+                                context = context,
+                                coachName = "${userInfo.firstName} ${userInfo.lastName}",
+                                initialValue = coachRating
+                            )
+                        ).thenApply {
+                            store.addRatingToCoach(userInfo.email, it)
+                            coachRating = it
+                        }
+                    } else {
+                        // Silent fail as we can't rate ourselves ;)
                     }
                 }
             )
