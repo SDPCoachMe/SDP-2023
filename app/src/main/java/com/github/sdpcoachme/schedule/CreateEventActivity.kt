@@ -198,7 +198,7 @@ class CreateEventActivity : ComponentActivity() {
                 TopAppBar(
                     title = {
                         Text(
-                            text = "New Event",
+                            text = "New event",
                             modifier = Modifier.testTag(TestTags.Texts.ACTIVITY_TITLE)
                         )
                     },
@@ -290,7 +290,7 @@ class CreateEventActivity : ComponentActivity() {
                                     EditTextActivity.getIntent(
                                         context = context,
                                         initialValue = eventName,
-                                        label = "Event Title",
+                                        label = "Event title",
                                     )
                                 ).thenApply {
                                     eventName = it
@@ -402,12 +402,14 @@ class CreateEventActivity : ComponentActivity() {
                 state = startDateSheet,
                 header = Header.Custom {
                     Text(
-                        text = "Start Date",
+                        text = "Start date",
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.h5,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .testTag(TestTags.Texts.START_DATE_DIALOG_TITLE)
+                            .testTag(TestTags.Texts.START_DATE_DIALOG_TITLE),
+                        // TODO: temporary until dark mode is enabled for maxkeppeler sheets
+                        color = Color.Black
                     )
                 },
                 config = CalendarConfig(
@@ -448,12 +450,14 @@ class CreateEventActivity : ComponentActivity() {
                 state = startTimeSheet,
                 header = Header.Custom {
                     Text(
-                        text = "Start Time",
+                        text = "Start time",
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.h5,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .testTag(TestTags.Texts.START_TIME_DIALOG_TITLE)
+                            .testTag(TestTags.Texts.START_TIME_DIALOG_TITLE),
+                        // TODO: temporary until dark mode is enabled for maxkeppeler sheets
+                        color = Color.Black
                     )
                 },
                 config = ClockConfig(
@@ -489,12 +493,14 @@ class CreateEventActivity : ComponentActivity() {
                 state = endDateSheet,
                 header = Header.Custom {
                     Text(
-                        text = "End Date",
+                        text = "End date",
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.h5,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .testTag(TestTags.Texts.END_DATE_DIALOG_TITLE)
+                            .testTag(TestTags.Texts.END_DATE_DIALOG_TITLE),
+                        // TODO: temporary until dark mode is enabled for maxkeppeler sheets
+                        color = Color.Black
                     )
                 },
                 config = CalendarConfig(
@@ -535,12 +541,14 @@ class CreateEventActivity : ComponentActivity() {
                 state = endTimeSheet,
                 header = Header.Custom {
                     Text(
-                        text = "End Time",
+                        text = "End time",
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.h5,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .testTag(TestTags.Texts.END_TIME_DIALOG_TITLE)
+                            .testTag(TestTags.Texts.END_TIME_DIALOG_TITLE),
+                        // TODO: temporary until dark mode is enabled for maxkeppeler sheets
+                        color = Color.Black
                     )
                 },
                 config = ClockConfig(
@@ -572,7 +580,7 @@ class CreateEventActivity : ComponentActivity() {
                             } else {
                                 ""
                             },
-                        label = "Max Participants",
+                        label = "Max participants",
                     )
                 ).thenApply {
                     onMaxParticipantsChange(it.toIntOrNull() ?: 0)
@@ -652,7 +660,9 @@ class CreateEventActivity : ComponentActivity() {
                         style = MaterialTheme.typography.h5,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .testTag(TestTags.Texts.COLOR_DIALOG_TITLE)
+                            .testTag(TestTags.Texts.COLOR_DIALOG_TITLE),
+                        // TODO: temporary until dark mode is enabled for maxkeppeler sheets
+                        color = Color.Black
                     )
                 },
                 selection = ColorSelection(
