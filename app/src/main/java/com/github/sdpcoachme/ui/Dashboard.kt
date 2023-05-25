@@ -356,17 +356,15 @@ fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
         contentAlignment = Alignment.Center,
         content = {
             Column(horizontalAlignment = Alignment.Start) {
-                val emailFuture = (context.applicationContext as CoachMeApplication).store.getCurrentEmail()
-                val userInfoFuture = emailFuture.thenCompose { email ->
-                    (context.applicationContext as CoachMeApplication).store.getUser(email)
-                }
+                val store = (context.applicationContext as CoachMeApplication).store
+
                 var email by remember { mutableStateOf("") }
                 var userInfo by remember { mutableStateOf(UserInfo()) }
 
-                LaunchedEffect(emailFuture, userInfoFuture) {
-                    email = emailFuture.await()
+                LaunchedEffect(true) {
+                    email = store.getCurrentEmail().await()
+                    userInfo = store.getUser(email).await()
 
-                    userInfo = userInfoFuture.await()
                     UIDisplayed.complete(null)
                 }
                 Box(
@@ -392,7 +390,7 @@ fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Image(
-                        painter = painterResource(id = R.drawable.ic_launcher_background),
+                        painter = painterResource(id = userInfo.getPictureResource()),
                         contentDescription = "Profile picture",
                         modifier = Modifier
                             .size(60.dp)
