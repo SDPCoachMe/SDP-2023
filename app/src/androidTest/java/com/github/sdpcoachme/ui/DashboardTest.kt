@@ -69,7 +69,7 @@ class DashboardTest {
 
     @Before
     fun initIntents() {
-        store.setCurrentEmail(EXISTING_EMAIL).get(1000, TimeUnit.MILLISECONDS)
+        store.setCurrentEmail(EXISTING_EMAIL).get(100, TimeUnit.MILLISECONDS)
         Intents.init()
     }
 
@@ -83,7 +83,7 @@ class DashboardTest {
      */
     private fun setUpDashboard(withoutEmail: Boolean = false) {
         if (withoutEmail) {
-            store.setCurrentEmail("")
+            store.setCurrentEmail("").get(1, TimeUnit.SECONDS)
         }
         val UIDisplayed = CompletableFuture<Void>()
         composeTestRule.setContent {
