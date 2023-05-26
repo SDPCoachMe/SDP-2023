@@ -160,14 +160,17 @@ class ProfileActivity : ComponentActivity() {
         val context = LocalContext.current
         var userInfo by remember { mutableStateOf(UserInfo()) }
         var coachRating by remember { mutableStateOf(0)}
+        var currIsCoach by remember { mutableStateOf(false) }
 
         // Make sure the userInfo variable is updated when the futureUserInfo completes
         LaunchedEffect(futureUserInfo, coachRating) {
-            userInfo = futureUserInfo.await()
-            // getCoachAverageRating(...) performs a CachingStore getUser() as a coach rating can be
-            // changed asynchronously within a ProfileActivity scope from another user, which could
-            // lead to stale data if we only pass the userInfo here.
-            coachRating = store.getCoachAverageRating(userInfo.email).await()
+            userInfo = futureUserInfo.await().also { currIsCoach = !isViewingCoach && it.coach}
+            if (currIsCoach) {
+                // getCoachAverageRating(...) performs a CachingStore getUser() as a coach rating can be
+                // changed asynchronously within a ProfileActivity scope from another user, which could
+                // lead to stale data if we only pass the userInfo here.
+                coachRating = store.getCoachAverageRating(userInfo.email).await()
+            }
             stateUpdated.complete(null)
         }
 
@@ -218,29 +221,31 @@ class ProfileActivity : ComponentActivity() {
         ) {
             TitleRow(userInfo, isViewingCoach)
             Spacer(modifier = Modifier.height(10.dp))
-            RatingRow(
-                label = "RATING",
-                tag = RATING,
-                value = coachRating,
-                onClick = {
-                    if (isViewingCoach) {
-                        ratingHandler(
-                            RatingActivity.getIntent(
-                                context = context,
-                                coachName = "${userInfo.firstName} ${userInfo.lastName}",
-                                initialValue = coachRating
-                            )
-                        ).thenApply { selectedRating ->
-                            store.addRatingToCoach(userInfo.email, selectedRating).thenApply {
-                                coachRating = selectedRating
+            if (currIsCoach || isViewingCoach) {
+                RatingRow(
+                    label = "RATING",
+                    tag = RATING,
+                    value = coachRating,
+                    onClick = {
+                        if (isViewingCoach) {
+                            ratingHandler(
+                                RatingActivity.getIntent(
+                                    context = context,
+                                    coachName = "${userInfo.firstName} ${userInfo.lastName}",
+                                    initialValue = coachRating
+                                )
+                            ).thenApply { selectedRating ->
+                                store.addRatingToCoach(userInfo.email, selectedRating).thenApply {
+                                    coachRating = selectedRating
+                                }
                             }
+                        } else {
+                            // Silent fail as we can't rate ourselves ;)
                         }
-                    } else {
-                        // Silent fail as we can't rate ourselves ;)
                     }
-                }
-            )
-            Divider(startIndent = 20.dp)
+                )
+                Divider(startIndent = 20.dp)
+            }
             TextRow(
                 label = "EMAIL",
                 tag = EMAIL,
@@ -415,6 +420,7 @@ class ProfileActivity : ComponentActivity() {
                 SwitchClientCoachRow(
                     value = userInfo.coach,
                     onValueChange = {
+                        currIsCoach = it
                         saveUserInfo(CompletableFuture.completedFuture(userInfo.copy(coach = it)))
                     }
                 )
