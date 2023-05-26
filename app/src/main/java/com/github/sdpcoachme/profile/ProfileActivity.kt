@@ -10,10 +10,30 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.material.Button
+import androidx.compose.material.Divider
+import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Switch
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +64,7 @@ import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PROFILE_
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.RATING
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.SPORTS
 import com.github.sdpcoachme.rating.RatingActivity
+import com.github.sdpcoachme.rating.RatingBar
 import com.github.sdpcoachme.ui.Dashboard
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
@@ -193,10 +214,10 @@ class ProfileActivity : ComponentActivity() {
         ) {
             TitleRow(userInfo, isViewingCoach)
             Spacer(modifier = Modifier.height(10.dp))
-            TextRow(
+            RatingRow(
                 label = "RATING",
                 tag = RATING,
-                value = coachRating.toString(),
+                value = coachRating,
                 onClick = {
                     if (isViewingCoach) {
                         ratingHandler(
@@ -205,9 +226,10 @@ class ProfileActivity : ComponentActivity() {
                                 coachName = "${userInfo.firstName} ${userInfo.lastName}",
                                 initialValue = coachRating
                             )
-                        ).thenApply {
-                            store.addRatingToCoach(userInfo.email, it)
-                            coachRating = it
+                        ).thenApply { selectedRating ->
+                            store.addRatingToCoach(userInfo.email, selectedRating).thenApply {
+                                coachRating = selectedRating
+                            }
                         }
                     } else {
                         // Silent fail as we can't rate ourselves ;)
@@ -532,6 +554,24 @@ fun SportsRow(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun RatingRow(
+    label: String,
+    tag: String,
+    onClick: () -> Unit = {},
+    value: Int
+) {
+    AttributeRow(
+        label = label,
+        onClick = onClick
+    ) {
+        RatingBar(
+            modifier = Modifier.padding(bottom = 3.dp).testTag(tag),
+            rating = value
+        )
     }
 }
 

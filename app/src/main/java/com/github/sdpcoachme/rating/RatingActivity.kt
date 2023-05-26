@@ -103,7 +103,7 @@ class RatingActivity: ComponentActivity() {
         setContent {
             CoachMeTheme {
                 Surface(color = MaterialTheme.colors.background) {
-                    RatingBar(
+                    RatingView(
                         title = title,
                         initialRating = initialRating,
                         onSubmit = {
