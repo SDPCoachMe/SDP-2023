@@ -73,7 +73,7 @@ class ContactsListTest {
 
         lateinit var stateLoading: CompletableFuture<Void>
         scenario.onActivity {
-            stateLoading = it.stateLoading
+            stateLoading = it.stateUpdated
         }
         stateLoading.get(1000, TimeUnit.MILLISECONDS)
         Intents.init()

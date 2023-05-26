@@ -90,7 +90,8 @@ class MapActivityTest {
                 Map(
                     email = "",
                     modifier = Modifier.fillMaxWidth(),
-                    lastUserLocation = lastUserLocation
+                    lastUserLocation = lastUserLocation,
+                    store = store
                 )
             }
         }
@@ -109,7 +110,7 @@ class MapActivityTest {
         val lastUserLocation: MutableState<LatLng?> = mutableStateOf(firstLocation)
         composeTestRule.setContent {
             CoachMeTheme() {
-                Map(email = "", modifier = Modifier.fillMaxWidth(),lastUserLocation = lastUserLocation)
+                Map(email = "", modifier = Modifier.fillMaxWidth(),lastUserLocation = lastUserLocation, store = store)
             }
         }
         composeTestRule.onNodeWithTag(firstTag).assertExists()

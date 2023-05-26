@@ -10,6 +10,10 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -107,6 +111,7 @@ class ProfileActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         stateUpdated = CompletableFuture()
         store = (application as CoachMeApplication).store
 
@@ -141,7 +146,7 @@ class ProfileActivity : ComponentActivity() {
                 if (isViewingCoach) stringResource(R.string.profile_details)
                 else stringResource(R.string.my_profile)
 
-            Dashboard(title) {
+            Dashboard(title = title) {
                 Profile(futureUserInfo, isViewingCoach)
             }
         }
@@ -270,10 +275,10 @@ class ProfileActivity : ComponentActivity() {
                     onClick = {
                         val future = editTextHandler(
                             EditTextActivity.getIntent(
-                            context = context,
-                            initialValue = userInfo.firstName,
-                            label = "First name"
-                        )
+                                context = context,
+                                initialValue = userInfo.firstName,
+                                label = "First name"
+                            )
                         ).thenApply { firstName ->
                             userInfo.copy(firstName = firstName)
                         }
@@ -439,9 +444,13 @@ fun TitleRow(user: UserInfo, isViewingCoach: Boolean) {
         horizontalArrangement = Arrangement.Start
     ) {
         Text(
-            modifier = Modifier.testTag(PROFILE_LABEL),
+            modifier = Modifier
+                .testTag(PROFILE_LABEL)
+                .fillMaxWidth(0.7f),
             text = title,
-            style = MaterialTheme.typography.h4
+            style = MaterialTheme.typography.h4,
+            maxLines = 4,
+            overflow = TextOverflow.Ellipsis
         )
         Box(
             modifier = Modifier
@@ -450,7 +459,7 @@ fun TitleRow(user: UserInfo, isViewingCoach: Boolean) {
             contentAlignment = Alignment.CenterEnd
         ) {
             Image(
-                painter = painterResource(id = R.drawable.ic_launcher_background),
+                painter = painterResource(id = user.getPictureResource()),
                 contentDescription = "Profile picture",
                 modifier = Modifier
                     .size(60.dp)
@@ -469,6 +478,7 @@ fun TitleRow(user: UserInfo, isViewingCoach: Boolean) {
 @Composable
 fun AttributeRow(
     label: String,
+    modifier: Modifier = Modifier.requiredHeight(22.dp),
     onClick: () -> Unit = {},
     content: @Composable () -> Unit
 ) {
@@ -482,20 +492,19 @@ fun AttributeRow(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Bottom
     ) {
-        Column(
-            modifier = Modifier
-                .requiredHeight(22.dp),
-            verticalArrangement = Arrangement.Bottom
-        ) {
-            content()
-        }
-        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = label,
             color = Color.Gray,
             style = MaterialTheme.typography.overline,
             fontSize = 8.sp
         )
+        Spacer(modifier = Modifier.height(4.dp))
+        Column(
+            modifier = modifier,
+            verticalArrangement = Arrangement.Bottom
+        ) {
+            content()
+        }
     }
 }
 
@@ -537,20 +546,19 @@ fun SportsRow(
         label = label,
         onClick = onClick
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start,
+        LazyHorizontalGrid(
+            rows = GridCells.Fixed(1),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier
+                .fillMaxWidth()
+                .height(16.dp)
                 .testTag(tag)
                 .padding(0.dp, 0.dp, 0.dp, 2.5.dp)
         ) {
-            value.map {
+            items(value) {
                 Icon(
                     imageVector = it.sportIcon,
-                    contentDescription = it.sportName,
-                    modifier = Modifier
-                        .padding(0.dp, 0.dp, 6.dp, 0.dp)
-                        .size(16.dp)
+                    contentDescription = it.sportName
                 )
             }
         }

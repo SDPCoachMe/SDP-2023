@@ -26,6 +26,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
@@ -109,6 +110,13 @@ class ChatActivity : ComponentActivity() {
 
         store = (application as CoachMeApplication).store
         emailFuture = store.getCurrentEmail()
+            .exceptionally {
+                // The following recovers from the user receiving a push notification, then logging out
+                // and then clicking on the notification. In this case, the intent will contain the email
+                val pushNotificationEmail = intent.getStringExtra("pushNotification_currentUserEmail")!!
+                store.setCurrentEmail(pushNotificationEmail)
+                pushNotificationEmail
+            }
         val chatId = intent.getStringExtra("chatId")
         val isGroupChat: Boolean
         var contact = ""
@@ -248,7 +256,9 @@ class ChatActivity : ComponentActivity() {
             title = {
                 Text(
                     text = if (isGroupChat) groupEvent.event.name else "${toUser.firstName} ${toUser.lastName}",
-                    modifier = Modifier.testTag(CONTACT_FIELD.LABEL)
+                    modifier = Modifier.testTag(CONTACT_FIELD.LABEL),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             },
             navigationIcon = {
@@ -410,18 +420,8 @@ class ChatActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = if (isFromCurrentUser) Alignment.BottomEnd else Alignment.BottomStart
             ) {
-                // message content (if the sender is not clear from the context
-                // (i.e., if it is a group chat with > 2 participants), display the sender's name)
-                val msgContent = buildAnnotatedString {
-                    withStyle(
-                        style = SpanStyle(fontWeight = FontWeight.Bold)
-                    ) { if (!isFromCurrentUser && nbParticipants > 2) append(message.senderName + "\n") }
-                    append(message.content.trim() + "\n")
-                }
-                Text(
-                    text = msgContent,
+                Column(
                     modifier = Modifier
-                        .testTag(CHAT_MESSAGE.LABEL)
                         .fillMaxWidth(0.7f)
                         .background(
                             color = if (isFromCurrentUser) MaterialTheme.colors.messageMe else MaterialTheme.colors.messageOther,
@@ -432,60 +432,74 @@ class ChatActivity : ComponentActivity() {
                                 if (isFromCurrentUser) 10.dp else 0.dp
                             )
                         )
-                        .padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp),
-                    color = MaterialTheme.colors.onMessage
-                )
+                        .padding(top = 5.dp, bottom = 5.dp, start = 10.dp, end = 7.dp)
+                ) {
+                    // message content (if the sender is not clear from the context
+                    // (i.e., if it is a group chat with > 2 participants), display the sender's name)
+                    val msgContent = buildAnnotatedString {
+                        withStyle(
+                            style = SpanStyle(fontWeight = FontWeight.Bold)
+                        ) { if (!isFromCurrentUser && nbParticipants > 2) append(message.senderName + "\n") }
+                        append(message.content.trim() + "\n")
+                    }
+                    Text(
+                        text = msgContent,
+                        modifier = Modifier
+                            .testTag(CHAT_MESSAGE.LABEL)
+                            .align(Alignment.Start),
+                        color = MaterialTheme.colors.onMessage
+                    )
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.End),
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        // timestamp for message
+                        Text(
+                            text = LocalDateTime.parse(message.timestamp).toLocalTime()
+                                .format(timestampFormatter),
+                            color = timeAndUnreadMarkColor,
+                            modifier = Modifier
+                                .testTag(CHAT_MESSAGE.TIMESTAMP)
+                        )
 
-                // timestamp for message
-                Text(
-                    text = LocalDateTime.parse(message.timestamp).toLocalTime()
-                        .format(timestampFormatter),
-                    color = timeAndUnreadMarkColor,
-                    modifier = Modifier
-                        .testTag(CHAT_MESSAGE.TIMESTAMP)
-                        .fillMaxWidth(if (message.sender == currentUserEmail) 0.19f else 0.45f)
-                        .padding(start = 5.dp, end = 0.dp, top = 5.dp, bottom = 2.dp)
-                        .align(Alignment.BottomEnd)
-                )
+                        // read by recipient icon
+                        // once online/offline mode implemented, we could add the single + double check mark functionality
+                        // similar to whatsapp
+                        if (message.sender == currentUserEmail) {
+                            val imgVector: ImageVector
+                            val contentDescr: String
+                            val color: Color
+                            when (message.readState) {
+                                ReadState.SENT -> {
+                                    imgVector = Icons.Default.Check
+                                    contentDescr = "message sent icon"
+                                    color = timeAndUnreadMarkColor
+                                }
 
-                // read by recipient icon
-                // once online/offline mode implemented, we could add the single + double check mark functionality
-                // similar to whatsapp
-                if (message.sender == currentUserEmail) {
-                    val imgVector: ImageVector
-                    val contentDescr: String
-                    val color: Color
-                    when (message.readState) {
-                        ReadState.SENT -> {
-                            imgVector = Icons.Default.Check
-                            contentDescr = "message sent icon"
-                            color = timeAndUnreadMarkColor
-                        }
+                                ReadState.RECEIVED -> {
+                                    imgVector = Icons.Default.DoneAll
+                                    contentDescr = "message received icon"
+                                    color = timeAndUnreadMarkColor
+                                }
 
-                        ReadState.RECEIVED -> {
-                            imgVector = Icons.Default.DoneAll
-                            contentDescr = "message received icon"
-                            color = timeAndUnreadMarkColor
-                        }
-
-                        ReadState.READ -> {
-                            imgVector = Icons.Default.DoneAll
-                            contentDescr = "message read icon"
-                            color = readMarkColor
+                                ReadState.READ -> {
+                                    imgVector = Icons.Default.DoneAll
+                                    contentDescr = "message read icon"
+                                    color = readMarkColor
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Icon(
+                                imageVector = imgVector,
+                                contentDescription = contentDescr,
+                                tint = color,
+                                modifier = Modifier
+                                    .testTag(CHAT_MESSAGE.READ_STATE)
+                                    .height(18.dp),
+                            )
                         }
                     }
-
-                    Icon(
-                        imageVector = imgVector,
-                        contentDescription = contentDescr,
-                        tint = color,
-                        modifier = Modifier
-                            .testTag(CHAT_MESSAGE.READ_STATE)
-                            .fillMaxWidth(0.07f)
-                            .padding(start = 0.dp, end = 0.dp, top = 5.dp, bottom = 2.dp)
-                            .align(Alignment.BottomEnd)
-                            .height(16.dp),
-                    )
                 }
             }
         }

@@ -3,6 +3,7 @@ package com.github.sdpcoachme.auth
 import android.content.Intent
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.pressBackUnconditionally
@@ -15,7 +16,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.uiautomator.*
 import com.github.sdpcoachme.CoachMeTestApplication
-import com.github.sdpcoachme.auth.LoginActivity.TestTags.Buttons.Companion.LOG_IN
+import com.github.sdpcoachme.auth.LoginActivity.TestTags.Companion.COACH_ME_ICON
+import com.github.sdpcoachme.auth.LoginActivity.TestTags.Companion.LOADING_SYMBOL
+import com.github.sdpcoachme.auth.LoginActivity.TestTags.Companion.RANDOM_FACT
+import com.github.sdpcoachme.auth.LoginActivity.TestTags.Companion.WELCOME_TEXT
 import com.github.sdpcoachme.data.AddressSamples
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.Chat
@@ -77,7 +81,7 @@ open class LoginActivityTest {
 
         // Easiest way to verify that the login activity is launched: check if the login button is displayed
         Assert.assertNotNull(device.wait(
-            Until.hasObject(By.res(LOG_IN)),
+            Until.hasObject(By.text(("Welcome to Coach Me!"))),
             2000
         ))
         pressBackUnconditionally()
@@ -123,7 +127,10 @@ open class LoginActivityTest {
             waitForLoading(it)
 
             // Assert that we are still in the login activity
-            composeTestRule.onNodeWithTag(LOG_IN, useUnmergedTree = true).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(WELCOME_TEXT, useUnmergedTree = true).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(RANDOM_FACT, useUnmergedTree = true).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(COACH_ME_ICON, useUnmergedTree = true).assertIsDisplayed()
+            composeTestRule.onNodeWithTag(LOADING_SYMBOL, useUnmergedTree = true).assertIsDisplayed()
         }
     }
 
@@ -183,8 +190,11 @@ open class LoginActivityTest {
 
     // Waits for the activity to finish loading any async state
     private fun waitForLoading(scenario: ActivityScenario<LoginActivity>) {
-        // Instead, make the test wait for the future to finish, and crash after a certain time
         lateinit var stateLoading: CompletableFuture<Void>
+        // Do not wait if the activity was destroyed already
+        if (scenario.state == Lifecycle.State.DESTROYED) {
+            return
+        }
         scenario.onActivity {
             stateLoading = it.stateLoading
         }

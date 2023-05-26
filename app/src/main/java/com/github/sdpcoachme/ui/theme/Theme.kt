@@ -77,6 +77,12 @@ val Colors.onChatTime: Color
 @get:Composable
 val Colors.readMessageCheck: Color
     get() = if (isLight) DarkPrettyBlue else LightPrettyBlue
+@get:Composable
+val Colors.rating: Color
+    get() = Gold
+@get:Composable
+val Colors.onRating: Color
+    get() = Color.White
 
 @Composable
 fun CoachMeTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {

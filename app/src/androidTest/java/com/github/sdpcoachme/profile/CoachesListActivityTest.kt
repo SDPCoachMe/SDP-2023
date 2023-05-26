@@ -19,6 +19,7 @@ import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACHES
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.COACH_1
 import com.github.sdpcoachme.data.UserInfoSamples.Companion.NON_COACHES
 import com.github.sdpcoachme.database.CachingStore
+import com.github.sdpcoachme.database.MockDatabase
 import com.github.sdpcoachme.messaging.ChatActivity
 import com.github.sdpcoachme.profile.CoachesListActivity.TestTags.Buttons.Companion.FILTER
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Buttons.Companion.HAMBURGER_MENU
@@ -37,7 +38,7 @@ import java.util.concurrent.TimeUnit.SECONDS
 @RunWith(AndroidJUnit4::class)
 open class CoachesListActivityTest {
 
-    private val defaultEmail = "example@email.com"
+    private val defaultEmail = MockDatabase.getDefaultEmail()
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
@@ -63,7 +64,7 @@ open class CoachesListActivityTest {
         //database.restoreDefaultAccountsSetup()
 
         // Populate the database, and wait for it to finish
-        populateDatabase(store).join()
+        //populateDatabase(store).join()
         scenario = ActivityScenario.launch(defaultIntent)
 
         // This is the proper way of waiting for an activity to finish loading. However, it does not
@@ -79,11 +80,11 @@ open class CoachesListActivityTest {
         }
         */
         // Instead, make the test wait for the future to finish, and crash after a certain time
-        lateinit var stateLoading: CompletableFuture<Void>
+        /*lateinit var stateLoading: CompletableFuture<Void>
         scenario.onActivity {
-            stateLoading = it.stateLoading
+            stateLoading = it.stateUpdated
         }
-        stateLoading.get(1000, MILLISECONDS)
+        stateLoading.get(1000, MILLISECONDS)*/
         Intents.init()
     }
 
@@ -109,10 +110,6 @@ open class CoachesListActivityTest {
             composeTestRule.onNodeWithText(coach.address.name).assertDoesNotExist()
         }
     }
-
-    // TODO: add a test that checks that the coaches are sorted by distance, however it is hard to do
-    //  and not a priority since it requires mocking the location service and some complex matcher
-    //  logic
 
     @Test
     fun whenClickingOnACoachProfileActivityShowsCoachToClient() {
@@ -197,7 +194,7 @@ open class CoachesListActivityTest {
 
             lateinit var stateLoading: CompletableFuture<Void>
             scenario.onActivity {
-                stateLoading = it.stateLoading
+                stateLoading = it.stateUpdated
             }
             stateLoading.get(1000, MILLISECONDS)
             Intents.init()

@@ -21,6 +21,10 @@ import androidx.compose.material.icons.Icons.Default
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,6 +40,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.R
+import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.Sports
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.data.messaging.ContactRowInfo
@@ -53,7 +58,7 @@ import com.github.sdpcoachme.ui.ListItem
 import com.github.sdpcoachme.ui.theme.ratingBackground
 import com.github.sdpcoachme.ui.theme.ratingStar
 import kotlinx.coroutines.future.await
-import java.util.Collections
+import java.util.*
 import java.util.concurrent.CompletableFuture
 
 class CoachesListActivity : ComponentActivity() {
@@ -72,23 +77,34 @@ class CoachesListActivity : ComponentActivity() {
     }
 
     // Allows to notice testing framework that the activity is ready
+    var stateUpdated = CompletableFuture<Void>()
+    // To refresh the list of events, when we come back to this activity
+    var refreshState by mutableStateOf(false)
 
     private lateinit var store: CachingStore
-    private lateinit var emailFuture: CompletableFuture<String>
-
-
-    var stateLoading = CompletableFuture<Void>()
 
     // Observable state of the current sports used to filter the coaches list
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
 
+    override fun onResume() {
+        super.onResume()
+        // Refresh the list of events by triggering launched effect
+        refreshState = !refreshState
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        if (intent.getBooleanExtra("openChat", false)) {
+            val chatId = intent.getStringExtra("chatId")!!
+            val email = intent.getStringExtra("pushNotification_currentUserEmail")!!
+            val chatIntent = Intent(this, ChatActivity::class.java)
+                .putExtra("chatId", chatId)
+                .putExtra("pushNotification_currentUserEmail", email)
+            startActivity(chatIntent)
+        }
         val isViewingContacts = intent.getBooleanExtra("isViewingContacts", false)
         store = (application as CoachMeApplication).store
-
-        emailFuture = store.getCurrentEmail()
 
         val locationProvider = (application as CoachMeApplication).locationProvider
         // Here we don't need the UserInfo
@@ -111,12 +127,30 @@ class CoachesListActivity : ComponentActivity() {
             // Composable is first created (given that the parameter key1 never changes). The code won't
             // be executed on every recomposition.
             // See https://developer.android.com/jetpack/compose/side-effects#rememberupdatedstate
-            LaunchedEffect(true) {
-                email = emailFuture.await()
+            // Note: Now we trigger LaunchedEffect not once, but every time the refreshState changes.
+            LaunchedEffect(refreshState) {
+                email = store.getCurrentEmail()
+                    .exceptionally {
+                        // The following recovers from the user receiving a push notification, then logging out
+                        // and then clicking on the notification. In this case, the intent will contain the email
+                        val pushNotificationEmail = intent.getStringExtra("pushNotification_currentUserEmail")!!
+                        store.setCurrentEmail(pushNotificationEmail)
+                        pushNotificationEmail
+                    }.await()
+
                 if (isViewingContacts) {
-                    contactRowInfos = store
+                    // TODO: this is bad code and should be refactored
+                    //  -> The participants should be fetched in the database method getContactRowInfo
+                    //  But does it really make sense to use ContactRowInfo over Chat, then ?
+                    //  (imo, ContactRowInfo and Chat should be merged into one class, and this should
+                    //  be the only class used throughout the app)
+                    val contactRowInfosTemp = store
                         .getContactRowInfo(email = email)
                         .await()
+                    contactRowInfos = contactRowInfosTemp.map {
+                        it.copy(participants = store.getChat(it.chatId).await().participants)
+                    }
+
                 } else {
                     listOfCoaches = store
                         .getAllUsersByNearest(
@@ -128,7 +162,7 @@ class CoachesListActivity : ComponentActivity() {
                 }
 
                 // Activity is now ready for testing
-                stateLoading.complete(null)
+                stateUpdated.complete(null)
             }
 
             val title = if (isViewingContacts) stringResource(R.string.chats)
@@ -208,85 +242,98 @@ class CoachesListActivity : ComponentActivity() {
         }
     }
 
-    /**
-     * Displays a single user info in a list, or a chat preview if isViewingContacts is true.
-     */
-    @Composable
-    fun UserInfoListItem(currentUserEmail: String, user: UserInfo = UserInfo(), isViewingContacts: Boolean = false,
-                         contactRowInfo: ContactRowInfo = ContactRowInfo(), coachRating: Int = 0) {
-        val context = LocalContext.current
-        if (isViewingContacts) {
-            ListItem(
-                image = ImageData(
-                    painter = painterResource(id = R.drawable.ic_launcher_background),
-                    contentDescription = contactRowInfo.chatTitle,
-                ),
-                title = contactRowInfo.chatTitle,
-                firstRow = {
-                    val senderName = if (contactRowInfo.lastMessage.sender == currentUserEmail) "You" else contactRowInfo.lastMessage.senderName
-                    IconTextRow(
-                        text = if (senderName.isNotEmpty()) "$senderName: ${contactRowInfo.lastMessage.content}" else "Tap to write a message",
-                        maxLines = 2
-                    )
-                },
-                onClick = {
-                    val displayChatIntent = Intent(context, ChatActivity::class.java)
-                    displayChatIntent.putExtra("chatId", contactRowInfo.chatId)
-                    context.startActivity(displayChatIntent)
-                }
-            )
+}
+
+
+/**
+ * Displays a single user info in a list, or a chat preview if isViewingContacts is true.
+ */
+@Composable
+fun UserInfoListItem(currentUserEmail: String, user: UserInfo = UserInfo(), isViewingContacts: Boolean = false,
+                     contactRowInfo: ContactRowInfo = ContactRowInfo(), coachRating: Int = 0) {
+    val context = LocalContext.current
+
+    if (isViewingContacts) {
+        val picture = if (contactRowInfo.isGroupChat) {
+            GroupEvent.getPictureResource(contactRowInfo.chatId)
         } else {
-            val tags = TestTags.CoachesListTags(user)
-            ListItem(
-                image = ImageData(
-                    painter = painterResource(id = R.drawable.ic_launcher_background),
-                    contentDescription = "${user.firstName} ${user.lastName}'s profile picture",
-                ),
-                title = "${user.firstName} ${user.lastName}",
-                firstRow = {
-                    IconTextRow(
-                        icon = IconData(icon = Default.Place, contentDescription = "${user.firstName} ${user.lastName}'s location"),
-                        text = user.address.name
-                    )
-                },
-                secondRow = {
-                    IconsRow(icons = user.sports.map { sport ->
-                        IconData(icon = sport.sportIcon, contentDescription = sport.sportName)
-                    })
-                },
-                secondColumn = {
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        modifier = Modifier.fillMaxHeight(),
-                        verticalArrangement = Arrangement.Top
-                    ) {
-                        Spacer(modifier = Modifier.height(9.dp))
-                        Label(
-                            text = "$coachRating",
-                            textTag = tags.RATING,
-                            icon = IconData(
-                                icon = Default.Star,
-                                contentDescription = "Coach rating"
-                            ),
-                            backgroundColor = colors.ratingBackground,
-                            contentColor = colors.ratingStar,
-                            iconOnRight = true
-                        )
-                    }
-                },
-                firstColumnMaxWidth = 0.7f,
-                onClick = {
-                    val displayCoachIntent = Intent(context, ProfileActivity::class.java)
-                    displayCoachIntent.putExtra("email", user.email)
-                    if (user.email == currentUserEmail) {
-                        displayCoachIntent.putExtra("isViewingCoach", false)
-                    } else {
-                        displayCoachIntent.putExtra("isViewingCoach", true)
-                    }
-                    context.startActivity(displayCoachIntent)
-                }
-            )
+            // Make sure we handle the case where participants is empty (should never happen here though)
+            // See the _TODO above in the LaunchedEffect and the one in ContactRowInfo for more details
+            contactRowInfo.participants
+                .firstOrNull { it != currentUserEmail }?.let { UserInfo.getPictureResource(it) } ?:
+            UserInfo.getPictureResource("") // fallback to gray picture (displayed when
+            // email is empty usually indicating loading state)
         }
+        ListItem(
+            image = ImageData(
+                painter = painterResource(id = picture),
+                contentDescription = contactRowInfo.chatTitle,
+            ),
+            title = contactRowInfo.chatTitle,
+            firstRow = {
+                val senderName = if (contactRowInfo.lastMessage.sender == currentUserEmail) "You" else contactRowInfo.lastMessage.senderName
+                IconTextRow(
+                    text = if (senderName.isNotEmpty()) "$senderName: ${contactRowInfo.lastMessage.content}" else "Tap to write a message",
+                    maxLines = 2
+                )
+            },
+            onClick = {
+                val displayChatIntent = Intent(context, ChatActivity::class.java)
+                displayChatIntent.putExtra("chatId", contactRowInfo.chatId)
+                context.startActivity(displayChatIntent)
+            }
+        )
+    } else {
+        val tags = CoachesListActivity.TestTags.CoachesListTags(user)
+        ListItem(
+            image = ImageData(
+                painter = painterResource(id = user.getPictureResource()),
+                contentDescription = "${user.firstName} ${user.lastName}'s profile picture",
+            ),
+            title = "${user.firstName} ${user.lastName}",
+            firstRow = {
+                IconTextRow(
+                    icon = IconData(icon = Default.Place, contentDescription = "${user.firstName} ${user.lastName}'s location"),
+                    text = user.address.name
+                )
+            },
+            secondRow = {
+                IconsRow(icons = user.sports.map { sport ->
+                    IconData(icon = sport.sportIcon, contentDescription = sport.sportName)
+                })
+            },
+            secondColumn = {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier.fillMaxHeight(),
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    Spacer(modifier = Modifier.height(9.dp))
+                    Label(
+                        text = "$coachRating",
+                        textTag = tags.RATING,
+                        icon = IconData(
+                            icon = Default.Star,
+                            contentDescription = "Coach rating"
+                        ),
+                        backgroundColor = colors.rating,
+                        contentColor = colors.onRating,
+                        iconOnRight = true
+                    )
+                }
+            },
+            firstColumnMaxWidth = 0.7f,
+            onClick = {
+                val displayCoachIntent = Intent(context, ProfileActivity::class.java)
+                displayCoachIntent.putExtra("email", user.email)
+                if (user.email == currentUserEmail) {
+                    displayCoachIntent.putExtra("isViewingCoach", false)
+                } else {
+                    displayCoachIntent.putExtra("isViewingCoach", true)
+                }
+                context.startActivity(displayCoachIntent)
+            }
+        )
     }
 }
 

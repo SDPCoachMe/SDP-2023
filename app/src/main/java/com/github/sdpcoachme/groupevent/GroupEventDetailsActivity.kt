@@ -27,10 +27,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
-import com.github.sdpcoachme.R
 import com.github.sdpcoachme.data.GroupEvent
 import com.github.sdpcoachme.data.UserInfo
 import com.github.sdpcoachme.database.CachingStore
@@ -249,7 +249,9 @@ fun GroupEventDetailsLayout(
                 modifier = Modifier
                     .testTag(EVENT_NAME),
                 text = groupEvent.event.name,
-                style = MaterialTheme.typography.h4
+                style = MaterialTheme.typography.h4,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(5.dp))
             Row(
@@ -286,7 +288,7 @@ fun GroupEventDetailsLayout(
                 horizontalArrangement = Arrangement.Start
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_background),
+                    painter = painterResource(id = organizer.getPictureResource()),
                     contentDescription = "Organizer profile picture",
                     modifier = Modifier
                         .size(40.dp)
@@ -314,7 +316,9 @@ fun GroupEventDetailsLayout(
                         intent.putExtra("isViewingCoach", true)
                         intent.putExtra("email", organizer.email)
                         context.startActivity(intent)
-                    }
+                    },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
             Spacer(modifier = Modifier.height(20.dp))
@@ -532,14 +536,18 @@ private fun IconTextRow(
                 style = MaterialTheme.typography.body1.copy(
                     color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
                 ),
-                onClick = { onClick() }
+                onClick = { onClick() },
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         } else {
             Text(
                 modifier = Modifier.testTag(tag),
                 text = text,
                 style = MaterialTheme.typography.body1,
-                color = Color.Gray
+                color = Color.Gray,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -555,7 +563,7 @@ fun SmallUserInfoListItem(
 ) {
     SmallListItem(
         image = ImageData(
-            painter = painterResource(id = R.drawable.ic_launcher_background),
+            painter = painterResource(id = userInfo.getPictureResource()),
             contentDescription = "${userInfo.firstName} ${userInfo.lastName}'s profile picture"
         ),
         title = "${userInfo.firstName} ${userInfo.lastName}",
