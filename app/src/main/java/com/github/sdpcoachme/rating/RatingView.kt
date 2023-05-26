@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.rating.RatingActivity.TestTags.Companion.Buttons.Companion.CANCEL
 import com.github.sdpcoachme.rating.RatingActivity.TestTags.Companion.Buttons.Companion.DONE
+import com.github.sdpcoachme.rating.RatingActivity.TestTags.Companion.RATING_BAR
+import com.github.sdpcoachme.rating.RatingActivity.TestTags.Companion.RATING_STAR
 import com.github.sdpcoachme.rating.RatingActivity.TestTags.Companion.TITLE
 import com.github.sdpcoachme.ui.theme.selectedStar
 import com.github.sdpcoachme.ui.theme.unselectedStar
@@ -93,6 +95,7 @@ fun RatingView(
             horizontalAlignment = CenterHorizontally
         ) {
             RatingBar(
+                modifier = Modifier.testTag(RATING_BAR),
                 padding = padding,
                 size = size,
                 rating = rating,
@@ -133,7 +136,8 @@ fun RatingBar(
                 modifier = Modifier
                     .width(size)
                     .height(size)
-                    .pointerInteropFilter { onTouchEvent(star, it) },
+                    .pointerInteropFilter { onTouchEvent(star, it) }
+                    .testTag(RATING_STAR + star),
                 tint = if (star <= rating) colors.selectedStar else colors.unselectedStar
             )
         }

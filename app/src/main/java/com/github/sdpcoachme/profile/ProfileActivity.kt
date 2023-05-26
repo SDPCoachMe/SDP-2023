@@ -91,7 +91,7 @@ class ProfileActivity : ComponentActivity() {
             const val ADDRESS = "address"
             const val SPORTS = "sports"
             const val COACH_SWITCH = "coachSwitch"
-            const val RATING = "rating"
+            const val RATING = "profileRating"
         }
     }
 
