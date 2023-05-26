@@ -287,21 +287,27 @@ class ProfileActivityTest {
     }
 
     @Test
-    fun editSportsClickOnAllSportsResultsInComplementChosen() {
+    fun editSportsSelectNewSportsWorks() {
         getStore().setCurrentEmail(NON_COACH_2.email).get(1000, TimeUnit.MILLISECONDS)
         ActivityScenario.launch<ProfileActivity>(defaultIntent).use {
             waitForUpdate(it)
 
             composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).performClick()
 
-            for (rowTag in ROW_TEXT_LIST) {
+            // Unselect current sports
+            for (rowTag in NON_COACH_2.sports.map { s -> SelectSportsActivity.TestTags.ListRowTag(s) }) {
+                composeTestRule.onNodeWithTag(rowTag.ROW, useUnmergedTree = true).performScrollTo().performClick()
+            }
+            // Select new sports
+            val newSelectedSports = listOf(Sports.FOOTBALL, Sports.BASKETBALL, Sports.WATERSKI)
+            for (rowTag in newSelectedSports.map { s -> SelectSportsActivity.TestTags.ListRowTag(s) }) {
                 composeTestRule.onNodeWithTag(rowTag.ROW, useUnmergedTree = true).performScrollTo().performClick()
             }
             composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.DONE, useUnmergedTree = true).performClick()
 
             waitForUpdate(it)
             // Given that we click on all sports, the list of sports is the complement
-            for (sport in Sports.values().toSet() - NON_COACH_2.sports.toSet()) {
+            for (sport in newSelectedSports) {
                 composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).onChildren().assertAny(
                     hasContentDescription(sport.sportName))
             }
