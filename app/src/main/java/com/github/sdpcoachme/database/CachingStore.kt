@@ -282,8 +282,11 @@ class CachingStore(private val wrappedDatabase: Database,
                     throw IllegalArgumentException("Adding rating to a non-coach user")
                 else if (rating !in 0..5)
                     throw IllegalArgumentException("Rating must be between 0 and 5")
-                else
-                    updateUser(user.copy(ratings = user.ratings + (currEmail to rating)))
+                else {
+                    // This replace should be done in the database but was written as a quickfix here
+                    val email = currEmail.replace(".", ",")
+                    updateUser(user.copy(ratings = user.ratings + (email to rating)))
+                }
 
             }
         }
