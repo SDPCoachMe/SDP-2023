@@ -159,17 +159,16 @@ class ProfileActivity : ComponentActivity() {
 
         val context = LocalContext.current
         var userInfo by remember { mutableStateOf(UserInfo()) }
-        var coachRating by remember { mutableStateOf(0)}
-        var currIsCoach by remember { mutableStateOf(false) }
+        var coachAverageRating by remember { mutableStateOf(0)}
 
         // Make sure the userInfo variable is updated when the futureUserInfo completes
-        LaunchedEffect(futureUserInfo, coachRating) {
-            userInfo = futureUserInfo.await().also { currIsCoach = !isViewingCoach && it.coach}
-            if (currIsCoach) {
+        LaunchedEffect(futureUserInfo) {
+            userInfo = futureUserInfo.await()
+            if (userInfo.coach) {
                 // getCoachAverageRating(...) performs a CachingStore getUser() as a coach rating can be
                 // changed asynchronously within a ProfileActivity scope from another user, which could
                 // lead to stale data if we only pass the userInfo here.
-                coachRating = store.getCoachAverageRating(userInfo.email).await()
+                coachAverageRating = store.getCoachAverageRating(userInfo.email).await()
             }
             stateUpdated.complete(null)
         }
@@ -182,13 +181,17 @@ class ProfileActivity : ComponentActivity() {
         fun saveUserInfo(futureNewUserInfo: CompletableFuture<UserInfo>): CompletableFuture<Void> {
             return futureNewUserInfo
                 .thenCompose { newUserInfo ->
-                    store.updateUser(newUserInfo)
-                        .thenAccept {
-                            userInfo = newUserInfo
-                            stateUpdated.complete(null)
-                        }
-                }
-                .exceptionally {
+                    store.updateUser(newUserInfo).thenAccept { userInfo = newUserInfo }
+                }.thenCompose {
+                    // If the user became a coach, make sure the coach average rating is up-to-date
+                    if (userInfo.coach) {
+                        store.getCoachAverageRating(userInfo.email).thenAccept { coachAverageRating = it }
+                    } else {
+                        CompletableFuture.completedFuture(null)
+                    }
+                }.thenAccept {
+                    stateUpdated.complete(null)
+                }.exceptionally {
                     when (it.cause) {
                         is AddressAutocompleteHandler.AutocompleteCancelledException -> {
                             // The user cancelled the Places Autocomplete activity
@@ -221,23 +224,40 @@ class ProfileActivity : ComponentActivity() {
         ) {
             TitleRow(userInfo, isViewingCoach)
             Spacer(modifier = Modifier.height(10.dp))
-            if (currIsCoach || isViewingCoach) {
+            if (userInfo.coach) {
                 RatingRow(
                     label = "RATING",
                     tag = RATING,
-                    value = coachRating,
+                    value = coachAverageRating,
                     onClick = {
                         if (isViewingCoach) {
-                            ratingHandler(
-                                RatingActivity.getIntent(
-                                    context = context,
-                                    coachName = "${userInfo.firstName} ${userInfo.lastName}",
-                                    initialValue = coachRating
+                            store.getCurrentEmail().thenApply { currentEmail ->
+                                // TODO replacement of commas here is temporary !
+                                userInfo.ratings.getOrDefault(currentEmail.replace(".", ","), 0)
+                            }.thenCompose { previousRatingOfCurrentUser ->
+                                ratingHandler(
+                                    RatingActivity.getIntent(
+                                        context = context,
+                                        coachName = "${userInfo.firstName} ${userInfo.lastName}",
+                                        initialValue = previousRatingOfCurrentUser
+                                    )
                                 )
-                            ).thenApply { selectedRating ->
-                                store.addRatingToCoach(userInfo.email, selectedRating).thenApply {
-                                    coachRating = selectedRating
+                            }.thenCompose { selectedRating ->
+                                // Update rating in database
+                                store.addRatingToCoach(userInfo.email, selectedRating)
+                            }.thenCompose {
+                                // Refresh local userInfo state
+                                store.getUser(userInfo.email).thenApply {
+                                    userInfo = it
                                 }
+                            }.thenCompose {
+                                // Refresh local coachAverageRating state
+                                store.getCoachAverageRating(userInfo.email).thenApply {
+                                    coachAverageRating = it
+                                }
+                            }.thenAccept {
+                                // Notify tests
+                                stateUpdated.complete(null)
                             }
                         } else {
                             // Silent fail as we can't rate ourselves ;)
@@ -420,7 +440,6 @@ class ProfileActivity : ComponentActivity() {
                 SwitchClientCoachRow(
                     value = userInfo.coach,
                     onValueChange = {
-                        currIsCoach = it
                         saveUserInfo(CompletableFuture.completedFuture(userInfo.copy(coach = it)))
                     }
                 )

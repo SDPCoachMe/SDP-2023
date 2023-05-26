@@ -310,10 +310,14 @@ fun GroupEventDetailsLayout(
                     ),
                     onClick = {
                         // Open organizer profile
-                        // If the organizer is the current user, open the profile activity, but not in edit mode
                         // TODO : temporary until we update the way intents are handled in profile activity
                         val intent = Intent(context, ProfileActivity::class.java)
-                        intent.putExtra("isViewingCoach", true)
+                        if (currentUser.email == organizer.email) {
+                            // Case where we are viewing our own profile
+                            intent.putExtra("isViewingCoach", false)
+                        } else {
+                            intent.putExtra("isViewingCoach", true)
+                        }
                         intent.putExtra("email", organizer.email)
                         context.startActivity(intent)
                     },
@@ -383,10 +387,14 @@ fun GroupEventDetailsLayout(
                                     it,
                             onClick = {
                                 // Open the user's profile
-                                // For the current user, this will open his profile, but not in edit mode
                                 // TODO : temporary until we update the way intents are handled in profile activity
                                 val intent = Intent(context, ProfileActivity::class.java)
-                                intent.putExtra("isViewingCoach", true)
+                                if (currentUser.email == it.email) {
+                                    // Case where we are viewing our own profile
+                                    intent.putExtra("isViewingCoach", false)
+                                } else {
+                                    intent.putExtra("isViewingCoach", true)
+                                }
                                 intent.putExtra("email", it.email)
                                 context.startActivity(intent)
                             }

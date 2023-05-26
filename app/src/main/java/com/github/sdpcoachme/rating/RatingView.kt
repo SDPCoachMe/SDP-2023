@@ -35,6 +35,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextOverflow.Companion.Ellipsis
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.sdpcoachme.rating.RatingActivity.TestTags.Companion.Buttons.Companion.CANCEL
@@ -64,7 +65,7 @@ fun RatingView(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(title, modifier = Modifier.testTag(TITLE))
+                    Text(title, modifier = Modifier.testTag(TITLE), maxLines = 1, overflow = Ellipsis)
                 },
                 navigationIcon = {
                     IconButton(onClick = onCancel, modifier = Modifier.testTag(CANCEL)) {

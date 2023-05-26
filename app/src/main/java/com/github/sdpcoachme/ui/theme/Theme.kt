@@ -7,6 +7,7 @@ import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.DarkGray
 import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.graphics.Color.Companion.White
 
@@ -39,7 +40,7 @@ val Colors.selectedStar: Color
     get() = Gold
 @get:Composable
 val Colors.unselectedStar: Color
-    get() = if(isLight) LightGray else White
+    get() = if(isLight) LightGray else DarkGray
 
 @get:Composable
 val Colors.rating: Color
@@ -68,10 +69,10 @@ val Colors.onMessage: Color
     get() = if (isLight) Color.Black else White
 @get:Composable
 val Colors.onMessageTimeStamp: Color
-    get() = if (isLight) Color.DarkGray else LightGray
+    get() = if (isLight) DarkGray else LightGray
 @get:Composable
 val Colors.chatTime: Color
-    get() = if (isLight) LightLightGray else Color.DarkGray
+    get() = if (isLight) LightLightGray else DarkGray
 @get:Composable
 val Colors.onChatTime: Color
     get() = if (isLight) Color.Black else White
