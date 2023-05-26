@@ -306,7 +306,7 @@ class ProfileActivityTest {
             composeTestRule.onNodeWithTag(SelectSportsActivity.TestTags.Buttons.DONE, useUnmergedTree = true).performClick()
 
             waitForUpdate(it)
-            // Given that we click on all sports, the list of sports is the complement
+            // Check that the list of sports is as expected
             for (sport in newSelectedSports) {
                 composeTestRule.onNodeWithTag(SPORTS, useUnmergedTree = true).onChildren().assertAny(
                     hasContentDescription(sport.sportName))

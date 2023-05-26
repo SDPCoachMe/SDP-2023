@@ -10,7 +10,17 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -54,7 +64,10 @@ import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.FIRST_NA
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.LAST_NAME
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PHONE
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.PROFILE_LABEL
+import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.RATING
 import com.github.sdpcoachme.profile.ProfileActivity.TestTags.Companion.SPORTS
+import com.github.sdpcoachme.rating.RatingActivity
+import com.github.sdpcoachme.rating.RatingBar
 import com.github.sdpcoachme.ui.Dashboard
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
@@ -81,6 +94,7 @@ class ProfileActivity : ComponentActivity() {
             const val ADDRESS = "address"
             const val SPORTS = "sports"
             const val COACH_SWITCH = "coachSwitch"
+            const val RATING = "profileRating"
         }
     }
 
@@ -92,6 +106,7 @@ class ProfileActivity : ComponentActivity() {
     private lateinit var addressAutocompleteHandler: AddressAutocompleteHandler
     private lateinit var editTextHandler: (Intent) -> CompletableFuture<String>
     private lateinit var selectSportsHandler: (Intent) -> CompletableFuture<List<Sports>>
+    private lateinit var ratingHandler: (Intent) -> CompletableFuture<Int>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -122,6 +137,9 @@ class ProfileActivity : ComponentActivity() {
         // Set up handler for calls to select sports activity
         selectSportsHandler = SelectSportsActivity.getHandler(this)
 
+        // Set up handler for calls to rate the coach activity
+        ratingHandler = RatingActivity.getHandler(this)
+
         setContent {
             val title =
                 if (isViewingCoach) stringResource(R.string.profile_details)
@@ -138,12 +156,20 @@ class ProfileActivity : ComponentActivity() {
      */
     @Composable
     fun Profile(futureUserInfo: CompletableFuture<UserInfo>, isViewingCoach: Boolean) {
+
         val context = LocalContext.current
         var userInfo by remember { mutableStateOf(UserInfo()) }
+        var coachAverageRating by remember { mutableStateOf(0)}
 
         // Make sure the userInfo variable is updated when the futureUserInfo completes
         LaunchedEffect(futureUserInfo) {
             userInfo = futureUserInfo.await()
+            if (userInfo.coach) {
+                // getCoachAverageRating(...) performs a CachingStore getUser() as a coach rating can be
+                // changed asynchronously within a ProfileActivity scope from another user, which could
+                // lead to stale data if we only pass the userInfo here.
+                coachAverageRating = store.getCoachAverageRating(userInfo.email).await()
+            }
             stateUpdated.complete(null)
         }
 
@@ -155,13 +181,17 @@ class ProfileActivity : ComponentActivity() {
         fun saveUserInfo(futureNewUserInfo: CompletableFuture<UserInfo>): CompletableFuture<Void> {
             return futureNewUserInfo
                 .thenCompose { newUserInfo ->
-                    store.updateUser(newUserInfo)
-                        .thenAccept {
-                            userInfo = newUserInfo
-                            stateUpdated.complete(null)
-                        }
-                }
-                .exceptionally {
+                    store.updateUser(newUserInfo).thenAccept { userInfo = newUserInfo }
+                }.thenCompose {
+                    // If the user became a coach, make sure the coach average rating is up-to-date
+                    if (userInfo.coach) {
+                        store.getCoachAverageRating(userInfo.email).thenAccept { coachAverageRating = it }
+                    } else {
+                        CompletableFuture.completedFuture(null)
+                    }
+                }.thenAccept {
+                    stateUpdated.complete(null)
+                }.exceptionally {
                     when (it.cause) {
                         is AddressAutocompleteHandler.AutocompleteCancelledException -> {
                             // The user cancelled the Places Autocomplete activity
@@ -194,6 +224,48 @@ class ProfileActivity : ComponentActivity() {
         ) {
             TitleRow(userInfo, isViewingCoach)
             Spacer(modifier = Modifier.height(10.dp))
+            if (userInfo.coach) {
+                RatingRow(
+                    label = "RATING",
+                    tag = RATING,
+                    value = coachAverageRating,
+                    onClick = {
+                        if (isViewingCoach) {
+                            store.getCurrentEmail().thenApply { currentEmail ->
+                                // TODO replacement of commas here is temporary !
+                                userInfo.ratings.getOrDefault(currentEmail.replace(".", ","), 0)
+                            }.thenCompose { previousRatingOfCurrentUser ->
+                                ratingHandler(
+                                    RatingActivity.getIntent(
+                                        context = context,
+                                        coachName = "${userInfo.firstName} ${userInfo.lastName}",
+                                        initialValue = previousRatingOfCurrentUser
+                                    )
+                                )
+                            }.thenCompose { selectedRating ->
+                                // Update rating in database
+                                store.addRatingToCoach(userInfo.email, selectedRating)
+                            }.thenCompose {
+                                // Refresh local userInfo state
+                                store.getUser(userInfo.email).thenApply {
+                                    userInfo = it
+                                }
+                            }.thenCompose {
+                                // Refresh local coachAverageRating state
+                                store.getCoachAverageRating(userInfo.email).thenApply {
+                                    coachAverageRating = it
+                                }
+                            }.thenAccept {
+                                // Notify tests
+                                stateUpdated.complete(null)
+                            }
+                        } else {
+                            // Silent fail as we can't rate ourselves ;)
+                        }
+                    }
+                )
+                Divider(startIndent = 20.dp)
+            }
             TextRow(
                 label = "EMAIL",
                 tag = EMAIL,
@@ -514,6 +586,24 @@ fun SportsRow(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun RatingRow(
+    label: String,
+    tag: String,
+    onClick: () -> Unit = {},
+    value: Int
+) {
+    AttributeRow(
+        label = label,
+        onClick = onClick
+    ) {
+        RatingBar(
+            modifier = Modifier.testTag(tag),
+            rating = value
+        )
     }
 }
 

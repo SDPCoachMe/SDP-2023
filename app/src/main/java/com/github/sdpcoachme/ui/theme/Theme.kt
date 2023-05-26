@@ -7,6 +7,9 @@ import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.DarkGray
+import androidx.compose.ui.graphics.Color.Companion.LightGray
+import androidx.compose.ui.graphics.Color.Companion.White
 
 private val DarkColorPalette = darkColors(
     primary = Purple200,
@@ -31,13 +34,28 @@ private val LightColorPalette = lightColors(
 
 // Adding extra colors for messages and other things
 
+// For rating stars
+@get:Composable
+val Colors.selectedStar: Color
+    get() = Gold
+@get:Composable
+val Colors.unselectedStar: Color
+    get() = if(isLight) LightGray else DarkGray
+
+@get:Composable
+val Colors.rating: Color
+    get() = Gold
+@get:Composable
+val Colors.onRating: Color
+    get() = White
+
 // Label for group event items
 @get:Composable
 val Colors.label: Color
     get() = DarkOrange
 @get:Composable
 val Colors.onLabel: Color
-    get() = Color.White
+    get() = White
 
 // Label for chat
 @get:Composable
@@ -45,28 +63,23 @@ val Colors.messageMe: Color
     get() = if (isLight) Purple100 else Purple800 // or Purple900 ?
 @get:Composable
 val Colors.messageOther: Color
-    get() = if (isLight) Color.LightGray else DarkDarkGray
+    get() = if (isLight) LightGray else DarkDarkGray
 @get:Composable
 val Colors.onMessage: Color
-    get() = if (isLight) Color.Black else Color.White
+    get() = if (isLight) Color.Black else White
 @get:Composable
 val Colors.onMessageTimeStamp: Color
-    get() = if (isLight) Color.DarkGray else Color.LightGray
+    get() = if (isLight) DarkGray else LightGray
 @get:Composable
 val Colors.chatTime: Color
-    get() = if (isLight) LightLightGray else Color.DarkGray
+    get() = if (isLight) LightLightGray else DarkGray
 @get:Composable
 val Colors.onChatTime: Color
-    get() = if (isLight) Color.Black else Color.White
+    get() = if (isLight) Color.Black else White
 @get:Composable
 val Colors.readMessageCheck: Color
     get() = if (isLight) DarkPrettyBlue else LightPrettyBlue
-@get:Composable
-val Colors.rating: Color
-    get() = Gold
-@get:Composable
-val Colors.onRating: Color
-    get() = Color.White
+
 
 @Composable
 fun CoachMeTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
