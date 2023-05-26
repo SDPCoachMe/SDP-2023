@@ -10,18 +10,10 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredHeight
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Button
 import androidx.compose.material.Divider
@@ -404,9 +396,13 @@ fun TitleRow(user: UserInfo, isViewingCoach: Boolean) {
         horizontalArrangement = Arrangement.Start
     ) {
         Text(
-            modifier = Modifier.testTag(PROFILE_LABEL),
+            modifier = Modifier
+                .testTag(PROFILE_LABEL)
+                .fillMaxWidth(0.7f),
             text = title,
-            style = MaterialTheme.typography.h4
+            style = MaterialTheme.typography.h4,
+            maxLines = 4,
+            overflow = TextOverflow.Ellipsis
         )
         Box(
             modifier = Modifier
@@ -415,7 +411,7 @@ fun TitleRow(user: UserInfo, isViewingCoach: Boolean) {
             contentAlignment = Alignment.CenterEnd
         ) {
             Image(
-                painter = painterResource(id = R.drawable.ic_launcher_background),
+                painter = painterResource(id = user.getPictureResource()),
                 contentDescription = "Profile picture",
                 modifier = Modifier
                     .size(60.dp)
@@ -502,20 +498,19 @@ fun SportsRow(
         label = label,
         onClick = onClick
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start,
+        LazyHorizontalGrid(
+            rows = GridCells.Fixed(1),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier
+                .fillMaxWidth()
+                .height(16.dp)
                 .testTag(tag)
                 .padding(0.dp, 0.dp, 0.dp, 2.5.dp)
         ) {
-            value.map {
+            items(value) {
                 Icon(
                     imageVector = it.sportIcon,
-                    contentDescription = it.sportName,
-                    modifier = Modifier
-                        .padding(0.dp, 0.dp, 6.dp, 0.dp)
-                        .size(16.dp)
+                    contentDescription = it.sportName
                 )
             }
         }

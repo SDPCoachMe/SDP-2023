@@ -60,7 +60,7 @@ class GroupEventsListActivityTest {
     private fun waitForLoading(scenario: ActivityScenario<GroupEventsListActivity>) {
         lateinit var stateLoading: CompletableFuture<Void>
         scenario.onActivity { activity ->
-            stateLoading = activity.stateLoading
+            stateLoading = activity.stateUpdated
         }
         stateLoading.get(3, TimeUnit.SECONDS)
     }

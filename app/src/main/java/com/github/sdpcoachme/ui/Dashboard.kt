@@ -55,6 +55,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.sdpcoachme.CoachMeApplication
@@ -73,7 +74,6 @@ import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DASHBOARD_NAME
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.DRAWER_HEADER
 import com.github.sdpcoachme.ui.Dashboard.TestTags.Companion.MENU_LIST
 import com.github.sdpcoachme.ui.theme.CoachMeTheme
-import com.github.sdpcoachme.ui.theme.dashboardPersonalDetailsBackground
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.util.concurrent.CompletableFuture
@@ -189,9 +189,15 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                     )
                                 ),
                                 onItemClick = {
+                                    fun startActivityWithNoHistory(intent: Intent) {
+                                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        context.startActivity(intent)
+                                    }
+
                                     when (it.tag) {
+
                                         Dashboard.TestTags.Buttons.PLAN -> {
-                                            context.startActivity(
+                                            startActivityWithNoHistory(
                                                 Intent(
                                                     context,
                                                     MapActivity::class.java
@@ -200,11 +206,11 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                         }
 
                                         Dashboard.TestTags.Buttons.PROFILE -> {
-                                            context.startActivity(
+                                            startActivityWithNoHistory(
                                                 Intent(
                                                     context,
                                                     ProfileActivity::class.java
-                                                ),
+                                                )
                                             )
                                         }
 
@@ -220,7 +226,7 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                                         ""
                                                     )
                                                         .thenApply {
-                                                            context.startActivity(
+                                                            startActivityWithNoHistory(
                                                                 Intent(
                                                                     context,
                                                                     LoginActivity::class.java
@@ -232,7 +238,7 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                         }
 
                                         Dashboard.TestTags.Buttons.SCHEDULE -> {
-                                            context.startActivity(
+                                            startActivityWithNoHistory(
                                                 Intent(
                                                     context,
                                                     ScheduleActivity::class.java
@@ -241,7 +247,7 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                         }
 
                                         Dashboard.TestTags.Buttons.COACHES_LIST -> {
-                                            context.startActivity(
+                                            startActivityWithNoHistory(
                                                 Intent(
                                                     context,
                                                     CoachesListActivity::class.java
@@ -253,11 +259,11 @@ fun Dashboard(title: @Composable (Modifier) -> Unit,
                                             val intent =
                                                 Intent(context, CoachesListActivity::class.java)
                                             intent.putExtra("isViewingContacts", true)
-                                            context.startActivity(intent)
+                                            startActivityWithNoHistory(intent)
                                         }
 
                                         Dashboard.TestTags.Buttons.GROUP_EVENTS_LIST -> {
-                                            context.startActivity(
+                                            startActivityWithNoHistory(
                                                 Intent(
                                                     context,
                                                     GroupEventsListActivity::class.java
@@ -300,7 +306,14 @@ fun Dashboard(title: String? = null,
               UIDisplayed: CompletableFuture<Void> = CompletableFuture<Void>(),
               appContent: @Composable (Modifier) -> Unit) {
     Dashboard(
-        title = { modifier -> Text(text = title ?: stringResource(id = R.string.app_name), modifier = modifier) },
+        title = { modifier ->
+            Text(
+                text = title ?: stringResource(id = R.string.app_name),
+                modifier = modifier,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        },
         UIDisplayed = UIDisplayed,
         appContent = appContent
     )
@@ -338,21 +351,19 @@ fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = MaterialTheme.colors.dashboardPersonalDetailsBackground),
+            .background(color = if (MaterialTheme.colors.isLight) MaterialTheme.colors.primary else Color.Unspecified),
         contentAlignment = Alignment.Center,
         content = {
             Column(horizontalAlignment = Alignment.Start) {
-                val emailFuture = (context.applicationContext as CoachMeApplication).store.getCurrentEmail()
-                val userInfoFuture = emailFuture.thenCompose { email ->
-                    (context.applicationContext as CoachMeApplication).store.getUser(email)
-                }
+                val store = (context.applicationContext as CoachMeApplication).store
+
                 var email by remember { mutableStateOf("") }
                 var userInfo by remember { mutableStateOf(UserInfo()) }
 
-                LaunchedEffect(emailFuture, userInfoFuture) {
-                    email = emailFuture.await()
+                LaunchedEffect(true) {
+                    email = store.getCurrentEmail().await()
+                    userInfo = store.getUser(email).await()
 
-                    userInfo = userInfoFuture.await()
                     UIDisplayed.complete(null)
                 }
                 Box(
@@ -367,18 +378,20 @@ fun DrawerHeader(context: Context, UIDisplayed: CompletableFuture<Void>) {
                             modifier = Modifier
                                 .padding(start = 16.dp, end = 3.dp)
                                 .testTag(DASHBOARD_NAME),
-                            text = userInfo.firstName + " " + userInfo.lastName, fontSize = 20.sp, color = Color.White,
+                            text = userInfo.firstName + " " + userInfo.lastName, fontSize = 20.sp,
+                            color = if (MaterialTheme.colors.isLight) MaterialTheme.colors.onPrimary else Color.Unspecified
                         )
                         Text(
                             modifier = Modifier
                                 .testTag(DASHBOARD_EMAIL)
                                 .padding(start = 16.dp),
-                            text = email, fontSize = 12.sp, color = Color.White,
+                            text = email, fontSize = 12.sp,
+                            color = if (MaterialTheme.colors.isLight) MaterialTheme.colors.onPrimary else Color.Unspecified
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Image(
-                        painter = painterResource(id = R.drawable.ic_launcher_background),
+                        painter = painterResource(id = userInfo.getPictureResource()),
                         contentDescription = "Profile picture",
                         modifier = Modifier
                             .size(60.dp)

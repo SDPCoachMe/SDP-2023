@@ -55,6 +55,7 @@
         <activity
             android:name=".auth.LoginActivity"
             android:exported="true"
+            android:noHistory="true"
             android:theme="@style/Theme.CoachMe">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -68,10 +68,6 @@ val Colors.rating: Color
 val Colors.onRating: Color
     get() = Color.White
 
-@get:Composable
-val Colors.dashboardPersonalDetailsBackground: Color
-    get() = if (isLight) Purple500 else DarkGrayTopBar
-
 @Composable
 fun CoachMeTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     val colors = if (darkTheme) {

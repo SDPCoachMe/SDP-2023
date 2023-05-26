@@ -37,7 +37,6 @@ import androidx.compose.ui.window.PopupProperties
 import com.github.sdpcoachme.CoachMeApplication
 import com.github.sdpcoachme.data.schedule.Event
 import com.github.sdpcoachme.data.schedule.EventType
-import com.github.sdpcoachme.data.schedule.Schedule
 import com.github.sdpcoachme.data.schedule.ShownEvent
 import com.github.sdpcoachme.database.CachingStore
 import com.github.sdpcoachme.errorhandling.ErrorHandlerLauncher
@@ -48,6 +47,7 @@ import com.github.sdpcoachme.schedule.EventOps.Companion.getTimeFormatter
 import com.github.sdpcoachme.ui.Dashboard
 import com.github.sdpcoachme.weather.WeatherForecast
 import com.github.sdpcoachme.weather.WeatherView
+import kotlinx.coroutines.future.await
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -86,14 +86,19 @@ class ScheduleActivity : ComponentActivity() {
         }
     }
 
+    // To refresh the list of events, when we come back to this activity
+    var refreshState by mutableStateOf(false)
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh the list of events by triggering launched effect
+        refreshState = !refreshState
+    }
+
     private lateinit var store: CachingStore
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         store = (application as CoachMeApplication).store
-
-        val startMonday = getStartMonday()
-
-        val futureDBSchedule: CompletableFuture<Schedule> = store.getSchedule(startMonday)
 
         // todo move this into caching store
         val locationProvider = (application as CoachMeApplication).locationProvider
@@ -102,7 +107,147 @@ class ScheduleActivity : ComponentActivity() {
         val weatherState = store.getWeatherForecast(userLatLng).get()
 
         setContent {
-            Schedule(futureDBSchedule, store, weatherState)
+            Schedule(weatherState)
+        }
+    }
+
+    @Composable
+    fun Schedule(weatherState: MutableState<WeatherForecast>) {
+        // the starting day is always the monday of the current week
+        var shownWeekMonday by remember { mutableStateOf(getStartMonday()) }
+        var events by remember { mutableStateOf(emptyList<Event>()) }
+        val context = LocalContext.current
+
+        // Launch an effect each time onResume is called
+        LaunchedEffect(refreshState) {
+            events = store.getSchedule(getStartMonday()).thenApply { e ->
+                e.events
+            }.exceptionally {
+                val errorMsg = "Schedule couldn't get the user information from the database." +
+                        "\n Please return to the login page and try again."
+                ErrorHandlerLauncher().launchExtrasErrorHandler(context, errorMsg)
+                emptyList()
+            }.await()
+        }
+
+        val dayWidth = LocalConfiguration.current.screenWidthDp.dp / COLUMNS_PER_WEEK
+        val verticalScrollState = rememberScrollState()
+
+        fun updateCurrentWeekMonday(weeksToAdd: Int) {
+            shownWeekMonday = shownWeekMonday.plusWeeks(weeksToAdd.toLong())
+            // Update the cached events and if not already cached, get the events from the database
+            store.getSchedule(shownWeekMonday).thenAccept { schedule ->
+                events = schedule.events
+            }
+        }
+
+        Dashboard(
+            title = { modifier ->
+                ScheduleTitleRow(
+                    shownWeekMonday = shownWeekMonday,
+                    onLeftArrowClick = { updateCurrentWeekMonday(-1) },
+                    onRightArrowClick = { updateCurrentWeekMonday(1) },
+                    modifier = modifier
+                )
+            }
+        ) { modifier ->
+            Box(modifier = modifier) {
+                Column(modifier = Modifier.testTag(TestTags.SCHEDULE_COLUMN)
+                ) {
+
+                    WeekHeader(
+                        shownWeekMonday = shownWeekMonday,
+                        dayWidth = dayWidth,
+                        weatherState = weatherState
+                    )
+
+                    // filter events to only show events in the current week
+                    val eventsToShow = EventOps.eventsToWrappedEvents(events)
+
+                    BasicSchedule(
+                        events = eventsToShow.filter { event ->
+                            val eventDate = LocalDateTime.parse(event.start).toLocalDate()
+                            eventDate >= shownWeekMonday && eventDate < shownWeekMonday.plusWeeks(1)
+                        },
+                        shownMonday = shownWeekMonday,
+                        dayWidth = dayWidth,
+                        modifier = Modifier
+                            .weight(1f) // Fill remaining space in the column
+                            .verticalScroll(verticalScrollState)
+                            .testTag(TestTags.BASIC_SCHEDULE)
+                    )
+                }
+
+                fun launchCreateEventActivity(eventType: EventType) {
+                    val intent = Intent(context, CreateEventActivity::class.java)
+                    intent.putExtra("eventType", eventType.eventTypeName)
+                    context.startActivity(intent)
+                }
+
+                var isDropdownExpanded by remember { mutableStateOf(false) }
+
+                Box(modifier = Modifier.align(Alignment.BottomEnd)) {
+                    FloatingActionButton(
+                        onClick = {
+                            val isCoachFuture = store.getCurrentEmail().thenCompose { email ->
+                                store.getUser(email)
+                            }.thenApply { user ->
+                                user.coach
+                            }
+                            // if user is coach, let them choose between private and group event
+                            isCoachFuture.thenAccept { isCoach ->
+                                if (isCoach) {
+                                    isDropdownExpanded = !isDropdownExpanded
+                                } else {
+                                    launchCreateEventActivity(EventType.PRIVATE)
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(16.dp)
+                            .testTag(TestTags.Buttons.ADD_EVENT_BUTTON),
+                        backgroundColor = MaterialTheme.colors.primary,
+                        contentColor = MaterialTheme.colors.onPrimary
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add Event"
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = isDropdownExpanded,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd),
+                        onDismissRequest = { isDropdownExpanded = false },
+                        properties = PopupProperties(clippingEnabled = false),
+                    ) {
+                        DropdownMenuItem(
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .testTag(TestTags.Buttons.ADD_PRIVATE_EVENT_BUTTON),
+                            onClick = {
+                                isDropdownExpanded = false
+                                launchCreateEventActivity(EventType.PRIVATE)
+                            }
+                        ) {
+                            Text(text = "Private Event")
+                        }
+                        DropdownMenuItem(
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .testTag(TestTags.Buttons.ADD_GROUP_EVENT_BUTTON),
+                            onClick = {
+                                isDropdownExpanded = false
+                                launchCreateEventActivity(EventType.GROUP)
+                            }
+                        ) {
+                            Text(text = "Group Event")
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -112,154 +257,6 @@ private class EventDataModifier(val event: ShownEvent) : ParentDataModifier {
 }
 
 private const val COLUMNS_PER_WEEK = 7
-@Composable
-fun Schedule(
-    futureDBSchedule: CompletableFuture<Schedule>,
-    store: CachingStore,
-    weatherState: MutableState<WeatherForecast>
-    ) {
-    // the starting day is always the monday of the current week
-    var shownWeekMonday by remember { mutableStateOf(getStartMonday()) }
-    var events by remember { mutableStateOf(emptyList<Event>()) }
-    var eventsFuture by remember { mutableStateOf(futureDBSchedule.thenApply {
-        Schedule(events = it.events) })
-    }
-    val context = LocalContext.current
-
-    // Launch an effect when the eventsFuture changes
-    LaunchedEffect(eventsFuture) {
-        eventsFuture.thenAccept { e ->
-            if (e != null) {
-                events = e.events
-                eventsFuture = CompletableFuture.completedFuture(null)
-            }
-        }.exceptionally {
-            val errorMsg = "Schedule couldn't get the user information from the database." +
-                "\n Please return to the login page and try again."
-            ErrorHandlerLauncher().launchExtrasErrorHandler(context, errorMsg)
-            null
-        }
-    }
-
-    val dayWidth = LocalConfiguration.current.screenWidthDp.dp / COLUMNS_PER_WEEK
-    val verticalScrollState = rememberScrollState()
-
-    fun updateCurrentWeekMonday(weeksToAdd: Int) {
-        shownWeekMonday = shownWeekMonday.plusWeeks(weeksToAdd.toLong())
-        // Update the cached events and if not already cached, get the events from the database
-        store.getSchedule(shownWeekMonday).thenAccept { schedule ->
-            events = schedule.events
-        }
-    }
-
-    Dashboard(
-        title = { modifier ->
-            ScheduleTitleRow(
-                shownWeekMonday = shownWeekMonday,
-                onLeftArrowClick = { updateCurrentWeekMonday(-1) },
-                onRightArrowClick = { updateCurrentWeekMonday(1) },
-                modifier = modifier
-            )
-        }
-    ) { modifier ->
-        Box(modifier = modifier) {
-            Column(modifier = Modifier.testTag(ScheduleActivity.TestTags.SCHEDULE_COLUMN)
-            ) {
-
-                WeekHeader(
-                    shownWeekMonday = shownWeekMonday,
-                    dayWidth = dayWidth,
-                    weatherState = weatherState
-                )
-
-                // filter events to only show events in the current week
-                val eventsToShow = EventOps.eventsToWrappedEvents(events)
-
-                BasicSchedule(
-                    events = eventsToShow.filter { event ->
-                        val eventDate = LocalDateTime.parse(event.start).toLocalDate()
-                        eventDate >= shownWeekMonday && eventDate < shownWeekMonday.plusWeeks(1)
-                    },
-                    shownMonday = shownWeekMonday,
-                    dayWidth = dayWidth,
-                    modifier = Modifier
-                        .weight(1f) // Fill remaining space in the column
-                        .verticalScroll(verticalScrollState)
-                        .testTag(ScheduleActivity.TestTags.BASIC_SCHEDULE)
-                )
-            }
-
-            fun launchCreateEventActivity(eventType: EventType) {
-                val intent = Intent(context, CreateEventActivity::class.java)
-                intent.putExtra("eventType", eventType.eventTypeName)
-                context.startActivity(intent)
-            }
-
-            var isDropdownExpanded by remember { mutableStateOf(false) }
-
-            Box(modifier = Modifier.align(Alignment.BottomEnd)){
-                FloatingActionButton(
-                    onClick = {
-                        val isCoachFuture = store.getCurrentEmail().thenCompose { email ->
-                            store.getUser(email)
-                        }.thenApply { user ->
-                            user.coach
-                        }
-                        // if user is coach, let them choose between private and group event
-                        isCoachFuture.thenAccept { isCoach ->
-                            if (isCoach) {
-                                isDropdownExpanded = !isDropdownExpanded
-                            } else {
-                                launchCreateEventActivity(EventType.PRIVATE)
-                            }
-                        }
-                    },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp)
-                        .testTag(ScheduleActivity.TestTags.Buttons.ADD_EVENT_BUTTON),
-                    backgroundColor = MaterialTheme.colors.primary,
-                    contentColor = MaterialTheme.colors.onPrimary
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add Event"
-                    )
-                }
-
-                DropdownMenu(
-                    expanded = isDropdownExpanded,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd),
-                    onDismissRequest = { isDropdownExpanded = false },
-                    properties = PopupProperties(clippingEnabled = false),
-                ) {
-                    DropdownMenuItem(
-                        modifier = Modifier
-                            .testTag(ScheduleActivity.TestTags.Buttons.ADD_PRIVATE_EVENT_BUTTON),
-                        onClick = {
-                            isDropdownExpanded = false
-                            launchCreateEventActivity(EventType.PRIVATE)
-                        }
-                    ) {
-                        Text(text = "Private Event")
-                    }
-                    DropdownMenuItem(
-                        modifier = Modifier
-                            .testTag(ScheduleActivity.TestTags.Buttons.ADD_GROUP_EVENT_BUTTON),
-                        onClick = {
-                            isDropdownExpanded = false
-                            launchCreateEventActivity(EventType.GROUP)
-                        }
-                    ) {
-                        Text(text = "Group Event")
-                    }
-                }
-            }
-
-        }
-    }
-}
 
 @Composable
 fun ScheduleTitleRow(

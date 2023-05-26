@@ -82,7 +82,7 @@ open class CoachesListActivityTest {
         // Instead, make the test wait for the future to finish, and crash after a certain time
         /*lateinit var stateLoading: CompletableFuture<Void>
         scenario.onActivity {
-            stateLoading = it.stateLoading
+            stateLoading = it.stateUpdated
         }
         stateLoading.get(1000, MILLISECONDS)*/
         Intents.init()
@@ -194,7 +194,7 @@ open class CoachesListActivityTest {
 
             lateinit var stateLoading: CompletableFuture<Void>
             scenario.onActivity {
-                stateLoading = it.stateLoading
+                stateLoading = it.stateUpdated
             }
             stateLoading.get(1000, MILLISECONDS)
             Intents.init()
