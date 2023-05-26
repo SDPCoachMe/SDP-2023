@@ -37,7 +37,7 @@ class RatingActivity: ComponentActivity() {
         private const val FINAL_KEY = "finalValue"
         private const val COACH_NAME = "coachName"
 
-        private const val DEFAULT_COACH_NAME = "the coach"
+        const val DEFAULT_COACH_NAME = "the coach"
 
         fun getIntent(
             context: Context,

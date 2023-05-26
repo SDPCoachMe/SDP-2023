@@ -1,9 +1,12 @@
 package com.github.sdpcoachme.rating
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.espresso.matcher.ViewMatchers.assertThat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.sdpcoachme.rating.RatingActivity.TestTags.Companion.Buttons.Companion.CANCEL
@@ -16,17 +19,18 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+
 @RunWith(AndroidJUnit4::class)
 class RatingViewTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    private fun ratingViewWorksOn(
-        title: String,
-        initialRating: Int,
-        onCancel: () -> Unit,
-        onSubmit: (Int) -> Unit
+    private fun defaultSetup(
+        title: String = "title",
+        initialRating: Int = 0,
+        onCancel: () -> Unit = {},
+        onSubmit: (Int) -> Unit = {}
     ) {
         composeTestRule.setContent {
             RatingView(
@@ -36,59 +40,77 @@ class RatingViewTest {
                 onSubmit = onSubmit
             )
         }
-        composeTestRule.onNodeWithTag(TITLE).assertExists().assertIsDisplayed()
-        composeTestRule.onNodeWithTag(DONE).assertExists().assertIsDisplayed()
-        composeTestRule.onNodeWithTag(CANCEL).assertExists().assertIsDisplayed()
-        composeTestRule.onNodeWithTag(RATING_BAR).assertExists().assertIsDisplayed()
-        for (i in 1..5) {
-            composeTestRule.onNodeWithTag(RATING_STAR + i).assertExists().assertIsDisplayed()
+    }
+
+    private fun assertStars(start: Int = 1, end: Int = 5, selected: Boolean = false) {
+        for (i in start..end) {
+            composeTestRule.onNodeWithTag(
+                RATING_STAR + i.toString() + selected.toString(),
+                useUnmergedTree = true
+            ).assertExists().assertIsDisplayed()
         }
+    }
+
+    private fun clickStar(star: Int, selected: Boolean = false) {
+        composeTestRule.onNodeWithTag(
+            RATING_STAR + star.toString() + selected.toString(),
+            useUnmergedTree = true
+        ).performClick()
     }
 
     @Test
     fun ratingViewWorksWithInitialRating() {
-        ratingViewWorksOn(
-            title = "Rate this",
-            initialRating = 3,
-            onCancel = {},
-            onSubmit = {}
-        )
+        defaultSetup()
+
+        composeTestRule.onNodeWithTag(TITLE).assertExists().assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DONE).assertExists().assertIsDisplayed()
+        composeTestRule.onNodeWithTag(CANCEL).assertExists().assertIsDisplayed()
+        composeTestRule.onNodeWithTag(RATING_BAR, useUnmergedTree = true).assertExists().assertIsDisplayed()
+        assertStars()
     }
 
     @Test
-    fun ratingViewReturnsOnDoneClick() {
+    fun ratingViewCorrectlyReturnsOnDoneClick() {
         var isDone = false
 
-        composeTestRule.setContent {
-            RatingView(
-                title = "title",
-                initialRating = 3,
-                onCancel = {},
-                onSubmit = {
-                    isDone = true
-                }
-            )
-        }
+        defaultSetup(initialRating = 3, onSubmit = { isDone = true })
+        composeTestRule.onNodeWithTag(DONE).performClick()
         assertThat(isDone, `is`(true))
     }
 
     @Test
-    fun ratingViewReturnsOnCancelClick() {
+    fun ratingViewCorrectlyReturnsOnCancelClick() {
         var isCancelled = false
 
-        composeTestRule.setContent {
-            RatingView(
-                title = "title",
-                initialRating = 3,
-                onSubmit = {},
-                onCancel = {
-                    isCancelled = true
-                }
-            )
-        }
-        composeTestRule.onNodeWithTag(DONE).performClick()
+        defaultSetup(initialRating = 3, onCancel = { isCancelled = true })
+        composeTestRule.onNodeWithTag(CANCEL).performClick()
         assertThat(isCancelled, `is`(true))
     }
 
+    @Test
+    fun starSelectionFillsInCorrectStars() {
+        defaultSetup()
+
+        assertStars()
+        clickStar(4)
+        assertStars(1, 4, true)
+        assertStars(5, 5)
+        clickStar(1, true)
+        assertStars(2, 5)
+        assertStars(1, 1, true)
+    }
+
+    @Test
+    fun outerSelectionResetsAllStars() {
+        defaultSetup(initialRating = 4)
+
+        assertStars(1, 4, true)
+        assertStars(5, 5)
+        composeTestRule.onNodeWithTag(RATING_BAR, useUnmergedTree = true)
+            .performTouchInput {
+                click(position = Offset(1000f, 1000f))
+            }
+        assertStars()
+    }
 
 }

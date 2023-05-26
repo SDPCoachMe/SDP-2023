@@ -130,6 +130,7 @@ fun RatingBar(
         horizontalArrangement = Center
     ) {
         for (star in 1..5) {
+            val isSelected: Boolean = star <= rating
             Icon(
                 imageVector = Default.Star,
                 contentDescription = "star",
@@ -137,8 +138,8 @@ fun RatingBar(
                     .width(size)
                     .height(size)
                     .pointerInteropFilter { onTouchEvent(star, it) }
-                    .testTag(RATING_STAR + star),
-                tint = if (star <= rating) colors.selectedStar else colors.unselectedStar
+                    .testTag(RATING_STAR + star.toString() + isSelected.toString()),
+                tint = if (isSelected) colors.selectedStar else colors.unselectedStar
             )
         }
     }
