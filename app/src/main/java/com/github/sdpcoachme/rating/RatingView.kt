@@ -120,7 +120,7 @@ fun RatingView(
 fun RatingBar(
     modifier: Modifier = Modifier,
     padding: PaddingValues = PaddingValues(),
-    size: Dp = 19.dp,
+    size: Dp = 20.dp,
     rating: Int,
     onTouchEvent: (Int, MotionEvent) -> Boolean = { _, _ -> false }
 ) {

@@ -21,10 +21,6 @@ import androidx.compose.material.icons.Icons.Default
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.runtime.*
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -55,10 +51,10 @@ import com.github.sdpcoachme.ui.IconsRow
 import com.github.sdpcoachme.ui.ImageData
 import com.github.sdpcoachme.ui.Label
 import com.github.sdpcoachme.ui.ListItem
-import com.github.sdpcoachme.ui.theme.ratingBackground
-import com.github.sdpcoachme.ui.theme.ratingStar
+import com.github.sdpcoachme.ui.theme.onRating
+import com.github.sdpcoachme.ui.theme.rating
 import kotlinx.coroutines.future.await
-import java.util.*
+import java.util.Collections
 import java.util.concurrent.CompletableFuture
 
 class CoachesListActivity : ComponentActivity() {

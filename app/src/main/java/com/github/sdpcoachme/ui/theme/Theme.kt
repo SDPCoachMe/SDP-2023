@@ -36,15 +36,16 @@ private val LightColorPalette = lightColors(
 // For rating stars
 @get:Composable
 val Colors.selectedStar: Color
-    get() = DarkOrange
+    get() = Gold
 @get:Composable
 val Colors.unselectedStar: Color
     get() = if(isLight) LightGray else White
+
 @get:Composable
-val Colors.ratingBackground: Color
-    get() = DarkOrange
+val Colors.rating: Color
+    get() = Gold
 @get:Composable
-val Colors.ratingStar: Color
+val Colors.onRating: Color
     get() = White
 
 // Label for group event items
@@ -77,12 +78,7 @@ val Colors.onChatTime: Color
 @get:Composable
 val Colors.readMessageCheck: Color
     get() = if (isLight) DarkPrettyBlue else LightPrettyBlue
-@get:Composable
-val Colors.rating: Color
-    get() = Gold
-@get:Composable
-val Colors.onRating: Color
-    get() = Color.White
+
 
 @Composable
 fun CoachMeTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
