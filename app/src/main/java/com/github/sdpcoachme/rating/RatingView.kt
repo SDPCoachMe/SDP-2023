@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow.Companion.Ellipsis
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.github.sdpcoachme.rating.RatingActivity.TestTags.Companion.BACKGROUND
 import com.github.sdpcoachme.rating.RatingActivity.TestTags.Companion.Buttons.Companion.CANCEL
 import com.github.sdpcoachme.rating.RatingActivity.TestTags.Companion.Buttons.Companion.DONE
 import com.github.sdpcoachme.rating.RatingActivity.TestTags.Companion.RATING_BAR
@@ -91,7 +92,8 @@ fun RatingView(
             modifier = Modifier
             .clickable { rating = 0 }
             .padding(padding)
-            .fillMaxSize(),
+            .fillMaxSize()
+            .testTag(BACKGROUND),
             verticalArrangement = Center,
             horizontalAlignment = CenterHorizontally
         ) {

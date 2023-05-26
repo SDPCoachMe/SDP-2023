@@ -21,6 +21,7 @@ class RatingActivity: ComponentActivity() {
             const val TITLE = "title"
             const val RATING_BAR = "ratingBar"
             const val RATING_STAR = "ratingStar"
+            const val BACKGROUND = "background"
 
             class Buttons {
                 companion object {
