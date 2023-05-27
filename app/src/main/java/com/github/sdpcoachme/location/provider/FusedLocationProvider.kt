@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import android.widget.Toast.LENGTH_LONG
 import androidx.activity.ComponentActivity
@@ -74,7 +75,7 @@ class FusedLocationProvider : LocationProvider {
         ) {
             if (it.resultCode == RESULT_OK) {
                 // User enabled device location, we can now retrieve it
-                getDeviceLocation(0)
+                getDeviceLocation()
             } else {
                 // User did not enable device location
                 setLocationToAddress()
@@ -107,25 +108,28 @@ class FusedLocationProvider : LocationProvider {
      * disabling the device location clears the cache).
      */
     @SuppressLint("MissingPermission") //permission is checked before the call
-    private fun getDeviceLocation(delay: Long) {
+    private fun getDeviceLocation(numberOfTries: Int = 60) {
+        // Stop the recursion if number of tries is exceeded
+        if (numberOfTries <= 0) {
+            Log.e(
+                "FusedLocationProvider",
+                "getDeviceLocation exceeded max number of tries without retrieving location"
+            )
+            return
+        }
         // The fusedLocationProviderClient should be correctly instantiated before calling this function.
         assert(fusedLocationProviderClient != null)
-        // getDeviceLocation should not be called more than DELAY time
-        if (delay >= DELAY) {
-            error("getDeviceLocation has reached its max recursive delay")
-        }
         try {
-            fusedLocationProviderClient?.lastLocation?.addOnCompleteListener {
-                if (it.isSuccessful) {
-                    if (it.result != null) {
-                        lastUserLocation.value = LatLng(it.result.latitude, it.result.longitude)
-                    } else {
-                        // Yann: I haven't found any better way to handle this so I'm open to
-                        // suggestions ! Futures and proper TimeOuts were tested but the
-                        // lastLocation task would not complete successfully nor could I find any
-                        // suitable implementation.
-                        getDeviceLocation(delay + 1)
-                    }
+            fusedLocationProviderClient!!.getCurrentLocation(PRIORITY_HIGH_ACCURACY, null).addOnCompleteListener {
+                if (it.isSuccessful && it.result != null) {
+                    lastUserLocation.value = LatLng(it.result.latitude, it.result.longitude)
+                } else {
+                    // The location service is enabled but the location is not available
+                    // (maybe because the device location service is not yet deployed)
+                    // We try again after 1s delay
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        getDeviceLocation(numberOfTries - 1)
+                    }, 500)
                 }
             }
         } catch (e: SecurityException) {
@@ -150,7 +154,7 @@ class FusedLocationProvider : LocationProvider {
 
         locationSettingsResponse.addOnSuccessListener {
             // Location settings are satisfied, get the last known location
-            getDeviceLocation(0)
+            getDeviceLocation()
         }
         locationSettingsResponse.addOnFailureListener { exception ->
             if (exception is ResolvableApiException) {
