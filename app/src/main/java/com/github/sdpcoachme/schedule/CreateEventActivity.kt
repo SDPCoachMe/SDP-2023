@@ -177,7 +177,7 @@ class CreateEventActivity : ComponentActivity() {
         var start by remember { mutableStateOf(EventOps.getDefaultEventStart()) }
         var end by remember { mutableStateOf(EventOps.getDefaultEventEnd()) }
         var maxParticipants by remember { mutableStateOf(0) }
-        var sports by remember { mutableStateOf(listOf(Sports.RUNNING)) }
+        var sports: List<Sports> by remember { mutableStateOf(listOf()) }
         var location by remember {
             mutableStateOf(Address())
         }
@@ -192,6 +192,7 @@ class CreateEventActivity : ComponentActivity() {
                     color = selectedColor.value.toString(),
                     start = start.format(formatterEventDate),
                     end = end.format(formatterEventDate),
+                    sport = sports.getOrElse(0) { Sports.RUNNING },
                     address = location,
                     description = description
                 )

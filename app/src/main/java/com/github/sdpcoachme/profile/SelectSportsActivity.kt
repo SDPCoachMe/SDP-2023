@@ -199,7 +199,10 @@ class SelectSportsActivity : ComponentActivity() {
         title: String
     ) {
         var sportItems by remember {
-            mutableStateOf(Sports.values().map { ListItem(it, initialValue.contains(it)) })
+            mutableStateOf(
+                (Sports.values().filter { s -> initialValue.contains(s) }
+                        + Sports.values().filter { s -> !initialValue.contains(s) })
+                    .map { ListItem(it, initialValue.contains(it)) })
         }
 
         val toggleSelectSport: (Sports) -> Unit = { sport ->
