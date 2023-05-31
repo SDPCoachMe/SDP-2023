@@ -116,6 +116,7 @@ class CoachesListActivity : ComponentActivity() {
             var listOfCoaches by remember { mutableStateOf(listOf<UserInfo>()) }
             var contactRowInfos by remember { mutableStateOf(listOf<ContactRowInfo>()) }
             var email by remember { mutableStateOf("") }
+            var currentUser by remember { mutableStateOf(UserInfo()) }
 
             // Proper way to handle result of a future in a Composable.
             // This makes sure the listOfCoaches state is updated only ONCE, when the future is complete
@@ -133,6 +134,7 @@ class CoachesListActivity : ComponentActivity() {
                         store.setCurrentEmail(pushNotificationEmail)
                         pushNotificationEmail
                     }.await()
+                currentUser = store.getUser(email).await()
 
                 if (isViewingContacts) {
                     // TODO: this is bad code and should be refactored
@@ -165,7 +167,13 @@ class CoachesListActivity : ComponentActivity() {
             else stringResource(R.string.title_activity_coaches_list)
 
             Dashboard(title) {
-                CoachesList(it, email, listOfCoaches, isViewingContacts, contactRowInfos)
+                CoachesList(
+                    it,
+                    email,
+                    currentUser,
+                    listOfCoaches,
+                    isViewingContacts,
+                    contactRowInfos)
             }
         }
     }
@@ -177,6 +185,7 @@ class CoachesListActivity : ComponentActivity() {
     fun CoachesList(
         modifier: Modifier,
         currentUserEmail: String,
+        currentUser: UserInfo,
         listOfCoaches: List<UserInfo>,
         isViewingContacts: Boolean,
         contactRowInfos: List<ContactRowInfo>,
@@ -184,6 +193,16 @@ class CoachesListActivity : ComponentActivity() {
         val context = LocalContext.current
         // initially all sports are selected
         var sportsFilter by remember { mutableStateOf(Sports.values().toList()) }
+
+        println("currentUser: $currentUser")
+        LaunchedEffect(true) {
+            store.getCurrentEmail().thenCompose {
+                store.getUser(it)
+            }.thenAccept { user ->
+                sportsFilter =
+                    user.sports.ifEmpty { Sports.values().toList() }
+            }
+        }
 
         Box(modifier = modifier.fillMaxSize()) {
             LazyColumn {
@@ -219,7 +238,7 @@ class CoachesListActivity : ComponentActivity() {
                             SelectSportsActivity.getIntent(
                                 context = context,
                                 title = "Filter coaches by sport",
-                                initialValue = sportsFilter
+                                initialValue = sportsFilter,
                             )).thenApply {sportsFilter = it }
                     },
                     modifier = Modifier
