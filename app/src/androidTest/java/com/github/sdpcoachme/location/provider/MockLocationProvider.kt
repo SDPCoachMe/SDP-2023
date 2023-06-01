@@ -1,13 +1,16 @@
 package com.github.sdpcoachme.location.provider
 
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import com.github.sdpcoachme.data.AddressSamples.Companion.LAUSANNE
 import com.github.sdpcoachme.data.UserInfo
-import com.github.sdpcoachme.location.provider.FusedLocationProvider.Companion.DELAY
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeoutException
@@ -68,19 +71,28 @@ class MockLocationProvider: LocationProvider {
         return mockLocation
     }
 
-    private fun getDeviceLocation(delay: Long) {
-        assert(fusedLocationProviderClient != null)
-        if (delay >= DELAY) {
-            error("getDeviceLocation has reached its max recursive delay")
+    private fun getDeviceLocation(numberOfTries: Int = 60) {
+        // Stop the recursion if number of tries is exceeded
+        if (numberOfTries <= 0) {
+            Log.e(
+                "FusedLocationProvider",
+                "getDeviceLocation exceeded max number of tries without retrieving location"
+            )
+            return
         }
+        // The fusedLocationProviderClient should be correctly instantiated before calling this function.
+        assert(fusedLocationProviderClient != null)
         try {
-            fusedLocationProviderClient?.lastLocation?.addOnCompleteListener {
-                if (it.isSuccessful) {
-                    if (it.result != null) {
-                        mockLocation.value = LatLng(it.result.latitude, it.result.longitude)
-                    } else {
-                        getDeviceLocation(delay + 1)
-                    }
+            fusedLocationProviderClient!!.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null).addOnCompleteListener {
+                if (it.isSuccessful && it.result != null) {
+                    mockLocation.value = LatLng(it.result.latitude, it.result.longitude)
+                } else {
+                    // The location service is enabled but the location is not available
+                    // (maybe because the device location service is not yet deployed)
+                    // We try again after 1s delay
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        getDeviceLocation(numberOfTries - 1)
+                    }, 500)
                 }
             }
         } catch (e: SecurityException) {

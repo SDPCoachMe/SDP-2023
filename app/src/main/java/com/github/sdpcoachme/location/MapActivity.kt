@@ -232,6 +232,8 @@ fun Map(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(
+                        modifier = Modifier
+                            .fillMaxWidth(),
                         horizontalAlignment = Alignment.End,
                         verticalArrangement = Arrangement.Top
                     ) {
