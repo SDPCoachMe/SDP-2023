@@ -208,7 +208,9 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return a completable future that completes when the user has been updated
      */
     fun updateUser(user: UserInfo): CompletableFuture<Void> {
-        return wrappedDatabase.updateUser(user).thenCompose {
+        return retrieveData.thenCompose {
+            wrappedDatabase.updateUser(user)
+        }.thenCompose {
             cachedUsers[user.email] = user
             storeLocalData()
         }
@@ -221,12 +223,15 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return a completable future that completes when the user has been retrieved
      */
     fun getUser(email: String): CompletableFuture<UserInfo> {
-        if (isCached(email)) {
-            return completedFuture(cachedUsers[email])
-        }
-        return wrappedDatabase.getUser(email).thenCompose {user ->
-            cachedUsers[email] = user
-            storeLocalData().thenApply { user }
+        return retrieveData.thenCompose {
+            if (isCached(email)) {
+                completedFuture(cachedUsers[email])
+            } else {
+                wrappedDatabase.getUser(email).thenCompose { user ->
+                    cachedUsers[email] = user
+                    storeLocalData().thenApply { user }
+                }
+            }
         }
     }
 
@@ -236,14 +241,16 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return a completable future that completes when all users have been retrieved
      */
     fun getAllUsers(): CompletableFuture<List<UserInfo>> {
-        return if (isOnline()) {
-            wrappedDatabase.getAllUsers().thenCompose { userList ->
-                cachedUsers.clear()
-                cachedUsers.putAll(userList.associateBy { it.email })
-                storeLocalData().thenApply { userList }
+        return retrieveData.thenCompose {
+            if (isOnline()) {
+                wrappedDatabase.getAllUsers().thenCompose { userList ->
+                    cachedUsers.clear()
+                    cachedUsers.putAll(userList.associateBy { it.email })
+                    storeLocalData().thenApply { userList }
+                }
+            } else {
+                completedFuture(cachedUsers.values.toList())
             }
-        } else {
-            completedFuture(cachedUsers.values.toList())
         }
     }
 
@@ -256,7 +263,9 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return A future that will complete with a list of all users in the database sorted by distance
      */
     fun getAllUsersByNearest(latitude: Double, longitude: Double): CompletableFuture<List<UserInfo>> {
-        return getAllUsers().thenApply { users ->
+        return retrieveData.thenCompose {
+            getAllUsers()
+        }.thenApply { users ->
             users.sortedBy { user ->
                 val userLatitude = user.address.latitude
                 val userLongitude = user.address.longitude
@@ -276,7 +285,9 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return A future that will complete with the updated user
      */
     fun addRatingToCoach(coachEmail: String, rating: Int): CompletableFuture<Void> {
-        return getCurrentEmail().thenCompose { currEmail ->
+        return retrieveData.thenCompose {
+            getCurrentEmail()
+        }.thenCompose { currEmail ->
             getUser(coachEmail).thenCompose { user ->
                 if (!user.coach)
                     throw IllegalArgumentException("Adding rating to a non-coach user")
@@ -298,7 +309,9 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return A future that will complete with the rating of the coach or null if the user is not a coach
      */
     fun getCoachAverageRating(email: String): CompletableFuture<Int> {
-        return getUser(email).thenApply { user ->
+        return retrieveData.thenCompose {
+            getUser(email)
+        }.thenApply { user ->
             if (user.coach) {
                 val ratings = user.ratings.values
                 // If the coach has no ratings, return 0 instead of NaN returned by average()
@@ -310,31 +323,40 @@ class CachingStore(private val wrappedDatabase: Database,
     }
 
     fun userExists(email: String): CompletableFuture<Boolean> {
-        if (isCached(email)) {
-            return completedFuture(true)
+        return retrieveData.thenCompose {
+            if (isCached(email)) {
+                completedFuture(true)
+            } else {
+                wrappedDatabase.userExists(email)
+            }
         }
-        return wrappedDatabase.userExists(email)
     }
 
     /**
      * Gets the group event with the given id
      */
     fun getGroupEvent(groupEventId: String): CompletableFuture<GroupEvent> {
-        return wrappedDatabase.getGroupEvent(groupEventId)
+        return retrieveData.thenCompose {
+            wrappedDatabase.getGroupEvent(groupEventId)
+        }
     }
 
     /**
      * Gets all group events
      */
     fun getAllGroupEvents(): CompletableFuture<List<GroupEvent>> {
-        return wrappedDatabase.getAllGroupEvents()
+        return retrieveData.thenCompose {
+            wrappedDatabase.getAllGroupEvents()
+        }
     }
 
     /**
      * Gets all group events sorted by date
      */
     fun getAllGroupEventsByDate(): CompletableFuture<List<GroupEvent>> {
-        return getAllGroupEvents().thenApply { groupEvents ->
+        return retrieveData.thenCompose {
+            getAllGroupEvents()
+        }.thenApply { groupEvents ->
             groupEvents.sortedBy { groupEvent ->
                 LocalDateTime.parse(groupEvent.event.start)
             }
@@ -345,7 +367,9 @@ class CachingStore(private val wrappedDatabase: Database,
      * Gets all group events that have not yet occurred, sorted by date
      */
     fun getUpcomingGroupEventsByDate(): CompletableFuture<List<GroupEvent>> {
-        return getAllGroupEventsByDate().thenApply { groupEvents ->
+        return retrieveData.thenCompose {
+            getAllGroupEventsByDate()
+        }.thenApply { groupEvents ->
             groupEvents.filter { groupEvent ->
                 LocalDateTime.parse(groupEvent.event.start).isAfter(LocalDateTime.now())
             }
@@ -356,7 +380,9 @@ class CachingStore(private val wrappedDatabase: Database,
      * Gets all group events from a given user, sorted by date
      */
     fun getGroupEventsOfUserByDate(email: String): CompletableFuture<List<GroupEvent>> {
-        return getAllGroupEventsByDate().thenApply { groupEvents ->
+        return retrieveData.thenCompose {
+            getAllGroupEventsByDate()
+        }.thenApply { groupEvents ->
             groupEvents.filter { groupEvent ->
                 email in groupEvent.participants || email == groupEvent.organizer
             }
@@ -370,7 +396,9 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return A future that will complete when the group event has been updated.
      */
     fun updateGroupEvent(groupEvent: GroupEvent): CompletableFuture<Void> {
-        return wrappedDatabase.updateGroupEvent(groupEvent)
+        return retrieveData.thenCompose {
+            wrappedDatabase.updateGroupEvent(groupEvent)
+        }
     }
 
     /**
@@ -382,7 +410,9 @@ class CachingStore(private val wrappedDatabase: Database,
      * event. The future will complete exceptionally if the group event is full.
      */
     fun registerForGroupEvent(groupEventId: String): CompletableFuture<Void> {
-        return getGroupEvent(groupEventId).thenApply { groupEvent ->
+        return retrieveData.thenCompose {
+            getGroupEvent(groupEventId)
+        }.thenApply { groupEvent ->
             // Check that event is not full
             if (groupEvent.participants.size >= groupEvent.maxParticipants) {
                 // TODO: should be a custom exception
@@ -415,7 +445,9 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return a completable future that completes when the events have been added, containing the cached schedule
      */
     fun addEventToSchedule(event: Event): CompletableFuture<Schedule> {
-        return getCurrentEmail().thenCompose { email ->
+        return retrieveData.thenCompose {
+            getCurrentEmail()
+        }.thenCompose { email ->
             wrappedDatabase.addEventToSchedule(email, event).thenCompose {
                 // Update the cached schedule
                 val start = LocalDateTime.parse(event.start).toLocalDate()
@@ -435,7 +467,9 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return a completable future that completes when the group event has been added, containing the cached schedule
      */
     fun addGroupEventToSchedule(groupEventId: String): CompletableFuture<Schedule> {
-        return getCurrentEmail().thenCompose { email ->
+        return retrieveData.thenCompose {
+            getCurrentEmail()
+        }.thenCompose { email ->
             wrappedDatabase.addGroupEventToSchedule(email = email, groupEventId = groupEventId)
         }.thenCompose {
             wrappedDatabase.getGroupEvent(groupEventId)
@@ -474,7 +508,9 @@ class CachingStore(private val wrappedDatabase: Database,
     fun getSchedule(currentWeekMonday: LocalDate): CompletableFuture<Schedule> {
         currentShownMonday = currentWeekMonday
 
-        return getCurrentEmail().thenCompose { email ->
+        return retrieveData.thenCompose {
+            getCurrentEmail()
+        }.thenCompose { email ->
             if (cachedSchedule.events.isEmpty() && cachedSchedule.groupEvents.isEmpty()) {  // If no cached schedule for that account, we fetch the schedule from the db
                 wrappedDatabase.getSchedule(email).thenApply { schedule ->
                     val events =
@@ -536,7 +572,9 @@ class CachingStore(private val wrappedDatabase: Database,
      * @param chatId The potentially new contact to add
      */
     fun addChatContactIfNew(email: String, chatId: String, contact: String): CompletableFuture<Void> {
-        return getUser(email).thenAccept() { user ->
+        return retrieveData.thenCompose {
+            getUser(email)
+        }.thenAccept() { user ->
             // Add the other user to the current user's chat contacts if not already inside
             if (!user.chatContacts.contains(contact)) {
                 updateCachedContactRowInfo(chatId, Message())
@@ -558,10 +596,14 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return A future that will complete with the contact row info
      */
     fun getContactRowInfo(email: String): CompletableFuture<List<ContactRowInfo>> {
-        if (contactRowInfos.containsKey(email)) {
-            return completedFuture(contactRowInfos[email])
+        return retrieveData.thenCompose {
+            if (contactRowInfos.containsKey(email)) {
+                completedFuture(contactRowInfos[email])
+            } else {
+                wrappedDatabase.getContactRowInfos(email)
+                    .thenApply { it.also { contactRowInfos[email] = it } }
+            }
         }
-        return wrappedDatabase.getContactRowInfos(email).thenApply { it.also { contactRowInfos[email] = it } }
     }
 
     /**
@@ -571,13 +613,16 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return a completable future that completes when the chat has been retrieved
      */
     fun getChat(chatId: String): CompletableFuture<Chat> {
-        if (chats.containsKey(chatId)) {
-            return completedFuture(chats[chatId]!!)
-        }
-        return wrappedDatabase.getChat(chatId).thenApply {
-            it.also {
-                chats[chatId] = it
-                storeLocalData()
+        return retrieveData.thenCompose {
+            if (chats.containsKey(chatId)) {
+                completedFuture(chats[chatId]!!)
+            } else {
+                wrappedDatabase.getChat(chatId).thenApply {
+                    it.also {
+                        chats[chatId] = it
+                        storeLocalData()
+                    }
+                }
             }
         }
     }
@@ -593,10 +638,12 @@ class CachingStore(private val wrappedDatabase: Database,
      */
     fun updateChatParticipants(chatId: String, participants: List<String>): CompletableFuture<Void> {
         // if not already cached, we don't cache the chat
-        if (chats.containsKey(chatId)) {
-            chats[chatId] = chats[chatId]!!.copy(participants = participants)
+        return retrieveData.thenCompose {
+            if (chats.containsKey(chatId)) {
+                chats[chatId] = chats[chatId]!!.copy(participants = participants)
+            }
+            wrappedDatabase.updateChatParticipants(chatId, participants)
         }
-        return wrappedDatabase.updateChatParticipants(chatId, participants)
     }
 
     /**
@@ -608,18 +655,24 @@ class CachingStore(private val wrappedDatabase: Database,
      */
     fun sendMessage(chatId: String, message: Message): CompletableFuture<Void> {
         // if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat from the db)
-        if (chats.containsKey(chatId)) {
-            chats[chatId] = chats[chatId]!!.copy(messages = chats[chatId]!!.messages + message)
-            storeLocalData()
-        }
-        return updateCachedContactRowInfo(chatId, message)
-            .thenCompose {
-                wrappedDatabase.sendMessage(chatId, message)
+        return retrieveData.thenCompose {
+            if (chats.containsKey(chatId)) {
+                chats[chatId] = chats[chatId]!!.copy(messages = chats[chatId]!!.messages + message)
+                storeLocalData()
+            } else {
+                completedFuture(null)
             }
+        }.thenCompose {
+            updateCachedContactRowInfo(chatId, message)
+        }.thenCompose {
+            wrappedDatabase.sendMessage(chatId, message)
+        }
     }
 
     private fun updateCachedContactRowInfo(chatId: String, message: Message): CompletableFuture<Void> {
-        return getCurrentEmail().thenAccept { currEmail ->
+        return retrieveData.thenCompose {
+            getCurrentEmail()
+        }.thenAccept { currEmail ->
             // update the contact's last message
             if (!contactRowInfos.containsKey(currEmail)) {
                 return@thenAccept
@@ -662,7 +715,9 @@ class CachingStore(private val wrappedDatabase: Database,
         currEmail: String,
         existingContacts: List<ContactRowInfo>
     ) {
-        getChat(chatId).thenCompose { chat ->
+        retrieveData.thenCompose {
+            getChat(chatId)
+        }.thenCompose { chat ->
             val isGroupChat = chatId.startsWith("@@event")
             val chatTitleFuture =
                 if (isGroupChat) getGroupEvent(chatId).thenApply { it.event.name }
@@ -696,13 +751,15 @@ class CachingStore(private val wrappedDatabase: Database,
      */
     fun markMessagesAsRead(chatId: String, email: String): CompletableFuture<Void> {
         // Also here, if not already cached, we don't cache the chat with the new message (as we would have to fetch the whole chat from the db)
-        if (chats.containsKey(chatId)) {
-            chats[chatId] = Chat.markOtherUsersMessagesAsRead(
+        return retrieveData.thenCompose {
+            if (chats.containsKey(chatId)) {
+                chats[chatId] = Chat.markOtherUsersMessagesAsRead(
                     chats[chatId]!!,
                     email
                 )
+            }
+            wrappedDatabase.markMessagesAsRead(chatId, email)
         }
-        return wrappedDatabase.markMessagesAsRead(chatId, email)
     }
 
     /**
@@ -738,18 +795,20 @@ class CachingStore(private val wrappedDatabase: Database,
      */
     fun getWeatherForecast(target: LatLng): CompletableFuture<MutableState<WeatherForecast>> {
 
-        return if (isOnline()) {
-            // The WeatherPresenter will launch a weather request and return a future that if
-            // completed normally will update the cache.
-            val weatherPresenter = WeatherPresenter().bind(OpenMeteoRepository(RetrofitClient.api))
-            weatherPresenter.getWeatherForecast(target.latitude, target.longitude).thenApply {
-                weatherForecast = it
-                storeLocalData()
+        return retrieveData.thenCompose {
+            if (isOnline()) {
+                // The WeatherPresenter will launch a weather request and return a future that if
+                // completed normally will update the cache.
+                val weatherPresenter = WeatherPresenter().bind(OpenMeteoRepository(RetrofitClient.api))
+                weatherPresenter.getWeatherForecast(target.latitude, target.longitude).thenApply {
+                    weatherForecast = it
+                    storeLocalData()
+                }
+                // we return an observable weather forecast state for the view here
+                completedFuture(weatherPresenter.observableWeatherForecast)
+            } else {
+                completedFuture(mutableStateOf(weatherForecast))
             }
-            // we return an observable weather forecast state for the view here
-            completedFuture(weatherPresenter.observableWeatherForecast)
-        } else {
-            completedFuture(mutableStateOf(weatherForecast))
         }
     }
 
@@ -761,13 +820,16 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return A completable future that completes when the FCM token has been retrieved
      */
     fun getFCMToken(email: String): CompletableFuture<String> {
-        if (cachedTokens.containsKey(email)) {
-            return completedFuture(cachedTokens[email])
-        }
-        return wrappedDatabase.getFCMToken(email).thenApply {
-            it.also {
-                cachedTokens[email] = it
-                storeLocalData()
+        return retrieveData.thenCompose {
+            if (cachedTokens.containsKey(email)) {
+                completedFuture(cachedTokens[email])
+            } else {
+                wrappedDatabase.getFCMToken(email).thenApply {
+                    it.also {
+                        cachedTokens[email] = it
+                        storeLocalData()
+                    }
+                }
             }
         }
     }
@@ -780,9 +842,12 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return A completable future that completes when the FCM token has been set
      */
     fun setFCMToken(email: String, token: String): CompletableFuture<Void> {
-        cachedTokens[email] = token
-        storeLocalData()
-        return wrappedDatabase.setFCMToken(email, token)
+        return retrieveData.thenCompose {
+            cachedTokens[email] = token
+            storeLocalData()
+        }.thenCompose {
+            wrappedDatabase.setFCMToken(email, token)
+        }
     }
 
     /**
@@ -809,8 +874,10 @@ class CachingStore(private val wrappedDatabase: Database,
      * @return A completable future that completes when the email has been set
      */
     fun setCurrentEmail(email: String): CompletableFuture<Void> {
-        currentEmail = email
-        return storeLocalData()
+        return retrieveData.thenCompose {
+            currentEmail = email
+            storeLocalData()
+        }
     }
 
     /**
