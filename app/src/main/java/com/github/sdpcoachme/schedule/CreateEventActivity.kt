@@ -305,14 +305,20 @@ class CreateEventActivity : ComponentActivity() {
                             startDateSheet = startDateSheet,
                             start = start,
                             formatter = formatterUserDate,
-                            onDateChange = { start = it },
+                            onDateChange = {
+                                start = it.withHour(start.hour).withMinute(start.minute)
+                                end = it.withHour(end.hour).withMinute(end.minute)
+                           },
                         )
                         Divider(startIndent = 20.dp)
                         StartTimeRow(
                             startTimeSheet = startTimeSheet,
                             start = start,
                             formatter = formatterUserTime,
-                            onTimeChange = { start = it }
+                            onTimeChange = {
+                                start = it
+                                end = it.plusHours(3)
+                            }
                         )
                         Divider(startIndent = 20.dp)
                         // End date
@@ -320,7 +326,7 @@ class CreateEventActivity : ComponentActivity() {
                             endDateSheet = endDateSheet,
                             end = end,
                             formatter = formatterUserDate,
-                            onDateChange = { end = it },
+                            onDateChange = { end = it.withHour(end.hour).withMinute(end.minute) },
                         )
                         Divider(startIndent = 20.dp)
                         EndTimeRow(

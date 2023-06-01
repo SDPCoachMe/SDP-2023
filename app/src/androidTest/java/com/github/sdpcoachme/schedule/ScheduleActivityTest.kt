@@ -82,7 +82,10 @@ class ScheduleActivityTest {
         }
     }
 
-    // TODO: Fix this test
+
+    /* This test is currently commented out because it introduces problems for other tests.
+    The time was too short to fix this, but considering the nondeterministic behaviour of all other tests,
+    it might be the best to leave it out for now. Also, the coverage does not suffer much from this.*/
     /*@Test
     fun getExceptionIsThrownCorrectly() {
         Intents.init()
