@@ -171,7 +171,7 @@ class LoginActivity : ComponentActivity() {
                 // Wait 5 seconds before launching the sign in
                 // to display the login screen to the user
                 withContext(Dispatchers.IO) {
-                    sleep(5000)
+                    sleep(3000)
                 }
                 launchGoogleSignIn.value = false
 
