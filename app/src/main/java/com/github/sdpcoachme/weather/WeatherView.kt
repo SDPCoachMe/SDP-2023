@@ -45,8 +45,8 @@ fun WeatherView(weatherForecast: MutableState<WeatherForecast>, day: LocalDate) 
 
         weatherCode = weatherForecast.value.forecast[dayId].weatherCode
         weatherText = Pair(
-            weatherForecast.value.forecast[dayId].maxTemperature.toString(),
-            weatherForecast.value.forecast[dayId].minTemperature.toString()
+            weatherForecast.value.forecast[dayId].maxTemperature.toInt().toString(),
+            weatherForecast.value.forecast[dayId].minTemperature.toInt().toString()
         ).toWeatherText()
 
     } else if (day.isBefore(now)) {
@@ -81,6 +81,6 @@ private fun WeatherColumn(weatherText: String, weatherCode: Int) {
 }
 
 fun Pair<String, String>.toWeatherText(): String {
-    return "$first | $second"
+    return "$first° | $second°"
 }
 
