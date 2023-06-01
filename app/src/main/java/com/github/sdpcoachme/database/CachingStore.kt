@@ -403,6 +403,8 @@ class CachingStore(private val wrappedDatabase: Database,
                     addChatContactIfNew(email, groupEvent.groupEventId, groupEvent.groupEventId)
                 )
             }
+        }.thenCompose {
+            storeLocalData()
         }
     }
 
@@ -414,14 +416,14 @@ class CachingStore(private val wrappedDatabase: Database,
      */
     fun addEventToSchedule(event: Event): CompletableFuture<Schedule> {
         return getCurrentEmail().thenCompose { email ->
-            wrappedDatabase.addEventToSchedule(email, event).thenApply {
+            wrappedDatabase.addEventToSchedule(email, event).thenCompose {
                 // Update the cached schedule
                 val start = LocalDateTime.parse(event.start).toLocalDate()
                 val end = LocalDateTime.parse(event.end).toLocalDate()
                 if (start >= minCachedMonday && end < maxCachedMonday) {
                     cachedSchedule = cachedSchedule.copy(events = cachedSchedule.events.plus(event))
                 }
-                cachedSchedule
+                storeLocalData().thenApply { cachedSchedule }
             }
         }
     }
@@ -437,13 +439,13 @@ class CachingStore(private val wrappedDatabase: Database,
             wrappedDatabase.addGroupEventToSchedule(email = email, groupEventId = groupEventId)
         }.thenCompose {
             wrappedDatabase.getGroupEvent(groupEventId)
-        }.thenApply { groupEvent ->
+        }.thenCompose { groupEvent ->
             // Update the cached schedule
             cachedSchedule = cachedSchedule.copy(
                 events = cachedSchedule.events + EventOps.groupEventsToEvents(listOf(groupEvent)),
                 groupEvents = cachedSchedule.groupEvents + groupEventId
             )
-            cachedSchedule
+            storeLocalData().thenApply { cachedSchedule }
         }
     }
 
