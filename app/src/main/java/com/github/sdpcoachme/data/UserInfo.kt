@@ -37,21 +37,37 @@ data class UserInfo(
          */
         // TODO: this method is temporary
         fun getPictureResource(email: String): Int {
+            return when (email) {
+                "lindsayski@gmail.com" ->
+                    R.drawable.lindsay
+                "ennassih.yann@gmail.com" ->
+                    R.drawable.yann
+                "damian.kopp01@gmail.com" ->
+                    R.drawable.damian
+                "luca.aengu@gmail.com" ->
+                    R.drawable.luca
+                "gotti.bry@gmail.com" ->
+                    R.drawable.bryan
+                else ->
+                    R.drawable::class.java.fields.firstOrNull {
+                        it.name == email.split("@").first().replace(".", "_")
+                    }?.get(null) as Int? ?: R.drawable.loading_picture
+            }
             // Empty email means UserInfo is probably loading, so return gray background picture
-            if (email.isEmpty()) {
-                return R.drawable.loading_picture
-            }
-
-            val prefix = "profile_picture_"
-            val fieldNames = R.drawable::class.java.fields.filter {
-                it.name.startsWith(prefix)
-            }
-
-            // mod returns same sign as divisor, so no need to use abs
-            val index = email.hashCode().mod(fieldNames.size)
-            val field = fieldNames[index]
-
-            return field.get(null) as Int
+//            if (email.isEmpty()) {
+//                return R.drawable.loading_picture
+//            }
+//
+//            val prefix = "profile_picture_"
+//            val fieldNames = R.drawable::class.java.fields.filter {
+//                it.name.startsWith(prefix)
+//            }
+//
+//            // mod returns same sign as divisor, so no need to use abs
+//            val index = email.hashCode().mod(fieldNames.size)
+//            val field = fieldNames[index]
+//
+//            return field.get(null) as Int
         }
     }
 }
